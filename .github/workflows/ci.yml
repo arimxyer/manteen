@@ -16,4 +16,7 @@ jobs:
       - run: bun run typecheck
       - run: node packages/cli/scripts/guard-runtime-apis.mjs
       - run: bun --cwd=packages/cli run build
+      # The dist-shape e2e validates public/r/empty-state.json, which is generated
+      # and gitignored — without this it is simply absent on a fresh checkout.
+      - run: bun run build:registry
       - run: node --test packages/cli/e2e/*.node-e2e.mjs
