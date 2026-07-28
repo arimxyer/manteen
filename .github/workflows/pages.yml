@@ -1,0 +1,45 @@
+name: Deploy registry
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# The registry is generated, never committed, so a queued run may safely
+# discard an older one — the newest catalog always wins.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+
+      # Builds the toolchain, then compiles the catalog with the BUILT bundle
+      # under Node rather than the TypeScript sources under Bun. Publishing the
+      # registry and proving the published artifact runs on Node are the same
+      # step, so a Bun-only API can never reach npm unnoticed again.
+      - run: bun run verify:node
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
