@@ -8,7 +8,8 @@
     "build:kit": "bun --cwd=packages/registry-kit run build",
     "build:registry": "bun packages/registry-kit/src/cli/index.ts build",
     "merge-theme": "bun packages/registry-kit/src/cli/index.ts merge-theme",
-    "test": "bun test",
+    "//test": "The house smoke test imports the kit by package name, which now resolves through its exports map into dist — so the kit has to be built before the suite runs.",
+    "test": "bun run build:kit && bun test",
     "typecheck": "tsc --noEmit",
     "verify:node": "bun run build:kit && node packages/registry-kit/dist/cli.mjs build",
     "serve": "bun run build:registry && bunx --bun serve public -p 4321"
