@@ -410,6 +410,45 @@ node <repo>/packages/cli/dist/cli.mjs add @base/empty-state
 
 ---
 
+## 5a. Resolutions — decided 2026-07-28
+
+The seven open questions below are **closed**. This section overrides them and §6 where they disagree.
+
+| # | Question | Decision |
+|---|---|---|
+| 1 | Dotenv floor | **Accepted.** `engines.node` is `>=20.12`; call `process.loadEnvFile` unguarded. `process.env` wins over file values. |
+| 2 | Install receipt | **REJECTED — the receipt ships in v1, not v1.1.** See below. |
+| 3 | `resolutions` shape | **Accepted.** Name-keyed, fully-qualified value. |
+| 4 | Version gate scope | **Accepted.** `@mantine/core` only; warn when a non-core `@mantine/*` range is unsatisfied. |
+| 5 | Bare `registryDependencies` | **Accepted.** Parent-relative + `bare-dep-assumed-local` warning. Never fall back to ui.shadcn.com. |
+| 6 | Framework tiers | **Accepted.** Tier A codemods for Vite / Next App / Next Pages / React Router; everything else Tier B. |
+| 7 | Tailwind coexistence | **Accepted.** Report and do not patch when `@tailwindcss/postcss` is present. |
+
+### The receipt is a v1 deliverable
+
+Deferring it leaves the shipped bug open **between** invocations: `@base/empty-state` installed after
+`@house/empty-state` is otherwise an ordinary "file exists, overwrite?" with no registry attribution and
+no signal that a differently-typed component is about to replace another. The in-run collision check
+(D8) closes this within one command only.
+
+Consequences that bind every phase:
+
+- The receipt is **read in `plan()`** and participates in gate evaluation, so its types belong in
+  `src/plan/types.ts` and must be frozen with the rest of the contract — not bolted on at apply time.
+- A destination whose receipt records a **different** owning item id is a cross-run collision. It is
+  reported with both ids and both registries, and is subject to the same `resolutions` escape hatch
+  as D8's in-run case.
+- The overwrite prompt gains attribution: which item, from which registry, replacing which item.
+- Writing the receipt is a phase of `apply()` and participates in the pre-image journal, so a failed
+  run does not leave the receipt describing files that were rolled back.
+- Every read path must still handle "no receipt yet" — that branch is unavoidable for existing
+  projects, and shipping it in v1 is cheaper than retrofitting it later.
+- `manteen diff` and `manteen update` stay deferred, but are no longer blocked on format design.
+
+Rows in §6 for "Install receipt / `manteen.lock.json`" and the open question below are superseded.
+
+---
+
 ## 5. Open questions
 
 Genuine forks, merged across dimensions. Each has a recommendation you can accept by silence.
