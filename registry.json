@@ -1,0 +1,77 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "mantine-components",
+  "homepage": "https://github.com/arimxyer/mantine-components",
+  "items": [
+    {
+      "name": "theme",
+      "type": "registry:lib",
+      "title": "House Theme",
+      "description": "Mantine theme with house defaults for Button, Card, Paper and Modal. Wrap your app in <MantineProvider theme={theme}>.",
+      "dependencies": ["@mantine/core@^9", "@mantine/hooks@^9"],
+      "files": [
+        {
+          "path": "registry/lib/theme.ts",
+          "type": "registry:lib"
+        }
+      ]
+    },
+    {
+      "name": "empty-state",
+      "type": "registry:ui",
+      "title": "Empty State",
+      "description": "Centered empty/zero-data placeholder with an optional icon and call to action.",
+      "dependencies": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "files": [
+        {
+          "path": "registry/ui/empty-state.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "page-header",
+      "type": "registry:ui",
+      "title": "Page Header",
+      "description": "Page title, description and right-aligned action slot with an optional divider.",
+      "dependencies": ["@mantine/core@^9"],
+      "files": [
+        {
+          "path": "registry/ui/page-header.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "stat-card",
+      "type": "registry:ui",
+      "title": "Stat Card",
+      "description": "Metric tile with label, value, optional icon and a trend row.",
+      "dependencies": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "files": [
+        {
+          "path": "registry/ui/stat-card.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "data-table",
+      "type": "registry:block",
+      "title": "Data Table",
+      "description": "Sortable table with loading skeletons, click-through rows and an empty state. Multi-file: pulls in a companion hook and depends on empty-state.",
+      "dependencies": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "registryDependencies": ["@house/empty-state"],
+      "files": [
+        {
+          "path": "registry/blocks/data-table/data-table.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "registry/blocks/data-table/use-data-table.ts",
+          "type": "registry:hook"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "baseUrl": ".",
+    // These map the *consumer's* alias shape onto this repo's layout, so the
+    // source files can be written with the import paths they will have AFTER
+    // `shadcn add` places them — and still typecheck here.
+    "paths": {
+      "@/components/ui/*": ["./registry/ui/*"],
+      "@/hooks/*": ["./registry/blocks/data-table/*"],
+      "@/lib/*": ["./registry/lib/*"]
+    }
+  },
+  "include": ["registry/**/*"]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "mantine-components",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A shadcn-format registry distributing house Mantine compositions.",
+  "type": "module",
+  "scripts": {
+    "build:registry": "shadcn build",
+    "validate": "shadcn registry validate",
+    "typecheck": "tsc --noEmit",
+    "serve": "bun build:registry && bunx --bun serve public -p 4321"
+  },
+  "devDependencies": {
+    "@mantine/core": "^9.5.0",
+    "@mantine/hooks": "^9.5.0",
+    "@tabler/icons-react": "^3.45.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "shadcn": "^4.16.0",
+    "typescript": "^5.9.0"
+  }
+}
