@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/arimxyer/mantine-components/schema/mantine-registry.schema.json",
+  "$id": "https://github.com/arimxyer/mantine-components/schema/manteen.registry.schema.json",
   "title": "Mantine registry",
   "description": "Authoring format for a Mantine component registry. Compiled to the interchange wire format by tools/build-registry.",
   "type": "object",

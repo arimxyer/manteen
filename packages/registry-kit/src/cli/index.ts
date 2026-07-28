@@ -2,10 +2,10 @@
 import { BUILD_USAGE, build } from "./build";
 import { MERGE_USAGE, mergeTheme } from "./merge-theme";
 
-const USAGE = `mantine-registry — tooling for Mantine component registries
+const USAGE = `manteen-kit — tooling for Mantine component registries
 
 Usage:
-  mantine-registry <command> [options]
+  manteen-kit <command> [options]
 
 Commands:
   build [catalog] [outDir]              compile a catalog to the wire format

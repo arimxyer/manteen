@@ -1,9 +1,9 @@
 import { resolve } from "node:path";
 
 import { describe, expect, test } from "bun:test";
-import { compileRegistry } from "mantine-registry-kit";
+import { compileRegistry } from "manteen-kit";
 
-const CATALOG = resolve(import.meta.dir, "../mantine-registry.json");
+const CATALOG = resolve(import.meta.dir, "../manteen.registry.json");
 
 describe("house catalog", () => {
   test("compiles and conforms to the wire schema", () => {

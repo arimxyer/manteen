@@ -9,7 +9,7 @@ and edit. Mantine itself stays an ordinary npm dependency in every consuming app
 ## Two formats, one direction
 
 ```
-mantine-registry.json          ← you write this. Our schema, our vocabulary.
+manteen.registry.json          ← you write this. Our schema, our vocabulary.
   { "kind": "component", "mantine": ">=9", "themeFragment": "...", "uses": ["empty-state"] }
         │
         │  bun run build:registry
@@ -43,10 +43,10 @@ If nobody but you maintains it and every project wants to tweak it, it belongs h
 This repo is a bun workspace: a registry, plus the toolchain it's built with.
 
 ```
-mantine-registry.json        # the catalog you author (namespace @house)
+manteen.registry.json        # the catalog you author (namespace @house)
 registry/                    # the components themselves
 test/                        # smoke test for this catalog
-packages/registry-kit/       # → mantine-registry-kit, the toolchain
+packages/registry-kit/       # → manteen-kit, the toolchain
 public/r/*.json              # build output (gitignored)
 ```
 
@@ -59,7 +59,7 @@ format, CLI, programmatic API and known limitations.
 ```bash
 bun install
 bun run build:registry                              # compile this registry
-mantine-registry build <catalog.json> <outDir>      # or any other
+manteen-kit build <catalog.json> <outDir>      # or any other
 bun run typecheck
 bun test
 ```
@@ -103,9 +103,9 @@ no equivalent, so a registry-shipped theme could only be prompted over or overwr
 wholesale — one theme item per project, local edits lost on update. This closes that gap.
 
 ```bash
-mantine-registry merge-theme <base.ts> <fragment.ts>            # dry run
-mantine-registry merge-theme <base.ts> <fragment.ts> --write
-mantine-registry merge-theme <base.ts> <fragment.ts> --write --prefer incoming
+manteen-kit merge-theme <base.ts> <fragment.ts>            # dry run
+manteen-kit merge-theme <base.ts> <fragment.ts> --write
+manteen-kit merge-theme <base.ts> <fragment.ts> --write --prefer incoming
 ```
 
 | Case | Behavior |
@@ -125,7 +125,7 @@ style. Idempotent, so it's safe to run on every install. Exit `0` clean, `1` con
 Verified 2026-07-28 against shadcn CLI 4.16.0 and Mantine 9.5.0, with a Vite + React 19
 consumer:
 
-- Output built **entirely by `mantine-registry build`** (no third-party CLI in the pipeline)
+- Output built **entirely by `manteen-kit build`** (no third-party CLI in the pipeline)
   installs via stock `npx shadcn add @house/...` — files placed correctly across
   `components/ui/`, `hooks/` and `lib/`, transitive `uses` resolved, npm deps installed.
 - Four registries served at once (`@house` plus the three fixtures); a single install
@@ -141,7 +141,7 @@ consumer:
 **Bare `uses` names would resolve against the public registry, not this one.** A wire
 `registryDependencies: ["empty-state"]` fails with
 `The item at https://ui.shadcn.com/r/styles/default/empty-state.json was not found`. The
-build qualifies bare names with `namespace` from `mantine-registry.json`, so authors never
+build qualifies bare names with `namespace` from `manteen.registry.json`, so authors never
 hardcode `@house/`.
 
 **Unknown top-level fields are stripped by third-party builders; `meta` survives.** Confirmed

@@ -1,10 +1,10 @@
-# mantine-registry-kit
+# manteen-kit
 
 Author Mantine component registries in Mantine's vocabulary; compile them to an interchange
 format any registry client can read.
 
 ```bash
-bun add -d mantine-registry-kit
+bun add -d manteen-kit
 ```
 
 Ships as Node-compatible ESM and requires Node >= 20.11. Any package manager works;
@@ -22,8 +22,8 @@ fragment, or Styles API selectors.
 This kit lets you write the former and emit the latter.
 
 ```
-mantine-registry.json   ← your schema, your vocabulary
-      │  mantine-registry build
+manteen.registry.json   ← your schema, your vocabulary
+      │  manteen-kit build
       ▼
 r/*.json                ← interchange format, machine-readable
 ```
@@ -35,8 +35,8 @@ authoring layer entirely Mantine-shaped.
 ## CLI
 
 ```bash
-mantine-registry build [catalog.json] [outDir]      # default: ./mantine-registry.json → ./public/r
-mantine-registry merge-theme <base.ts> <fragment.ts> [--write] [--prefer incoming] [--json]
+manteen-kit build [catalog.json] [outDir]      # default: ./manteen.registry.json → ./public/r
+manteen-kit merge-theme <base.ts> <fragment.ts> [--write] [--prefer incoming] [--json]
 ```
 
 `build` validates the catalog against the authoring schema **and** every emitted item against
@@ -85,7 +85,7 @@ The interchange format merges its own theme variables into a consumer's project.
 wholesale — one theme item per project, local edits lost on update.
 
 ```bash
-mantine-registry merge-theme src/lib/theme.ts fragment.ts --write
+manteen-kit merge-theme src/lib/theme.ts fragment.ts --write
 ```
 
 | Case | Behavior |
@@ -102,9 +102,9 @@ Idempotent, so it's safe to run on every install.
 ## Programmatic API
 
 ```ts
-import { compileRegistry, mergeThemeSource, validateCatalog } from "mantine-registry-kit";
+import { compileRegistry, mergeThemeSource, validateCatalog } from "manteen-kit";
 
-const { source, items, index, failures } = compileRegistry("./mantine-registry.json");
+const { source, items, index, failures } = compileRegistry("./manteen.registry.json");
 const { text, conflicts } = mergeThemeSource(baseSource, fragmentSource);
 ```
 
@@ -114,8 +114,8 @@ One toolchain, any number of catalogs — paths inside a catalog resolve against
 directory:
 
 ```bash
-mantine-registry build registries/base/mantine-registry.json    dist/base
-mantine-registry build registries/product/mantine-registry.json dist/product
+manteen-kit build registries/base/manteen.registry.json    dist/base
+manteen-kit build registries/product/manteen.registry.json dist/product
 ```
 
 An item in `@product` can declare `uses: ["@kit/callout", "@base/empty-state"]`, and a client

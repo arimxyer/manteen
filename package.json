@@ -2,7 +2,7 @@
   "name": "mantine-components",
   "version": "0.1.0",
   "private": true,
-  "description": "A Mantine component registry, authored in Mantine vocabulary and compiled with mantine-registry-kit.",
+  "description": "A Mantine component registry, authored in Mantine vocabulary and compiled with manteen-kit.",
   "type": "module",
   "scripts": {
     "build:kit": "bun --cwd=packages/registry-kit run build",
@@ -21,7 +21,7 @@
     "@types/bun": "^1.3.14",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "mantine-registry-kit": "workspace:*",
+    "manteen-kit": "workspace:*",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "shadcn": "^4.16.0",

@@ -2,10 +2,10 @@ import { resolve } from "node:path";
 
 import { compileRegistry, writeRegistry } from "../build-registry";
 
-export const BUILD_USAGE = `mantine-registry build [catalog.json] [outDir]
+export const BUILD_USAGE = `manteen-kit build [catalog.json] [outDir]
 
 Compiles a Mantine registry catalog to the interchange wire format.
-Defaults: ./mantine-registry.json -> <catalog dir>/public/r
+Defaults: ./manteen.registry.json -> <catalog dir>/public/r
 `;
 
 export function build(argv: string[]): number {
@@ -14,7 +14,7 @@ export function build(argv: string[]): number {
     return 0;
   }
 
-  const catalog = resolve(argv[0] ?? "mantine-registry.json");
+  const catalog = resolve(argv[0] ?? "manteen.registry.json");
   const outDir = resolve(argv[1] ?? resolve(catalog, "../public/r"));
 
   let result;

@@ -1,18 +1,18 @@
 {
-  "name": "mantine-registry-kit",
+  "name": "manteen-kit",
   "version": "0.1.0",
   "description": "Author Mantine component registries in Mantine's vocabulary and compile them to an interchange format any registry client can read.",
   "type": "module",
   "license": "MIT",
   "bin": {
-    "mantine-registry": "./dist/cli.mjs"
+    "manteen-kit": "./dist/cli.mjs"
   },
   "exports": {
     ".": {
       "types": "./dist/index.d.mts",
       "default": "./dist/index.mjs"
     },
-    "./schema": "./schema/mantine-registry.schema.json"
+    "./schema": "./schema/manteen.registry.schema.json"
   },
   "files": ["dist", "schema", "README.md"],
   "engines": {
@@ -22,7 +22,8 @@
   "scripts": {
     "build": "tsdown",
     "test": "bun test",
-    "prepublishOnly": "tsdown"
+    "//prepare": "Runs on both install and publish, so a fresh clone has dist/ and the package-name import resolves without a manual build. It does NOT fix the bin symlink on that first install — bun links bins before running prepare, and skips any whose target is missing — but local work goes through the root scripts, which run the TS sources directly.",
+    "prepare": "tsdown"
   },
   "dependencies": {
     "ajv": "^8.20.0",

@@ -1,8 +1,8 @@
 {
-  "$schema": "./schema/mantine-registry.schema.json",
-  "name": "mantine-components",
+  "$schema": "./packages/registry-kit/schema/manteen.registry.schema.json",
+  "name": "manteen",
   "namespace": "@house",
-  "homepage": "https://github.com/arimxyer/mantine-components",
+  "homepage": "https://github.com/arimxyer/manteen",
   "items": [
     {
       "name": "theme",

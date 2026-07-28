@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 import { mergeThemeSource } from "../merge-theme";
 
-export const MERGE_USAGE = `mantine-registry merge-theme <base.ts> <fragment.ts> [options]
+export const MERGE_USAGE = `manteen-kit merge-theme <base.ts> <fragment.ts> [options]
 
 Composes a Mantine theme fragment into an existing theme instead of overwriting it.
 

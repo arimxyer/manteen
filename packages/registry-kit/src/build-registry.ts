@@ -1,7 +1,7 @@
 /**
  * Compile the Mantine authoring format into the interchange wire format.
  *
- * The authoring catalog (`mantine-registry.json`, our schema and vocabulary) is
+ * The authoring catalog (`manteen.registry.json`, our schema and vocabulary) is
  * validated, then compiled to items conforming to the vendored interchange
  * schema. Mantine-only concepts the wire format has no field for — version
  * gate, provider requirement, theme fragment, Styles API selectors — ride along
@@ -96,7 +96,7 @@ function messagesFrom(validate: ValidateFunction): string[] {
 
 /** Validates a catalog against our own authoring schema. */
 export function validateCatalog(value: unknown): string[] | null {
-  const validate = ajv().compile(loadSchema("schema/mantine-registry.schema.json"));
+  const validate = ajv().compile(loadSchema("schema/manteen.registry.schema.json"));
   return validate(value) ? null : messagesFrom(validate);
 }
 

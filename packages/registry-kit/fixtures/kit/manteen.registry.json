@@ -1,5 +1,5 @@
 {
-  "$schema": "../../schema/mantine-registry.schema.json",
+  "$schema": "../../schema/manteen.registry.schema.json",
   "name": "kit",
   "namespace": "@kit",
   "items": [

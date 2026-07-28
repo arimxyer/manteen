@@ -12,9 +12,9 @@ import {
 } from "../src/build-registry";
 
 const FIXTURES = resolve(import.meta.dir, "../fixtures");
-const BASE = join(FIXTURES, "base/mantine-registry.json");
-const KIT = join(FIXTURES, "kit/mantine-registry.json");
-const PRODUCT = join(FIXTURES, "product/mantine-registry.json");
+const BASE = join(FIXTURES, "base/manteen.registry.json");
+const KIT = join(FIXTURES, "kit/manteen.registry.json");
+const PRODUCT = join(FIXTURES, "product/manteen.registry.json");
 
 function itemNamed(items: WireItem[], name: string): WireItem {
   const found = items.find((item) => item.name === name);
