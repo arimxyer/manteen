@@ -1,0 +1,16 @@
+{
+  "name": "product",
+  "namespace": "@product",
+  "items": [
+    {
+      "name": "alert-panel",
+      "kind": "component",
+      "title": "Alert Panel",
+      "description": "Alert list built from items in two other registries.",
+      "mantine": ">=9",
+      "npm": ["@mantine/core@^9"],
+      "uses": ["@kit/callout", "@house/empty-state"],
+      "files": [{ "path": "src/alert-panel.tsx", "as": "component" }]
+    }
+  ]
+}

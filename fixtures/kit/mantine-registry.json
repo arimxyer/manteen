@@ -1,0 +1,15 @@
+{
+  "name": "kit",
+  "namespace": "@kit",
+  "items": [
+    {
+      "name": "callout",
+      "kind": "component",
+      "title": "Callout",
+      "description": "Inline informational alert.",
+      "mantine": ">=9",
+      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "files": [{ "path": "src/callout.tsx", "as": "component" }]
+    }
+  ]
+}

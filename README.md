@@ -56,13 +56,22 @@ public/r/*.json                       # build output (gitignored)
 
 ```bash
 bun install
-bun run build:registry     # compile + validate wire-schema conformance
+bun run build:registry                          # compile this registry
+bun tools/build-registry/build.ts <catalog> <outDir>   # or any other
 bun run typecheck
 bun test
 ```
 
-The build validates every emitted item against the vendored wire schema with ajv and exits
-non-zero on any violation, so conformance can't silently regress.
+The build validates the catalog against our authoring schema *and* every emitted item
+against the vendored wire schema, exiting non-zero on either, so conformance can't silently
+regress.
+
+### Fixtures
+
+`fixtures/kit` and `fixtures/product` are two additional registries used by the test suite.
+`@product/alert-panel` declares `uses: ["@kit/callout", "@house/empty-state"]`, so the
+cross-registry path — one toolchain, three namespaces, dependencies spanning all of them —
+is covered by `bun test` rather than by hand.
 
 Source files are authored with the import paths they'll have **after** installation
 (`@/components/ui/empty-state`). `tsconfig.json` maps those aliases onto this repo's layout
