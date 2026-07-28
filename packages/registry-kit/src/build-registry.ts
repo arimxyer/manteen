@@ -18,8 +18,13 @@ import Ajv, { type ValidateFunction } from "ajv";
 
 const ajv = () => new Ajv({ strict: false, allErrors: true });
 
-/** Package root, so bundled schemas resolve wherever this is installed. */
-const PKG_ROOT = resolve(import.meta.dir, "..");
+/**
+ * Package root, so bundled schemas resolve wherever this is installed.
+ *
+ * `import.meta.dirname` rather than Bun's `import.meta.dir`: the latter is
+ * `undefined` under Node, which is what runs this once it is published.
+ */
+const PKG_ROOT = resolve(import.meta.dirname, "..");
 
 export type Kind = "component" | "block" | "hook" | "lib" | "theme" | "file";
 export type FileRole = "component" | "hook" | "lib" | "style" | "file";

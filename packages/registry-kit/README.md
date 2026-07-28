@@ -7,6 +7,9 @@ format any registry client can read.
 bun add -d mantine-registry-kit
 ```
 
+Ships as Node-compatible ESM and requires Node >= 20.11. Any package manager works;
+authoring the registry in Bun is optional.
+
 ## Why
 
 Registries distribute code you're meant to **own and edit** — the composed layer on top of a

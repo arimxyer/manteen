@@ -5,10 +5,12 @@
   "description": "A Mantine component registry, authored in Mantine vocabulary and compiled with mantine-registry-kit.",
   "type": "module",
   "scripts": {
+    "build:kit": "bun --cwd=packages/registry-kit run build",
     "build:registry": "bun packages/registry-kit/src/cli/index.ts build",
     "merge-theme": "bun packages/registry-kit/src/cli/index.ts merge-theme",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
+    "verify:node": "bun run build:kit && node packages/registry-kit/dist/cli.mjs build",
     "serve": "bun run build:registry && bunx --bun serve public -p 4321"
   },
   "devDependencies": {

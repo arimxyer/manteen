@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 import { BUILD_USAGE, build } from "./build";
 import { MERGE_USAGE, mergeTheme } from "./merge-theme";
 
