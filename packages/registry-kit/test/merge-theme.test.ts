@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { mergeThemeSource } from "./merge-theme";
+import { mergeThemeSource } from "../src/merge-theme";
 
 const BASE = `import { Button, createTheme } from "@mantine/core";
 

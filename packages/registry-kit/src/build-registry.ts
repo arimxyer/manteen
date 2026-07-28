@@ -16,7 +16,10 @@ import { dirname, join, resolve } from "node:path";
 
 import Ajv, { type ValidateFunction } from "ajv";
 
-const TOOL_ROOT = resolve(import.meta.dir, "../..");
+const ajv = () => new Ajv({ strict: false, allErrors: true });
+
+/** Package root, so bundled schemas resolve wherever this is installed. */
+const PKG_ROOT = resolve(import.meta.dir, "..");
 
 export type Kind = "component" | "block" | "hook" | "lib" | "theme" | "file";
 export type FileRole = "component" | "hook" | "lib" | "style" | "file";
@@ -71,16 +74,13 @@ export const FILE_TYPE: Record<FileRole, string> = {
   file: "registry:file",
 };
 
-function createAjv(): Ajv {
-  const ajv = new Ajv({ strict: false, allErrors: true });
-  // The vendored wire schema declares draft-07 under its https:// id; ajv
-  // registers the http:// one, so alias it rather than editing the vendored copy.
-  const draft07 = JSON.parse(
-    readFileSync(join(TOOL_ROOT, "node_modules/ajv/dist/refs/json-schema-draft-07.json"), "utf8"),
-  );
-  delete draft07.$id;
-  ajv.addMetaSchema(draft07, "https://json-schema.org/draft-07/schema#");
-  return ajv;
+function loadSchema(relativePath: string): Record<string, unknown> {
+  const schema = JSON.parse(readFileSync(join(PKG_ROOT, relativePath), "utf8"));
+  // Drop the dialect declaration and let ajv use its own draft-07 meta-schema.
+  // The vendored copy declares the https:// id, which ajv does not register, and
+  // reaching into ajv's internals to alias it breaks once installed as a dep.
+  delete schema.$schema;
+  return schema;
 }
 
 function messagesFrom(validate: ValidateFunction): string[] {
@@ -91,17 +91,13 @@ function messagesFrom(validate: ValidateFunction): string[] {
 
 /** Validates a catalog against our own authoring schema. */
 export function validateCatalog(value: unknown): string[] | null {
-  const validate = createAjv().compile(
-    JSON.parse(readFileSync(join(TOOL_ROOT, "schema/mantine-registry.schema.json"), "utf8")),
-  );
+  const validate = ajv().compile(loadSchema("schema/mantine-registry.schema.json"));
   return validate(value) ? null : messagesFrom(validate);
 }
 
 /** Validates a compiled item against the vendored interchange schema. */
 export function createWireValidator(): (value: unknown) => string[] | null {
-  const validate = createAjv().compile(
-    JSON.parse(readFileSync(join(TOOL_ROOT, "schema/wire/registry-item.schema.json"), "utf8")),
-  );
+  const validate = ajv().compile(loadSchema("schema/wire/registry-item.schema.json"));
   return (value) => (validate(value) ? null : messagesFrom(validate));
 }
 

@@ -1,0 +1,43 @@
+{
+  "$schema": "../../schema/mantine-registry.schema.json",
+  "name": "base",
+  "namespace": "@base",
+  "homepage": "https://example.test/base",
+  "items": [
+    {
+      "name": "theme",
+      "kind": "theme",
+      "title": "Base Theme",
+      "description": "House defaults.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/core@^9"],
+      "files": [{ "path": "src/theme.ts", "as": "lib" }]
+    },
+    {
+      "name": "empty-state",
+      "kind": "component",
+      "title": "Empty State",
+      "description": "Zero-data placeholder.",
+      "npm": ["@mantine/core@^9"],
+      "files": [{ "path": "src/empty-state.tsx", "as": "component" }]
+    },
+    {
+      "name": "data-grid",
+      "kind": "block",
+      "title": "Data Grid",
+      "description": "Multi-file block with a companion hook and a theme fragment.",
+      "mantine": ">=9",
+      "npm": ["@mantine/core@^9"],
+      "uses": ["empty-state"],
+      "files": [
+        { "path": "src/data-grid.tsx", "as": "component" },
+        { "path": "src/use-data-grid.ts", "as": "hook" }
+      ],
+      "themeFragment": "src/data-grid.theme.ts",
+      "stylesApi": {
+        "DataGrid": ["root", "header", "row"]
+      }
+    }
+  ]
+}

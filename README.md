@@ -40,24 +40,26 @@ If nobody but you maintains it and every project wants to tweak it, it belongs h
 
 ## Layout
 
+This repo is a bun workspace: a registry, plus the toolchain it's built with.
+
 ```
-mantine-registry.json                 # the catalog you author
-schema/mantine-registry.schema.json   # our authoring schema
-schema/wire/registry-item.schema.json # vendored interchange schema (validated against at build)
-registry/ui/*.tsx                     # single-file components
-registry/blocks/data-table/*          # multi-file block
-registry/lib/*.ts                     # theme + theme fragments
-tools/build-registry/                 # authoring format → wire format
-tools/merge-theme/                    # theme composition codemod
-public/r/*.json                       # build output (gitignored)
+mantine-registry.json        # the catalog you author (namespace @house)
+registry/                    # the components themselves
+test/                        # smoke test for this catalog
+packages/registry-kit/       # → mantine-registry-kit, the toolchain
+public/r/*.json              # build output (gitignored)
 ```
+
+The toolchain is a package rather than a folder of scripts so any number of registries can
+share it. See [packages/registry-kit](packages/registry-kit/README.md) for the authoring
+format, CLI, programmatic API and known limitations.
 
 ## Develop
 
 ```bash
 bun install
-bun run build:registry                          # compile this registry
-bun tools/build-registry/build.ts <catalog> <outDir>   # or any other
+bun run build:registry                              # compile this registry
+mantine-registry build <catalog.json> <outDir>      # or any other
 bun run typecheck
 bun test
 ```
@@ -66,12 +68,9 @@ The build validates the catalog against our authoring schema *and* every emitted
 against the vendored wire schema, exiting non-zero on either, so conformance can't silently
 regress.
 
-### Fixtures
-
-`fixtures/kit` and `fixtures/product` are two additional registries used by the test suite.
-`@product/alert-panel` declares `uses: ["@kit/callout", "@house/empty-state"]`, so the
-cross-registry path — one toolchain, three namespaces, dependencies spanning all of them —
-is covered by `bun test` rather than by hand.
+The kit's own fixtures (`packages/registry-kit/fixtures/`) hold three more registries —
+`@base`, `@kit`, `@product` — wired so `@product/alert-panel` depends on items in the other
+two. The cross-registry path is covered by `bun test` rather than by hand.
 
 Source files are authored with the import paths they'll have **after** installation
 (`@/components/ui/empty-state`). `tsconfig.json` maps those aliases onto this repo's layout
@@ -97,16 +96,16 @@ so they typecheck here and land correctly there.
 a client that understands it merges it into the project theme, and one that doesn't must
 not drop a stray theme file into the project.
 
-## `tools/merge-theme` — theme composition
+## Theme composition
 
 The interchange format's `cssVars` merges into a consumer's theme; Mantine's `theme.ts` has
 no equivalent, so a registry-shipped theme could only be prompted over or overwritten
 wholesale — one theme item per project, local edits lost on update. This closes that gap.
 
 ```bash
-bun run merge-theme <base.ts> <fragment.ts>            # dry run
-bun run merge-theme <base.ts> <fragment.ts> --write
-bun run merge-theme <base.ts> <fragment.ts> --write --prefer incoming
+mantine-registry merge-theme <base.ts> <fragment.ts>            # dry run
+mantine-registry merge-theme <base.ts> <fragment.ts> --write
+mantine-registry merge-theme <base.ts> <fragment.ts> --write --prefer incoming
 ```
 
 | Case | Behavior |
@@ -126,9 +125,11 @@ style. Idempotent, so it's safe to run on every install. Exit `0` clean, `1` con
 Verified 2026-07-28 against shadcn CLI 4.16.0 and Mantine 9.5.0, with a Vite + React 19
 consumer:
 
-- Output built **entirely by `tools/build-registry`** (no shadcn CLI in the pipeline)
-  installs via stock `npx shadcn add @house/...` — 6 files placed correctly across
+- Output built **entirely by `mantine-registry build`** (no third-party CLI in the pipeline)
+  installs via stock `npx shadcn add @house/...` — files placed correctly across
   `components/ui/`, `hooks/` and `lib/`, transitive `uses` resolved, npm deps installed.
+- Four registries served at once (`@house` plus the three fixtures); a single install
+  resolved dependencies spanning them.
 - The stock CLI ignores `meta.mantine` and skips the theme fragment — working but degraded,
   exactly as intended.
 - Feeding the *same wire file* to `tools/merge-theme` produces the rich behavior:
@@ -146,6 +147,10 @@ hardcode `@house/`.
 **Unknown top-level fields are stripped by third-party builders; `meta` survives.** Confirmed
 by round-tripping both. `meta` also survives into the registry index, so a client can read
 `meta.mantine` during `list` without fetching every item.
+
+**Items dedupe by destination path, so same-named items across registries collide.** Hit
+for real: the fixture `@base/empty-state` overwrote `@house/empty-state` and broke every
+caller relying on the richer prop signature. Install order decides the winner, silently.
 
 **`components.json` requires a `tailwind` block even in non-Tailwind projects** — the
 interchange schema lists `["style", "tailwind", "rsc", "aliases"]` as required. Only

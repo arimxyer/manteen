@@ -2,13 +2,13 @@
   "name": "mantine-components",
   "version": "0.1.0",
   "private": true,
-  "description": "A shadcn-format registry distributing house Mantine compositions.",
+  "description": "A Mantine component registry, authored in Mantine vocabulary and compiled with mantine-registry-kit.",
   "type": "module",
   "scripts": {
-    "build:registry": "bun tools/build-registry/build.ts",
+    "build:registry": "bun packages/registry-kit/src/cli/index.ts build",
+    "merge-theme": "bun packages/registry-kit/src/cli/index.ts merge-theme",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
-    "merge-theme": "bun tools/merge-theme/cli.ts",
     "serve": "bun run build:registry && bunx --bun serve public -p 4321"
   },
   "devDependencies": {
@@ -18,11 +18,13 @@
     "@types/bun": "^1.3.14",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "ajv": "^8.20.0",
+    "mantine-registry-kit": "workspace:*",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "shadcn": "^4.16.0",
-    "ts-morph": "^28.0.0",
     "typescript": "^5.9.0"
-  }
+  },
+  "workspaces": [
+    "packages/*"
+  ]
 }

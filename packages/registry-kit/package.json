@@ -1,0 +1,23 @@
+{
+  "name": "mantine-registry-kit",
+  "version": "0.1.0",
+  "description": "Author Mantine component registries in Mantine's vocabulary and compile them to an interchange format any registry client can read.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "mantine-registry": "./src/cli/index.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./schema/mantine-registry.schema.json"
+  },
+  "files": ["src", "schema", "README.md"],
+  "keywords": ["mantine", "registry", "components", "codemod"],
+  "scripts": {
+    "test": "bun test"
+  },
+  "dependencies": {
+    "ajv": "^8.20.0",
+    "ts-morph": "^28.0.0"
+  }
+}
