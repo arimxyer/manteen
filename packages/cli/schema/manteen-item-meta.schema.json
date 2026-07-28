@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/arimxyer/manteen/schema/manteen-item-meta.schema.json",
+  "title": "meta.mantine",
+  "description": "The Mantine-specific block of a wire item's `meta`. The interchange schema declares `meta` as `additionalProperties: true`, so `{ requires: 12345 }` passes the wire validator untouched — every Mantine behaviour reads this object, so it gets a schema of its own. Strict on the four keys manteen acts on, open to everything else: a newer manteen-kit may add keys, and an older manteen must ignore them rather than refuse the item. Note the http:// dialect id: ajv registers draft-07 under that form, so nothing here needs the `delete schema.$schema` workaround the kit applies to the vendored (https://) wire schema.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "requires": {
+      "type": "string",
+      "minLength": 1,
+      "description": "semver range the item needs from @mantine/core. Fails CLOSED: a non-string here is a blocking `meta-invalid-requires`, because this is the safety mechanism that keeps a v9-only component off a v8 install. Whether the string is a valid range is a separate, downstream question (semver.validRange -> `mantine-malformed-metadata`, a warning) — a typo must not become an unclearable blocker."
+    },
+    "provider": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifier of the provider the item needs mounted, e.g. \"MantineProvider\". Fails OPEN: documentation for a check that already warns rather than refuses, and that can report satisfied falsely."
+    },
+    "stylesApi": {
+      "type": "object",
+      "description": "Component name -> selector names the item exposes through Mantine's Styles API. Fails OPEN: display-only.",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "themeFragment": {
+      "type": "object",
+      "description": "A standalone createTheme(...) source inlined by the toolchain rather than listed in `files`, so a client that does not understand it cannot drop a stray theme file into the project. Fails OPEN: dropping it loses a theme contribution, which is recoverable; refusing the whole item is not.",
+      "required": ["path", "content"],
+      "additionalProperties": true,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Source path in the authoring repo. Reporting only — nothing is ever written here."
+        },
+        "content": {
+          "type": "string",
+          "description": "The fragment source, folded into the project theme by mergeThemeSource."
+        }
+      }
+    }
+  }
+}

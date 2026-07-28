@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    // No `DOM`. The root tsconfig has it because `registry/` holds React
+    // components; this package is a Node CLI with no JSX and no browser code,
+    // and `@types/bun` already declares `fetch`/`Response`/`Headers`/
+    // `AbortSignal` globally (verified — the http loader typechecks without it).
+    // Adding DOM would make `document`, `window` and `localStorage` compile in
+    // a process that has none of them.
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "noUncheckedIndexedAccess": true
+    // Deliberately no `baseUrl`: TypeScript 7 removed it (TS5102), and this
+    // package resolves every internal import relatively. It is also the setting
+    // whose presence makes `createPathsMatcher` fall back to `baseUrl +
+    // specifier` instead of returning [] — the D1 trap — so not having one here
+    // keeps our own build from depending on the behavior we refuse to trust.
+  },
+  // e2e/ is `.mjs` and runs the BUILT dist under real `node`; without `allowJs`
+  // those files are listed but not typechecked, which is the intent — they must
+  // exercise the published shape, not the sources.
+  "include": ["src/**/*", "test/**/*", "e2e/**/*"]
+}

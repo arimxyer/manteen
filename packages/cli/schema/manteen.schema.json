@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/arimxyer/manteen/schema/manteen.schema.json",
+  "title": "manteen configuration",
+  "description": "Consumer configuration for manteen. Lives at <project root>/manteen.json; its directory IS the project root. manteen never reads components.json — the aliases here are import-path prefixes backed by tsconfig `paths`, which is a different thing from shadcn's alias map.",
+  "type": "object",
+  "required": ["registries", "aliases"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Declared so `additionalProperties: false` does not reject the field that gives you editor completion."
+    },
+    "registries": {
+      "type": "object",
+      "description": "Namespace -> where its items live. The namespace is what you type in `manteen add @house/data-table`.",
+      "minProperties": 1,
+      "propertyNames": {
+        "pattern": "^@[a-z0-9-]+$",
+        "description": "A namespace: `@` followed by lowercase letters, digits and hyphens. Matches the `namespace` field of the authoring catalog that produced the registry."
+      },
+      "additionalProperties": { "$ref": "#/definitions/registrySource" }
+    },
+    "aliases": {
+      "type": "object",
+      "description": "Import-path prefixes files are placed under. All four are required, and each must be backed by a `paths` key in your tsconfig — content ships verbatim, so a project whose tsconfig cannot resolve the prefix gets files that install cleanly and do not compile.",
+      "required": ["components", "ui", "hooks", "lib"],
+      "additionalProperties": false,
+      "properties": {
+        "components": { "$ref": "#/definitions/alias" },
+        "ui": { "$ref": "#/definitions/alias" },
+        "hooks": { "$ref": "#/definitions/alias" },
+        "lib": { "$ref": "#/definitions/alias" }
+      }
+    },
+    "theme": {
+      "type": "string",
+      "description": "Path to your Mantine theme, relative to this file. Items that ship a theme file or a theme fragment are folded into it rather than written alongside it. Need not exist yet."
+    },
+    "tsconfig": {
+      "type": "string",
+      "description": "Path to the tsconfig whose `paths` back the aliases, relative to this file. Defaults to ./tsconfig.json. Resolved verbatim — name the file, not its directory."
+    },
+    "resolutions": {
+      "type": "object",
+      "description": "Which registry wins when two of them publish the same item name. Durable, because the decision has to survive CI. The value's item name must equal the key.",
+      "propertyNames": {
+        "pattern": "^[^@\\s/][^\\s]*$",
+        "description": "A bare item name — no namespace, no leading slash."
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^@[a-z0-9-]+/.+$",
+        "description": "The winning item, fully qualified."
+      }
+    }
+  },
+  "definitions": {
+    "registrySource": {
+      "description": "Either the item URL template on its own, or an object when the registry also needs headers or query parameters.",
+      "oneOf": [
+        { "$ref": "#/definitions/urlTemplate" },
+        {
+          "type": "object",
+          "required": ["url"],
+          "additionalProperties": false,
+          "properties": {
+            "url": { "$ref": "#/definitions/urlTemplate" },
+            "index": {
+              "type": "string",
+              "description": "URL of the registry index. Used for did-you-mean on a 404. Declared rather than inferred from `url`, because substituting name=\"registry\" only happens to work for one emitted layout."
+            },
+            "headers": {
+              "type": "object",
+              "description": "Sent with every request to this registry. Values may reference environment variables as ${VAR}; expansion happens when the request is made, never in anything stored or printed.",
+              "additionalProperties": { "type": "string" }
+            },
+            "params": {
+              "type": "object",
+              "description": "Appended to every request URL as a query string. Same ${VAR} rule as `headers`.",
+              "additionalProperties": { "type": "string" }
+            }
+          }
+        }
+      ]
+    },
+    "urlTemplate": {
+      "type": "string",
+      "pattern": "\\{name\\}",
+      "description": "Where one item lives, with the literal {name} standing in for the item's name — for example https://example.com/r/{name}.json. Required rather than guessed: appending /{name}.json to a base URL produces a 404 that reads as a missing item whenever the guess is wrong."
+    },
+    "alias": {
+      "type": "string",
+      "minLength": 1,
+      "description": "An import-path prefix such as @/components/ui — the thing that appears in an import specifier. Not a filesystem path."
+    }
+  }
+}

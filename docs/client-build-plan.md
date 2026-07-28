@@ -416,13 +416,27 @@ The seven open questions below are **closed**. This section overrides them and �
 
 | # | Question | Decision |
 |---|---|---|
-| 1 | Dotenv floor | **Accepted.** `engines.node` is `>=20.12`; call `process.loadEnvFile` unguarded. `process.env` wins over file values. |
+| 1 | Dotenv floor | **Accepted, then revised upward to `>=22.12`.** Call `process.loadEnvFile` unguarded; `process.env` wins over file values. See below. |
 | 2 | Install receipt | **REJECTED — the receipt ships in v1, not v1.1.** See below. |
 | 3 | `resolutions` shape | **Accepted.** Name-keyed, fully-qualified value. |
 | 4 | Version gate scope | **Accepted.** `@mantine/core` only; warn when a non-core `@mantine/*` range is unsatisfied. |
 | 5 | Bare `registryDependencies` | **Accepted.** Parent-relative + `bare-dep-assumed-local` warning. Never fall back to ui.shadcn.com. |
 | 6 | Framework tiers | **Accepted.** Tier A codemods for Vite / Next App / Next Pages / React Router; everything else Tier B. |
 | 7 | Tailwind coexistence | **Accepted.** Report and do not patch when `@tailwindcss/postcss` is present. |
+
+### The Node floor is `>=22.12`, not `>=20.12`
+
+Resolution 1 was decided against a one-patch-release framing that turned out to be wrong twice over:
+
+- **`commander@15` declares `engines.node: ">=22.12.0"`.** A `>=20.12` floor would have claimed
+  support for a runtime our own dependency refuses.
+- **Node 20 reached end-of-life 2026-04-30** (nodejs/Release schedule.json). The floor was being set
+  on a line that was already dead; v22 is the oldest still receiving fixes, until 2027-04-30.
+
+`process.loadEnvFile` (20.12) and `import.meta.dirname` (20.11) are both satisfied far below 22.12,
+so the reasoning behind resolution 1 is untouched — only the number changed. The alternative,
+holding commander at 14 (`>=20`, security-supported to 2027-05) to preserve a Node 20 floor, buys
+compatibility with an EOL runtime and was rejected.
 
 ### The receipt is a v1 deliverable
 

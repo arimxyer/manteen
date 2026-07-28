@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../registry-kit/schema/manteen.registry.schema.json",
+  "name": "collide",
+  "namespace": "@collide",
+  "homepage": "https://example.test/collide",
+  "items": [
+    {
+      "name": "empty-state",
+      "kind": "component",
+      "title": "Empty State",
+      "description": "Deliberately shares a name — and therefore a destination — with @base/empty-state.",
+      "npm": ["@mantine/core@^9"],
+      "files": [{ "path": "src/empty-state.tsx", "as": "component" }]
+    }
+  ]
+}
