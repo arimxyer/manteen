@@ -83,6 +83,40 @@ URL (`https://<host>/r/empty-state.json`) is the namespace-independent alternati
 A `registry:block` whose files are typed `registry:ui` and `registry:hook` splits them
 across `aliases.ui` and `aliases.hooks` correctly.
 
+## `tools/merge-theme` — theme composition
+
+shadcn's `cssVars` field merges into the consumer's existing theme. Mantine has no
+equivalent, so a `theme.ts` shipped by a registry item can only ever be **prompted over
+or overwritten wholesale** — meaning one theme item per project, and local edits lost on
+update. This closes that gap.
+
+```bash
+bun run merge-theme <base.ts> <fragment.ts>            # dry run
+bun run merge-theme <base.ts> <fragment.ts> --write
+bun run merge-theme <base.ts> <fragment.ts> --write --prefer incoming
+```
+
+A fragment is an ordinary theme module (`createTheme({...})`), so it's a valid standalone
+theme when no base exists yet — the tool just installs it.
+
+**Merge policy**
+
+| Case | Behavior |
+| --- | --- |
+| Component missing from base | inserted, and its `@mantine/core` import added in the file's existing sort order |
+| Component in both | `.extend()` argument objects merged, so `defaultProps` compose |
+| Same leaf set by both | existing kept, conflict reported (`--prefer incoming` flips it) |
+| `classNames`/`styles`/`vars` as callbacks | never merged — reported, since composing them would change runtime semantics |
+| `components` entry that isn't `X.extend({...})` | reported, left alone |
+
+Comments and formatting in untouched regions survive; inserted nodes are reindented to the
+base file's own width and comma style. The merge is idempotent — running twice is a no-op,
+which is what makes it safe to run on every `add`.
+
+Exit codes: `0` clean, `1` merged with conflicts, `2` usage/parse error.
+
+Run `bun test` for the suite covering composition, conflicts, idempotency and formatting.
+
 ## Deploying
 
 `public/r/` is gitignored — build it in CI and publish the directory to any static host.

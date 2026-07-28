@@ -22,5 +22,5 @@
       "@/lib/*": ["./registry/lib/*"]
     }
   },
-  "include": ["registry/**/*"]
+  "include": ["registry/**/*", "tools/**/*"]
 }
