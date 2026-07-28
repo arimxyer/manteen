@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/arimxyer/mantine-components/schema/mantine-registry.schema.json",
+  "title": "Mantine registry",
+  "description": "Authoring format for a Mantine component registry. Compiled to the interchange wire format by tools/build-registry.",
+  "type": "object",
+  "required": ["name", "namespace", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "name": { "type": "string" },
+    "namespace": {
+      "type": "string",
+      "pattern": "^@[a-z0-9-]+$",
+      "description": "Namespace consumers register this registry under. Used to qualify `uses` entries at build time."
+    },
+    "homepage": { "type": "string" },
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/item" }
+    }
+  },
+  "definitions": {
+    "item": {
+      "type": "object",
+      "required": ["name", "kind", "files"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "kind": {
+          "enum": ["component", "block", "hook", "lib", "theme", "file"],
+          "description": "What this item is, in Mantine terms."
+        },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "mantine": {
+          "type": "string",
+          "description": "Semver range the item's source requires. Checked against the project's installed @mantine/core — a gate, not an install directive."
+        },
+        "provider": {
+          "type": "boolean",
+          "description": "Item only works inside a MantineProvider. The client verifies one exists and offers to add it."
+        },
+        "npm": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Runtime packages to install."
+        },
+        "npmDev": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "uses": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Other items this one needs. Bare names resolve within this registry; `@other/name` crosses registries."
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "as"],
+            "additionalProperties": false,
+            "properties": {
+              "path": { "type": "string" },
+              "as": { "enum": ["component", "hook", "lib", "style", "file"] },
+              "target": {
+                "type": "string",
+                "description": "Explicit destination. Omit to let the client place it by `as`."
+              }
+            }
+          }
+        },
+        "themeFragment": {
+          "type": "string",
+          "description": "Path to a theme module merged into the project theme on install, rather than written as a file."
+        },
+        "stylesApi": {
+          "type": "object",
+          "description": "Styles API selectors this item exposes, keyed by component name.",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "docs": { "type": "string" }
+      }
+    }
+  }
+}

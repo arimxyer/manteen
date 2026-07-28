@@ -1,0 +1,62 @@
+{
+  "$schema": "./schema/mantine-registry.schema.json",
+  "name": "mantine-components",
+  "namespace": "@house",
+  "homepage": "https://github.com/arimxyer/mantine-components",
+  "items": [
+    {
+      "name": "theme",
+      "kind": "theme",
+      "title": "House Theme",
+      "description": "Mantine theme with house defaults for Button, Card, Paper and Modal.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/core@^9", "@mantine/hooks@^9"],
+      "files": [{ "path": "registry/lib/theme.ts", "as": "lib" }]
+    },
+    {
+      "name": "empty-state",
+      "kind": "component",
+      "title": "Empty State",
+      "description": "Centered empty/zero-data placeholder with an optional icon and call to action.",
+      "mantine": ">=9",
+      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "files": [{ "path": "registry/ui/empty-state.tsx", "as": "component" }]
+    },
+    {
+      "name": "page-header",
+      "kind": "component",
+      "title": "Page Header",
+      "description": "Page title, description and right-aligned action slot with an optional divider.",
+      "mantine": ">=9",
+      "npm": ["@mantine/core@^9"],
+      "files": [{ "path": "registry/ui/page-header.tsx", "as": "component" }]
+    },
+    {
+      "name": "stat-card",
+      "kind": "component",
+      "title": "Stat Card",
+      "description": "Metric tile with label, value, optional icon and a trend row.",
+      "mantine": ">=9",
+      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "files": [{ "path": "registry/ui/stat-card.tsx", "as": "component" }],
+      "stylesApi": {
+        "StatCard": ["root", "label", "value", "trend"]
+      }
+    },
+    {
+      "name": "data-table",
+      "kind": "block",
+      "title": "Data Table",
+      "description": "Sortable table with loading skeletons, click-through rows and an empty state.",
+      "mantine": ">=9",
+      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "uses": ["empty-state"],
+      "files": [
+        { "path": "registry/blocks/data-table/data-table.tsx", "as": "component" },
+        { "path": "registry/blocks/data-table/use-data-table.ts", "as": "hook" }
+      ],
+      "themeFragment": "registry/lib/data-table.theme.ts"
+    }
+  ]
+}
