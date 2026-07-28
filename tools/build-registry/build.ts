@@ -17,10 +17,15 @@ import { dirname, join, resolve } from "node:path";
 
 import Ajv from "ajv";
 
-const ROOT = resolve(import.meta.dir, "../..");
-const SOURCE = join(ROOT, "mantine-registry.json");
-const OUT_DIR = join(ROOT, "public/r");
-const WIRE_SCHEMA = join(ROOT, "schema/wire/registry-item.schema.json");
+const TOOL_ROOT = resolve(import.meta.dir, "../..");
+
+// Usage: build.ts [catalog.json] [outDir]
+// Paths inside a catalog resolve relative to the catalog's own directory, so
+// one toolchain can build any number of registries from anywhere.
+const SOURCE = resolve(process.argv[2] ?? join(TOOL_ROOT, "mantine-registry.json"));
+const ROOT = dirname(SOURCE);
+const OUT_DIR = resolve(process.argv[3] ?? join(ROOT, "public/r"));
+const WIRE_SCHEMA = join(TOOL_ROOT, "schema/wire/registry-item.schema.json");
 
 type Kind = "component" | "block" | "hook" | "lib" | "theme" | "file";
 type FileRole = "component" | "hook" | "lib" | "style" | "file";
@@ -124,7 +129,7 @@ const ajv = new Ajv({ strict: false, allErrors: true });
 // The vendored schema declares draft-07 under its https:// id; ajv registers
 // the http:// one, so alias it rather than editing the vendored copy.
 const draft07 = JSON.parse(
-  readFileSync(join(ROOT, "node_modules/ajv/dist/refs/json-schema-draft-07.json"), "utf8"),
+  readFileSync(join(TOOL_ROOT, "node_modules/ajv/dist/refs/json-schema-draft-07.json"), "utf8"),
 );
 delete draft07.$id; // otherwise it re-registers under the http:// id ajv already has
 ajv.addMetaSchema(draft07, "https://json-schema.org/draft-07/schema#");
