@@ -16,4 +16,4 @@ jobs:
       - run: bun run typecheck
       - run: node packages/cli/scripts/guard-runtime-apis.mjs
       - run: bun --cwd=packages/cli run build
-      - run: node --test packages/cli/e2e/
+      - run: node --test packages/cli/e2e/*.node-e2e.mjs
