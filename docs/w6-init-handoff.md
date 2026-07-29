@@ -1,7 +1,8 @@
 # W6 handoff — `manteen init`
 
-Status: probe stage and human checkpoint complete on 2026-07-29. The shared contract is frozen in
-`packages/cli/src/init/types.ts`; framework adapter implementation is next.
+Status: complete and locally verified on 2026-07-29. The probe/checkpoint/contract sequence, four
+framework adapters, shared plan/apply boundary, CLI integration and built-Node acceptance tier have
+all landed. W7 portability/runtime hardening is next.
 
 ## The question
 
@@ -125,12 +126,11 @@ and the generic loader's [supported shapes](https://github.com/postcss/postcss-l
 
 ### Evidence boundary
 
-This report proves current generator manifests, current documented placement, two loader-precedence
-results and three manually constructed build outcomes. It does **not** prove a W6 transform: no
-codemod, mutation plan, refusal path, rollback path, dry-run or second-run recognizer exists yet.
-The templates also do not cover alternate quotes, reordered imports, an existing provider with
-props, a populated Next `<Head>`, dynamic framework configs or a partially complete PostCSS block.
-Those are required contract fixtures, not shapes an implementation may guess through.
+At the probe checkpoint, this report proved current generator manifests, current documented
+placement, two loader-precedence results and three manually constructed build outcomes. It did
+**not** yet prove a W6 transform. The later source and built-Node receipts below close that separate
+boundary; the probe evidence remains useful because generated fixtures alone cannot prove what the
+upstream generators and Mantine guidance looked like on the observation date.
 
 The evidence is point-in-time. Generator tags, template heads and npm latest versions can move;
 the committed W6 e2e fixtures must record their generator version and provenance rather than call
@@ -201,17 +201,36 @@ Do not force init-shaped writes into the registry `Plan`: its files require item
 receipt ownership and registry lineage that init files do not have. Reuse the journal and package
 manager mechanisms behind an init-specific plan/apply contract instead.
 
-## Implementation and verification shape
+## Implementation closure — 2026-07-29
 
-With the contract frozen, adapters can fan out by disjoint ownership: Vite, Next App, Next
-Pages, React Router, and PostCSS/Tier B. Integration follows after every adapter is complete; review
-follows integration, never alongside it.
+The implementation followed the frozen sequence: adapters landed independently, then the shared
+project snapshot, bounded config transforms, plan/apply cores, production ports, CLI shell and
+public exports were integrated. `planInit` emits only mutation entries; `applyInit` preflights exact
+pre-image hashes, asks one all-or-nothing question only in interactive mode, installs dependencies
+before opening the journal, rechecks after lifecycle scripts, and writes all init files through one
+shared pre-image journal.
 
-The final gate is the Phase 5 acceptance list in `client-build-plan.md`, plus:
+Integration exposed one additional safety consequence without changing the contract: an active
+PostCSS object embedded in `package.json` cannot be exact-byte patched in a run where the package
+manager must also add dependencies. Both operations would own the same file, and install runs first.
+That combination now emits `init-config-conflict` with two recoveries: declare the four init
+dependencies first, or move PostCSS to a supported standalone config. It never writes planned stale
+package bytes over dependency entries the package manager just added.
 
-- source-tier unit tests for pure detection and transformation logic;
-- a built-Node e2e that starts from each probed template shape, runs `init --dry-run`, runs `init`,
-  loads the emitted config, and proves the second run is empty;
-- a filesystem manifest proving every refusal and cancellation path is zero-mutation;
-- install-failure and write-failure coverage proving the journal boundary; and
-- the repository's full test, typecheck, lint, guard, build and Node e2e commands.
+The local closure receipt on Node 26.4.0 and Bun 1.3.14 is:
+
+- 148 source-tier tests, including alternate quotes/imports/provider props, populated Next `Head`,
+  PostCSS precedence/conflicts, exact theme-fragment merge, empty second plans, dry-run, cancellation,
+  stale plans, install failure and journal rollback;
+- 88 built-Node e2e tests total; W6's six cover Vite, Next App, Next Pages, Next hybrid, React Router
+  and a zero-mutation refusal;
+- each framework fixture records its pinned generator and 2026-07-29 observation date, runs
+  `init --dry-run`, runs `init`, passes `loadConfig()`, preserves generated content and produces an
+  empty second mutation plan;
+- the default Next Tailwind fixture leaves `postcss.config.mjs` byte-identical and returns
+  `ok: true`, `complete: false` with the exact required `tailwind-postcss` instruction; and
+- typecheck, Biome, all three guards, registry build, CLI build and the full real-Node e2e glob pass.
+
+This proves the transforms against the committed, provenance-labelled shapes and the shipped Node
+bundle. It still does not turn those fixtures into live evidence about generator releases after the
+observation date; refreshing that evidence is a new probe, not a routine unit-test claim.

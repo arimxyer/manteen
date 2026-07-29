@@ -21,10 +21,17 @@ Any client that speaks the registry format can install from it today:
 { "registries": { "@house": "https://arimxyer.github.io/manteen/r/{name}.json" } }
 ```
 
-`manteen` adds what that client cannot express — a Mantine version gate, a provider
-requirement, theme-fragment composition, and refusal when two registries would overwrite each
-other's component. It is in active development and unpublished; see
-[docs/roadmap.md](docs/roadmap.md).
+`manteen` adds what that client cannot express — safe framework initialization, a Mantine version
+gate, provider setup, theme-fragment composition, maintenance commands, and refusal when two
+registries would overwrite each other's component. It is in active development and unpublished;
+see [packages/cli](packages/cli/README.md) for usage and [docs/roadmap.md](docs/roadmap.md) for the
+remaining hardening/release work.
+
+```bash
+manteen init --dry-run
+manteen init
+manteen add @house/data-table
+```
 
 An independent project, not affiliated with the Mantine team.
 
@@ -69,19 +76,20 @@ manteen.registry.json        # the catalog you author (namespace @house)
 registry/                    # the components themselves
 test/                        # smoke test for this catalog
 packages/registry-kit/       # → manteen-kit, the toolchain
+packages/cli/                # → manteen, init/install/maintenance client
 public/r/*.json              # build output (gitignored)
 ```
 
-The toolchain is a package rather than a folder of scripts so any number of registries can
-share it. See [packages/registry-kit](packages/registry-kit/README.md) for the authoring
-format, CLI, programmatic API and known limitations.
+The toolchain is packaged rather than kept as repository-only scripts so any number of registries
+can share it. See [packages/registry-kit](packages/registry-kit/README.md) for authoring and
+[packages/cli](packages/cli/README.md) for consuming.
 
 ## Develop
 
 ```bash
 bun install --frozen-lockfile
 bun run build:registry                              # compile this registry
-manteen-kit build <catalog.json> <outDir>      # or any other
+manteen-kit build <catalog.json> <outDir>            # or any other
 bun run typecheck
 bun test
 ```

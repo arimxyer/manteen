@@ -310,18 +310,25 @@ Exit convention extends the kit's (`src/cli/index.ts` exits 2 on unknown command
 - `CI=true` + non-TTY + an existing differing destination + no flags exits 1 with a message containing both `--overwrite` and `--no-overwrite`, and the existing file is byte-identical. A companion guard asserts `CI=1` does **not** take the non-interactive branch (see D14).
 - Mutating a planned destination between `plan()` and `apply()` exits 1 telling the user to re-run; the file retains the user's edit.
 
-### Phase 5 — `mantine init`
+### Phase 5 — `manteen init`
 
-**Ships:** `src/init/*` for Tier A (Vite, Next App Router, Next Pages Router, React Router): framework-set detection, PostCSS plan (create-or-patch with the corrected precedence rule and the five `postcss-simple-vars` breakpoints), entry-point codemods, theme scaffold, `mantine.json` emission, dependency plan.
+**Ships:** `src/init/*` for Tier A (Vite, Next App Router, Next Pages Router, React
+Router): finite framework detection, PostCSS create-or-patch planning, bounded tsconfig/Vite config
+patches, entry-point codemods, theme/config scaffolds, dependency planning, exact-byte preflight,
+transactional apply, production ports and the text/JSON `manteen init` shell. Tier B is
+`--framework manual`: shared automation plus a structured required integration instruction.
 
-**Done when:**
-- Vite fixture with a pre-existing `postcss.config.mjs`: `mantine init --dry-run` shows a patch to the `.mjs` and **no** new `postcss.config.cjs`. Same assertion for a Next fixture. *(Both directions — postcss-load-config searches `.cjs` before `.mjs`, Next-webpack searches it last; either way a new file is never created when one exists.)*
+**Verified 2026-07-29:**
+- Vite fixture with a pre-existing `postcss.config.mjs`: `manteen init --dry-run` shows a patch to the `.mjs` and **no** new `postcss.config.cjs`. The same assertion holds for a non-Tailwind Next fixture. *(Both directions — postcss-load-config searches `.cjs` before `.mjs`, Next searches it before `.cjs`; either way a new file is never created when one exists.)*
 - The emitted PostCSS config carries `postcss-preset-mantine` and `postcss-simple-vars` with `mantine-breakpoint-{xs,sm,md,lg,xl}` = `36em/48em/62em/75em/88em`.
 - A Vite SPA using `react-router` as a library (no `@react-router/dev`, no `app/root.tsx` — mantinedev/vite-template's shape) detects as Vite.
 - A hybrid Next project produces edits to `app/layout.tsx`, `pages/_app.tsx` **and** `pages/_document.tsx`.
 - The emitted theme scaffold, passed to the kit's `mergeThemeSource` against `packages/registry-kit/fixtures/base/src/data-grid.theme.ts`, merges without throwing.
-- Running `init` twice produces an empty second plan and exit 0.
-- **The Phase 1 missing-config hint no longer says "there is no `mantine init` yet"** — this string is a cross-phase coupling and ships stale if not changed here.
+- The built-Node tier runs Vite, Next App, Next Pages, Next hybrid and React Router through dry-run, apply, `loadConfig()` and an empty second mutation plan. Generated metadata, document machinery, providers/props, app bodies and styles survive.
+- Current default Next Tailwind output keeps `postcss.config.mjs` byte-identical and exits 0 with `ok: true`, `complete: false` plus the exact required Mantine block in both text and JSON.
+- Detection/config/transform refusals and declined confirmation are zero-mutation. Install failure precedes journal creation; write failure unwinds every init file through the shared journal.
+- An active PostCSS object inside `package.json` plus missing init dependencies refuses with `init-config-conflict`: install and an exact-byte config patch cannot safely own the same manifest in one run.
+- **The Phase 1 missing-config hint now directs the user to `manteen init`** instead of claiming the command does not exist.
 
 ### Phase 6 — Release hardening
 

@@ -17,18 +17,18 @@ and something a stranger can depend on, and how the remaining work is sequenced.
 6. **Maintainable** — a linter, dependency automation, and a license file that matches what
    `package.json` claims.
 
-Today: 1, 2 and the mechanical part of 6 are implemented and locally verified. W6's `init` probes,
-human checkpoint and shared-contract freeze are complete; adapter/integration implementation, the
-portability matrix, publication and release-grade documentation remain, so the tool is not yet
-something a stranger can install and depend on.
+Today: 1, 2 and the mechanical part of 6 are implemented and locally verified. W6 `init` is
+complete through its built-Node acceptance tier. The portability matrix, publication and
+release-grade documentation remain, so the tool is not yet something a stranger can install and
+depend on.
 
 ## Known gaps, by kind
 
-**Client.** W4's apply surface and W5's command set are complete. W6 `init` has a frozen shared
-contract and is entering adapter implementation, followed by W7 portability and runtime hardening.
+**Client.** W4's apply surface, W5's command set and W6 `init` are complete. W7 portability and
+runtime hardening is next.
 
-**Commands.** `add`, `list`, `info`, `diff` and `update` ship. `search` does not exist and is not
-currently assigned to a wave; whether it belongs in v1 remains undecided.
+**Commands.** `init`, `add`, `list`, `info`, `diff` and `update` ship. `search` does not exist and
+is not currently assigned to a wave; whether it belongs in v1 remains undecided.
 
 **Portability, untested.** Windows path separators, `.cmd` shims, and whether a `^` range
 survives argument quoting. Node 24 and 26. Yarn PnP degrades to `undeterminable` by design but
@@ -55,7 +55,7 @@ is a judgment call, which is exactly why they are separate runs.
 |---|---|---|---|
 | W4 | Apply surface | narrow + deep: 2–3 agents on one seam, adversarial | Prompt/TTY/CI behaviour is where subtle bugs live. `CI=1` already nearly shipped a hang. Parallelism buys nothing; probing buys everything. |
 | W5 | Command set — `list`, `info`, `diff`, `update` | wide: 4 parallel, shared receipt reader frozen first | Four genuinely independent commands over one contract. The classic freeze-then-fan-out. |
-| W6 | [`init`](w6-init-handoff.md) | probe/checkpoint/contract complete; per-framework parallel next | The 2026-07-29 probes corrected Vite color-scheme handling, pinned current generators and proved candidate integrations. The approved contract now separates mutations from required manual actions. |
+| W6 | [`init`](w6-init-handoff.md) | complete: probe → checkpoint → contract → per-framework adapters → integration → built-Node review | The adapters preserve generated work; the shared plan/apply boundary makes dry-run, cancellation, install failure and rollback observable; required Tailwind/manual work is separate from mutations. |
 | W7 | Hardening | matrix-driven: agents per platform/runtime, findings-first | The work is discovering what breaks, not writing features. Needs real Windows CI. |
 | W8 | Release | mostly sequential, small | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
 | Wc | Registry content | wide, parallel per component | Independent of all of the above; can run any time. Doubles as client stress-testing. |
@@ -68,19 +68,20 @@ pure overhead.
 
 ```
 Phase 3 ✔ ─> W4 apply surface ✔ ─┬─> W5 command set ✔ ──┐
-                                 └─> W6 init ───────────┴─> W7 hardening ─> W8 release
+                                 └─> W6 init ✔ ─────────┴─> W7 hardening ─> W8 release
 Wc registry content ......... any time, independent
 hygiene ..................... done, direct
 ```
 
 **Done so far.** W4 closed the write seam (overwrite decision, dry-run, cancel,
 failure reporting). W5 added `list`, `info`, `diff` and `update` over one frozen
-inventory contract, with `update` routed through the existing `plan()`/`apply()`
-rather than writing files itself. W6's dated probes, human checkpoint and shared-contract freeze
-are complete; next is the disjoint adapter implementation described in `w6-init-handoff.md`.
+inventory contract, with `update` routed through the existing `plan()`/`apply()` rather than
+writing files itself. W6 added finite framework detection, four AST adapters, bounded shared
+config transforms, an init-specific plan/apply contract, text/JSON CLI output and built-Node
+fixtures for Vite, both Next routers, their hybrid and React Router. W7 is next.
 
-W5 and W6 are independent of each other and could run back to back or as parallel tracks of one
-program. W7 must follow both, because it hardens whatever exists. W8 must be last.
+W5 and W6 were independent tracks. Both are now complete, so W7 can harden the full surface. W8
+must be last.
 
 ## On one large program workflow
 
@@ -99,7 +100,8 @@ made Phase 3 work depends on a human reading the probe.
 
 - **Version policy: `0.x` until `init` lands.** Breaking changes stay cheap while the config
   shape and the `meta.mantine` surface are still moving. `1.0` is the signal that `manteen.json`
-  and the receipt format are stable, and neither is yet.
+  and the receipt format are stable. `init` has now landed; W8 owns the explicit first-release
+  version decision rather than this completed milestone changing package versions implicitly.
 - **Publish the kit ahead of the client.** It is finished, independently useful, and verified
   as a consumer install. The client then depends on a published range rather than `workspace:*`,
   which is the harder half of W8 done early and in isolation.

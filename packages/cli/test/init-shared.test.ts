@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 
-import { planShared } from "../src/init/shared";
+import { mergeThemeSource } from "manteen-kit";
+
+import { INIT_THEME_SOURCE, planShared } from "../src/init/shared";
 import { frameworkSetFor, type InitProjectSnapshot } from "../src/init/types";
 
 const ROOT = "/project";
@@ -49,6 +52,18 @@ function applyProposals(
 }
 
 describe("W6 shared init planning", () => {
+  test("the exact scaffold accepts the kit's real data-grid theme fragment", () => {
+    const fragment = readFileSync(
+      resolve(import.meta.dirname, "../../registry-kit/fixtures/base/src/data-grid.theme.ts"),
+      "utf8",
+    );
+    const merged = mergeThemeSource(INIT_THEME_SOURCE, fragment);
+
+    expect(merged.conflicts).toEqual([]);
+    expect(merged.text).toContain("Table: Table.extend");
+    expect(merged.text).toContain('import { Table, createTheme } from "@mantine/core";');
+  });
+
   test("creates the compatible config, theme, paths, Vite resolver and PostCSS pipeline", () => {
     const result = planShared(snapshot(), frameworkSetFor("vite"));
 
