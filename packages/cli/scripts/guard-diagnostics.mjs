@@ -17,15 +17,21 @@ import { join, resolve } from "node:path";
 const SRC = resolve(import.meta.dirname, "../src");
 const TYPES = join(SRC, "plan/types.ts");
 
-/** Declared, not yet emitted, with the phase that will land it. */
-const PENDING = new Map([
-  ["mantine-version-mismatch", "phase 3 — version gate"],
-  ["mantine-version-unknown", "phase 3 — version gate"],
-  ["provider-missing", "phase 3 — provider check"],
-  ["styles-api", "phase 3 — stylesApi reporting"],
-  ["theme-base-unmergeable", "phase 3 — theme fold"],
-  ["theme-conflict", "phase 3 — theme fold"],
-]);
+/**
+ * Declared, not yet emitted, with the phase that will land it.
+ *
+ * EMPTY as of phase 3: every code in the union now has a construction site. The
+ * Map and both directions of the check stay, because the guard's value is the
+ * asymmetry — a NEW declared-but-unemitted code fails immediately unless someone
+ * writes down which phase owns it.
+ *
+ * What a green guard does NOT prove, and the distinction has bitten: this is a
+ * regex scan of the `src` corpus for construction sites. It goes green the
+ * moment a gate module exists on disk, whether or not `plan()` ever calls it. A
+ * gate that is written, exported and never invoked passes here and does nothing
+ * for the user. Only the e2e tier proves wiring.
+ */
+const PENDING = new Map([]);
 
 function walk(dir) {
   return readdirSync(dir).flatMap((entry) => {

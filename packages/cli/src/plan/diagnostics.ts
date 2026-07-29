@@ -52,7 +52,14 @@ export const DIAGNOSTIC_CODES: Record<DiagnosticCode, DiagnosticSpec> = {
    *  from, so the alternative is writing an empty file over the user's
    *  component. */
   "file-no-content": { severity: "error", forceable: false, exit: 1 },
-  "theme-base-unmergeable": { severity: "error", forceable: false, exit: 1 },
+  /** Forceable because this code covers two cases with different owners. An
+   *  unmergeable BASE is the user's own file and they can fix it; an unmergeable
+   *  incoming FRAGMENT is a registry author's mistake, and leaving the consumer
+   *  with a non-forceable exit 1 makes someone else's typo unclearable. Forcing
+   *  drops every theme contribution for the run — the fold returns no theme at
+   *  all — which is blunt, but it is an explicit user action and the diagnostic
+   *  still prints. */
+  "theme-base-unmergeable": { severity: "error", forceable: true, exit: 1 },
   "unknown-namespace": { severity: "error", forceable: false, exit: 1 },
   "missing-env": { severity: "error", forceable: false, exit: 1 },
   "fetch-failed": { severity: "error", forceable: false, exit: 1 },

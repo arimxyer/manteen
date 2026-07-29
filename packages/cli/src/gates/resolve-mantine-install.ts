@@ -57,34 +57,50 @@ export function installedVersion(name: string, root: string): string | null {
 }
 
 export function resolveMantineInstall(root: string): MantineInstall {
-  // Checked before the walk: under PnP there is no `node_modules` to find, and
-  // reporting "not installed" for a project whose packages ARE installed sends
-  // the user to fix something that is not broken.
-  for (const dir of ancestors(root)) {
-    for (const marker of PNP_MARKERS) {
-      const path = join(dir, marker.slice(1));
-      if (existsSync(path)) return { state: "undeterminable", reason: "pnp", marker: path };
-    }
-  }
-
   let sawNodeModules = false;
 
+  // ONE walk, manifest before marker at each level, so "nearest wins" applies to
+  // both signals uniformly.
+  //
+  // These were two sequential walks — every ancestor scanned for a PnP marker up
+  // to `/`, and only then the manifests. That made a `.pnp.cjs` five levels up
+  // beat a readable `node_modules/@mantine/core/package.json` in the project
+  // itself, so a real `mantine-version-mismatch` refusal silently became a
+  // warning and exit 0. Any PnP monorepo containing a nested npm/pnpm subproject
+  // hits it, as does a stray `~/.pnp.cjs`.
+  //
+  // The tell that it was wrong rather than conservative: `installedVersion`
+  // above has no marker check and reads that same manifest happily, so the two
+  // functions in this file disagreed about whether a file is readable — and
+  // D17's dependency filter consumes the other answer.
+  //
+  // Manifest first WITHIN a level because a version read off disk is a fact,
+  // while a marker is an inference that reading is impossible; when both are
+  // present the fact wins.
   for (const dir of ancestors(root)) {
     if (existsSync(join(dir, "node_modules"))) sawNodeModules = true;
 
     const manifest = join(dir, "node_modules", "@mantine", "core", "package.json");
-    if (!existsSync(manifest)) continue;
+    if (existsSync(manifest)) {
+      let parsed: { version?: unknown };
+      try {
+        parsed = JSON.parse(readFileSync(manifest, "utf8")) as { version?: unknown };
+      } catch {
+        return { state: "undeterminable", reason: "unparseable", marker: manifest };
+      }
+      if (typeof parsed.version !== "string" || parsed.version === "") {
+        return { state: "undeterminable", reason: "no-version", marker: manifest };
+      }
+      return { state: "found", version: parsed.version, from: manifest };
+    }
 
-    let parsed: { version?: unknown };
-    try {
-      parsed = JSON.parse(readFileSync(manifest, "utf8")) as { version?: unknown };
-    } catch {
-      return { state: "undeterminable", reason: "unparseable", marker: manifest };
+    // Under PnP there is no `node_modules` to find, and reporting "not
+    // installed" for a project whose packages ARE installed sends the user to
+    // fix something that is not broken.
+    for (const marker of PNP_MARKERS) {
+      const path = join(dir, marker.slice(1));
+      if (existsSync(path)) return { state: "undeterminable", reason: "pnp", marker: path };
     }
-    if (typeof parsed.version !== "string" || parsed.version === "") {
-      return { state: "undeterminable", reason: "no-version", marker: manifest };
-    }
-    return { state: "found", version: parsed.version, from: manifest };
   }
 
   // The distinction matters to the remedy: with no `node_modules` at all the

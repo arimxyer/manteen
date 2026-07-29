@@ -10,6 +10,11 @@
  *   4 write theme  ├ one shared pre-image journal
  *   5 write receipt┘
  *
+ * Phase 4 is one `journal.write` of `plan.theme.text` and nothing more. It has
+ * no `write-theme.ts` module because there is nothing for one to hold: D7 put
+ * the entire merge in `plan()`, so the only decision left here is whether
+ * `changed` is true.
+ *
  * Two properties of that order are load-bearing rather than stylistic:
  *
  * - **All decisions precede all mutations**, so cancelling is always
@@ -36,6 +41,7 @@ import { installDeps } from "./install-deps";
 import { createJournal } from "./journal";
 import { preflight } from "./preflight";
 import { writeFiles } from "./write-files";
+import { writeTheme } from "./write-theme";
 
 /**
  * Phase 1. Turns each `Disposition` (what plan PREDICTED) into a `WriteResult`
@@ -86,28 +92,6 @@ function overwriteSeamMessage(destination: string, options: ApplyOptions): strin
   );
 }
 
-/**
- * The one phase that still has no implementation, checked BEFORE the journal
- * opens so a throw can never be caught by the unwind and mislabeled
- * `write-failed`.
- *
- * Phase 2's row is gone from here because `src/apply/install-deps.ts` landed;
- * this is now phase 4 alone. It is a `throw`, not a fifth `ApplyFailureKind`:
- * the four kinds are runtime outcomes a user can act on, while "this build of
- * apply has no theme writer but was handed a plan with a changed theme" is a
- * composition bug in our own wiring, and giving it a user-facing refusal code
- * would put it in the refusal table.
- */
-function assertPhasesWired(plan: Plan): void {
-  if (plan.theme !== null && plan.theme.changed) {
-    throw new Error(
-      `apply: the plan folds a theme into ${plan.theme.destination} and phase 4 ` +
-        `(src/apply/write-theme.ts) has not landed. The fold itself already ran in plan() (D7); what ` +
-        `is missing is one journalled write of plan.theme.text.`,
-    );
-  }
-}
-
 function emptyOutcome(plan: Plan, options: ApplyOptions): ApplyOutcome {
   return {
     ok: false,
@@ -151,16 +135,15 @@ async function applyPlan(plan: Plan, options: ApplyOptions): Promise<ApplyOutcom
   // structurally cannot report. The decisions ride out so the preview can show
   // what each destination would get.
   //
-  // It returns ABOVE both the seam check and the install deliberately. The
-  // check exists to stop a run that would mutate the tree from silently
-  // skipping a phase, and a dry run mutates nothing; `installDeps` enforces the
-  // same boundary from its own side and throws if it is ever reached with
-  // `dryRun`, so the two cannot drift into disagreeing about where D19 stops.
+  // It returns ABOVE the install deliberately, and `theme.written` stays false
+  // on the way out: a dry run mutates nothing, so a preview that claimed the
+  // theme was written would be describing a file that still holds its old text.
+  // `installDeps` enforces the same boundary from its own side and throws if it
+  // is ever reached with `dryRun`, so the two cannot drift into disagreeing
+  // about where D19 stops.
   if (options.dryRun === true) {
     return { ...emptyOutcome(plan, options), ok: true, files };
   }
-
-  assertPhasesWired(plan);
 
   // ---- phase 2: install dependencies (outside the journal) -----------------
   // Before the journal opens, and its failure returns before it opens: a failed
@@ -178,6 +161,11 @@ async function applyPlan(plan: Plan, options: ApplyOptions): Promise<ApplyOutcom
   }
 
   const journal = createJournal();
+  // Both declared OUTSIDE the try, because both are read by the success return
+  // below and a `let` inside a block is not in scope there. They are also the
+  // two flags whose default must be `false`: every failure path unwinds the
+  // journal, so a run that threw wrote neither.
+  let themeWritten = false;
   let receiptWritten = false;
 
   try {
@@ -185,15 +173,11 @@ async function applyPlan(plan: Plan, options: ApplyOptions): Promise<ApplyOutcom
     writeFiles(plan.files, results, journal);
 
     // ---- phase 4: write theme ----------------------------------------------
-    // SEAM: src/apply/write-theme.ts plugs in here with a single
-    // `journal.write(plan.theme.destination, plan.theme.text)` — D7 put the whole
-    // merge in plan(), so apply writes `text` verbatim and sets `themeWritten`.
-    // `assertPhasesWired` refuses to reach this point with `changed === true`, so
-    // `false` is the only state this build can be in; it is not a skip of work
-    // that was asked for. A theme with `changed === false` is genuinely nothing
-    // to write (the base on disk already equals the fold), which is why that case
-    // passes the assertion.
-    const themeWritten = false;
+    // `journal`, the SAME one phase 3 just wrote through — not a second journal.
+    // That is what makes a phase-5 failure unwind the folded theme along with the
+    // components it was folded for, and it is asserted from both directions in
+    // `e2e/gates.node-e2e.mjs`. The rest of the rule lives in write-theme.ts.
+    themeWritten = writeTheme(plan.theme, journal);
 
     // ---- phase 5: write receipt --------------------------------------------
     // An unreadable receipt forced past merges from `null`: the prior records are
@@ -254,6 +238,11 @@ async function applyPlan(plan: Plan, options: ApplyOptions): Promise<ApplyOutcom
     ok: true,
     files,
     dependencies,
+    // `emptyOutcome` hardcodes `written: false` for both of these, so a success
+    // that does not override them reports a theme it just wrote as unwritten.
+    // Every OTHER return in this function keeps the `false` correctly — the
+    // journal unwound, or nothing ran at all.
+    theme: plan.theme === null ? null : { path: plan.theme.destination, written: themeWritten },
     receipt: { path: plan.receipt.path, written: receiptWritten },
   };
 }

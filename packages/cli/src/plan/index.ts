@@ -29,10 +29,14 @@ import { satisfies } from "semver";
 import { loadEnv } from "../config/load";
 import { splitItemId } from "../config/registries";
 import type { LoadedConfig } from "../config/types";
+import { createSourceWalker } from "../fs/walk";
 import { checkCollisions } from "../gates/collision";
+import { checkMantineVersion } from "../gates/mantine-version";
+import { checkProvider } from "../gates/provider";
 import { checkReceipt } from "../gates/receipt";
 import { aggregate } from "../gates/report";
 import { installedVersion, resolveMantineInstall } from "../gates/resolve-mantine-install";
+import { reportStylesApi } from "../gates/styles-api";
 import { hashFileBytes } from "../apply/preflight";
 import { createReceiptReader, createReceiptValidator } from "../receipt/load";
 import { toReceiptPath } from "../receipt/path";
@@ -42,9 +46,9 @@ import { createHttpLoader, isHttpUrl, type IndexResolver, type IndexSource } fro
 import { createFileLoader, isFileUrl } from "./loader-local";
 import { expandVars } from "./registry-source";
 import { resolve as resolveGraph } from "./resolve";
+import { foldTheme } from "./theme-fold";
 import { RECEIPT_VERSION } from "./types";
 import type {
-  CanonicalId,
   Diagnostic,
   Disposition,
   ExistingHashes,
@@ -89,6 +93,50 @@ async function planImpl(
 
   const diagnostics: Diagnostic[] = [...graph.diagnostics];
   diagnostics.push(...checkCollisions(graph.files, root));
+
+  // ---- the Mantine-aware gates (D11, D13, styles-api) -----------------------
+  // Push order is not observable: `aggregate` sorts on (severity, code, path,
+  // items, message), which totally orders anything two gates can produce. These
+  // sit here — high in the function and well above `aggregate` — because that is
+  // the one ordering constraint that IS real.
+
+  // ONE read, held in a const rather than called twice. It feeds the version
+  // gate AND `Plan.mantine`; two calls could see two different node_modules if a
+  // concurrent install lands mid-plan, and the plan would then refuse on a
+  // version it does not report.
+  const mantine = resolveMantineInstall(root);
+
+  // D11. `graph.dependencies`, deliberately NOT the post-D17 `deps` computed
+  // below. The two agree for `@mantine/core` today only because D17 drops a
+  // dependency exactly when the installed version satisfies its range — which is
+  // the case this gate would pass anyway. That is a coincidence of two
+  // independent rules, and the day D17 gains a second reason to filter is the
+  // day the version check silently stops running.
+  diagnostics.push(
+    ...checkMantineVersion({
+      items: graph.items,
+      dependencies: graph.dependencies,
+      install: mantine,
+    }),
+  );
+
+  // D13 — always warns. The walker is injected here so `gates/provider.ts` stays
+  // pure; it is the only filesystem this gate ever sees. `themeFragments` rides
+  // along because D5 absorbs a theme item's file OUT of `graph.files`, and the
+  // one catalog item that declares `provider` is exactly that item.
+  diagnostics.push(
+    ...checkProvider({
+      root: graph.root,
+      items: graph.items,
+      files: graph.files,
+      themeFragments: graph.themeFragments,
+      walk: createSourceWalker(),
+    }),
+  );
+
+  // `graph.items`, not `graph.files`: `meta.mantine.stylesApi` is declared per
+  // item and is display-only (severity info, never a refusal).
+  diagnostics.push(...reportStylesApi(graph.items));
 
   // ---- the receipt (§5a) ----------------------------------------------------
   // Read once, here. `apply()` receives the parsed state on the Plan and re-reads
@@ -157,11 +205,24 @@ async function planImpl(
 
   const packageManager = detected ?? NO_PACKAGE_MANAGER;
 
-  // ---- theme ----------------------------------------------------------------
-  // Before `aggregate`, not inline in the object literal below: this can emit a
-  // diagnostic, and the aggregator is what decides `ok`. Anything pushed after
-  // it is silently dropped.
-  const theme = foldTheme(config, graph.themeFragments, diagnostics);
+  // ---- theme (D5, D6, D7) ---------------------------------------------------
+  // Before `aggregate`, not inline in the object literal below: the fold can
+  // refuse, and the aggregator is what decides `ok`. Anything pushed after it is
+  // silently dropped.
+  //
+  // The write-list side of D5 needs no code here: `resolve.ts` absorbs a file
+  // whose destination equals `config.themeDestination` into `themeFragments`
+  // before it ever reaches `graph.files` (resolve.ts:319), so `items`, `files`
+  // and every gate above already see a write list with the theme removed. The
+  // e2e asserts it rather than trusting it.
+  const folded = foldTheme({
+    destination: config.themeDestination,
+    base: readThemeBase(config.themeDestination, graph.themeFragments.length),
+    fragments: graph.themeFragments,
+    root,
+  });
+  diagnostics.push(...folded.diagnostics);
+  const theme = folded.theme;
 
   const report = aggregate(diagnostics, force);
 
@@ -175,7 +236,7 @@ async function planImpl(
     packageManager,
     installCommand: detected === undefined ? null : installCommandFor(detected, deps),
     theme,
-    mantine: resolveMantineInstall(root),
+    mantine,
     receipt,
     diagnostics: report.diagnostics,
     ok: report.ok,
@@ -493,45 +554,49 @@ function installCommandFor(
 // ---- theme ------------------------------------------------------------------
 
 /**
- * D5/D7 put the ENTIRE theme merge in `plan()` — `mergeThemeSource` is pure and
- * *throws* on an unmergeable base, and a throw after component files are on disk
- * violates "nothing touches disk until every check has passed".
+ * The base theme on disk, decoded AND hashed from ONE read.
  *
- * `src/plan/theme-fold.ts` is that merge and is a later phase. Until it lands
- * this refuses loudly rather than dropping contributions: a silently discarded
- * fragment is a theme that is missing entries nobody will connect to an install.
+ * The natural spelling — `hashFileBytes(dest)` then `readFileSync(dest, "utf8")`
+ * — is a TOCTOU hole with teeth. `PlannedTheme.base.sha256` is what apply's
+ * preflight compares the file against to prove the project did not change
+ * between plan and apply; if it describes bytes other than the ones that were
+ * folded, that check either false-fails or, worse, passes against the wrong
+ * content and apply overwrites an edit it never saw.
+ *
+ * The two fields also live in different hash domains on purpose, matching
+ * `PlannedFile`: `sha256` is of the RAW BYTES (the domain `hashFileBytes`,
+ * `ExistingHashes` and `preflight` all use), while `text` is the UTF-8 decoding
+ * that the merge reads. Hashing the decoded string instead would agree on every
+ * ASCII fixture and diverge only on a file with a BOM — i.e. it would ship green.
+ *
+ * `fragmentCount` gates the read rather than the caller doing it, so the
+ * "declared a theme, nothing contributed" case costs no syscall and cannot throw
+ * EACCES on a file this run has no business opening. The theme destination is
+ * deliberately absent from the `ExistingHashes` pass above: that map is keyed by
+ * planned-file destinations, and D5 guarantees the theme is not one of them.
  */
-function foldTheme(
-  config: LoadedConfig,
-  fragments: readonly { itemId: CanonicalId; kind: string; path: string }[],
-  diagnostics: Diagnostic[],
-): null {
-  if (config.themeDestination === null) {
-    if (fragments.length > 0) {
-      diagnostics.push(
-        diag(
-          "meta-degraded",
-          `${fragments.length} theme contribution(s) were dropped because manteen.json declares no \`theme\`: ${fragments.map((f) => `${f.itemId} (${f.path})`).join(", ")}. Set \`theme\` to the file that exports your createTheme(...) call to fold them in.`,
-          { items: [...new Set(fragments.map((f) => f.itemId))] },
-        ),
-      );
-    }
-    return null;
+function readThemeBase(
+  destination: string | null,
+  fragmentCount: number,
+): { text: string; sha256: string } | null {
+  if (destination === null || fragmentCount === 0) return null;
+
+  let bytes: Buffer;
+  try {
+    bytes = readFileSync(destination);
+  } catch (error) {
+    // ENOENT is the ordinary "no theme yet" case and D6's trigger for adopting
+    // the first contribution as the base. EACCES / EISDIR are NOT absence, and
+    // returning null for them would make the fold write a file it could never
+    // have read — exactly the clobber D5 exists to prevent.
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
   }
 
-  if (fragments.length === 0) {
-    // Correct, not a gap: nothing was folded, so nothing is owned. The receipt
-    // records `theme: null` for exactly this case even when `config.theme` names
-    // a file that exists on disk.
-    return null;
-  }
-
-  throw new Error(
-    `plan: ${fragments.length} item(s) contribute to ${config.themeDestination} and the theme fold ` +
-      `(src/plan/theme-fold.ts) has not landed. D7 puts the whole merge in plan() so an unmergeable ` +
-      `base refuses before anything is written; refusing here rather than dropping the contributions ` +
-      `keeps that property. Contributions: ${fragments.map((f) => `${f.itemId} (${f.kind}: ${f.path})`).join(", ")}.`,
-  );
+  return {
+    text: bytes.toString("utf8"),
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+  };
 }
 
 // ---- receipt ----------------------------------------------------------------

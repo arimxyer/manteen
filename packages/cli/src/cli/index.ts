@@ -20,6 +20,7 @@ import { readFileSync } from "node:fs";
 import { relative, resolve, sep } from "node:path";
 
 import { Command, CommanderError } from "commander";
+import { createPatch } from "diff";
 import { packageManagers } from "nypm";
 
 import { apply } from "../apply/index";
@@ -105,7 +106,63 @@ function renderDryRun(planned: Plan): string {
     lines.push(`${verb.padEnd(VERB_WIDTH)}  ${display(planned.theme.destination, planned.root)}`);
   }
   lines.push("", "Dry run — nothing was written.");
+
+  const patch = themePatch(planned);
+  if (patch !== null) lines.push("", patch);
+
   return `${lines.join("\n")}\n`;
+}
+
+/**
+ * The theme merge, as a unified diff.
+ *
+ * A dry run can show every other decision as one verb per destination, but
+ * `merge  src/lib/theme.ts` is the one line that hides its whole content: the
+ * fold is the only thing manteen does that REWRITES a file the user wrote, and
+ * "merge" alone gives no way to see what it kept. So the theme — and only the
+ * theme — gets its content previewed.
+ *
+ * FULL CONTEXT rather than the usual three lines, up to a bound. Three lines
+ * around a `components.Table` insertion shows the tail of the entry above it and
+ * nothing else, which answers "what was added" while leaving "what survived"
+ * — the question a user with a hand-edited theme actually has — unanswered. A
+ * theme is one small file, so printing it whole is affordable and is the point.
+ * `MAX_FULL_CONTEXT` keeps a pathological theme from flooding the terminal.
+ *
+ * Reads the base off disk rather than from the Plan: `PlannedTheme` carries the
+ * base's `sha256` but not its text (`plan/types.ts` is frozen), and the fold
+ * itself needs only the hash. A re-read is safe here because this renders a
+ * PREVIEW — a file that changed since `plan()` makes the diff stale, never
+ * wrong, and the real run's preflight refuses on exactly that drift.
+ */
+const MAX_FULL_CONTEXT = 400;
+
+function themePatch(planned: Plan): string | null {
+  const theme = planned.theme;
+  if (theme === null || !theme.changed) return null;
+
+  // `base === null` is a theme being created, so the "before" side is empty and
+  // every line renders as an addition — which is the truth.
+  let before = "";
+  if (theme.base !== null) {
+    try {
+      before = readFileSync(theme.destination, "utf8");
+    } catch {
+      // Unreadable between plan() and here. The preview degrades to nothing
+      // rather than to a diff against "" that would claim the whole file is new.
+      return null;
+    }
+  }
+
+  const label = display(theme.destination, planned.root);
+  const lineCount = before.split("\n").length;
+  const patch = createPatch(label, before, theme.text, "on disk", "after merge", {
+    context: lineCount <= MAX_FULL_CONTEXT ? lineCount : 3,
+  });
+
+  // jsdiff prefixes every patch with `Index: <file>` and a rule of `=`, which is
+  // an RCS artifact and not part of a unified diff. The `---`/`+++`/`@@` body is.
+  return patch.split("\n").slice(2).join("\n").trimEnd();
 }
 
 /** What a real run prints: `WriteResult`, which is what apply() OBSERVED. */
