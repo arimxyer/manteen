@@ -1,10 +1,32 @@
-# mantine-components
+# manteen
 
-A **Mantine-native component registry**. Authored in Mantine's vocabulary, compiled to an
-interchange format any registry client can read.
+A **Mantine-native component registry**, and the toolchain around it. Authored in Mantine's
+vocabulary, compiled to an interchange format any registry client can read.
 
 What ships through here is the *composed* layer — the components you're expected to open up
 and edit. Mantine itself stays an ordinary npm dependency in every consuming app.
+
+Live at **<https://arimxyer.github.io/manteen/>**, rebuilt from the catalog on every push.
+
+| | |
+| --- | --- |
+| `manteen-kit` | author side — compile a catalog, compose theme fragments |
+| `manteen` | consumer side — a Mantine-aware install client |
+| `@house` | the registry itself, as the reference implementation |
+
+Any client that speaks the registry format can install from it today:
+
+```jsonc
+// components.json
+{ "registries": { "@house": "https://arimxyer.github.io/manteen/r/{name}.json" } }
+```
+
+`manteen` adds what that client cannot express — a Mantine version gate, a provider
+requirement, theme-fragment composition, and refusal when two registries would overwrite each
+other's component. It is in active development and unpublished; see
+[docs/roadmap.md](docs/roadmap.md).
+
+An independent project, not affiliated with the Mantine team.
 
 ## Two formats, one direction
 
