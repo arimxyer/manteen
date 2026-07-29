@@ -12,22 +12,39 @@
  */
 export { apply } from "./apply/index";
 /**
+ * The two renderers a programmatic caller genuinely cannot do without.
+ *
+ * `DiffPorts.renderDiagnostic` has no default ON PURPOSE (see `createDiffPorts`)
+ * — `plan()`'s diagnostics are the only channel that can explain an
+ * `unavailable` item — so `reportDiff` is unusable without one, and asking every
+ * caller to write it is how the CLI's output and a tool's output diverge.
+ * `PROCESS_STREAMS` is here for the same reason: `DiffPorts` wants two writers.
+ *
+ * The rest of `cli/render.ts` stays internal. It is presentation for THIS CLI,
+ * not a formatting library.
+ */
+export { PROCESS_STREAMS, renderDiagnostic } from "./cli/render";
+/**
  * W5's four commands, as their PURE CORES only.
  *
- * `buildList`, `readInfo`, `buildDiff` and `update` take their I/O as
- * parameters and return a value; they are usable from a script, a test or
- * another tool. The `run*` shells beside them are NOT exported and must not be:
- * each resolves `--cwd`, writes to `process.stdout`/`process.stderr` and returns
- * an exit code, and this module's own contract (see the header) is that
+ * `buildList`, `readInfo`, `buildDiff`, `reportDiff` and `update` take their
+ * I/O as parameters and return a value; they are usable from a script, a test
+ * or another tool. The `run*` shells beside them are NOT exported and must not
+ * be: each resolves `--cwd`, writes to `process.stdout`/`process.stderr` and
+ * returns an exit code, and this module's own contract (see the header) is that
  * importing it never does any of those things. A caller that wants the shells
  * has the `manteen` binary.
  *
- * `reportDiff` is included because it is `diff`'s core under an unfortunate
- * name — it takes a `LoadedConfig` and every port, prints through injected
- * writers, and never touches the process.
+ * EVERY PORT FACTORY EACH CORE NEEDS IS EXPORTED ALONGSIDE IT. That is not a
+ * convenience — a function whose argument type can only be CONSTRUCTED by a
+ * module the package does not expose is not part of the public API, however
+ * exported it looks, and typecheck cannot tell you so. `buildList` and `update`
+ * are already satisfiable (`createInstalledPorts`/`createIndexLoader` ride out
+ * on the inventory re-export below; `update`'s ports are optional); the other
+ * three need what follows.
  */
-export { buildDiff, reportDiff } from "./commands/diff";
-export { readInfo } from "./commands/info";
+export { buildDiff, createDiffPorts, createFileSnapshot, reportDiff } from "./commands/diff";
+export { createInfoPorts, readInfo } from "./commands/info";
 export { buildList } from "./commands/list";
 export { update } from "./commands/update";
 export { loadConfig } from "./config/load";

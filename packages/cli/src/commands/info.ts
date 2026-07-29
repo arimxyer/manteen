@@ -58,6 +58,7 @@ import {
   type ItemDetail,
   type LocalStatus,
   localStatus,
+  ownerLabel,
   readAvailable,
   readInstalled,
   sanitize,
@@ -647,8 +648,11 @@ function installedRows(report: InfoReport): string[] {
   const { installed } = report;
   if (installed === null) return [];
 
+  // `ownerLabel`, not a re-spelled `registry ?? sourceUrl`. `installed.ts`
+  // exports it precisely so four renderers do not each write the convention out,
+  // and this was the last copy of it.
   const rows = [
-    `from ${clean(installed.registry ?? installed.sourceUrl)}, ${installed.direct ? "installed directly" : "pulled in as a dependency"}`,
+    `from ${clean(ownerLabel(installed))}, ${installed.direct ? "installed directly" : "pulled in as a dependency"}`,
   ];
 
   // Gated on `detail`, not on `files.length`. With no item document there is

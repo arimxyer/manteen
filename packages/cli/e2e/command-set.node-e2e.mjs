@@ -441,6 +441,105 @@ test("update rejects an unknown --pm exactly as add does, at exit 2", () => {
   }
 });
 
+// ---- an UPSTREAM change, which is what `update` is actually for -------------
+
+test("diff sees an upstream change and update fetches it", () => {
+  /**
+   * Its OWN published registry, not the shared one.
+   *
+   * `node --test` runs top-level `test()` calls in this file's order and in one
+   * process, so mutating `WORK/base` here would leak the edited bytes into every
+   * test declared after it and make the suite order-dependent. A second
+   * directory costs one compile and keeps each test hermetic.
+   */
+  const moved = publish(BASE_FIXTURE, "base-moved");
+  const project = makeProject({ registries: { "@base": moved } });
+  assert.equal(run(project, ["add", ITEM]).status, 0);
+
+  const itemDoc = join(WORK, "base-moved", "empty-state.json");
+  const doc = JSON.parse(readFileSync(itemDoc, "utf8"));
+  doc.files[0].content = `${doc.files[0].content}\n// shipped upstream\n`;
+  writeFileSync(itemDoc, `${JSON.stringify(doc, null, 2)}\n`);
+
+  // `upstream-only`: the file on disk still matches what manteen recorded, and
+  // the registry now serves something else. The third of the four states, and
+  // the one `update` exists to resolve.
+  const compared = run(project, ["diff"]);
+  assert.equal(compared.status, 0, compared.all);
+  assert.match(
+    compared.stdout,
+    /upstream-only\s+src\/components\/ui\/empty-state\.tsx/,
+    compared.stdout,
+  );
+  assert.match(compared.stdout, /^\+\/\/ shipped upstream$/m, compared.stdout);
+
+  const updated = run(project, ["update", "--overwrite"]);
+  assert.equal(updated.status, 0, updated.all);
+  assert.match(updated.stdout, /^updated {2}@base\/empty-state$/m, updated.stdout);
+  assert.match(
+    readFileSync(join(project, DESTINATION), "utf8"),
+    /\/\/ shipped upstream/,
+    "update must land the bytes the registry serves today",
+  );
+
+  // The receipt was rewritten with the new hash, so the project is clean again.
+  assert.match(run(project, ["diff"]).stdout, /No changes\./);
+
+  // And a local edit ON TOP of an upstream change is the fourth state, `both`.
+  const target = join(project, DESTINATION);
+  writeFileSync(target, `${readFileSync(target, "utf8")}\n// and a local edit\n`);
+  doc.files[0].content = `${doc.files[0].content}\n// and again upstream\n`;
+  writeFileSync(itemDoc, `${JSON.stringify(doc, null, 2)}\n`);
+  assert.match(run(project, ["diff"]).stdout, /\bboth\b\s+src\/components\/ui\/empty-state\.tsx/);
+});
+
+// ---- the theme fold (D5/D6) --------------------------------------------------
+
+test("diff and update carry the folded theme, and update re-merges it directly", () => {
+  // `fixtures/base` ships a `theme` item AND a `data-grid` that contributes a
+  // `themeFragment`, so declaring `theme` is all it takes to exercise the fold.
+  // Without it every other test in this file gets `meta-degraded` instead.
+  const project = makeProject({ theme: "src/lib/theme.ts" });
+  const added = run(project, ["add", "@base/theme", "@base/data-grid"]);
+  assert.equal(added.status, 0, added.all);
+
+  const theme = join(project, "src", "lib", "theme.ts");
+  assert.ok(existsSync(theme), added.all);
+  // D5: the theme item's file is ABSORBED into the fold, so no item owns it and
+  // `add` reports it as the theme rather than as a written file.
+  assert.match(added.stdout, /src\/lib\/theme\.ts/, added.stdout);
+
+  const clean = run(project, ["diff"]);
+  assert.equal(clean.status, 0, clean.all);
+  assert.match(clean.stdout, /No changes\./, clean.stdout);
+
+  // A hand edit to the theme. `mergeThemeSource` runs `prefer: "base"`, so this
+  // value must SURVIVE the re-merge — that is the whole basis of the roadmap
+  // decision that `update` re-merges directly with no confirmation diff.
+  writeFileSync(theme, readFileSync(theme, "utf8").replace(/^/, "// a hand edit\n"));
+
+  const dirty = run(project, ["diff"]);
+  assert.equal(dirty.status, 0, dirty.all);
+  assert.match(dirty.stdout, /^theme$/m, dirty.stdout);
+  assert.match(dirty.stdout, /local-only\s+src\/lib\/theme\.ts/, dirty.stdout);
+
+  const doc = json(run(project, ["diff", "--json"]));
+  assert.equal(doc.theme.receiptPath, "src/lib/theme.ts");
+  assert.equal(doc.theme.change, "local-only");
+
+  const updated = run(project, ["update", "--overwrite"]);
+  assert.equal(updated.status, 0, updated.all);
+  assert.match(
+    readFileSync(theme, "utf8"),
+    /\/\/ a hand edit/,
+    "the fold keeps existing values on conflict — an update must not discard the user's theme",
+  );
+
+  // No confirmation diff and no prompt: SETTLED in the roadmap. The run is
+  // non-interactive and still completes.
+  assert.equal(updated.stdout.includes("Dry run"), false, updated.stdout);
+});
+
 // ---- the shared exit convention ---------------------------------------------
 
 test("a missing manteen.json is exit 2 with one config error, in all five commands", () => {

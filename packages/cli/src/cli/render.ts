@@ -126,12 +126,20 @@ export function renderDiagnostics(
  * message.
  *
  * The `redactedUrl` line is CONDITIONAL, and the condition is measured rather
- * than assumed. Three of the note messages `available.ts` authors
- * (`index-unreachable`, `index-invalid`, `index-missing-env`) end with the URL
- * themselves; three more (`index-entry-dropped`, `index-name-uninstallable`,
- * `not-in-index`) carry a `redactedUrl` and do not. Printing it unconditionally
- * doubles it for the first group; dropping it loses it for the second. So the
- * line is emitted only when the message does not already end in it.
+ * than assumed. Exactly six note codes ever carry one, and they split evenly:
+ *
+ *   ends with the URL       `index-unreachable`, `index-invalid`,
+ *                           `index-missing-env`   (all in `available.ts`)
+ *   carries it, silently    `index-entry-dropped`, `index-name-uninstallable`
+ *                           (`available.ts`), `not-in-index` (`list.ts`, `info.ts`)
+ *
+ * Printing it unconditionally doubles it for the first group; dropping it loses
+ * it for the second. `list` had chosen the second reading and `diff` the first,
+ * and each was right about half the codes. So the line is emitted only when the
+ * message does not already end in it.
+ *
+ * This does couple rendering to message WORDING, which is the cost. A seventh
+ * code is free either way; re-wording one of the six is what to watch.
  */
 export function renderNote(note: InventoryNote): string {
   const subject = note.itemId ?? note.registry;
