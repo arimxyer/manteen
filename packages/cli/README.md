@@ -58,7 +58,10 @@ a `paths` key in your application tsconfig, and the theme file to fold into. A V
 {
   "$schema": "./node_modules/manteen/schema/manteen.schema.json",
   "registries": {
-    "@house": "https://arimxyer.github.io/manteen/r/{name}.json"
+    "@house": {
+      "url": "https://arimxyer.github.io/manteen/r/{name}.json",
+      "index": "https://arimxyer.github.io/manteen/r/registry.json"
+    }
   },
   "aliases": {
     "components": "@/components",

@@ -4,6 +4,7 @@ import { join, resolve } from "node:path";
 
 import { mergeThemeSource } from "manteen-kit";
 
+import { HOUSE_REGISTRY_INDEX_URL, HOUSE_REGISTRY_ITEM_URL } from "../src/config/defaults";
 import { INIT_THEME_SOURCE, planShared } from "../src/init/shared";
 import { frameworkSetFor, type InitProjectSnapshot } from "../src/init/types";
 
@@ -80,7 +81,10 @@ describe("W6 shared init planning", () => {
     const config = result.files.find((file) => file.kind === "manteen-config")?.content ?? "";
     expect(JSON.parse(config)).toMatchObject({
       registries: {
-        "@house": "https://arimxyer.github.io/manteen/r/{name}.json",
+        "@house": {
+          url: HOUSE_REGISTRY_ITEM_URL,
+          index: HOUSE_REGISTRY_INDEX_URL,
+        },
       },
       aliases: {
         components: "@/components",
@@ -108,6 +112,75 @@ describe("W6 shared init planning", () => {
     expect(second.diagnostics).toEqual([]);
     expect(second.instructions).toEqual([]);
     expect(second.files).toEqual([]);
+  });
+
+  test("migrates the exact legacy house registry without dropping authored config", () => {
+    const project = snapshot();
+    const initialized = applyProposals(project, planShared(project, frameworkSetFor("vite")).files);
+    const configPath = join(ROOT, "manteen.json");
+    const legacy = JSON.parse(initialized.files.get(configPath) ?? "null");
+    legacy.registries["@house"] = HOUSE_REGISTRY_ITEM_URL;
+    legacy.registries["@other"] = "https://example.com/r/{name}.json";
+    legacy.resolutions = { "empty-state": "@house/empty-state" };
+    initialized.files.set(configPath, `${JSON.stringify(legacy, null, 2)}\n`);
+
+    const migration = planShared(initialized, frameworkSetFor("vite"));
+    expect(migration.diagnostics).toEqual([]);
+    const proposal = migration.files.find((file) => file.kind === "manteen-config");
+    const migrated = JSON.parse(proposal?.content ?? "null");
+    expect(migrated.registries).toEqual({
+      "@house": {
+        url: HOUSE_REGISTRY_ITEM_URL,
+        index: HOUSE_REGISTRY_INDEX_URL,
+      },
+      "@other": "https://example.com/r/{name}.json",
+    });
+    expect(migrated.resolutions).toEqual({ "empty-state": "@house/empty-state" });
+
+    const after = applyProposals(initialized, migration.files);
+    expect(
+      planShared(after, frameworkSetFor("vite")).files.filter(
+        (file) => file.kind === "manteen-config",
+      ),
+    ).toEqual([]);
+  });
+
+  test("adds the house index without dropping request metadata", () => {
+    const project = snapshot();
+    const initialized = applyProposals(project, planShared(project, frameworkSetFor("vite")).files);
+    const configPath = join(ROOT, "manteen.json");
+    const config = JSON.parse(initialized.files.get(configPath) ?? "null");
+    config.registries["@house"] = {
+      url: HOUSE_REGISTRY_ITEM_URL,
+      headers: { "X-Registry": "house" },
+      params: { channel: "stable" },
+    };
+    initialized.files.set(configPath, `${JSON.stringify(config, null, 2)}\n`);
+
+    const migration = planShared(initialized, frameworkSetFor("vite"));
+    expect(migration.diagnostics).toEqual([]);
+    const proposal = migration.files.find((file) => file.kind === "manteen-config");
+    expect(JSON.parse(proposal?.content ?? "null").registries["@house"]).toEqual({
+      url: HOUSE_REGISTRY_ITEM_URL,
+      headers: { "X-Registry": "house" },
+      params: { channel: "stable" },
+      index: HOUSE_REGISTRY_INDEX_URL,
+    });
+  });
+
+  test("refuses an explicitly different house registry index", () => {
+    const project = snapshot();
+    const initialized = applyProposals(project, planShared(project, frameworkSetFor("vite")).files);
+    const configPath = join(ROOT, "manteen.json");
+    const config = JSON.parse(initialized.files.get(configPath) ?? "null");
+    config.registries["@house"].index = "https://example.com/registry.json";
+    initialized.files.set(configPath, `${JSON.stringify(config, null, 2)}\n`);
+
+    const result = planShared(initialized, frameworkSetFor("vite"));
+    expect(result.files.some((file) => file.kind === "manteen-config")).toBe(false);
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({ code: "init-config-conflict", path: configPath }),
+    );
   });
 
   test("preserves existing path keys and accepts an aliased mergeable theme", () => {

@@ -39,7 +39,7 @@ export interface RegistrySourceObject {
   params?: Record<string, string>;
 }
 
-/** The string form is the object form with only `url` — most registries need nothing else. */
+/** The string form supports known refs; the object form adds discovery and request metadata. */
 export type RegistrySource = string | RegistrySourceObject;
 
 /** `manteen.json` exactly as authored. Kept on `LoadedConfig` so a reporter can

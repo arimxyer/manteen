@@ -32,6 +32,7 @@ import {
   matchesPathsPattern,
   unbackedAliases,
 } from "./aliases";
+import { houseRegistrySource } from "./defaults";
 import { normalizeRegistry } from "./registries";
 import {
   ALIAS_KEYS,
@@ -50,7 +51,7 @@ export const CONFIG_FILENAME = "manteen.json";
 /** Printed when the config is missing. Kept as a value so it is provably valid JSON. */
 const MINIMAL_CONFIG: MantineConfig = {
   $schema: "./node_modules/manteen/schema/manteen.schema.json",
-  registries: { "@house": "https://arimxyer.github.io/manteen/r/{name}.json" },
+  registries: { "@house": houseRegistrySource() },
   aliases: {
     components: "@/components",
     ui: "@/components/ui",

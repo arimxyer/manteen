@@ -21,11 +21,14 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { after, test } from "node:test";
+import { pathToFileURL } from "node:url";
 
+import { compileRegistry, writeRegistry } from "manteen-kit";
 import { loadConfig } from "../dist/index.mjs";
 import { childEnv } from "./helpers/child-env.mjs";
 
 const PKG_ROOT = resolve(import.meta.dirname, "..");
+const REPO_ROOT = resolve(PKG_ROOT, "../..");
 const CLI = join(PKG_ROOT, "dist", "cli.mjs");
 const projects = [];
 
@@ -77,8 +80,8 @@ function packageFile(generator, extraDependencies = {}, extraDevDependencies = {
   )}\n`;
 }
 
-function run(root, args) {
-  const result = spawnSync(process.execPath, [CLI, "init", "--cwd", root, ...args], {
+function runCommand(root, args) {
+  const result = spawnSync(process.execPath, [CLI, ...args], {
     cwd: root,
     env: childEnv(),
     encoding: "utf8",
@@ -90,6 +93,10 @@ function run(root, args) {
     stderr: result.stderr,
     all: `${result.stdout}\n${result.stderr}`,
   };
+}
+
+function run(root, args) {
+  return runCommand(root, ["init", "--cwd", root, ...args]);
 }
 
 function json(result) {
@@ -298,6 +305,78 @@ for (const [name, make] of [
     assert.deepEqual(second.plan.dependencies, []);
   });
 }
+
+test("init emits a list-ready house registry and the built list consumes its index", () => {
+  const fixture = viteFixture();
+  const applied = run(fixture.root, ["--yes", "--json"]);
+  assert.equal(applied.status, 0, applied.all);
+
+  const configPath = join(fixture.root, "manteen.json");
+  const config = JSON.parse(readFileSync(configPath, "utf8"));
+  assert.deepEqual(config.registries["@house"], {
+    url: "https://arimxyer.github.io/manteen/r/{name}.json",
+    index: "https://arimxyer.github.io/manteen/r/registry.json",
+  });
+
+  const compiled = compileRegistry(join(REPO_ROOT, "manteen.registry.json"));
+  assert.deepEqual(compiled.failures, [], "the house registry must compile for the list seam");
+  const registryRoot = join(fixture.root, "registry");
+  writeRegistry(compiled, registryRoot);
+  const base = pathToFileURL(registryRoot).href;
+  config.registries["@house"] = {
+    url: `${base}/{name}.json`,
+    index: `${base}/registry.json`,
+  };
+  writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
+
+  const listed = runCommand(fixture.root, ["list", "--cwd", fixture.root, "--json"]);
+  assert.equal(listed.status, 0, listed.all);
+  const document = json(listed);
+  assert.equal(document.registries[0]?.namespace, "@house");
+  assert.ok(
+    document.registries[0]?.items.some((item) => item.id === "@house/data-table"),
+    listed.stdout,
+  );
+  assert.equal(
+    document.notes.some((note) => note.code === "no-index"),
+    false,
+    listed.stdout,
+  );
+});
+
+test("init safely migrates the exact legacy house registry string", () => {
+  const fixture = viteFixture();
+  const first = run(fixture.root, ["--yes", "--json"]);
+  assert.equal(first.status, 0, first.all);
+
+  const configPath = join(fixture.root, "manteen.json");
+  const config = JSON.parse(readFileSync(configPath, "utf8"));
+  config.registries["@house"] = "https://arimxyer.github.io/manteen/r/{name}.json";
+  config.registries["@other"] = "https://example.com/r/{name}.json";
+  config.resolutions = { "empty-state": "@house/empty-state" };
+  writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
+
+  const migratedResult = run(fixture.root, ["--yes", "--json"]);
+  assert.equal(migratedResult.status, 0, migratedResult.all);
+  const migratedDocument = json(migratedResult);
+  assert.deepEqual(
+    migratedDocument.plan.files.map((file) => file.path),
+    ["manteen.json"],
+  );
+
+  const migrated = JSON.parse(readFileSync(configPath, "utf8"));
+  assert.deepEqual(migrated.registries["@house"], {
+    url: "https://arimxyer.github.io/manteen/r/{name}.json",
+    index: "https://arimxyer.github.io/manteen/r/registry.json",
+  });
+  assert.equal(migrated.registries["@other"], "https://example.com/r/{name}.json");
+  assert.deepEqual(migrated.resolutions, { "empty-state": "@house/empty-state" });
+  assert.equal(loadConfig(fixture.root).ok, true);
+
+  const second = json(run(fixture.root, ["--dry-run", "--yes", "--json"]));
+  assert.deepEqual(second.plan.files, []);
+  assert.deepEqual(second.plan.dependencies, []);
+});
 
 test("a source refusal is zero-mutation in the built binary", () => {
   const root = project("refusal");

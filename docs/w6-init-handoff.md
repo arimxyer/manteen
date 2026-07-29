@@ -234,3 +234,23 @@ The local closure receipt on Node 26.4.0 and Bun 1.3.14 is:
 This proves the transforms against the committed, provenance-labelled shapes and the shipped Node
 bundle. It still does not turn those fixtures into live evidence about generator releases after the
 observation date; refreshing that evidence is a new probe, not a routine unit-test claim.
+
+### Dogfood follow-up — 2026-07-29
+
+A full disposable Vite run crossed the seams the hermetic suite intentionally avoids: the complete
+`create-vite@9.1.1` project, a real interactive PTY confirmation, real npm dependency installs, the
+live `@house` registry, `data-table` plus its transitive item and theme merge, and a production build
+that actually imported and rendered the installed component. Repeat `init`, `add` and `update` runs
+were mutation-empty or byte-identical.
+
+That run found one cross-command defect: init emitted only `@house`'s item template, while `list`
+correctly refuses to infer an index under D21. Known-reference `add` worked, but a fresh
+`init → list` returned `no-index`. Fresh and missing-config examples now share an explicit
+`{ url, index }` source. The exact legacy string—or the exact object URL with no index—is migrated
+transactionally while preserving other registries and resolutions; an explicitly different URL or
+index still refuses.
+
+The regression test remains hermetic: it first asserts the live URLs emitted by built `init`, then
+points that same generated object at a kit-compiled `file:` registry before driving built `list`.
+The updated local receipt is 151 source-tier tests and 90 built-Node e2e tests. It proves the
+init/list seam without turning external GitHub Pages availability into a CI dependency.

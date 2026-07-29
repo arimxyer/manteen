@@ -55,7 +55,7 @@ is a judgment call, which is exactly why they are separate runs.
 |---|---|---|---|
 | W4 | Apply surface | narrow + deep: 2–3 agents on one seam, adversarial | Prompt/TTY/CI behaviour is where subtle bugs live. `CI=1` already nearly shipped a hang. Parallelism buys nothing; probing buys everything. |
 | W5 | Command set — `list`, `info`, `diff`, `update` | wide: 4 parallel, shared receipt reader frozen first | Four genuinely independent commands over one contract. The classic freeze-then-fan-out. |
-| W6 | [`init`](w6-init-handoff.md) | complete: probe → checkpoint → contract → per-framework adapters → integration → built-Node review | The adapters preserve generated work; the shared plan/apply boundary makes dry-run, cancellation, install failure and rollback observable; required Tailwind/manual work is separate from mutations. |
+| W6 | [`init`](w6-init-handoff.md) | complete: probe → checkpoint → contract → per-framework adapters → integration → built-Node review → disposable dogfood | The adapters preserve generated work; the shared plan/apply boundary makes dry-run, cancellation, install failure and rollback observable; required Tailwind/manual work is separate from mutations; fresh config is list-ready. |
 | W7 | Hardening | matrix-driven: agents per platform/runtime, findings-first | The work is discovering what breaks, not writing features. Needs real Windows CI. |
 | W8 | Release | mostly sequential, small | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
 | Wc | Registry content | wide, parallel per component | Independent of all of the above; can run any time. Doubles as client stress-testing. |
@@ -78,7 +78,8 @@ failure reporting). W5 added `list`, `info`, `diff` and `update` over one frozen
 inventory contract, with `update` routed through the existing `plan()`/`apply()` rather than
 writing files itself. W6 added finite framework detection, four AST adapters, bounded shared
 config transforms, an init-specific plan/apply contract, text/JSON CLI output and built-Node
-fixtures for Vite, both Next routers, their hybrid and React Router. W7 is next.
+fixtures for Vite, both Next routers, their hybrid and React Router. A disposable full-app run then
+closed the generated-config-to-`list` seam and added exact legacy migration. W7 is next.
 
 W5 and W6 were independent tracks. Both are now complete, so W7 can harden the full surface. W8
 must be last.

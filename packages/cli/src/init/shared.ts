@@ -10,7 +10,11 @@ import {
   ScriptKind,
   SyntaxKind,
 } from "ts-morph";
-
+import {
+  HOUSE_REGISTRY_INDEX_URL,
+  HOUSE_REGISTRY_ITEM_URL,
+  houseRegistrySource,
+} from "../config/defaults";
 import type { Diagnostic } from "../plan/types";
 import { initConfigConflict } from "./diagnostics";
 import { VITE_CONFIG_PATHS } from "./framework-paths";
@@ -22,8 +26,6 @@ import type {
   InitProposedFile,
 } from "./types";
 import { INIT_ALIASES } from "./types";
-
-export const INIT_REGISTRY_URL = "https://arimxyer.github.io/manteen/r/{name}.json";
 
 export const INIT_THEME_SOURCE = `import { createTheme } from "@mantine/core";
 
@@ -73,17 +75,24 @@ function objectInitializer(assignment: PropertyAssignment): ObjectLiteralExpress
 function desiredConfig(project: InitProjectSnapshot): Record<string, unknown> {
   return {
     $schema: "./node_modules/manteen/schema/manteen.schema.json",
-    registries: { "@house": INIT_REGISTRY_URL },
+    registries: { "@house": houseRegistrySource() },
     aliases: INIT_ALIASES,
     theme: posixRelative(project.layout.root, project.layout.themePath),
     tsconfig: posixRelative(project.layout.root, project.layout.tsconfigPath),
   };
 }
 
-function compatibleConfig(
-  source: string,
-  expected: Record<string, unknown>,
-): { ok: true } | { ok: false; detail: string } {
+type ConfigCompatibility = { ok: true; content: string | null } | { ok: false; detail: string };
+
+function serializedJson(parsed: Record<string, unknown>, source: string): string {
+  const lineEnding = source.includes("\r\n") ? "\r\n" : "\n";
+  const trailingLineEnding = source.endsWith("\r\n") ? "\r\n" : source.endsWith("\n") ? "\n" : "";
+  const indent = /\r?\n([ \t]+)"/.exec(source)?.[1] ?? (source.includes("\n") ? 2 : 0);
+  const json = JSON.stringify(parsed, null, indent);
+  return `${lineEnding === "\n" ? json : json.replaceAll("\n", lineEnding)}${trailingLineEnding}`;
+}
+
+function compatibleConfig(source: string, expected: Record<string, unknown>): ConfigCompatibility {
   const parsed = jsonObject(source);
   if (parsed === null) return { ok: false, detail: "the existing file is not a JSON object" };
 
@@ -91,10 +100,33 @@ function compatibleConfig(
   if (typeof registries !== "object" || registries === null || Array.isArray(registries)) {
     return { ok: false, detail: "registries is not an object" };
   }
-  if ((registries as Record<string, unknown>)["@house"] !== INIT_REGISTRY_URL) {
+  const registryMap = registries as Record<string, unknown>;
+  const house = registryMap["@house"];
+  let migrateHouse = false;
+  if (house === HOUSE_REGISTRY_ITEM_URL) {
+    registryMap["@house"] = houseRegistrySource();
+    migrateHouse = true;
+  } else if (typeof house === "object" && house !== null && !Array.isArray(house)) {
+    const sourceObject = house as Record<string, unknown>;
+    if (sourceObject.url !== HOUSE_REGISTRY_ITEM_URL) {
+      return {
+        ok: false,
+        detail: `registries.@house.url is not ${JSON.stringify(HOUSE_REGISTRY_ITEM_URL)}`,
+      };
+    }
+    if (sourceObject.index === undefined) {
+      sourceObject.index = HOUSE_REGISTRY_INDEX_URL;
+      migrateHouse = true;
+    } else if (sourceObject.index !== HOUSE_REGISTRY_INDEX_URL) {
+      return {
+        ok: false,
+        detail: `registries.@house.index is not ${JSON.stringify(HOUSE_REGISTRY_INDEX_URL)}`,
+      };
+    }
+  } else {
     return {
       ok: false,
-      detail: `registries.@house is not ${JSON.stringify(INIT_REGISTRY_URL)}`,
+      detail: "registries.@house is neither the legacy item URL nor a registry source object",
     };
   }
 
@@ -110,7 +142,7 @@ function compatibleConfig(
     return { ok: false, detail: "tsconfig differs from the detected application tsconfig" };
   }
 
-  return { ok: true };
+  return { ok: true, content: migrateHouse ? serializedJson(parsed, source) : null };
 }
 
 function planConfig(project: InitProjectSnapshot): InitSharedResult {
@@ -134,7 +166,14 @@ function planConfig(project: InitProjectSnapshot): InitSharedResult {
 
   const compatible = compatibleConfig(existing, expected);
   return compatible.ok
-    ? { files: [], instructions: [], diagnostics: [] }
+    ? {
+        files:
+          compatible.content === null
+            ? []
+            : [{ kind: "manteen-config", destination, content: compatible.content }],
+        instructions: [],
+        diagnostics: [],
+      }
     : {
         files: [],
         instructions: [],
