@@ -91,3 +91,16 @@ Bun continues to link the version-matching local workspace package, while the np
 the real range. A fresh npm consumer installed the local kit and client tarballs together and ran
 the packed `manteen --version` successfully. This is the package-shape half of the smoke; the
 cross-manager add harness below owns the behavioral half.
+
+### F2 — two Unix permission tests and one path assertion were not Windows-safe
+
+The apply tier already skipped mode-bit denial tests on Windows and when running as root. The gates
+tier had two equivalent tests without the guard: Windows ignores `chmod(0o555)`, the write succeeds,
+and the fallback assertion compared an absent `process.getuid` to `0`. The same file also matched an
+installed manifest using hard-coded `/` separators even though the diagnostic intentionally prints
+the native absolute path it read.
+
+**Resolved locally.** Both permission injections now carry the same explicit non-root Unix guard,
+so a skip cannot be mistaken for rollback evidence, and the manifest-path assertion accepts both
+native separators. This removes static Windows blockers; only the hosted runner can establish that
+no others remain.
