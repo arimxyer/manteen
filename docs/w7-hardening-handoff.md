@@ -86,3 +86,8 @@ current npm pack step. The bounded remedy is a real semver dependency compatible
 publish order, followed by an install of both local tarballs in the Wave 7 smoke. It does not
 publish either package and is not evidence of npm provenance.
 
+**Resolved in the first implementation milestone.** The client now declares `manteen-kit@^0.1.0`.
+Bun continues to link the version-matching local workspace package, while the npm tarball contains
+the real range. A fresh npm consumer installed the local kit and client tarballs together and ran
+the packed `manteen --version` successfully. This is the package-shape half of the smoke; the
+cross-manager add harness below owns the behavioral half.
