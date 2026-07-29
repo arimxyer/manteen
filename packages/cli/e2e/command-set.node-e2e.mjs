@@ -570,3 +570,46 @@ test("every command is registered, and an unknown one is still exit 2", () => {
   assert.equal(bogus.status, 2, bogus.all);
   assert.match(bogus.stderr, /bogus/, bogus.stderr);
 });
+
+/**
+ * The `NON-INTERACTIVE` help block, asserted against the behaviour it describes
+ * rather than against itself.
+ *
+ * Documentation that nothing executes is documentation that rots. This is the
+ * one piece of help text in the CLI making a claim a reader cannot check by
+ * looking — that `--dry-run` refuses without `--overwrite`/`--no-overwrite`, and
+ * that `diff` needs neither — so each sentence is run rather than trusted.
+ */
+test("the non-interactive help block is true of add, update and diff", () => {
+  const project = makeProject();
+  assert.equal(run(project, ["add", ITEM]).status, 0);
+  const target = join(project, DESTINATION);
+  writeFileSync(target, `${readFileSync(target, "utf8")}\n// a local edit\n`);
+
+  for (const command of ["add", "update"]) {
+    const help = run(project, [command, "--help"]);
+    assert.equal(help.status, 0, help.all);
+    assert.match(help.stdout, /^NON-INTERACTIVE/m, `${command}: no help block`);
+    assert.match(help.stdout, /--dry-run/, `${command}: the block must name --dry-run`);
+  }
+
+  // The claim: a bare --dry-run refuses over a changed file.
+  const bare = run(project, ["update", "--dry-run"]);
+  assert.equal(bare.status, 1, bare.all);
+  assert.match(bare.stderr, /destination-exists/, bare.stderr);
+
+  // The claim: EITHER flag turns that refusal into a preview.
+  for (const flag of ["--overwrite", "--no-overwrite"]) {
+    const preview = run(project, ["update", "--dry-run", flag]);
+    assert.equal(preview.status, 0, `${flag}: ${preview.all}`);
+    assert.match(preview.stdout, /Dry run — nothing was written\./, preview.stdout);
+  }
+
+  // The claim: `diff` answers the same question with no flag and no refusal.
+  const diff = run(project, ["diff"]);
+  assert.equal(diff.status, 0, diff.all);
+  assert.match(diff.stdout, /local-only/, diff.stdout);
+
+  // …and the file is still the user's, after all of the above.
+  assert.match(readFileSync(target, "utf8"), /\/\/ a local edit/);
+});

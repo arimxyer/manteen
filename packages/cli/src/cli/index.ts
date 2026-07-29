@@ -206,17 +206,45 @@ const program = new Command()
   // default 1 instead of our 2.
   .exitOverride();
 
+/**
+ * Shared by `add` and `update`, because the behaviour is one gate and writing it
+ * twice is how the two drift apart.
+ *
+ * The surprising half is `--dry-run`. Nobody expects the flag that means "just
+ * show me" to need write authorisation, but `destination-exists` is a PLAN-time
+ * refusal and `--dry-run` only suppresses the writing — `dryRun` lives on
+ * `ApplyOptions`, which `plan()` never sees. So the preview refuses for exactly
+ * the reason the real run would, which is defensible, and completely opaque
+ * unless it is written down.
+ *
+ * Pointing at `diff` is the actually useful part of this text: it answers the
+ * question the person is really asking, needs no flag, and cannot write.
+ */
+const NON_INTERACTIVE_HELP = `
+NON-INTERACTIVE (CI, or any run with no terminal attached):
+  A destination that already exists with different content is a refusal here,
+  not a prompt — including under --dry-run, because the check runs while
+  planning and --dry-run only skips the writing.
+
+  Pass --overwrite to replace those files, or --no-overwrite to keep them.
+  Either one also makes --dry-run print the preview instead of refusing.
+
+  To see what would change without deciding anything, use \`manteen diff\`.
+  It needs no flags, writes nothing, and exits 0 when there is nothing to do.
+`;
+
 program
   .command("add")
   .description("install one or more registry items")
   .argument("[refs...]", "qualified item names, e.g. @house/data-table")
   .option("--cwd <dir>", "project directory containing manteen.json", process.cwd())
-  .option("--dry-run", "plan and preflight only; write nothing")
+  .option("--dry-run", "plan and preflight only; write nothing (see NON-INTERACTIVE)")
   .option("--force", "downgrade forceable refusals to warnings; never silences them")
   .option("--overwrite", "replace existing files without asking")
   .option("--no-overwrite", "keep existing files without asking")
   .option("-y, --yes", "assume yes at every prompt; implies --overwrite")
   .option("--pm <name>", "override package-manager detection (npm, pnpm, yarn, bun, deno)")
+  .addHelpText("after", NON_INTERACTIVE_HELP)
   .action(async (refs: string[], flags: AddFlags, command: Command) => {
     process.exitCode = await runAdd(refs, flags, command);
   });
@@ -275,7 +303,7 @@ program
   .argument("[refs...]", "item ids to update; omit for every directly-installed item")
   .option("--cwd <dir>", "project directory containing manteen.json", process.cwd())
   .option("--all", "also update items installed only as dependencies; promotes them to direct")
-  .option("--dry-run", "plan and preflight only; write nothing")
+  .option("--dry-run", "plan and preflight only; write nothing (see NON-INTERACTIVE)")
   .option("--force", "downgrade forceable refusals to warnings; never silences them")
   .option("--json", "emit the result as one JSON document")
   // Worded as an obligation rather than a nicety: without one of these three, a
@@ -288,6 +316,7 @@ program
   .option("--no-overwrite", "keep existing files without asking")
   .option("-y, --yes", "assume yes at every prompt; implies --overwrite")
   .option("--pm <name>", "override package-manager detection (npm, pnpm, yarn, bun, deno)")
+  .addHelpText("after", NON_INTERACTIVE_HELP)
   .action(async (refs: string[], flags: UpdateFlags, command: Command) => {
     process.exitCode = await runUpdate(refs, flags, command);
   });
