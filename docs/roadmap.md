@@ -132,10 +132,42 @@ The tradeoff: that first version has no provenance attestation, because provenan
 the OIDC path. Storing an `NPM_TOKEN` just for it would reintroduce the long-lived credential
 the whole setup exists to avoid, for the sake of one version.
 
+## Carried into W7
+
+**Test the real `clackOverwritePrompt` through a pty.** The header of
+`packages/cli/e2e/apply-surface.node-e2e.mjs` states that neither tier runs it — the ~15 lines
+translating a multiselect into an `OverwriteAnswer`. Everything downstream of the port's answer
+is covered; the widget itself is verified only by a hand-run recipe recorded in that header.
+
+Its stated rationale is half wrong and the file now says so. "`script(1)` is not on Windows or
+macOS by default" does not justify omitting a test — the same file already carries
+`{ skip: !CAN_DENY_WRITES }` two hundred lines further down. A platform guard is the answer, not
+omission.
+
+The other half is real, and the mechanism is worth writing down because it is not guessable:
+
+> **clack renders one character at a time, redrawing the whole line between each.** So
+> `"would be replaced"` never exists as a contiguous string in the pty output — every character
+> is separated by a carriage return and a redraw. Waiting for the prompt's text to appear
+> therefore cannot work, and a fixed `sleep` is the only reason the hand-run recipe uses one.
+
+Readiness has to be detected some other way. Two that would:
+
+- **Output quiescence** — wait until the pty emits nothing for ~200 ms. Still timing-based, but
+  it adapts to a slow machine instead of guessing, which is the actual objection to `sleep`.
+- **A terminal emulator** — parse the cursor movements and reconstruct the screen. Correct, and
+  a real dependency for a dev-only test.
+
+Quiescence plus `{ skip: process.platform === "win32" || !hasScript() }` is the recommendation:
+genuine coverage on Linux and macOS, free elsewhere. This belongs in W7 rather than earlier
+because pty and TTY behaviour is platform work, and W7 is when a `windows-latest` runner appears
+anyway.
+
 ## Deferred, with a reason
 
 - **Linting.** Biome (one binary, lint + format, near-zero config; `tsc --noEmit` already covers
   what type-aware ESLint rules would add). Not installed yet — adding a dependency re-resolves
   the workspace, and phase 3's agents are running against it. First task once that lands.
+  *(Landed 2026-07-28; kept here because the reasoning still explains the config.)*
 - **`CONTRIBUTING.md`, issue and PR templates, `SECURITY.md`.** Ceremony for an audience of one.
   Revisit if the repo gets contributors.

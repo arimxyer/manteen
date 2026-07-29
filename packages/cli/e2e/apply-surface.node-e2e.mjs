@@ -32,10 +32,24 @@
  *   (sleep 1.5; printf '\003';      sleep 2) | ...
  *     -> exit 130, clack's cancel banner, no receipt, no file touched
  *
- * Not committed: it needs `script` (not on Windows or macOS by default) and
- * sleep-based timing against a prompt that renders after a registry fetch, which
- * is a flaky test wearing a coverage badge. The recipe is here so the next person
- * to touch `clackOverwritePrompt` can re-run it in a minute.
+ * Not committed — but only ONE of the two reasons that used to be given here
+ * actually holds, and the weak one is corrected rather than deleted so it does
+ * not get re-derived:
+ *
+ * - "`script(1)` is not on Windows or macOS by default" does NOT justify
+ *   omitting a test. `{ skip: !CAN_DENY_WRITES }` two hundred lines below is the
+ *   same situation solved correctly. A platform guard is the answer.
+ * - The timing IS the real obstacle, for a reason worth stating: **clack renders
+ *   one character at a time, redrawing the whole line between each**, so
+ *   `"would be replaced"` never exists as a contiguous string in the pty output.
+ *   Waiting for the prompt's TEXT cannot work, which is why the recipe above
+ *   resorts to `sleep`. Readiness needs output quiescence (~200 ms of silence)
+ *   or a terminal emulator that reconstructs the screen.
+ *
+ * Quiescence plus a platform guard is the plan; it is carried in
+ * `docs/roadmap.md` under "Carried into W7", where the pty work belongs. The
+ * recipe stays here so the next person to touch `clackOverwritePrompt` can
+ * re-run it in a minute without waiting for that.
  *
  * NETWORK DISCIPLINE. The registry is served over `file:`, so `loader-http.ts`
  * is never entered. npm is the live one: D17 drops a dependency only when the
