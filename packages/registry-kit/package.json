@@ -30,10 +30,10 @@
     "codemod"
   ],
   "scripts": {
-    "build": "tsdown",
+    "build": "tsdown --config-loader native",
     "test": "bun test",
     "//prepare": "Runs on both install and publish, so a fresh clone has dist/ and the package-name import resolves without a manual build. It does NOT fix the bin symlink on that first install — bun links bins before running prepare, and skips any whose target is missing — but local work goes through the root scripts, which run the TS sources directly.",
-    "prepare": "tsdown"
+    "prepare": "tsdown --config-loader native"
   },
   "dependencies": {
     "ajv": "^8.20.0",

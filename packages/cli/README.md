@@ -14,10 +14,15 @@ name of the component library this tool installs components *for*.
 ## Install
 
 ```bash
-bun add -d manteen      # or: pnpm add -D manteen / npm i -D manteen
+bun add -d manteen      # or: pnpm add -D manteen / yarn add -D manteen / npm i -D manteen
 ```
 
 Requires Node 22.12 or newer.
+
+The portability gate runs the built CLI on Node 22.12, 24 and 26, exercises npm, pnpm, Yarn PnP and
+Bun from packed tarballs, and includes native macOS and Windows jobs. Windows remains best-effort
+until that hosted `.cmd`/caret-range install is green; Linux emulation is not treated as Windows
+evidence.
 
 ## Use
 

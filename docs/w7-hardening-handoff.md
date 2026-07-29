@@ -116,3 +116,63 @@ input only after 250 ms of output quiescence. Bare Enter keeps the file, Space t
 it, and Ctrl-C reports the CLI's own exit 130 with whole-tree equality. It skips with a named reason
 on Windows or without a supported pty. The Linux focused run passed 3/3; the hosted macOS run is
 still required for the cross-platform receipt.
+
+### F4 — the release workflow has a separate W8 trusted-publishing blocker
+
+The Wave 7 audit checked the already-present release job without widening this phase into a
+publication change. npm's current
+[`trusted-publishers` documentation](https://docs.npmjs.com/trusted-publishers/) requires Node
+22.14 or newer, npm 11.5.1 or newer, and an exact GitHub `repository.url` in the package manifest.
+The workflow currently selects Node 22.12 without upgrading npm, and the client manifest lacks the
+repository block that the kit already has.
+
+**Deferred explicitly to W8.** Wave 7 does not publish, change release credentials or imply that
+OIDC was exercised. W8 must update and pin the release runtime/npm pair, add the client repository
+metadata, and then obtain the real trusted-publisher receipt after each package's manual first
+publish boundary.
+
+### F5 — `npm pack` failed during `prepare` on the Node 22.12 floor
+
+The first exact CI rehearsal found a runtime-dependent build seam. tsdown 0.22's automatic config
+loader uses native TypeScript loading on newer Node releases, but selects its optional `unrun`
+loader on Node 22.12. That peer is absent, and its current release requires Node 22.13 anyway, so
+adding it would have violated the client engine floor. Both packages therefore built and packed on
+Node 24/26 while `npm pack` failed on the supported minimum.
+
+**Resolved locally.** Both tsdown configs are plain ESM `.mjs` files and the build/prepare scripts
+select the native loader explicitly. A real Node 22.12 `npm pack` now runs `prepare` and produces
+both tarballs. The packed-consumer harness also accepts npm 10's lifecycle output before the JSON
+pack report instead of assuming stdout contains only JSON. The exact Node 22.12 manager matrix then
+passed npm 10.9.2, pnpm 10.30.1, Yarn 4.9.2 PnP and Bun 1.3.14.
+
+### F6 — package preparation and the full built tier cannot share `dist/`
+
+The first integrated rehearsal ran the opt-in packed-consumer test inside the ordinary full e2e
+glob. Its real `npm pack` invokes `prepare`, which cleans and rebuilds the shared package `dist/`
+while other test files are importing that same output. Eleven `MODULE_NOT_FOUND` failures followed;
+they were a concurrent test-isolation defect, not evidence that the active Node runtime could not
+load the package.
+
+**Resolved locally.** The packed-consumer file skips unless `MANTEEN_E2E_PM` names a manager, and CI
+runs it alone in the package-manager job. The ordinary built tier therefore sees one stable build,
+while the isolated smoke deliberately retains the real prepare lifecycle that consumers and
+publishers will execute.
+
+## Local integrated receipt — 2026-07-29
+
+The integrated branch has the following local evidence:
+
+- Source gates: `bun run test` passed 151 tests with 0 failures; `bun run typecheck`,
+  `bun run lint`, and `bun run guard` passed, including all 41 diagnostic vectors.
+- Built package: after one registry and CLI build, the complete e2e tier passed under exact Node
+  22.12.0, 24.18.1 and 26.5.1. Each run discovered 94 tests: 93 passed, 0 failed, and the sole skip
+  was the intentionally disabled packed-consumer smoke. All three Linux pty cases ran.
+- Packed consumer: exact Node 22.12.0 passed npm 10.9.2, pnpm 10.30.1, Yarn 4.9.2 PnP and Bun
+  1.3.14. Both package tarballs were produced through their real `prepare` scripts.
+- Workflow shape: `actionlint` 1.7.7 reported no findings. It was run in Docker, which validates
+  the workflow statically but is not macOS or Windows runtime evidence.
+
+This receipt does **not** close Wave 7. The configured GitHub-hosted macOS and Windows jobs have not
+run yet. In particular, local Linux cannot prove the native Windows `.cmd`/caret path or the macOS
+pty mechanism. The milestone must be committed before those jobs run, and pushing/opening the pull
+request remains a separate external action.

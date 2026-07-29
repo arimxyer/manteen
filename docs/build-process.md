@@ -145,3 +145,13 @@ A phase is done when its behaviour is observable, not when it compiles.
   ones that reach a user.
 - Unimplemented seams **refuse**, naming the missing module. They never no-op,
   because a silent no-op is indistinguishable from success.
+
+## Packing at the Node floor
+
+Both package configs are `tsdown.config.mjs`, and both build/prepare scripts pass
+`--config-loader native`. Keep those three facts together. tsdown 0.22's automatic loader chooses
+the optional `unrun` peer on Node 22.12, while newer Node releases can load TypeScript config
+natively. The result was a package that built under the maintainer's Node 26 but failed inside
+`npm pack` at the client's declared minimum. Plain ESM config plus the explicit native loader makes
+the prepare path identical across Node 22.12, 24 and 26 without adding a loader whose own engine is
+above the client floor.

@@ -18,27 +18,30 @@ and something a stranger can depend on, and how the remaining work is sequenced.
    `package.json` claims.
 
 Today: 1, 2 and the mechanical part of 6 are implemented and locally verified. W6 `init` is
-complete through its built-Node acceptance tier. The portability matrix, publication and
-release-grade documentation remain, so the tool is not yet something a stranger can install and
-depend on.
+complete through its built-Node acceptance tier. W7 is locally integrated across the runtime and
+package-manager matrix; its hosted macOS and Windows receipts remain. Publication and release-grade
+documentation also remain, so the tool is not yet something a stranger can install and depend on.
 
 ## Known gaps, by kind
 
 **Client.** W4's apply surface, W5's command set and W6 `init` are complete. W7 portability and
-runtime hardening is in progress under the frozen [`w7-hardening-handoff.md`](w7-hardening-handoff.md)
-matrix.
+runtime hardening is locally integrated under the frozen
+[`w7-hardening-handoff.md`](w7-hardening-handoff.md) matrix; the hosted macOS/Windows receipt is the
+remaining gate.
 
 **Commands.** `init`, `add`, `list`, `info`, `diff` and `update` ship. `search` does not exist and
 is not currently assigned to a wave; whether it belongs in v1 remains undecided.
 
-**Portability, untested.** Windows path separators, `.cmd` shims, and whether a `^` range
-survives argument quoting. Node 24 and 26. Yarn PnP degrades to `undeterminable` by design but
-has never run. `jsconfig`-only projects refuse — the refusal has never been read by a human.
+**Portability, hosted receipt pending.** The built tier passes locally on exact Node 22.12, 24 and
+26, and the packed-consumer harness passes npm, pnpm, Yarn PnP and Bun on the Node floor. Native
+Windows `.cmd`/caret behavior and the macOS pty path remain unproven until the configured hosted
+jobs run. `jsconfig`-only projects refuse — the refusal has never been read by a human.
 
 **Distribution.** Nothing is published. The kit has a changelog, the repository has a `0.x`
 version policy, and the release workflow requests npm provenance. The first publish still needs
-the manual bootstrap below; the client must then replace `workspace:*` with the published kit
-range.
+the manual bootstrap below. The client tarball already declares the publishable
+`manteen-kit@^0.1.0` range; W8 still owns the trusted-publishing prerequisites and real publication
+receipt.
 
 **Project hygiene.** The MIT license, Biome, Dependabot, editorconfig and rename are done.
 `SECURITY.md` and contributor ceremony remain deliberately deferred until the repository has
@@ -80,7 +83,8 @@ inventory contract, with `update` routed through the existing `plan()`/`apply()`
 writing files itself. W6 added finite framework detection, four AST adapters, bounded shared
 config transforms, an init-specific plan/apply contract, text/JSON CLI output and built-Node
 fixtures for Vite, both Next routers, their hybrid and React Router. A disposable full-app run then
-closed the generated-config-to-`list` seam and added exact legacy migration. W7 is next.
+closed the generated-config-to-`list` seam and added exact legacy migration. W7 is locally
+integrated and awaits its hosted portability receipt.
 
 W5 and W6 were independent tracks. Both are now complete, so W7 is hardening the full surface. W8
 must be last.
@@ -105,8 +109,8 @@ made Phase 3 work depends on a human reading the probe.
   and the receipt format are stable. `init` has now landed; W8 owns the explicit first-release
   version decision rather than this completed milestone changing package versions implicitly.
 - **Publish the kit ahead of the client.** It is finished, independently useful, and verified
-  as a consumer install. The client then depends on a published range rather than `workspace:*`,
-  which is the harder half of W8 done early and in isolation.
+  as a consumer install. The client now declares the publishable `manteen-kit@^0.1.0` range, so the
+  kit must exist before that client version can be installed from npm.
 - **Windows is best-effort.** Not a target; say so in the README rather than implying support.
   *Caveat worth keeping visible:* being a Node tool does not make it portable by itself —
   path separators, `.cmd` shims, and argument quoting around a `^` range all differ, and the
@@ -119,9 +123,11 @@ made Phase 3 work depends on a human reading the probe.
 
 ## Releasing
 
-`.github/workflows/release.yml` publishes on a per-package tag (`manteen-kit-v0.1.0`) using
-npm **trusted publishing over OIDC** — no stored token, and every published version carries a
-provenance attestation.
+`.github/workflows/release.yml` is designed to publish on a per-package tag
+(`manteen-kit-v0.1.0`) using npm **trusted publishing over OIDC** — no stored token, and every
+published version carries a provenance attestation. W7's audit found that the checked-in Node/npm
+pair is now below npm's trusted-publishing minimum and that the client lacks exact repository
+metadata. W8 must repair those two prerequisites before treating the workflow as executable.
 
 **The first release of each package cannot use it.** A trusted publisher is configured on a
 package's settings page on npmjs.com, and a package that has never been published has no

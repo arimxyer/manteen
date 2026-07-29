@@ -20,7 +20,7 @@
 ```
 packages/cli/
   package.json                      bin.mantine -> ./dist/cli.mjs; type module; engines.node >=22.12
-  tsdown.config.ts                  entry { index: src/index.ts, cli: src/cli/index.ts }, FLAT dist
+  tsdown.config.mjs                 entry { index: src/index.ts, cli: src/cli/index.ts }, FLAT dist
   README.md
   schema/mantine.schema.json        consumer config schema; $schema = http://json-schema.org/draft-07/schema#
   schema/mantine-item-meta.schema.json   meta.mantine (wire schema leaves `meta` open)
@@ -56,7 +56,11 @@ packages/cli/
   scripts/guard-runtime-apis.mjs    static guard over src/** and test/**
 ```
 
-`mantine-registry-kit` is a runtime `dependency` (`workspace:*`) and must stay **external**. Its `createWireValidator` resolves schemas via `resolve(import.meta.dirname, "..")` = the *kit's* package root (build-registry.ts:27). Bundling it repoints that at `packages/cli/` and throws ENOENT at runtime only.
+`manteen-kit@^0.1.0` is a runtime dependency and must stay **external**. Bun links the matching
+workspace package during development, while the packed manifest retains that publishable range.
+The kit's `createWireValidator` resolves schemas via `resolve(import.meta.dirname, "..")` = the
+*kit's* package root (build-registry.ts:27). Bundling it repoints that at `packages/cli/` and throws
+ENOENT at runtime only.
 
 ### Purity convention — stated once, binds every module
 
@@ -249,7 +253,7 @@ Exit convention extends the kit's (`src/cli/index.ts` exits 2 on unknown command
 
 ### Phase 0 — Skeleton, build, and the guards that make every later phase checkable
 
-**Ships:** `package.json`, `tsdown.config.ts` (copied from the kit including its flat-dist rationale comment), `README.md`, a commander program with `--version`/`--cwd` and one stub subcommand, `scripts/guard-runtime-apis.mjs`, `e2e/dist-shape.node-e2e.mjs`.
+**Ships:** `package.json`, `tsdown.config.mjs` (copied from the kit including its flat-dist rationale comment), `README.md`, a commander program with `--version`/`--cwd` and one stub subcommand, `scripts/guard-runtime-apis.mjs`, `e2e/dist-shape.node-e2e.mjs`.
 
 **Unblocks:** everything. The flat-dist + kit-external contract is what `schema/` resolution and `createWireValidator()` both depend on.
 
@@ -333,9 +337,14 @@ transactional apply, production ports and the text/JSON `manteen init` shell. Ti
 
 ### Phase 6 — Release hardening
 
-**Ships:** CI matrix (Node 22.12 / 24 / 26 running the e2e tier; `windows-latest` running one install to check `^` survival through `.cmd` shims), publish ordering (kit first; `workspace:*` rewritten to a real range), README.
+**Ships:** CI matrix (Node 22.12 / 24 / 26 running the built e2e tier; macOS at the Node floor;
+`windows-latest` running the tier plus one packed install to check `^` survival through `.cmd`
+shims), packed npm/pnpm/Yarn/Bun consumer smokes, publish ordering (kit first; the client declares
+the real `manteen-kit@^0.1.0` range), README.
 
-**Done when:** the e2e tier passes on all three Node versions, and a `npm pack` of `mantine-cli` installed into an empty temp dir can run `mantine add` against a `file:` registry.
+**Done when:** the e2e tier passes on all named Node/OS runners, and packed `manteen-kit` plus
+`manteen` installed into disposable consumers can run `manteen add` against a `file:` registry
+through npm, pnpm, Yarn PnP and Bun. Windows must exercise its native `.cmd` shim.
 
 ---
 
@@ -352,8 +361,8 @@ node <repo>/packages/cli/dist/cli.mjs add @base/empty-state
 
 **Files to write (in order):**
 
-1. `packages/cli/package.json` — `type: module`, `engines.node >=22.12`, `bin.manteen`, `exports` with `.mjs`/`.d.mts` and `"./schema"`, `files: ["dist","schema","README.md"]`. Deps for the slice: `manteen-kit` (`workspace:*`), `commander ^15`, `ajv ^8`, `get-tsconfig ^4.14`. Dev: `tsdown`, `@types/bun`. *(No `@types/diff` — diff@9 ships its own types. `@types/semver` is required when semver lands in phase 3.)*
-2. `packages/cli/tsdown.config.ts` — verbatim from the kit's, with `entry: { index: "src/index.ts", cli: "src/cli/index.ts" }`.
+1. `packages/cli/package.json` — `type: module`, `engines.node >=22.12`, `bin.manteen`, `exports` with `.mjs`/`.d.mts` and `"./schema"`, `files: ["dist","schema","README.md"]`. Deps for the slice: `manteen-kit` (`^0.1.0`; Bun links the matching workspace package locally), `commander ^15`, `ajv ^8`, `get-tsconfig ^4.14`. Dev: `tsdown`, `@types/bun`. *(No `@types/diff` — diff@9 ships its own types. `@types/semver` is required when semver lands in phase 3.)*
+2. `packages/cli/tsdown.config.mjs` — verbatim from the kit's, with `entry: { index: "src/index.ts", cli: "src/cli/index.ts" }`.
 3. `packages/cli/schema/mantine.schema.json` — draft-07 with the **`http://`** dialect id (so no `delete schema.$schema` workaround is needed; only the kit's *vendored wire* schema declares the `https://` form). `additionalProperties: false`. Properties: `$schema?`, `registries` (keys `^@[a-z0-9-]+$`; values are either the `{name}` URL template or an object with required `url` plus optional `index`/`headers`/`params`), `aliases` (all four of `components`/`ui`/`hooks`/`lib` required), `theme?`, `tsconfig?`, `resolutions?`.
 4. `src/config/types.ts` — `MantineConfig`, `RegistrySource`, `AliasKey`, `LoadedConfig`, `ConfigError` (carries `pointer` + `hint`).
 5. `src/config/aliases.ts` — pure. Exports:
