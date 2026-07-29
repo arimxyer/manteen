@@ -25,7 +25,8 @@ depend on.
 ## Known gaps, by kind
 
 **Client.** W4's apply surface, W5's command set and W6 `init` are complete. W7 portability and
-runtime hardening is next.
+runtime hardening is in progress under the frozen [`w7-hardening-handoff.md`](w7-hardening-handoff.md)
+matrix.
 
 **Commands.** `init`, `add`, `list`, `info`, `diff` and `update` ship. `search` does not exist and
 is not currently assigned to a wave; whether it belongs in v1 remains undecided.
@@ -81,7 +82,7 @@ config transforms, an init-specific plan/apply contract, text/JSON CLI output an
 fixtures for Vite, both Next routers, their hybrid and React Router. A disposable full-app run then
 closed the generated-config-to-`list` seam and added exact legacy migration. W7 is next.
 
-W5 and W6 were independent tracks. Both are now complete, so W7 can harden the full surface. W8
+W5 and W6 were independent tracks. Both are now complete, so W7 is hardening the full surface. W8
 must be last.
 
 ## On one large program workflow
