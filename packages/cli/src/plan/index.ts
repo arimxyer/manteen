@@ -37,13 +37,13 @@ import { checkReceipt } from "../gates/receipt";
 import { aggregate } from "../gates/report";
 import { installedVersion, resolveMantineInstall } from "../gates/resolve-mantine-install";
 import { reportStylesApi } from "../gates/styles-api";
+import { indexSourceFor } from "../inventory/available";
 import { createReceiptReader, createReceiptValidator } from "../receipt/load";
 import { toReceiptPath } from "../receipt/path";
 import { buildIndex, ownerOf, readReceipt } from "../receipt/read";
 import { diag } from "./diagnostics";
 import { createHttpLoader, type IndexResolver, type IndexSource, isHttpUrl } from "./loader-http";
 import { createFileLoader, isFileUrl } from "./loader-local";
-import { expandVars } from "./registry-source";
 import { resolve as resolveGraph } from "./resolve";
 import { foldTheme } from "./theme-fold";
 import type {
@@ -84,7 +84,7 @@ async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptio
   // reaches for `process.env` itself is unreachable from a test that sets one.
   const env = loadEnv(root);
 
-  const ports: ResolvePorts = { load: createLoader(config, env), target: config.target, env };
+  const ports: ResolvePorts = { load: createItemLoader(config, env), target: config.target, env };
   const graph = await resolveGraph(ports, config, refs);
 
   const diagnostics: Diagnostic[] = [...graph.diagnostics];
@@ -270,8 +270,17 @@ async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptio
  * unrecognised scheme is how `s3://bucket/{name}.json` becomes "no such file or
  * directory" — a message about the wrong problem entirely. It says which scheme
  * was seen and which three exist.
+ *
+ * EXPORTED for `commands/info.ts`, which fetches one item document without
+ * planning a graph. It had re-expressed this function, its index resolver and
+ * its `unsupportedScheme` because all three were private here — three copies of
+ * "how does manteen fetch an item", which is exactly how `info` and `add` come
+ * to disagree about what a `s3:` URL or a 404 means.
  */
-function createLoader(config: LoadedConfig, env: Record<string, string | undefined>): ItemLoader {
+export function createItemLoader(
+  config: LoadedConfig,
+  env: Record<string, string | undefined>,
+): ItemLoader {
   const file = createFileLoader();
   const http = createHttpLoader({ index: indexResolverFor(config, env) });
 
@@ -308,20 +317,20 @@ function unsupportedScheme(redactedUrl: string): string {
  * D21's per-registry `index`, resolved for whichever registry produced a
  * request, with `${VAR}` expanded.
  *
+ * DELEGATES to the ONE implementation, `inventory/available.ts`'s
+ * `indexSourceFor` — "what is this registry's index request": the URL, the
+ * headers, the `params` a registry that authenticates by query parameter needs
+ * on its index too, and the rule that a request with an unexpanded `${VAR}` in
+ * it never goes out. This function used to carry its own copy of all four; two
+ * implementations of "which index is this" is how the listing and the
+ * did-you-mean come to disagree about which registry was even asked.
+ *
+ * `IndexRequest` is structurally a superset of `IndexSource` (`url` +
+ * `headers`), so it satisfies the loader contract unchanged.
+ *
  * The loader is handed `ItemRequest`s and has no idea which registry produced
- * one; the config does. Expansion happens here rather than there because the
- * loader deliberately has no `env` — a module that cannot see the environment
- * cannot leak it.
- *
- * `expandVars` from `registry-source.ts`, NOT `expandEnv` from `config/env.ts`:
- * the two disagree about an empty value (one counts it missing, the other
- * counts it set), and the item path uses the former. A registry whose token is
- * set to "" must not get an item-path `missing-env` refusal alongside an index
- * request that goes out with a bare `Bearer `.
- *
- * `null` on ANY unset variable, in the URL, a header or a param — the loader
- * guards this too, but a did-you-mean is a nicety and a request with a hole in
- * it published to a registry's access log is not.
+ * one; the config does. Expansion stays out of the loader for the same reason
+ * as before — a module that cannot see the environment cannot leak it.
  */
 function indexResolverFor(
   config: LoadedConfig,
@@ -333,34 +342,13 @@ function indexResolverFor(
     if (namespace === null) return null;
 
     const registry = config.registries.get(namespace);
-    if (registry === undefined || registry.index === null) return null;
+    if (registry === undefined) return null;
 
-    const base = expandVars(registry.index, env);
-    if (base.missing.length > 0) return null;
-
-    const headers: Record<string, string> = {};
-    for (const [key, template] of Object.entries(registry.headers)) {
-      const value = expandVars(template, env);
-      if (value.missing.length > 0) return null;
-      headers[key] = value.text;
-    }
-
-    // `params` are documented as appended to every request to the registry, and
-    // the index is one — a registry that authenticates by query parameter would
-    // otherwise 401 its own index and the did-you-mean would vanish silently.
-    const query: string[] = [];
-    for (const [key, template] of Object.entries(registry.params)) {
-      const value = expandVars(template, env);
-      if (value.missing.length > 0) return null;
-      query.push(`${encodeURIComponent(key)}=${encodeURIComponent(value.text)}`);
-    }
-
-    const url =
-      query.length === 0
-        ? base.text
-        : `${base.text}${base.text.includes("?") ? "&" : "?"}${query.join("&")}`;
-
-    return { url, headers };
+    // `no-index` and `missing-env` both degrade to silence here: a
+    // did-you-mean is a nicety, and a request with a hole in it published to a
+    // registry access log is not.
+    const source = indexSourceFor(registry, env);
+    return source.ok ? source.request : null;
   };
 }
 

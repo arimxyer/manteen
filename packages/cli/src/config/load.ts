@@ -77,17 +77,42 @@ const MINIMAL_CONFIG: MantineConfig = {
  * (`scripts/guard-runtime-apis.mjs` scans comments too, which is why the wrong
  * spelling is described here rather than written out.)
  *
- * The `..` is correct only because dist is FLAT: `dist/index.mjs` and
- * `dist/cli.mjs` sit one level below the package root, so `../schema` is the
- * package's `schema/`.
+ * `../schema` is correct only because dist is FLAT: `dist/index.mjs` and
+ * `dist/cli.mjs` sit one level below the package root, so it resolves to the
+ * package's `schema/`. `../../schema` is the same directory reached from
+ * `src/config/`, which is what makes this module loadable FROM SOURCE — under
+ * `bun test`, or from any script that imports `src/` rather than `dist/`.
+ *
+ * The candidate list mirrors `plan/validate-item.ts`, which has had both since
+ * it was written. This file had only the first, and the consequence was not
+ * cosmetic: `loadConfig` threw ENOENT before anything else could run, so no
+ * command module could be exercised without building first — three of the four
+ * W5 agents hit it independently and worked around it with a temporary
+ * `src/schema` symlink.
  */
-const SCHEMA_PATH = resolve(import.meta.dirname, "../schema/manteen.schema.json");
+const SCHEMA_CANDIDATES = ["../schema", "../../schema"] as const;
+const SCHEMA_FILE = "manteen.schema.json";
 
 let validator: ConfigValidator | undefined;
 
 function configValidator(): ConfigValidator {
-  validator ??= createConfigValidator(JSON.parse(readFileSync(SCHEMA_PATH, "utf8")) as object);
+  validator ??= createConfigValidator(readSchema());
   return validator;
+}
+
+function readSchema(): object {
+  let lastError: unknown;
+  for (const candidate of SCHEMA_CANDIDATES) {
+    try {
+      const path = resolve(import.meta.dirname, candidate, SCHEMA_FILE);
+      return JSON.parse(readFileSync(path, "utf8")) as object;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw new Error(
+    `${SCHEMA_FILE} is missing from the manteen package (looked in ${SCHEMA_CANDIDATES.join(" and ")} relative to ${import.meta.dirname}): ${String(lastError)}`,
+  );
 }
 
 function fail(errors: ConfigError[]): ConfigLoadResult {

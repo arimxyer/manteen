@@ -4,6 +4,14 @@
  * consequence: it loads config, calls `plan()`, prints what came back, calls
  * `apply()`, and prints what happened.
  *
+ * PRESENTATION lives in `cli/render.ts` and not here. It used to: `display`,
+ * `renderDiagnostic`, `renderConfigError`, `renderThrown`, `renderDryRun` and
+ * `renderOutcome` were private to this module, which meant every W5 command
+ * either copied them (`info` copied three verbatim) or asked for one to be
+ * passed in (`diff` had to — this module has a shebang and RUNS a program on
+ * import, so nothing may import it). They are now in a leaf module that all five
+ * shells share. What stays here is argv, flags, and the exit code.
+ *
  * Exit convention, extending the kit's (`packages/registry-kit/src/cli/index.ts`
  * exits 2 on an unknown command):
  *
@@ -17,19 +25,33 @@
  * refusal computed from a Plan is 1.
  */
 import { readFileSync } from "node:fs";
-import { relative, resolve, sep } from "node:path";
+import { resolve } from "node:path";
 
 import { Command, CommanderError } from "commander";
-import { createPatch } from "diff";
 import { packageManagers } from "nypm";
 
 import { apply } from "../apply/index";
-import { loadConfig } from "../config/load";
-import type { ConfigError } from "../config/types";
+import type { DiffFlags } from "../commands/diff";
+import { runDiff } from "../commands/diff";
+import type { InfoFlags } from "../commands/info";
+import { runInfo } from "../commands/info";
+import type { ListFlags } from "../commands/list";
+import { runList } from "../commands/list";
+import type { UpdateFlags } from "../commands/update";
+import { runUpdate } from "../commands/update";
 import { blockingExitCode } from "../plan/diagnostics";
 import { plan } from "../plan/index";
-import type { ApplyOptions, ApplyOutcome, Diagnostic, Plan, PlanOptions } from "../plan/types";
+import type { ApplyOptions, ApplyOutcome, Plan, PlanOptions } from "../plan/types";
 import { interactiveFromProcess } from "../ui";
+import {
+  loadProjectConfig,
+  PROCESS_STREAMS,
+  renderApplyFailure,
+  renderDiagnostics,
+  renderDryRun,
+  renderOutcome,
+  renderThrown,
+} from "./render";
 
 const EXIT_OK = 0;
 const EXIT_REFUSED = 1;
@@ -48,168 +70,6 @@ const { version } = JSON.parse(
 
 /** Derived from nypm rather than hardcoded, so a new manager arrives with an upgrade. */
 const PACKAGE_MANAGER_NAMES: string[] = [...new Set(packageManagers.map((pm) => pm.name))];
-
-// ---- rendering --------------------------------------------------------------
-// Deliberately private. `gates/report.ts` and `apply/report.ts` own aggregation
-// (computing `ok`, ordering diagnostics); presentation is the shell's job and
-// lives where the streams are chosen. If either of those grows a renderer, these
-// three functions are what it replaces.
-
-/**
- * Root-relative and POSIX, so output is identical on Windows.
- *
- * `Diagnostic.path` carries either a filesystem path or a registry URL, and
- * path logic mangles the latter — `relative()` collapses `https://` into
- * `https:/`, so a `fetch-failed` printed a URL that 404s when copy-pasted.
- */
-function display(pathOrUrl: string, root: string): string {
-  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(pathOrUrl)) return pathOrUrl;
-  return relative(root, pathOrUrl).split(sep).join("/");
-}
-
-/**
- * `severity  code  ids` on the first line, then path and message indented.
- *
- * The code is printed rather than only the prose because it is the stable
- * handle: e2e assertions and user bug reports both grep for `target-collision`,
- * and `Diagnostic.message` is free to be reworded.
- */
-function renderDiagnostic(diagnostic: Diagnostic, root: string): string {
-  const ids = diagnostic.items?.length ? `  ${diagnostic.items.join(", ")}` : "";
-  const lines = [`${diagnostic.severity}  ${diagnostic.code}${ids}`];
-  if (diagnostic.path) lines.push(`  ${display(diagnostic.path, root)}`);
-  for (const line of diagnostic.message.split("\n")) lines.push(`  ${line}`);
-  return `${lines.join("\n")}\n`;
-}
-
-/** Widest verb in either vocabulary — `identical`, `overwrite`, `unchanged`. */
-const VERB_WIDTH = 9;
-
-/**
- * What `--dry-run` prints: `Disposition`, which is what plan() PREDICTED.
- *
- * Read off the Plan rather than off `ApplyOutcome.files`, because under D19 the
- * outcome's `WriteResult` describes writes that were never attempted.
- */
-function renderDryRun(planned: Plan): string {
-  const lines = planned.files.map(
-    (file) => `${file.disposition.padEnd(VERB_WIDTH)}  ${display(file.destination, planned.root)}`,
-  );
-  if (planned.theme) {
-    const verb = planned.theme.changed ? "merge" : "unchanged";
-    lines.push(`${verb.padEnd(VERB_WIDTH)}  ${display(planned.theme.destination, planned.root)}`);
-  }
-  lines.push("", "Dry run — nothing was written.");
-
-  const patch = themePatch(planned);
-  if (patch !== null) lines.push("", patch);
-
-  return `${lines.join("\n")}\n`;
-}
-
-/**
- * The theme merge, as a unified diff.
- *
- * A dry run can show every other decision as one verb per destination, but
- * `merge  src/lib/theme.ts` is the one line that hides its whole content: the
- * fold is the only thing manteen does that REWRITES a file the user wrote, and
- * "merge" alone gives no way to see what it kept. So the theme — and only the
- * theme — gets its content previewed.
- *
- * FULL CONTEXT rather than the usual three lines, up to a bound. Three lines
- * around a `components.Table` insertion shows the tail of the entry above it and
- * nothing else, which answers "what was added" while leaving "what survived"
- * — the question a user with a hand-edited theme actually has — unanswered. A
- * theme is one small file, so printing it whole is affordable and is the point.
- * `MAX_FULL_CONTEXT` keeps a pathological theme from flooding the terminal.
- *
- * Reads the base off disk rather than from the Plan: `PlannedTheme` carries the
- * base's `sha256` but not its text (`plan/types.ts` is frozen), and the fold
- * itself needs only the hash. A re-read is safe here because this renders a
- * PREVIEW — a file that changed since `plan()` makes the diff stale, never
- * wrong, and the real run's preflight refuses on exactly that drift.
- */
-const MAX_FULL_CONTEXT = 400;
-
-function themePatch(planned: Plan): string | null {
-  const theme = planned.theme;
-  if (theme === null || !theme.changed) return null;
-
-  // `base === null` is a theme being created, so the "before" side is empty and
-  // every line renders as an addition — which is the truth.
-  let before = "";
-  if (theme.base !== null) {
-    try {
-      before = readFileSync(theme.destination, "utf8");
-    } catch {
-      // Unreadable between plan() and here. The preview degrades to nothing
-      // rather than to a diff against "" that would claim the whole file is new.
-      return null;
-    }
-  }
-
-  const label = display(theme.destination, planned.root);
-  const lineCount = before.split("\n").length;
-  const patch = createPatch(label, before, theme.text, "on disk", "after merge", {
-    context: lineCount <= MAX_FULL_CONTEXT ? lineCount : 3,
-  });
-
-  // jsdiff prefixes every patch with `Index: <file>` and a rule of `=`, which is
-  // an RCS artifact and not part of a unified diff. The `---`/`+++`/`@@` body is.
-  return patch.split("\n").slice(2).join("\n").trimEnd();
-}
-
-/** What a real run prints: `WriteResult`, which is what apply() OBSERVED. */
-function renderOutcome(outcome: ApplyOutcome, root: string): string {
-  const lines = outcome.files.map(
-    (file) => `${file.result.padEnd(VERB_WIDTH)}  ${display(file.destination, root)}`,
-  );
-  if (outcome.theme) {
-    const verb = outcome.theme.written ? "written" : "unchanged";
-    lines.push(`${verb.padEnd(VERB_WIDTH)}  ${display(outcome.theme.path, root)}`);
-  }
-  if (outcome.receipt.written) {
-    lines.push(`${"written".padEnd(VERB_WIDTH)}  ${display(outcome.receipt.path, root)}`);
-  }
-  // `installed` unconditionally, because `dependencies.command` is what apply
-  // RAN and `install-deps.ts` only appends a batch to it AFTER that batch
-  // returned — so a non-null command names batches that landed, even on the
-  // partial-install failure where `dependencies.installed` is false. The old
-  // `installed ? … : "skipped"` printed `skipped  npm install @mantine/core@^9`
-  // for a command that had already rewritten the user's package.json, which is
-  // the same class of misreport as a `written` line for a rolled-back file.
-  // Nothing ran ⇒ `command` is null ⇒ no line at all.
-  if (outcome.dependencies.command) {
-    lines.push(`${"installed".padEnd(VERB_WIDTH)}  ${outcome.dependencies.command}`);
-  }
-  return lines.length > 0 ? `${lines.join("\n")}\n` : "";
-}
-
-/**
- * Same three-part head as a diagnostic — `severity  subject  where` — so config
- * failures and plan failures read alike. `hint` is separated by a blank line
- * because it is the user's next action, not more description of the problem.
- */
-function renderConfigError(error: ConfigError): string {
-  // `pointer` is a JSON Pointer (`/aliases/ui`) and is the empty string when the
-  // problem is the file as a whole, which would otherwise print a dangling head.
-  const lines = [error.pointer ? `error  config  ${error.pointer}` : "error  config"];
-  for (const line of error.message.split("\n")) lines.push(`  ${line}`);
-  if (error.hint) {
-    lines.push("");
-    for (const line of error.hint.split("\n")) lines.push(`  ${line}`);
-  }
-  return `${lines.join("\n")}\n`;
-}
-
-/** A throw, as opposed to a returned failure — a bug, or an fs error nobody anticipated. */
-function renderThrown(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
-  return `${message
-    .split("\n")
-    .map((line) => `  ${line}`)
-    .join("\n")}\n`;
-}
 
 // ---- add --------------------------------------------------------------------
 
@@ -257,29 +117,15 @@ async function runAdd(refs: string[], flags: AddFlags, command: Command): Promis
       : undefined;
 
   const interactive = interactiveFromProcess({ yes: Boolean(flags.yes) });
-  const root = resolve(flags.cwd);
 
-  /**
-   * `loadConfig` reports failure by returning, not by throwing — every problem
-   * it can find is one the user authored, and there can be several at once
-   * (three unbacked aliases are three edits). The try/catch is for the other
-   * kind: an EACCES on `tsconfig.json`, or a bug. Both are still exit 2, because
-   * both happened before there was a Plan to refuse.
-   */
-  let loaded: ReturnType<typeof loadConfig>;
-  try {
-    loaded = loadConfig(root);
-  } catch (error) {
-    process.stderr.write("error  config\n");
-    process.stderr.write(renderThrown(error));
-    return EXIT_USAGE;
-  }
-
-  if (!loaded.ok) {
-    for (const configError of loaded.errors) process.stderr.write(renderConfigError(configError));
-    return EXIT_USAGE;
-  }
-
+  // `loadProjectConfig` is the shared implementation of the exit-2 boundary:
+  // `loadConfig` reports authored problems by RETURNING (there can be several at
+  // once — three unbacked aliases are three edits) while an EACCES on
+  // `tsconfig.json` still throws, and both are 2 because both happened before
+  // there was a Plan to refuse. All five shells go through it, so a config
+  // failure looks the same whichever command hit it.
+  const loaded = loadProjectConfig(flags.cwd, PROCESS_STREAMS.stderr);
+  if (!loaded.ok) return loaded.exit;
   const config = loaded.config;
 
   // Validated here rather than in `plan()` because an unknown name is a usage
@@ -310,9 +156,7 @@ async function runAdd(refs: string[], flags: AddFlags, command: Command): Promis
     return EXIT_REFUSED;
   }
 
-  for (const diagnostic of planned.diagnostics) {
-    process.stderr.write(renderDiagnostic(diagnostic, planned.root));
-  }
+  renderDiagnostics(planned.diagnostics, planned.root, PROCESS_STREAMS.stderr);
 
   // `plan.ok` already has --force folded in; apply() reads it and never
   // re-derives a verdict, so neither does the shell. The exit CODE is a separate
@@ -342,15 +186,7 @@ async function runAdd(refs: string[], flags: AddFlags, command: Command): Promis
   // that reads as a real install.
   process.stdout.write(flags.dryRun ? renderDryRun(planned) : renderOutcome(outcome, planned.root));
 
-  if (outcome.failure) {
-    process.stderr.write(`error  ${outcome.failure.kind}\n`);
-    for (const line of outcome.failure.message.split("\n")) {
-      process.stderr.write(`  ${line}\n`);
-    }
-    for (const path of outcome.failure.paths ?? []) {
-      process.stderr.write(`  ${display(path, planned.root)}\n`);
-    }
-  }
+  process.stderr.write(renderApplyFailure(outcome, planned.root));
 
   return outcome.ok ? EXIT_OK : EXIT_REFUSED;
 }
@@ -383,6 +219,77 @@ program
   .option("--pm <name>", "override package-manager detection (npm, pnpm, yarn, bun, deno)")
   .action(async (refs: string[], flags: AddFlags, command: Command) => {
     process.exitCode = await runAdd(refs, flags, command);
+  });
+
+/**
+ * The four read-and-maintain commands.
+ *
+ * Registered AFTER `.exitOverride()` for the reason stated on it: a subcommand
+ * copies the exit callback from its parent at CREATION time, so a command built
+ * before that call would exit commander's default 1 on its own usage errors
+ * instead of our 2. Order among the four is presentational only.
+ *
+ * `--cwd` carries commander's `process.cwd()` default on every one of them. It
+ * is not decoration: each `run*` takes a REQUIRED `cwd: string` and
+ * `resolve(undefined)` throws, so an omitted default is a crash on the bare
+ * invocation rather than a defaulted one.
+ *
+ * The bodies live in `src/commands/`; nothing below does more than name flags
+ * and hand the exit code to `process.exitCode`.
+ */
+
+program
+  .command("list")
+  .description("list what the configured registries offer, and what is installed")
+  .argument("[namespaces...]", "limit the listing to these registries, e.g. @house")
+  .option("--cwd <dir>", "project directory containing manteen.json", process.cwd())
+  .option("--json", "emit the listing and its notes as one JSON document")
+  .action(async (namespaces: string[], flags: ListFlags) => {
+    process.exitCode = await runList(namespaces, flags);
+  });
+
+program
+  .command("info")
+  .description("show everything known about one registry item")
+  .argument("<ref>", "a qualified item name, e.g. @house/data-table")
+  .option("--cwd <dir>", "project directory containing manteen.json", process.cwd())
+  .option("--json", "emit the report as one JSON document")
+  .action(async (ref: string, flags: InfoFlags) => {
+    process.exitCode = await runInfo(ref, flags);
+  });
+
+program
+  .command("diff")
+  .description("compare installed files against the registry and against what manteen wrote")
+  .argument("[refs...]", "item ids to compare; omit for every installed item")
+  .option("--cwd <dir>", "project directory containing manteen.json", process.cwd())
+  .option("--json", "emit the comparison as one JSON document")
+  .option("--stat", "summary only; compute no patches")
+  .action(async (refs: string[], flags: DiffFlags) => {
+    process.exitCode = await runDiff(refs, flags);
+  });
+
+program
+  .command("update")
+  .description("re-fetch installed items and re-apply them")
+  .argument("[refs...]", "item ids to update; omit for every directly-installed item")
+  .option("--cwd <dir>", "project directory containing manteen.json", process.cwd())
+  .option("--all", "also update items installed only as dependencies; promotes them to direct")
+  .option("--dry-run", "plan and preflight only; write nothing")
+  .option("--force", "downgrade forceable refusals to warnings; never silences them")
+  .option("--json", "emit the result as one JSON document")
+  // Worded as an obligation rather than a nicety: without one of these three, a
+  // NON-INTERACTIVE update refuses essentially always, because every file it
+  // would change is a `destination-exists` error at error severity. `--dry-run`
+  // does not exempt it — `dryRun` lives on `ApplyOptions` and `plan()` never
+  // sees it — so a CI preview needs `--overwrite` too. Interactive is fine
+  // either way: the same gate downgrades to `info` when there is a prompt.
+  .option("--overwrite", "replace changed files without asking (required in CI)")
+  .option("--no-overwrite", "keep existing files without asking")
+  .option("-y, --yes", "assume yes at every prompt; implies --overwrite")
+  .option("--pm <name>", "override package-manager detection (npm, pnpm, yarn, bun, deno)")
+  .action(async (refs: string[], flags: UpdateFlags, command: Command) => {
+    process.exitCode = await runUpdate(refs, flags, command);
   });
 
 /**
