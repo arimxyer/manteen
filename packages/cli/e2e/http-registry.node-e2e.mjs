@@ -36,6 +36,7 @@ import { after, test } from "node:test";
 
 import { compileRegistry, writeRegistry } from "manteen-kit";
 
+import { childEnv } from "./helpers/child-env.mjs";
 import {
   MALFORMED_MOUNT,
   OVERSIZE_MOUNT,
@@ -212,13 +213,10 @@ function makeProject(registries) {
  * server to starve.
  */
 async function run(project, args, env = {}) {
-  const childEnv = { ...process.env, CI: "true", NO_COLOR: "1", ...env };
-  for (const [key, value] of Object.entries(env)) {
-    if (value === undefined) delete childEnv[key];
-  }
+  const resolvedEnv = childEnv(env);
 
   const result = await new Promise((settle, fail) => {
-    const child = spawn(process.execPath, [CLI, ...args], { cwd: project, env: childEnv });
+    const child = spawn(process.execPath, [CLI, ...args], { cwd: project, env: resolvedEnv });
     let out = "";
     let err = "";
     child.stdout.setEncoding("utf8");

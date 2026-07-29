@@ -34,6 +34,7 @@ import { pathToFileURL } from "node:url";
 // Resolves through the workspace symlink into packages/registry-kit/dist. If
 // this throws ERR_MODULE_NOT_FOUND the kit has not been built.
 import { compileRegistry, writeRegistry } from "manteen-kit";
+import { childEnv } from "./helpers/child-env.mjs";
 
 const PKG_ROOT = resolve(import.meta.dirname, "..");
 const REPO_ROOT = resolve(PKG_ROOT, "..", "..");
@@ -168,7 +169,7 @@ function run(project, args) {
     // `CI=true`, not `CI=1`: D14's predicate is an exact string comparison, so
     // `CI=1` would leave the child on the interactive branch, where a prompt
     // against a piped stdin hangs until the test times out.
-    env: { ...process.env, CI: "true", NO_COLOR: "1" },
+    env: childEnv(),
   });
   return {
     status: result.status,

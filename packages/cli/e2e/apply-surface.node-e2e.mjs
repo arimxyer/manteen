@@ -67,6 +67,7 @@ import { after, test } from "node:test";
 import { pathToFileURL } from "node:url";
 
 import { compileRegistry, writeRegistry } from "manteen-kit";
+import { childEnv } from "./helpers/child-env.mjs";
 
 const PKG_ROOT = resolve(import.meta.dirname, "..");
 const REPO_ROOT = resolve(PKG_ROOT, "..", "..");
@@ -225,7 +226,7 @@ function run(project, args, env = {}) {
     cwd: project,
     encoding: "utf8",
     // `CI=true`, not `CI=1`: D14's predicate is an exact string comparison.
-    env: { ...process.env, CI: "true", NO_COLOR: "1", ...env },
+    env: childEnv(env),
     // A prompt reached in a non-interactive run would block forever; the timeout
     // turns "it hung" into a failed assertion instead of a dead test run.
     timeout: 60_000,

@@ -52,6 +52,7 @@ import { after, test } from "node:test";
 import { pathToFileURL } from "node:url";
 
 import { compileRegistry, writeRegistry } from "manteen-kit";
+import { childEnv } from "./helpers/child-env.mjs";
 
 const PKG_ROOT = resolve(import.meta.dirname, "..");
 const REPO_ROOT = resolve(PKG_ROOT, "..", "..");
@@ -219,7 +220,7 @@ function run(project, args) {
     // `CI=true`, not `CI=1`: D14's predicate is an exact string comparison, and
     // `CI=1` leaves the child on the interactive branch, where a prompt against
     // a piped stdin hangs until the test times out.
-    env: { ...process.env, CI: "true", NO_COLOR: "1" },
+    env: childEnv(),
   });
   return {
     status: result.status,
