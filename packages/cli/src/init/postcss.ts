@@ -46,7 +46,7 @@ const NEW_CONFIG = `module.exports = {
 };
 `;
 
-const GENERIC_CANDIDATES = [
+export const GENERIC_POSTCSS_CANDIDATES = [
   "package.json",
   ".postcssrc",
   ".postcssrc.json",
@@ -68,7 +68,7 @@ const GENERIC_CANDIDATES = [
 
 // Verified against Next 16.2.12's findConfigPath. The differing mjs/cjs order
 // is the reason this list is not shared with postcss-load-config's.
-const NEXT_CANDIDATES = [
+export const NEXT_POSTCSS_CANDIDATES = [
   "package.json",
   ".postcssrc.json",
   "postcss.config.json",
@@ -99,6 +99,10 @@ function isNext(framework: InitFrameworkSet): boolean {
   );
 }
 
+export function postcssCandidatePaths(framework: InitFrameworkSet): readonly string[] {
+  return isNext(framework) ? NEXT_POSTCSS_CANDIDATES : GENERIC_POSTCSS_CANDIDATES;
+}
+
 function jsonObject(source: string): Record<string, unknown> | null {
   try {
     const parsed: unknown = JSON.parse(source);
@@ -111,7 +115,7 @@ function jsonObject(source: string): Record<string, unknown> | null {
 }
 
 function locate(project: InitProjectSnapshot, framework: InitFrameworkSet): LocatedConfig | null {
-  const candidates = isNext(framework) ? NEXT_CANDIDATES : GENERIC_CANDIDATES;
+  const candidates = postcssCandidatePaths(framework);
 
   for (const relative of candidates) {
     const path = join(project.layout.root, relative);
