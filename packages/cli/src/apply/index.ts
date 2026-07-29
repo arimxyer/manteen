@@ -32,6 +32,7 @@
 // for, so the path moved rather than the design.
 import { mergeReceipt, serializeReceipt } from "../receipt/write";
 import type { ApplyFn, ApplyOptions, ApplyOutcome, Plan, WriteResult } from "../plan/types";
+import { installDeps } from "./install-deps";
 import { createJournal } from "./journal";
 import { preflight } from "./preflight";
 import { writeFiles } from "./write-files";
@@ -86,24 +87,18 @@ function overwriteSeamMessage(destination: string, options: ApplyOptions): strin
 }
 
 /**
- * The phases that have no implementation yet, checked BEFORE the journal opens
- * so a throw can never be caught by the unwind and mislabeled `write-failed`.
+ * The one phase that still has no implementation, checked BEFORE the journal
+ * opens so a throw can never be caught by the unwind and mislabeled
+ * `write-failed`.
  *
- * These are `throw`, not a fifth `ApplyFailureKind`. The four kinds are runtime
- * outcomes a user can act on; "this build of apply has no theme writer but was
- * handed a plan with a changed theme" is a composition bug in our own wiring,
- * and giving it a user-facing refusal code would put it in the refusal table.
+ * Phase 2's row is gone from here because `src/apply/install-deps.ts` landed;
+ * this is now phase 4 alone. It is a `throw`, not a fifth `ApplyFailureKind`:
+ * the four kinds are runtime outcomes a user can act on, while "this build of
+ * apply has no theme writer but was handed a plan with a changed theme" is a
+ * composition bug in our own wiring, and giving it a user-facing refusal code
+ * would put it in the refusal table.
  */
 function assertPhasesWired(plan: Plan): void {
-  if (plan.dependencies.length > 0) {
-    throw new Error(
-      `apply: the plan wants ${plan.dependencies.length} npm dependenc${plan.dependencies.length === 1 ? "y" : "ies"} ` +
-        `installed and phase 2 (src/apply/install-deps.ts) has not landed. Deps must precede the file ` +
-        `writes — components importing a package that is not installed is the failure that ordering ` +
-        `exists to prevent — so this refuses instead of writing them first.`,
-    );
-  }
-
   if (plan.theme !== null && plan.theme.changed) {
     throw new Error(
       `apply: the plan folds a theme into ${plan.theme.destination} and phase 4 ` +
@@ -156,12 +151,11 @@ async function applyPlan(plan: Plan, options: ApplyOptions): Promise<ApplyOutcom
   // structurally cannot report. The decisions ride out so the preview can show
   // what each destination would get.
   //
-  // It returns ABOVE the seam checks deliberately. Those exist to stop a run
-  // that would mutate the tree from silently skipping a phase; a dry run mutates
-  // nothing, so refusing one would break the previews the plan's own done-when
-  // criteria are written in — every catalog item declares `@mantine/core@^9`, so
-  // `assertPhasesWired` above this line makes `--dry-run` throw on every real
-  // command.
+  // It returns ABOVE both the seam check and the install deliberately. The
+  // check exists to stop a run that would mutate the tree from silently
+  // skipping a phase, and a dry run mutates nothing; `installDeps` enforces the
+  // same boundary from its own side and throws if it is ever reached with
+  // `dryRun`, so the two cannot drift into disagreeing about where D19 stops.
   if (options.dryRun === true) {
     return { ...emptyOutcome(plan, options), ok: true, files };
   }
@@ -169,8 +163,19 @@ async function applyPlan(plan: Plan, options: ApplyOptions): Promise<ApplyOutcom
   assertPhasesWired(plan);
 
   // ---- phase 2: install dependencies (outside the journal) -----------------
-  // SEAM: src/apply/install-deps.ts. `assertPhasesWired` refuses above when the
-  // plan has any dependency, so there is nothing to skip silently here.
+  // Before the journal opens, and its failure returns before it opens: a failed
+  // install has written nothing, so there is nothing to unwind, and D18 keeps
+  // the dependencies it did add rather than removing packages the project may
+  // already have depended on.
+  const deps = await installDeps(plan, options);
+  // Carried onto EVERY return below, including the failing ones. It is the only
+  // record of which batch already touched the user's package.json — dropping it
+  // on the failure path is precisely where it matters most.
+  const dependencies = { installed: deps.installed, command: deps.command };
+
+  if (deps.failure !== null) {
+    return { ...emptyOutcome(plan, options), files, dependencies, failure: deps.failure };
+  }
 
   const journal = createJournal();
   let receiptWritten = false;
@@ -221,6 +226,7 @@ async function applyPlan(plan: Plan, options: ApplyOptions): Promise<ApplyOutcom
       return {
         ...emptyOutcome(plan, options),
         files,
+        dependencies,
         failure: {
           kind: "rollback-failed",
           message:
@@ -234,6 +240,7 @@ async function applyPlan(plan: Plan, options: ApplyOptions): Promise<ApplyOutcom
     return {
       ...emptyOutcome(plan, options),
       files,
+      dependencies,
       failure: {
         kind: "write-failed",
         message: `${detail}\nEvery file written by this run was restored to its previous contents.`,
@@ -246,6 +253,7 @@ async function applyPlan(plan: Plan, options: ApplyOptions): Promise<ApplyOutcom
     ...emptyOutcome(plan, options),
     ok: true,
     files,
+    dependencies,
     receipt: { path: plan.receipt.path, written: receiptWritten },
   };
 }

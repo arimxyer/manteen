@@ -27,6 +27,7 @@ import { addDependencyCommand, detectPackageManager, type PackageManagerName } f
 import { satisfies } from "semver";
 
 import { loadEnv } from "../config/load";
+import { splitItemId } from "../config/registries";
 import type { LoadedConfig } from "../config/types";
 import { checkCollisions } from "../gates/collision";
 import { checkReceipt } from "../gates/receipt";
@@ -37,7 +38,9 @@ import { createReceiptReader, createReceiptValidator } from "../receipt/load";
 import { toReceiptPath } from "../receipt/path";
 import { buildIndex, ownerOf, readReceipt } from "../receipt/read";
 import { diag } from "./diagnostics";
+import { createHttpLoader, isHttpUrl, type IndexResolver, type IndexSource } from "./loader-http";
 import { createFileLoader, isFileUrl } from "./loader-local";
+import { expandVars } from "./registry-source";
 import { resolve as resolveGraph } from "./resolve";
 import { RECEIPT_VERSION } from "./types";
 import type {
@@ -81,7 +84,7 @@ async function planImpl(
   // reaches for `process.env` itself is unreachable from a test that sets one.
   const env = loadEnv(root);
 
-  const ports: ResolvePorts = { load: createLoader(), target: config.target, env };
+  const ports: ResolvePorts = { load: createLoader(config, env), target: config.target, env };
   const graph = await resolveGraph(ports, config, refs);
 
   const diagnostics: Diagnostic[] = [...graph.diagnostics];
@@ -185,23 +188,105 @@ async function planImpl(
  * Dispatch on scheme rather than trying one loader and falling back.
  *
  * Node's `fetch` rejects `file:` outright ("not implemented… yet…"), so the two
- * schemes genuinely need different code — and `loader-http.ts` is a later phase.
- * Letting an `http:` registry fall into the file loader produces an ENOENT
- * naming a path the user never wrote; a `fetch-failed` naming the missing module
- * at least says what is going on.
+ * schemes genuinely need different code — a `file:` registry has no path through
+ * the HTTP loader at all, and an `http:` URL handed to the file loader produces
+ * an ENOENT naming a path the user never wrote.
+ *
+ * The third branch is not a formality. Falling through to either loader for an
+ * unrecognised scheme is how `s3://bucket/{name}.json` becomes "no such file or
+ * directory" — a message about the wrong problem entirely. It says which scheme
+ * was seen and which three exist.
  */
-function createLoader(): ItemLoader {
+function createLoader(config: LoadedConfig, env: Record<string, string | undefined>): ItemLoader {
   const file = createFileLoader();
+  const http = createHttpLoader({ index: indexResolverFor(config, env) });
+
   return async (request) => {
     if (isFileUrl(request.url)) return file(request);
+    if (isHttpUrl(request.url)) return http(request);
     return {
       ok: false,
       reason: "network",
       redactedUrl: request.redactedUrl,
-      detail:
-        "manteen cannot fetch over the network yet — src/plan/loader-http.ts has not landed. " +
-        "A `file:` registry URL works today.",
+      // A clause, not a sentence: `resolve.ts` strips the trailing punctuation
+      // off a loader's detail and appends its own.
+      detail: unsupportedScheme(request.redactedUrl),
     };
+  };
+}
+
+/**
+ * The scheme, taken from the REDACTED url.
+ *
+ * `request.url` is the expanded one and is the single string in this file that
+ * may hold a secret. A `${VAR}` at the very start of a template would make the
+ * two disagree — and in that case the redacted form prints the literal
+ * `${VAR}`, which is exactly what the user needs to see and carries nothing.
+ */
+function unsupportedScheme(redactedUrl: string): string {
+  const scheme = /^[A-Za-z][A-Za-z0-9+.-]*:/.exec(redactedUrl)?.[0];
+  return scheme === undefined
+    ? "the registry URL has no scheme — manteen fetches file:, http: and https:"
+    : `${scheme} is not a scheme manteen fetches — use file:, http: or https:`;
+}
+
+/**
+ * D21's per-registry `index`, resolved for whichever registry produced a
+ * request, with `${VAR}` expanded.
+ *
+ * The loader is handed `ItemRequest`s and has no idea which registry produced
+ * one; the config does. Expansion happens here rather than there because the
+ * loader deliberately has no `env` — a module that cannot see the environment
+ * cannot leak it.
+ *
+ * `expandVars` from `registry-source.ts`, NOT `expandEnv` from `config/env.ts`:
+ * the two disagree about an empty value (one counts it missing, the other
+ * counts it set), and the item path uses the former. A registry whose token is
+ * set to "" must not get an item-path `missing-env` refusal alongside an index
+ * request that goes out with a bare `Bearer `.
+ *
+ * `null` on ANY unset variable, in the URL, a header or a param — the loader
+ * guards this too, but a did-you-mean is a nicety and a request with a hole in
+ * it published to a registry's access log is not.
+ */
+function indexResolverFor(
+  config: LoadedConfig,
+  env: Record<string, string | undefined>,
+): IndexResolver {
+  return (request): IndexSource | null => {
+    const { namespace } = splitItemId(request.id);
+    // A `url:` ref names no registry, so no index can be configured for it.
+    if (namespace === null) return null;
+
+    const registry = config.registries.get(namespace);
+    if (registry === undefined || registry.index === null) return null;
+
+    const base = expandVars(registry.index, env);
+    if (base.missing.length > 0) return null;
+
+    const headers: Record<string, string> = {};
+    for (const [key, template] of Object.entries(registry.headers)) {
+      const value = expandVars(template, env);
+      if (value.missing.length > 0) return null;
+      headers[key] = value.text;
+    }
+
+    // `params` are documented as appended to every request to the registry, and
+    // the index is one — a registry that authenticates by query parameter would
+    // otherwise 401 its own index and the did-you-mean would vanish silently.
+    const query: string[] = [];
+    for (const [key, template] of Object.entries(registry.params)) {
+      const value = expandVars(template, env);
+      if (value.missing.length > 0) return null;
+      query.push(`${encodeURIComponent(key)}=${encodeURIComponent(value.text)}`);
+    }
+
+    const url =
+      query.length === 0
+        ? base.text
+        : `${base.text}${base.text.includes("?") ? "&" : "?"}${query.join("&")}`;
+
+    return { url, headers };
   };
 }
 
