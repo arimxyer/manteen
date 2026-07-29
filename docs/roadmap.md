@@ -87,12 +87,28 @@ Worth *not* doing for **W4 and W6**. Their gates are judgment: "is this prompt f
 unattended run that goes wrong in its first hour wastes four. The probe→read→adjust loop that
 made Phase 3 work depends on a human reading the probe.
 
-## Decisions still needed
+## Decisions taken — 2026-07-28
 
-- **Version policy.** `0.x` until `init` lands, or `1.0` once install is solid? Affects whether
-  breaking changes are cheap.
-- **Publish both packages, or the kit first?** The kit is done and independently useful.
-- **Windows support: real or best-effort?** Real means CI runners and path handling throughout;
-  best-effort means saying so in the README.
-- **`update` semantics.** Re-fetch and re-merge, or show a diff and require confirmation? The
-  receipt supports either.
+- **Version policy: `0.x` until `init` lands.** Breaking changes stay cheap while the config
+  shape and the `meta.mantine` surface are still moving. `1.0` is the signal that `manteen.json`
+  and the receipt format are stable, and neither is yet.
+- **Publish the kit ahead of the client.** It is finished, independently useful, and verified
+  as a consumer install. The client then depends on a published range rather than `workspace:*`,
+  which is the harder half of W8 done early and in isolation.
+- **Windows is best-effort.** Not a target; say so in the README rather than implying support.
+  *Caveat worth keeping visible:* being a Node tool does not make it portable by itself —
+  path separators, `.cmd` shims, and argument quoting around a `^` range all differ, and the
+  code already carries Windows-aware handling in places. The cheap move in W7 is one
+  `windows-latest` runner: if it passes, real support is free; if it fails, the README claim is
+  accurate rather than assumed.
+- **`update` re-merges directly.** No confirmation diff. `mergeThemeSource` is idempotent and
+  keeps existing values on conflict, and the receipt records pre-update hashes, so the operation
+  is recoverable. `manteen diff` still ships for people who want to look first.
+
+## Deferred, with a reason
+
+- **Linting.** Biome (one binary, lint + format, near-zero config; `tsc --noEmit` already covers
+  what type-aware ESLint rules would add). Not installed yet — adding a dependency re-resolves
+  the workspace, and phase 3's agents are running against it. First task once that lands.
+- **`CONTRIBUTING.md`, issue and PR templates, `SECURITY.md`.** Ceremony for an audience of one.
+  Revisit if the repo gets contributors.
