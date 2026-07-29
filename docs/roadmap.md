@@ -17,28 +17,31 @@ and something a stranger can depend on, and how the remaining work is sequenced.
 6. **Maintainable** — a linter, dependency automation, and a license file that matches what
    `package.json` claims.
 
-Today: 1 is close, 2–6 are largely absent.
+Today: 1, 2 and the mechanical part of 6 are implemented and locally verified. W6's `init` probes
+are complete and paused at their human checkpoint; implementation, the portability matrix,
+publication and release-grade documentation remain, so the tool is not yet something a stranger
+can install and depend on.
 
 ## Known gaps, by kind
 
-**Client (planned).** Phase 4 apply surface — overwrite prompting, `--force` semantics, cancel
-handling. Phase 5 `init`. Phase 6 hardening.
+**Client.** W4's apply surface and W5's command set are complete. W6 `init` has completed its
+probe stage and is awaiting contract approval, followed by W7 portability and runtime hardening.
 
-**Commands that do not exist.** `list`, `search`, `info` (need the per-registry `index` URL,
-already in the config schema). `diff` and `update` — both unblocked now that the receipt ships,
-and both are the difference between a one-shot installer and a tool you keep.
+**Commands.** `add`, `list`, `info`, `diff` and `update` ship. `search` does not exist and is not
+currently assigned to a wave; whether it belongs in v1 remains undecided.
 
 **Portability, untested.** Windows path separators, `.cmd` shims, and whether a `^` range
 survives argument quoting. Node 24 and 26. Yarn PnP degrades to `undeterminable` by design but
 has never run. `jsconfig`-only projects refuse — the refusal has never been read by a human.
 
-**Distribution.** Nothing published. `workspace:*` must become a real range at publish. No
-changelog, no version policy, no npm provenance.
+**Distribution.** Nothing is published. The kit has a changelog, the repository has a `0.x`
+version policy, and the release workflow requests npm provenance. The first publish still needs
+the manual bootstrap below; the client must then replace `workspace:*` with the published kit
+range.
 
-**Project hygiene.** No `LICENSE` file although both packages declare MIT — that is a real
-defect for a public repo, not a formality. No linter or formatter at all. No `SECURITY.md`,
-`CONTRIBUTING.md`, dependency automation, or editorconfig. The root README still uses the
-pre-rename name.
+**Project hygiene.** The MIT license, Biome, Dependabot, editorconfig and rename are done.
+`SECURITY.md` and contributor ceremony remain deliberately deferred until the repository has
+outside contributors.
 
 **Content.** Five registry items. Every new item exercises the client harder than a fixture
 does, and a second real registry would prove multi-registry outside the test suite.
@@ -52,7 +55,7 @@ is a judgment call, which is exactly why they are separate runs.
 |---|---|---|---|
 | W4 | Apply surface | narrow + deep: 2–3 agents on one seam, adversarial | Prompt/TTY/CI behaviour is where subtle bugs live. `CI=1` already nearly shipped a hang. Parallelism buys nothing; probing buys everything. |
 | W5 | Command set — `list`, `info`, `diff`, `update` | wide: 4 parallel, shared receipt reader frozen first | Four genuinely independent commands over one contract. The classic freeze-then-fan-out. |
-| W6 | `init` | probe-first, then per-framework parallel | Framework requirements are empirical — `ColorSchemeScript` placement and PostCSS ordering must be read off real templates, not recalled. Largest surface remaining. |
+| W6 | [`init`](w6-init-handoff.md) | probe complete; human checkpoint; then per-framework parallel | The 2026-07-29 probes corrected Vite color-scheme handling, pinned current generator shapes and proved the candidate integrations build. Contract decisions remain before implementation. |
 | W7 | Hardening | matrix-driven: agents per platform/runtime, findings-first | The work is discovering what breaks, not writing features. Needs real Windows CI. |
 | W8 | Release | mostly sequential, small | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
 | Wc | Registry content | wide, parallel per component | Independent of all of the above; can run any time. Doubles as client stress-testing. |
@@ -73,7 +76,8 @@ hygiene ..................... done, direct
 **Done so far.** W4 closed the write seam (overwrite decision, dry-run, cancel,
 failure reporting). W5 added `list`, `info`, `diff` and `update` over one frozen
 inventory contract, with `update` routed through the existing `plan()`/`apply()`
-rather than writing files itself. Next is W6.
+rather than writing files itself. W6's dated probe receipt is complete; next is the human
+checkpoint in `w6-init-handoff.md`, then the shared-contract freeze.
 
 W5 and W6 are independent of each other and could run back to back or as parallel tracks of one
 program. W7 must follow both, because it hardens whatever exists. W8 must be last.

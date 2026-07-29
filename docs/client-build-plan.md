@@ -19,7 +19,7 @@
 
 ```
 packages/cli/
-  package.json                      bin.mantine -> ./dist/cli.mjs; type module; engines.node >=20.11
+  package.json                      bin.mantine -> ./dist/cli.mjs; type module; engines.node >=22.12
   tsdown.config.ts                  entry { index: src/index.ts, cli: src/cli/index.ts }, FLAT dist
   README.md
   schema/mantine.schema.json        consumer config schema; $schema = http://json-schema.org/draft-07/schema#
@@ -320,7 +320,7 @@ Exit convention extends the kit's (`src/cli/index.ts` exits 2 on unknown command
 
 ### Phase 6 — Release hardening
 
-**Ships:** CI matrix (`node` 20.11 / 22 / 24 running the e2e tier; `windows-latest` running one install to check `^` survival through `.cmd` shims), publish ordering (kit first; `workspace:*` rewritten to a real range), README.
+**Ships:** CI matrix (Node 22.12 / 24 / 26 running the e2e tier; `windows-latest` running one install to check `^` survival through `.cmd` shims), publish ordering (kit first; `workspace:*` rewritten to a real range), README.
 
 **Done when:** the e2e tier passes on all three Node versions, and a `npm pack` of `mantine-cli` installed into an empty temp dir can run `mantine add` against a `file:` registry.
 
@@ -339,7 +339,7 @@ node <repo>/packages/cli/dist/cli.mjs add @base/empty-state
 
 **Files to write (in order):**
 
-1. `packages/cli/package.json` — `type: module`, `engines.node >=20.11`, `bin.mantine`, `exports` with `.mjs`/`.d.mts` and `"./schema"`, `files: ["dist","schema","README.md"]`. Deps for the slice: `mantine-registry-kit` (`workspace:*`), `commander ^15`, `ajv ^8`, `get-tsconfig ^4.14`. Dev: `tsdown`, `@types/bun`. *(No `@types/diff` — diff@9 ships its own types. `@types/semver` is required when semver lands in phase 3.)*
+1. `packages/cli/package.json` — `type: module`, `engines.node >=22.12`, `bin.manteen`, `exports` with `.mjs`/`.d.mts` and `"./schema"`, `files: ["dist","schema","README.md"]`. Deps for the slice: `manteen-kit` (`workspace:*`), `commander ^15`, `ajv ^8`, `get-tsconfig ^4.14`. Dev: `tsdown`, `@types/bun`. *(No `@types/diff` — diff@9 ships its own types. `@types/semver` is required when semver lands in phase 3.)*
 2. `packages/cli/tsdown.config.ts` — verbatim from the kit's, with `entry: { index: "src/index.ts", cli: "src/cli/index.ts" }`.
 3. `packages/cli/schema/mantine.schema.json` — draft-07 with the **`http://`** dialect id (so no `delete schema.$schema` workaround is needed; only the kit's *vendored wire* schema declares the `https://` form). `additionalProperties: false`. Properties: `$schema?`, `registries` (keys `^@[a-z0-9-]+$`, values a URL template string containing the literal `{name}`), `aliases` (all four of `components`/`ui`/`hooks`/`lib` required), `theme?`, `tsconfig?`, `resolutions?`.
 4. `src/config/types.ts` — `MantineConfig`, `RegistrySource`, `AliasKey`, `LoadedConfig`, `ConfigError` (carries `pointer` + `hint`).

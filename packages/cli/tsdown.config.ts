@@ -18,7 +18,7 @@ export default defineConfig({
   // vendored wire schema via `resolve(import.meta.dirname, "..")` = the KIT's
   // package root. Inlining it repoints that at packages/cli and throws ENOENT
   // at runtime only — nothing about the build would look wrong.
-  external: ["manteen-kit"],
+  deps: { neverBundle: ["manteen-kit"] },
   dts: true,
   clean: true,
 });

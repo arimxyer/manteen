@@ -79,7 +79,7 @@ format, CLI, programmatic API and known limitations.
 ## Develop
 
 ```bash
-bun install
+bun install --frozen-lockfile
 bun run build:registry                              # compile this registry
 manteen-kit build <catalog.json> <outDir>      # or any other
 bun run typecheck
