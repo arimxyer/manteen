@@ -64,12 +64,16 @@ pure overhead.
 ## Sequencing and dependencies
 
 ```
-Phase 3 (running)
-   └─> W4 apply surface ─┬─> W5 command set ──┐
-                         └─> W6 init ─────────┴─> W7 hardening ─> W8 release
+Phase 3 ✔ ─> W4 apply surface ✔ ─┬─> W5 command set ✔ ──┐
+                                 └─> W6 init ───────────┴─> W7 hardening ─> W8 release
 Wc registry content ......... any time, independent
-hygiene ..................... now, direct
+hygiene ..................... done, direct
 ```
+
+**Done so far.** W4 closed the write seam (overwrite decision, dry-run, cancel,
+failure reporting). W5 added `list`, `info`, `diff` and `update` over one frozen
+inventory contract, with `update` routed through the existing `plan()`/`apply()`
+rather than writing files itself. Next is W6.
 
 W5 and W6 are independent of each other and could run back to back or as parallel tracks of one
 program. W7 must follow both, because it hardens whatever exists. W8 must be last.
