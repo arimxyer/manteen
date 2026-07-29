@@ -104,3 +104,15 @@ the native absolute path it read.
 so a skip cannot be mistaken for rollback evidence, and the manifest-path assertion accepts both
 native separators. This removes static Windows blockers; only the hosted runner can establish that
 no others remain.
+
+### F3 — the real overwrite widget had only a manual recipe
+
+The downstream `OverwritePrompt` contract was exhaustive, but the clack multiselect translation
+was outside both automated tiers. Waiting for a phrase is invalid because clack redraws one
+character at a time; a fixed sleep was the only mechanism in the old hand-run recipe.
+
+**Resolved locally.** `pty-prompt.node-e2e.mjs` uses a real util-linux/BSD `script(1)` pty and sends
+input only after 250 ms of output quiescence. Bare Enter keeps the file, Space then Enter overwrites
+it, and Ctrl-C reports the CLI's own exit 130 with whole-tree equality. It skips with a named reason
+on Windows or without a supported pty. The Linux focused run passed 3/3; the hosted macOS run is
+still required for the cross-platform receipt.

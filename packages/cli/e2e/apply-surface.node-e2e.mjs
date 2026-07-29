@@ -16,40 +16,11 @@
  *             exist: driving clack needs a pseudo-terminal, and a prompt that
  *             can only be tested through a pty does not get tested.
  *
- * WHAT NEITHER TIER RUNS, stated so it is not mistaken for coverage: the real
- * `clackOverwritePrompt` — keystrokes, rendering, and clack's own cancel symbol.
- * Everything downstream of the port's ANSWER is covered; the ~15 lines that
- * translate a multiselect into an `OverwriteAnswer` are not.
- *
- * They HAVE been run, just not from here. Verified by hand 2026-07-29 through a
- * util-linux `script(1)` pty, from a project with all three `@base/data-grid`
- * destinations pre-seeded:
- *
- *   (sleep 1.5; printf '\r';        sleep 2) | script -qec "node dist/cli.mjs add @base/data-grid" /dev/null
- *     -> exit 0, all three `skipped` — nothing pre-selected, so a bare Enter keeps every file
- *   (sleep 1.5; printf ' \r';       sleep 2) | ...
- *     -> exit 0, exactly the toggled candidate `written`, the other two `skipped`
- *   (sleep 1.5; printf '\003';      sleep 2) | ...
- *     -> exit 130, clack's cancel banner, no receipt, no file touched
- *
- * Not committed — but only ONE of the two reasons that used to be given here
- * actually holds, and the weak one is corrected rather than deleted so it does
- * not get re-derived:
- *
- * - "`script(1)` is not on Windows or macOS by default" does NOT justify
- *   omitting a test. `{ skip: !CAN_DENY_WRITES }` two hundred lines below is the
- *   same situation solved correctly. A platform guard is the answer.
- * - The timing IS the real obstacle, for a reason worth stating: **clack renders
- *   one character at a time, redrawing the whole line between each**, so
- *   `"would be replaced"` never exists as a contiguous string in the pty output.
- *   Waiting for the prompt's TEXT cannot work, which is why the recipe above
- *   resorts to `sleep`. Readiness needs output quiescence (~200 ms of silence)
- *   or a terminal emulator that reconstructs the screen.
- *
- * Quiescence plus a platform guard is the plan; it is carried in
- * `docs/roadmap.md` under "Carried into W7", where the pty work belongs. The
- * recipe stays here so the next person to touch `clackOverwritePrompt` can
- * re-run it in a minute without waiting for that.
+ * REAL PTY coverage now lives in `pty-prompt.node-e2e.mjs`. It drives the
+ * shipped `clackOverwritePrompt` through util-linux/BSD `script(1)` and asserts
+ * keep, select and Ctrl-C using output quiescence as readiness. This file keeps
+ * the injected-port matrix because it can reach phase-ordering failures without
+ * making every case depend on terminal rendering.
  *
  * NETWORK DISCIPLINE. The registry is served over `file:`, so `loader-http.ts`
  * is never entered. npm is the live one: D17 drops a dependency only when the

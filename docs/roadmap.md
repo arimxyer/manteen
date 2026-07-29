@@ -140,7 +140,7 @@ The tradeoff: that first version has no provenance attestation, because provenan
 the OIDC path. Storing an `NPM_TOKEN` just for it would reintroduce the long-lived credential
 the whole setup exists to avoid, for the sake of one version.
 
-## Carried into W7
+## Carried into W7 — closed locally
 
 **Test the real `clackOverwritePrompt` through a pty.** The header of
 `packages/cli/e2e/apply-surface.node-e2e.mjs` states that neither tier runs it — the ~15 lines
@@ -166,10 +166,10 @@ Readiness has to be detected some other way. Two that would:
 - **A terminal emulator** — parse the cursor movements and reconstruct the screen. Correct, and
   a real dependency for a dev-only test.
 
-Quiescence plus `{ skip: process.platform === "win32" || !hasScript() }` is the recommendation:
-genuine coverage on Linux and macOS, free elsewhere. This belongs in W7 rather than earlier
-because pty and TTY behaviour is platform work, and W7 is when a `windows-latest` runner appears
-anyway.
+W7 implemented quiescence plus an explicit platform/mechanism skip in
+`packages/cli/e2e/pty-prompt.node-e2e.mjs`. Keep, select and cancel now pass through the real widget
+on Linux; the configured macOS runner is the remaining platform receipt. Windows remains a named
+skip because this mechanism is a Unix pty test.
 
 ## Deferred, with a reason
 
