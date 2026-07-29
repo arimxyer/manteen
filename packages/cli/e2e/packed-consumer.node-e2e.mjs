@@ -38,7 +38,9 @@ const TEST_TIMEOUT_MS = 10 * 60_000;
 const CLI_ROOT = resolve(import.meta.dirname, "..");
 const REPO_ROOT = resolve(CLI_ROOT, "..", "..");
 const KIT_ROOT = join(REPO_ROOT, "packages", "registry-kit");
-const PACKED_FILE = join("src", "components", "ui", "portable-smoke.tsx");
+// Receipt destinations are canonical POSIX paths on every host. Node accepts
+// this spelling when it is joined to the disposable root for disk assertions.
+const PACKED_FILE = "src/components/ui/portable-smoke.tsx";
 const PACKED_SOURCE = 'export const portableSmoke = "packed-consumer";\n';
 const CARET_DEPENDENCY = "is-number";
 const CARET_RANGE = "^7.0.0";

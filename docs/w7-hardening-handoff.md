@@ -158,11 +158,34 @@ runs it alone in the package-manager job. The ordinary built tier therefore sees
 while the isolated smoke deliberately retains the real prepare lifecycle that consumers and
 publishers will execute.
 
+### F7 — the first hosted run exposed native path and line-ending assumptions
+
+The first hosted matrix ran on 2026-07-29 as
+[GitHub Actions run 30500539995](https://github.com/arimxyer/manteen/actions/runs/30500539995).
+All Linux runtime and package-manager lanes passed, while macOS and both Windows lanes found five
+distinct portability defects:
+
+- macOS reports its `/var` temporary directory through canonical `/private/var` from `getcwd(3)`;
+  the JSON-envelope fixture now compares the same canonical project root the CLI sees.
+- Node's Windows ESM loader requires an absolute path to be converted to a `file:` URL before a
+  dynamic import. The dist-shape test now crosses that boundary explicitly.
+- Init containment used a literal `/` suffix, classifying every native Windows child path as
+  outside its own root. Init now reuses the client's relative-path containment helper.
+- Receipt destinations are deliberately POSIX on every platform, so the packed Windows assertion
+  no longer constructs its expected receipt path with native separators.
+- ts-morph formatted a CRLF base theme as LF after an additive merge, making the preview and write
+  look like a whole-file replacement. The kit now preserves the base file's CRLF style and has a
+  direct regression test.
+
+**Resolved locally; hosted retry required.** The source tier now passes 152 tests, the complete
+local built-Node tier passes 93 with the one opt-in packed-smoke skip, and the isolated npm packed
+consumer passes. Wave 7 remains open until the corrected commit is green on both hosted platforms.
+
 ## Local integrated receipt — 2026-07-29
 
 The integrated branch has the following local evidence:
 
-- Source gates: `bun run test` passed 151 tests with 0 failures; `bun run typecheck`,
+- Source gates: `bun run test` passed 152 tests with 0 failures; `bun run typecheck`,
   `bun run lint`, and `bun run guard` passed, including all 41 diagnostic vectors.
 - Built package: after one registry and CLI build, the complete e2e tier passed under exact Node
   22.12.0, 24.18.1 and 26.5.1. Each run discovered 94 tests: 93 passed, 0 failed, and the sole skip
@@ -172,7 +195,7 @@ The integrated branch has the following local evidence:
 - Workflow shape: `actionlint` 1.7.7 reported no findings. It was run in Docker, which validates
   the workflow statically but is not macOS or Windows runtime evidence.
 
-This receipt does **not** close Wave 7. The configured GitHub-hosted macOS and Windows jobs have not
-run yet. In particular, local Linux cannot prove the native Windows `.cmd`/caret path or the macOS
-pty mechanism. The milestone must be committed before those jobs run, and pushing/opening the pull
-request remains a separate external action.
+This receipt does **not** close Wave 7. The first GitHub-hosted run produced the F7 findings above;
+the corrected commit has not yet passed its hosted retry. Until it does, the native Windows
+`.cmd`/caret path and the macOS pty mechanism remain unclosed. The retry result, rather than the
+locally green replacement tests, is the remaining evidence boundary.

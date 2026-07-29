@@ -25,7 +25,15 @@
  */
 import { strict as assert } from "node:assert";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { after, test } from "node:test";
@@ -101,7 +109,10 @@ const ALIASES = {
 /** A consumer project. Scaffolding copied from `first-slice.node-e2e.mjs`,
  *  including the two D15/D17 hermeticity measures documented there. */
 function makeProject({ registries = { "@base": BASE }, aliases = ALIASES, theme } = {}) {
-  const dir = mkdtempSync(join(tmpdir(), "manteen-cmdset-project-"));
+  // macOS exposes tmpdir through `/var` while getcwd(3), and therefore the CLI,
+  // reports the canonical `/private/var` path. Keep the fixture on that same
+  // absolute-path boundary instead of comparing two spellings of one directory.
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "manteen-cmdset-project-")));
   projects.push(dir);
 
   writeFileSync(

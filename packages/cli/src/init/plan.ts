@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import { join, resolve } from "node:path";
 
+import { isInsideRoot } from "../config/aliases";
 import { diag, downgradeForced, isBlocking, sortDiagnostics } from "../plan/diagnostics";
 import type { Diagnostic } from "../plan/types";
 import {
@@ -44,12 +45,6 @@ function compare(a: string, b: string): number {
 
 function hashText(content: string): string {
   return createHash("sha256").update(content, "utf8").digest("hex");
-}
-
-function insideRoot(path: string, root: string): boolean {
-  const normalized = resolve(path);
-  const prefix = root.endsWith("/") ? root : `${root}/`;
-  return normalized.startsWith(prefix);
 }
 
 function failureFramework(
@@ -134,7 +129,7 @@ function plannedFiles(
 ): InitPlannedFile[] {
   const files: InitPlannedFile[] = [];
   for (const proposal of dedupeProposals(proposals)) {
-    if (!insideRoot(proposal.destination, root)) {
+    if (!isInsideRoot(proposal.destination, root)) {
       diagnostics.push(initPathEscapesRoot(root, proposal.destination));
       continue;
     }

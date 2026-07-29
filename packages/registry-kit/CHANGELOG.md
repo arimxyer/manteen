@@ -18,8 +18,8 @@ interchange format registry clients already read.
 - **`manteen-kit merge-theme`** — a ts-morph codemod that composes a theme fragment into an
   existing `createTheme(...)` call. Merges `.extend()` arguments so `defaultProps` compose,
   reports conflicts rather than resolving them, never merges callback `classNames`/`styles`/
-  `vars` (composing them changes runtime semantics), and preserves comments, indentation and
-  comma style. Idempotent.
+  `vars` (composing them changes runtime semantics), and preserves comments, indentation, line
+  endings and comma style. Idempotent.
 - **Programmatic API** — `compileRegistry`, `mergeThemeSource`, `validateCatalog`,
   `createWireValidator`, `buildIndex`, `writeRegistry`, `toWireItem`.
 

@@ -71,8 +71,16 @@ export function mergeThemeSource(
     if (usesTrailingCommas(baseText)) restoreTrailingCommas(baseFile);
   }
 
+  let text = baseFile.getFullText();
+  // ts-morph's formatter emits LF even when the base file arrived with CRLF.
+  // The base owns formatting: normalizing every line would make an additive
+  // component merge look like a destructive whole-file replacement on Windows.
+  if (baseText.includes("\r\n") && (ctx.mutations > 0 || importsAdded.length > 0)) {
+    text = text.replace(/\r?\n/g, "\r\n");
+  }
+
   return {
-    text: baseFile.getFullText(),
+    text,
     added: ctx.added,
     conflicts: ctx.conflicts,
     importsAdded,
