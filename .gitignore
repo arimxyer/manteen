@@ -1,5 +1,6 @@
 node_modules/
 dist/
 public/r/
+public/index.html
 *.tsbuildinfo
 .DS_Store

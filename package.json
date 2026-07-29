@@ -12,7 +12,8 @@
     "test": "bun run build:kit && bun test",
     "typecheck": "tsc --noEmit",
     "verify:node": "bun run build:kit && node packages/registry-kit/dist/cli.mjs build",
-    "serve": "bun run build:registry && bunx --bun serve public -p 4321"
+    "build:site": "node scripts/build-site.mjs",
+    "serve": "bun run build:registry && bun run build:site && bunx --bun serve public -p 4321"
   },
   "devDependencies": {
     "@mantine/core": "^9.5.0",

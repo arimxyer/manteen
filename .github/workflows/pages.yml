@@ -29,6 +29,7 @@ jobs:
       # registry and proving the published artifact runs on Node are the same
       # step, so a Bun-only API can never reach npm unnoticed again.
       - run: bun run verify:node
+      - run: bun run build:site
 
       - uses: actions/upload-pages-artifact@v3
         with:
