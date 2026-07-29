@@ -34,8 +34,12 @@ that originated in the brief itself twice.
 
 ## Guards, not vigilance
 
-Two checks encode rules that a reader could otherwise silently break:
+Three checks encode rules that a reader could otherwise silently break:
 
+- `scripts/guard-workspace.mjs` — every symlink under a `node_modules` resolves
+  and does not point at itself. Runs in front of `tsc` in the `typecheck` script
+  and immediately after `bun install` in CI. See the incident below; unlike the
+  other two, its value is the message rather than the detection.
 - `scripts/guard-runtime-apis.mjs` — repo-wide, so it lives at the root rather
   than inside a package. Rules are **per scope**: shipped code (`packages/*/src`,
   `packages/cli/e2e`) may not use `import.meta.dir`, `Bun.*` or `bun:`
@@ -55,6 +59,42 @@ Two checks encode rules that a reader could otherwise silently break:
   one that goes missing.
 
 Prefer a guard over a convention whenever the rule is mechanically checkable.
+
+## Agents must never write into this repo's `node_modules`
+
+On 2026-07-29 a W5 agent staged a mirror `node_modules` for an isolated probe by
+symlinking each entry to its absolute path in this repo. An early version of that
+script wrote into **this repo's** `node_modules` rather than the scratch copy,
+replacing eight scoped entries with links pointing at themselves:
+
+```
+node_modules/@types/bun -> /abs/path/to/node_modules/@types/bun
+```
+
+`tsc` then reported 168 errors across 20 files, including files nobody had
+touched, because the Node and Bun ambient types had silently disappeared.
+Several agents spent half an hour treating that as a code defect.
+
+Two things made the diagnosis slower than it should have been, and both are
+worth remembering:
+
+- **The damage was scoped-only.** `@types`, `@mantine`, `@tabler` and `@biomejs`
+  broke; `react`, `typescript` and `shadcn` did not. A scope adds one path level,
+  and that is what the staging script computed wrongly — so the *shape* of the
+  damage identified the actor once anyone looked at it.
+- **It was misattributed to `bun install`.** That theory is disprovable from
+  evidence: an install rotates `.old_modules`, refreshes `node_modules/.bin` and
+  touches the `.bun` store, and none of those had changed. Only the eight scoped
+  links had. When a tree looks corrupted, read the mtimes before naming a cause.
+
+The rule: **a probe or e2e that needs its own `node_modules` builds it inside
+`mkdtemp()`, never by writing into the repo.** The existing e2e tier already does
+this correctly and is the pattern to copy. `guard-workspace.mjs` exists to make
+the next occurrence cost one line instead of an afternoon — it cannot prevent the
+write, only stop it from masquerading as a type error.
+
+The repair, for the record, is `bun install --frozen-lockfile`. Frozen relinks
+without re-resolving, so a repair cannot drift the lockfile as a side effect.
 
 ## Linting
 

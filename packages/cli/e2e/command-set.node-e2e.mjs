@@ -99,7 +99,7 @@ const ALIASES = {
 
 /** A consumer project. Scaffolding copied from `first-slice.node-e2e.mjs`,
  *  including the two D15/D17 hermeticity measures documented there. */
-function makeProject({ registries, aliases = ALIASES } = { registries: { "@base": BASE } }) {
+function makeProject({ registries = { "@base": BASE }, aliases = ALIASES, theme } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "manteen-cmdset-project-"));
   projects.push(dir);
 
@@ -133,7 +133,13 @@ function makeProject({ registries, aliases = ALIASES } = { registries: { "@base"
   );
 
   writeFileSync(join(dir, "tsconfig.json"), `${JSON.stringify(TSCONFIG, null, 2)}\n`);
-  writeFileSync(join(dir, "manteen.json"), `${JSON.stringify({ registries, aliases }, null, 2)}\n`);
+  writeFileSync(
+    join(dir, "manteen.json"),
+    // `theme` omitted rather than written as `undefined`: the config schema has
+    // `additionalProperties: false` and a present-but-null key is a config error,
+    // not an absent one.
+    `${JSON.stringify({ registries, aliases, ...(theme === undefined ? {} : { theme }) }, null, 2)}\n`,
+  );
 
   return dir;
 }

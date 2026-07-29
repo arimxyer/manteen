@@ -33,6 +33,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
 
       - run: bun install --frozen-lockfile
+      - run: node scripts/guard-workspace.mjs
 
       # A tag is not a promise that main was green when it was cut. Everything
       # CI runs, runs again here, because an unpublish is not a real remedy —

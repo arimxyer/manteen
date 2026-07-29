@@ -12,6 +12,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
+      # Immediately after install, so a bad install is named as one rather than
+      # surfacing later as several hundred type errors in untouched files.
+      - run: node scripts/guard-workspace.mjs
       - run: bun run test
       - run: bun run typecheck
       - run: bun run lint
