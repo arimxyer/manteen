@@ -11,7 +11,7 @@ import {
   validateCatalog,
 } from "../src/build-registry";
 
-const FIXTURES = resolve(import.meta.dir, "../fixtures");
+const FIXTURES = resolve(import.meta.dirname, "../fixtures");
 const BASE = join(FIXTURES, "base/manteen.registry.json");
 const KIT = join(FIXTURES, "kit/manteen.registry.json");
 const PRODUCT = join(FIXTURES, "product/manteen.registry.json");
