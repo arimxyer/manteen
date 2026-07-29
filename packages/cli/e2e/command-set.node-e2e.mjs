@@ -543,7 +543,7 @@ test("diff and update carry the folded theme, and update re-merges it directly",
 
 // ---- the shared exit convention ---------------------------------------------
 
-test("a missing manteen.json is exit 2 with one config error, in all five commands", () => {
+test("a missing manteen.json is exit 2 in every config-dependent command", () => {
   const bare = mkdtempSync(join(tmpdir(), "manteen-cmdset-bare-"));
   projects.push(bare);
 
@@ -560,7 +560,7 @@ test("every command is registered, and an unknown one is still exit 2", () => {
 
   const help = run(project, ["--help"]);
   assert.equal(help.status, 0, help.all);
-  for (const command of ["add", "list", "info", "diff", "update"]) {
+  for (const command of ["init", "add", "list", "info", "diff", "update"]) {
     assert.match(help.stdout, new RegExp(`^\\s+${command}\\b`, "m"), help.stdout);
   }
 

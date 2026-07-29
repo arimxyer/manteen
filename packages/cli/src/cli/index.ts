@@ -35,6 +35,8 @@ import type { DiffFlags } from "../commands/diff";
 import { runDiff } from "../commands/diff";
 import type { InfoFlags } from "../commands/info";
 import { runInfo } from "../commands/info";
+import type { InitFlags } from "../commands/init";
+import { runInit } from "../commands/init";
 import type { ListFlags } from "../commands/list";
 import { runList } from "../commands/list";
 import type { UpdateFlags } from "../commands/update";
@@ -232,6 +234,23 @@ NON-INTERACTIVE (CI, or any run with no terminal attached):
   To see what would change without deciding anything, use \`manteen diff\`.
   It needs no flags, writes nothing, and exits 0 when there is nothing to do.
 `;
+
+program
+  .command("init")
+  .description("configure Mantine and manteen for the detected project framework")
+  .option("--cwd <dir>", "project directory to initialize", process.cwd())
+  .option("--dry-run", "plan and preflight only; prompt for and write nothing")
+  .option("--force", "downgrade forceable refusals to warnings; never silences them")
+  .option("-y, --yes", "apply without the all-or-nothing confirmation")
+  .option("--json", "emit the plan, outcome, diagnostics and required work as one JSON document")
+  .option(
+    "--framework <name>",
+    "select vite, next-app, next-pages, next-hybrid, react-router or manual",
+  )
+  .option("--pm <name>", "override package-manager detection (npm, pnpm, yarn, bun, deno)")
+  .action(async (flags: InitFlags) => {
+    process.exitCode = await runInit(flags);
+  });
 
 program
   .command("add")

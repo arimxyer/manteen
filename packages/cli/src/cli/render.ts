@@ -331,7 +331,7 @@ export function renderApplyFailure(outcome: ApplyOutcome, root: string): string 
  * `not-installed` indistinguishable from a refusal.
  */
 export interface JsonEnvelope {
-  command: "list" | "info" | "diff" | "update";
+  command: "init" | "list" | "info" | "diff" | "update";
   root: string;
   ok: boolean;
 }
