@@ -17,7 +17,8 @@
   "files": [
     "dist",
     "schema",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "engines": {
     "node": ">=20.11"
@@ -40,5 +41,18 @@
   },
   "devDependencies": {
     "tsdown": "^0.22.14"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arimxyer/manteen.git",
+    "directory": "packages/registry-kit"
+  },
+  "homepage": "https://github.com/arimxyer/manteen/tree/main/packages/registry-kit#readme",
+  "bugs": {
+    "url": "https://github.com/arimxyer/manteen/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }
