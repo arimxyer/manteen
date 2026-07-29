@@ -47,6 +47,7 @@ import { expandVars } from "./registry-source";
 import { resolve as resolveGraph } from "./resolve";
 import { foldTheme } from "./theme-fold";
 import type {
+  CanonicalId,
   Diagnostic,
   Disposition,
   ExistingHashes,
@@ -148,8 +149,24 @@ async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptio
   // ---- one hash pass over every planned destination -------------------------
   const existing: Map<string, string | null> = new Map();
   for (const file of graph.files) {
-    if (!existing.has(file.destination))
+    if (existing.has(file.destination)) continue;
+    // EISDIR ONLY, and by `code` rather than by message text. `hashFileBytes`
+    // throws on everything that is not ENOENT, deliberately (preflight.ts: an
+    // EACCES is not absence, and answering `null` for one would let the write
+    // phase replace something we were never able to inspect). That stays true:
+    // every other code still throws and still reaches `renderThrown`.
+    //
+    // A directory sitting at a planned destination is different in kind — it is
+    // an ordinary user-side file state, not an fs error nobody anticipated, and
+    // it is the one state where the raw throw hid BOTH the code every other
+    // plan-stage refusal carries and the path that would have said which file.
+    try {
       existing.set(file.destination, hashFileBytes(file.destination));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EISDIR") throw error;
+      existing.set(file.destination, null);
+      diagnostics.push(directoryAtDestination(file.itemId, file.destination, root));
+    }
   }
 
   diagnostics.push(
@@ -378,6 +395,37 @@ function dispositionFor(planned: string, onDisk: string | null): Disposition {
 }
 
 // ---- destination-exists -----------------------------------------------------
+
+/**
+ * A planned destination that is a DIRECTORY.
+ *
+ * `destination-exists` because that is exactly what happened — something is
+ * already at the path — and because `plan/types.ts` is frozen, so there is no
+ * code of its own to mint. It is emitted from the hash pass rather than from
+ * `checkDestinations` below for two reasons that both matter: the disposition
+ * this file would get is `create` (nothing hashed), so the loop below skips it;
+ * and `checkDestinations` returns early under `--overwrite`, which for a
+ * directory would turn a clear refusal into an EACCES/EISDIR at write time.
+ * Emitted here, it refuses under every flag combination — `destination-exists`
+ * is `forceable: false`, so `--force` does not downgrade it either.
+ *
+ * The message deliberately does NOT end in `checkDestinations`' "Pass
+ * --overwrite to replace it or --no-overwrite to keep it": neither flag can help
+ * here, and advice that cannot work is worse than none.
+ */
+function directoryAtDestination(
+  itemId: CanonicalId,
+  destination: string,
+  root: string,
+): Diagnostic {
+  return diag(
+    "destination-exists",
+    `${toReceiptPath(destination, root)} is a directory, not a file. manteen writes files and ` +
+      `will not replace a directory, so neither --overwrite nor --force applies. Move or remove ` +
+      `it and re-run.`,
+    { items: [itemId], path: destination },
+  );
+}
 
 /**
  * The overwrite question, asked once per destination that genuinely has one.

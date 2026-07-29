@@ -64,7 +64,11 @@ const SCOPES = [
     roots: ["packages/cli/src", "packages/cli/e2e", "packages/registry-kit/src"],
     rules: ALL,
   },
-  { label: "bun tests", roots: ["packages/registry-kit/test", "test"], rules: PORTABLE_ONLY },
+  {
+    label: "bun tests",
+    roots: ["packages/cli/test", "packages/registry-kit/test", "test"],
+    rules: PORTABLE_ONLY,
+  },
 ];
 
 /**

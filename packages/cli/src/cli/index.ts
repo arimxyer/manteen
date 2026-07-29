@@ -171,9 +171,16 @@ function renderOutcome(outcome: ApplyOutcome, root: string): string {
   if (outcome.receipt.written) {
     lines.push(`${"written".padEnd(VERB_WIDTH)}  ${display(outcome.receipt.path, root)}`);
   }
+  // `installed` unconditionally, because `dependencies.command` is what apply
+  // RAN and `install-deps.ts` only appends a batch to it AFTER that batch
+  // returned — so a non-null command names batches that landed, even on the
+  // partial-install failure where `dependencies.installed` is false. The old
+  // `installed ? … : "skipped"` printed `skipped  npm install @mantine/core@^9`
+  // for a command that had already rewritten the user's package.json, which is
+  // the same class of misreport as a `written` line for a rolled-back file.
+  // Nothing ran ⇒ `command` is null ⇒ no line at all.
   if (outcome.dependencies.command) {
-    const verb = outcome.dependencies.installed ? "installed" : "skipped";
-    lines.push(`${verb.padEnd(VERB_WIDTH)}  ${outcome.dependencies.command}`);
+    lines.push(`${"installed".padEnd(VERB_WIDTH)}  ${outcome.dependencies.command}`);
   }
   return lines.length > 0 ? `${lines.join("\n")}\n` : "";
 }

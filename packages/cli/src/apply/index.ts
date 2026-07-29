@@ -5,6 +5,7 @@
  *
  *   0 preflight    read-only; re-hash, re-prove containment and uniqueness
  *   1 decide       read-only; every question the user could be asked is asked here
+ *                  (`decide.ts` — one grouped overwrite prompt, behind a port)
  *   2 install deps subprocess, OUTSIDE the journal
  *   3 write files  ┐
  *   4 write theme  ├ one shared pre-image journal
@@ -38,60 +39,42 @@
 
 import type { ApplyFn, ApplyOptions, ApplyOutcome, Plan, WriteResult } from "../plan/types";
 import { mergeReceipt, serializeReceipt } from "../receipt/write";
+import { clackOverwritePrompt, decideWrites, type OverwritePrompt } from "./decide";
 import { installDeps } from "./install-deps";
 import { createJournal } from "./journal";
 import { preflight } from "./preflight";
 import { writeFiles } from "./write-files";
 import { writeTheme } from "./write-theme";
 
+export type {
+  Decision,
+  OverwriteAnswer,
+  OverwriteCandidate,
+  OverwritePrompt,
+  OverwriteRequest,
+} from "./decide";
+export { decideWrites } from "./decide";
+
 /**
- * Phase 1. Turns each `Disposition` (what plan PREDICTED) into a `WriteResult`
- * (what apply will DO) using only the flags — the decision rules that do not
- * need a human.
+ * The impure edges apply() is allowed to have injected.
  *
- * SEAM: `src/apply/decide.ts` replaces this with the grouped multiselect from
- * `src/ui.ts` for the one case below that genuinely needs an answer. Exported so
- * that swap is a one-line change at the call site rather than a rewrite.
+ * Exactly one today, and the bar for a second is high: a port earns its place
+ * when the alternative is a test that needs a terminal, a network, or a clock.
+ * `installDeps` deliberately is NOT one — it already refuses to run under
+ * `dryRun`, and the e2e tier proves the no-install case by asserting no lockfile
+ * appeared, which is evidence about the project rather than about a stub.
  */
-export function decideWrites(plan: Plan, options: ApplyOptions): ReadonlyMap<string, WriteResult> {
-  const results = new Map<string, WriteResult>();
-
-  for (const file of plan.files) {
-    switch (file.disposition) {
-      case "identical":
-        // Not a write, but still an ownership claim — see write-files.ts.
-        results.set(file.destination, "identical");
-        break;
-      case "create":
-        results.set(file.destination, "written");
-        break;
-      case "overwrite":
-        if (options.overwrite === true) results.set(file.destination, "written");
-        else if (options.overwrite === "no") results.set(file.destination, "skipped");
-        else throw new Error(overwriteSeamMessage(file.destination, options));
-        break;
-    }
-  }
-
-  return results;
+export interface ApplyPorts {
+  /**
+   * Phase 1's grouped overwrite question. Defaulted to the clack implementation
+   * so the shipped CLI needs no wiring, and overridable so the whole decision
+   * matrix — decline all, take a subset, cancel — is exercisable in-process
+   * under real node without a pseudo-terminal.
+   */
+  prompt: OverwritePrompt;
 }
 
-function overwriteSeamMessage(destination: string, options: ApplyOptions): string {
-  if (options.interactive) {
-    return (
-      `apply: ${destination} exists with different content and no overwrite decision is available.\n` +
-      `The grouped overwrite prompt is phase 1's job and lives in src/apply/decide.ts, which has ` +
-      `not landed yet. Refusing rather than guessing: writing would destroy the user's file and ` +
-      `skipping would silently drop a file they asked for. Pass --overwrite or --no-overwrite.`
-    );
-  }
-  return (
-    `apply: ${destination} exists with different content in a non-interactive run with neither ` +
-    `--overwrite nor --no-overwrite. The destination-exists gate refuses that combination (§1's ` +
-    `refusal table), so plan.ok would be false and apply returns before phase 1 — reaching here ` +
-    `means the gate did not run.`
-  );
-}
+const CLACK_PORTS: ApplyPorts = { prompt: clackOverwritePrompt };
 
 function emptyOutcome(plan: Plan, options: ApplyOptions): ApplyOutcome {
   return {
@@ -121,7 +104,57 @@ function outcomeFiles(
   });
 }
 
-async function applyPlan(plan: Plan, options: ApplyOptions): Promise<ApplyOutcome> {
+/*
+ * WHY EVERY FAILURE RETURN BELOW SETS `files: []`.
+ *
+ * (A plain block rather than a doc comment: it documents three returns inside
+ * `applyPlan`, not the declaration that follows it.)
+ *
+ * `outcomeFiles` above projects phase 1's DECISIONS, which is the truth only on
+ * a return that carried them out. Carrying that projection onto a failure return
+ * is how a run that wrote nothing printed `written  src/components/ui/…` on
+ * stdout while its own stderr said the tree had been restored — `cli/index.ts`
+ * documents `renderOutcome` as printing "what apply() OBSERVED", and a
+ * rolled-back destination was observed as not-written. `manteen add … >
+ * report.txt` captured only the half that lied.
+ *
+ * `WriteResult` is `written | identical | skipped` and `plan/types.ts` is
+ * frozen, so there is no value for "attempted, then unwound" and no value for
+ * "we no longer know". Two rejected alternatives, both of which trade one false
+ * claim for another:
+ *
+ * - Re-map `written` to `skipped`. The contract defines `skipped` as the user
+ *   declining, so a consumer still could not tell a decline from a failure.
+ * - Report the `rollback-failed` unrestored set as `written`, on the theory that
+ *   those destinations hold our bytes. THEY MAY NOT: `journal.write` pushes its
+ *   entry BEFORE calling `place()` (journal.ts, deliberately — a rename that
+ *   fails halfway must still be covered), so a write that failed outright is
+ *   still journalled, and its unwind then fails for the same reason the write
+ *   did. Measured: a run whose destination directory is read-only reports that
+ *   destination as unrestored while the file on disk is the user's original,
+ *   byte for byte. `unrestored` means "could not prove the pre-image is back",
+ *   not "we wrote it".
+ *
+ * So the outcome claims nothing about files, which is the same shape — and the
+ * same reason — as the cancel return: no decision was carried out. Nothing is
+ * lost. `ApplyFailure.paths` still carries the touched set (`write-failed`) and
+ * the unrestored set (`rollback-failed`), and only the failure channel can say
+ * "this one is now indeterminate, run `git checkout --` on it", which is the
+ * sentence a `WriteResult` cannot form.
+ */
+
+/**
+ * `ports` is a THIRD, OPTIONAL parameter rather than a field on `ApplyOptions`
+ * because `plan/types.ts` is frozen — and it stays optional so `apply` still
+ * satisfies `ApplyFn`, whose two-parameter shape every caller's mapping is
+ * written against (TypeScript ignores trailing optional parameters when
+ * checking arity, so the `satisfies` below is a real check, not a widened one).
+ */
+async function applyPlan(
+  plan: Plan,
+  options: ApplyOptions,
+  ports: ApplyPorts = CLACK_PORTS,
+): Promise<ApplyOutcome> {
   // `apply()` reads plan.ok and never re-derives a verdict (§1). `failure` stays
   // null on purpose: the reason is already in plan.diagnostics, and ApplyFailure
   // is for things that go wrong in THIS stage.
@@ -132,13 +165,26 @@ async function applyPlan(plan: Plan, options: ApplyOptions): Promise<ApplyOutcom
   if (stale !== null) return { ...emptyOutcome(plan, options), failure: stale };
 
   // ---- phase 1: decide (read-only) -----------------------------------------
-  const results = decideWrites(plan, options);
+  const decision = await decideWrites(plan, options, ports.prompt);
+
+  // The cancel return sits ABOVE phase 2, which is the entire reason phase 1 is
+  // ordered before it: no dependency was installed, no journal was opened, no
+  // receipt was touched. `ok` stays false — a cancelled run did not apply — and
+  // `cli/index.ts` reads `cancelled` first and exits 130 without printing a
+  // write report for writes that never happened.
+  if (decision.cancelled) return { ...emptyOutcome(plan, options), cancelled: true };
+
+  const results = decision.results;
   const files = outcomeFiles(plan, results);
 
   // D19: a dry run has now done everything that can be done without writing —
   // including the uniqueness, containment and hash checks a plan-only preview
   // structurally cannot report. The decisions ride out so the preview can show
-  // what each destination would get.
+  // what each destination would get — as a FORECAST, not an observation: a
+  // `create` destination reads `written` here and nothing was written, and an
+  // undecided conflict reads `skipped` because phase 1 does not ask under
+  // `dryRun` (decide.ts). `renderDryRun` reads the Plan, so a CLI user sees the
+  // Disposition either way and only a programmatic caller reads this back.
   //
   // It returns ABOVE the install deliberately, and `theme.written` stays false
   // on the way out: a dry run mutates nothing, so a preview that claimed the
@@ -162,7 +208,10 @@ async function applyPlan(plan: Plan, options: ApplyOptions): Promise<ApplyOutcom
   const dependencies = { installed: deps.installed, command: deps.command };
 
   if (deps.failure !== null) {
-    return { ...emptyOutcome(plan, options), files, dependencies, failure: deps.failure };
+    // `files: []` — not phase 1's decisions. The install failed BEFORE the
+    // journal opened, so not one destination was touched, which is exactly what
+    // this failure's own message tells the user.
+    return { ...emptyOutcome(plan, options), dependencies, failure: deps.failure };
   }
 
   const journal = createJournal();
@@ -214,7 +263,9 @@ async function applyPlan(plan: Plan, options: ApplyOptions): Promise<ApplyOutcom
     if (!unwound.ok) {
       return {
         ...emptyOutcome(plan, options),
-        files,
+        // `files: []` — the one failure where the per-destination state is
+        // genuinely UNKNOWN, and the enum has no word for it. `unwound.unrestored`
+        // below says which ones, in the channel that can also say what to do.
         dependencies,
         failure: {
           kind: "rollback-failed",
@@ -228,7 +279,8 @@ async function applyPlan(plan: Plan, options: ApplyOptions): Promise<ApplyOutcom
 
     return {
       ...emptyOutcome(plan, options),
-      files,
+      // Every pre-image is back on disk, so nothing this run decided to write
+      // survives it. `touched` below still names what was attempted.
       dependencies,
       failure: {
         kind: "write-failed",
@@ -253,9 +305,9 @@ async function applyPlan(plan: Plan, options: ApplyOptions): Promise<ApplyOutcom
 }
 
 /**
- * `cancelled` is never true in this build — it belongs to the phase-1 prompt,
- * which returns clack's cancel symbol and exits 130 before phase 2. It is on the
- * outcome now rather than added later because every caller's exit-code mapping
- * reads it.
+ * `cancelled` is set by exactly one path: the phase-1 prompt returning clack's
+ * cancel symbol. It is never inferred from an empty selection — selecting no
+ * files is a complete answer ("keep all of them", exit 0 with everything
+ * `skipped`), and collapsing the two would map a deliberate decline onto 130.
  */
 export const apply = applyPlan satisfies ApplyFn;
