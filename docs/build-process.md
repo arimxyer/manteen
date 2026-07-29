@@ -36,10 +36,18 @@ that originated in the brief itself twice.
 
 Two checks encode rules that a reader could otherwise silently break:
 
-- `packages/cli/scripts/guard-runtime-apis.mjs` — no `import.meta.dir`, `Bun.*`,
-  or `bun:` specifiers. `import.meta.dir` is `undefined` under Node and shipped
-  as a real bug once; the guard self-tests its own lookahead so the regex cannot
-  rot into a no-op.
+- `scripts/guard-runtime-apis.mjs` — repo-wide, so it lives at the root rather
+  than inside a package. Rules are **per scope**: shipped code (`packages/*/src`,
+  `packages/cli/e2e`) may not use `import.meta.dir`, `Bun.*` or `bun:`
+  specifiers, while the `bun test` tier is held only to the first, since it
+  imports `bun:test` by design. `import.meta.dir` is `undefined` under Node and
+  shipped as a real bug once — written in a test file and copied into src, which
+  is why the portable-spelling rule spans both tiers.
+  It self-tests its own lookahead so the regex cannot rot into a no-op, and
+  skips lines that *begin* as comments so documenting a banned API does not trip
+  the ban. Only the leading form: stripping from a mid-line `//` would blind it
+  after any string containing `://`, and a false negative in a guard is worse
+  than a flagged trailing comment.
 - `packages/cli/scripts/guard-diagnostics.mjs` — every `DiagnosticCode` is
   emitted somewhere or explicitly listed as pending. A specified refusal with no
   emitter reads exactly like a forgotten one. The pending list is required to

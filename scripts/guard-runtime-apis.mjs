@@ -13,12 +13,18 @@
  * fixtures contain every pattern it looks for, so scanning itself would make the
  * guard permanently red. Anything that scanning `scripts/` would have caught is
  * build tooling that never reaches a user's machine.
+ *
+ * Rules are per-scope rather than uniform, because the repo runs two tiers and
+ * only one of them ships. The `bun test` tier imports `bun:test` by design, so
+ * banning that specifier everywhere would be a rule the codebase must violate.
+ * `import.meta.dir` is banned in BOTH tiers: it is Bun-only either way, and a
+ * test using the portable spelling costs nothing while keeping the habit
+ * uniform — the original bug was written in a test file and copied into src.
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
-const PKG_ROOT = resolve(import.meta.dirname, "..");
-const ROOTS = ["src", "e2e"];
+const REPO_ROOT = resolve(import.meta.dirname, "..");
 const EXTENSIONS = new Set([".ts", ".tsx", ".mts", ".cts", ".mjs", ".cjs", ".js"]);
 
 const RULES = [
@@ -43,6 +49,18 @@ const RULES = [
     pattern: /from ["']bun:/g,
     hint: "no `bun:test` / `bun:sqlite` imports in shipped code; the e2e tier uses node:test",
   },
+];
+
+const ALL = RULES.map((rule) => rule.id);
+const PORTABLE_ONLY = ["import.meta.dir"];
+
+/**
+ * Everything that either ships to a user or runs under `node`, versus the
+ * `bun test` tier which only has to stay portable in its path handling.
+ */
+const SCOPES = [
+  { label: "shipped", roots: ["packages/cli/src", "packages/cli/e2e", "packages/registry-kit/src"], rules: ALL },
+  { label: "bun tests", roots: ["packages/registry-kit/test", "test"], rules: PORTABLE_ONLY },
 ];
 
 /**
@@ -113,26 +131,44 @@ function* walk(dir) {
   }
 }
 
+/**
+ * Lines that BEGIN as comments are prose and are skipped — documenting why
+ * `import.meta.dir` is banned should not trip the ban, and a guard that flags
+ * its own rationale is one people mute.
+ *
+ * Deliberately only the leading form. Stripping from a mid-line `//` would
+ * blind the guard after any string containing `://`, and a false negative in a
+ * guard is far worse than the occasional flagged trailing comment.
+ */
+function isProse(line) {
+  const trimmed = line.trimStart();
+  return trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*");
+}
+
 function scan() {
   const hits = [];
 
-  for (const root of ROOTS) {
-    for (const file of walk(join(PKG_ROOT, root))) {
-      const lines = readFileSync(file, "utf8").split("\n");
-      lines.forEach((line, index) => {
-        for (const rule of RULES) {
-          rule.pattern.lastIndex = 0;
-          for (const match of line.matchAll(rule.pattern)) {
-            hits.push({
-              file: relative(PKG_ROOT, file),
-              line: index + 1,
-              column: match.index + 1,
-              text: match[0],
-              hint: rule.hint,
-            });
+  for (const scope of SCOPES) {
+    const rules = RULES.filter((rule) => scope.rules.includes(rule.id));
+    for (const root of scope.roots) {
+      for (const file of walk(join(REPO_ROOT, root))) {
+        const lines = readFileSync(file, "utf8").split("\n");
+        lines.forEach((line, index) => {
+          if (isProse(line)) return;
+          for (const rule of rules) {
+            rule.pattern.lastIndex = 0;
+            for (const match of line.matchAll(rule.pattern)) {
+              hits.push({
+                file: relative(REPO_ROOT, file),
+                line: index + 1,
+                column: match.index + 1,
+                text: match[0],
+                hint: rule.hint,
+              });
+            }
           }
-        }
-      });
+        });
+      }
     }
   }
 
@@ -152,4 +188,7 @@ if (hits.length > 0) {
   process.exit(1);
 }
 
-console.log(`guard-runtime-apis: clean (${ROOTS.join(", ")}).`);
+const summary = SCOPES.map(
+  (scope) => `${scope.label}: ${scope.roots.length} root(s), ${scope.rules.length} rule(s)`,
+).join(" | ");
+console.log(`guard-runtime-apis: clean — ${summary}.`);
