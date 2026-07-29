@@ -105,6 +105,29 @@ made Phase 3 work depends on a human reading the probe.
   keeps existing values on conflict, and the receipt records pre-update hashes, so the operation
   is recoverable. `manteen diff` still ships for people who want to look first.
 
+## Releasing
+
+`.github/workflows/release.yml` publishes on a per-package tag (`manteen-kit-v0.1.0`) using
+npm **trusted publishing over OIDC** — no stored token, and every published version carries a
+provenance attestation.
+
+**The first release of each package cannot use it.** A trusted publisher is configured on a
+package's settings page on npmjs.com, and a package that has never been published has no
+settings page. npm's docs do not cover this case; it follows from where the setting lives.
+
+So, once per package:
+
+1. `npm login` (in a terminal, not through an agent session — nothing about it belongs in a
+   transcript).
+2. `cd packages/registry-kit && npm publish --access public`.
+3. On npmjs.com, add the trusted publisher: `arimxyer` / `manteen` / `release.yml`.
+
+After that, releases are `git tag manteen-kit-v0.1.1 && git push --tags`.
+
+The tradeoff: that first version has no provenance attestation, because provenance requires
+the OIDC path. Storing an `NPM_TOKEN` just for it would reintroduce the long-lived credential
+the whole setup exists to avoid, for the sake of one version.
+
 ## Deferred, with a reason
 
 - **Linting.** Biome (one binary, lint + format, near-zero config; `tsc --noEmit` already covers
