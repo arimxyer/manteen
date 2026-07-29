@@ -592,8 +592,8 @@ function describeFailure(loaded: Extract<LoadedDoc, { ok: false }>): string {
 /** (registry, code, message), by code unit. */
 function sortNotes(notes: InventoryNote[]): InventoryNote[] {
   return [...notes].sort((a, b) => {
-    const left = `${a.registry ?? ""} ${a.code} ${a.message}`;
-    const right = `${b.registry ?? ""} ${b.code} ${b.message}`;
+    const left = `${a.registry ?? ""}\u0000${a.code}\u0000${a.message}`;
+    const right = `${b.registry ?? ""}\u0000${b.code}\u0000${b.message}`;
     return left < right ? -1 : left > right ? 1 : 0;
   });
 }

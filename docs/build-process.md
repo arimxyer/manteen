@@ -40,8 +40,18 @@ Three checks encode rules that a reader could otherwise silently break:
   and does not point at itself. Runs in front of `tsc` in the `typecheck` script
   and immediately after `bun install` in CI. See the incident below; unlike the
   other two, its value is the message rather than the detection.
-- `scripts/guard-runtime-apis.mjs` — repo-wide, so it lives at the root rather
-  than inside a package. Rules are **per scope**: shipped code (`packages/*/src`,
+- `scripts/guard-runtime-apis.mjs` — two checks sharing one walk. The rules
+  proper are below; `checkText` additionally bans **raw control characters**
+  anywhere in scanned source. That is not pedantry: a literal NUL byte makes a
+  file `data` rather than text, and **grep then skips the whole file silently**
+  — no match, no warning, no hint that it was never searched. Two files here had
+  one, both using NUL legitimately as a composite-key separator but written as a
+  literal byte instead of `\u0000`; identical at runtime, invisible to review.
+  It cannot be one of the line-based rules, because those skip prose and a
+  control character in a comment blinds grep exactly as much as one in code.
+
+  The rules proper are repo-wide, which is why this lives at the root rather
+  than inside a package, and are **per scope**: shipped code (`packages/*/src`,
   `packages/cli/e2e`) may not use `import.meta.dir`, `Bun.*` or `bun:`
   specifiers, while the `bun test` tier is held only to the first, since it
   imports `bun:test` by design. `import.meta.dir` is `undefined` under Node and

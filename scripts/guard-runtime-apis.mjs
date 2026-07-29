@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /**
- * Fail the build on Bun-only APIs in shipped code.
+ * Fail the build on Bun-only APIs in shipped code — and on raw control
+ * characters anywhere in it (see `checkText`, a second concern sharing this
+ * walk).
  *
  * This package is published as Node ESM and its e2e tier runs under real `node`,
  * but every developer here runs `bun test` — so a Bun-only API passes the whole
@@ -153,6 +155,40 @@ function isProse(line) {
   return trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*");
 }
 
+/**
+ * A different concern from the rules above, riding the same walk rather than
+ * paying for a fourth guard script over one check.
+ *
+ * A RAW NUL byte in a source file makes it `data` rather than text, and **grep
+ * then silently skips the whole file** — no match, no warning, no hint that it
+ * was never searched. Two files here had one: both used NUL legitimately, as a
+ * composite-key field separator, but written as a literal byte instead of the
+ * `\u0000` escape. The strings are identical at runtime; the difference is
+ * entirely in whether the file can be read by the tools people review with.
+ *
+ * It is deliberately NOT a rule in `RULES`: those are line-based and skip
+ * prose, and a control character buried in a comment is exactly as invisible to
+ * grep as one in code. This runs over whole file text, comments included.
+ */
+// biome-ignore lint/suspicious/noControlCharactersInRegex: matching control characters is the entire purpose of this check; the rule is correct everywhere else and stays on.
+const CONTROL_CHARACTERS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
+
+function checkText(file, text) {
+  const found = [];
+  for (const match of text.matchAll(CONTROL_CHARACTERS)) {
+    const line = text.slice(0, match.index).split("\n").length;
+    const code = match[0].charCodeAt(0).toString(16).padStart(4, "0");
+    found.push({
+      file: relative(REPO_ROOT, file),
+      line,
+      column: match.index - text.lastIndexOf("\n", match.index - 1),
+      text: `U+${code.toUpperCase()}`,
+      hint: `a raw control character makes this file binary to grep, which then skips it silently — write the escape (\\u${code}) instead`,
+    });
+  }
+  return found;
+}
+
 function scan() {
   const hits = [];
 
@@ -160,7 +196,9 @@ function scan() {
     const rules = RULES.filter((rule) => scope.rules.includes(rule.id));
     for (const root of scope.roots) {
       for (const file of walk(join(REPO_ROOT, root))) {
-        const lines = readFileSync(file, "utf8").split("\n");
+        const source = readFileSync(file, "utf8");
+        hits.push(...checkText(file, source));
+        const lines = source.split("\n");
         lines.forEach((line, index) => {
           if (isProse(line)) return;
           for (const rule of rules) {
@@ -188,7 +226,10 @@ selfTest();
 const hits = scan();
 
 if (hits.length > 0) {
-  console.error(`guard-runtime-apis: ${hits.length} Bun-only API use(s) in shipped code.\n`);
+  // Not "Bun-only API use(s)" any more: `checkText` contributes to the same
+  // list, and a control-character hit reported under that heading sends the
+  // reader looking for a `Bun.` that is not there.
+  console.error(`guard-runtime-apis: ${hits.length} problem(s) in scanned source.\n`);
   for (const hit of hits) {
     console.error(`  ${hit.file}:${hit.line}:${hit.column}  ${hit.text}`);
     console.error(`    ${hit.hint}\n`);
