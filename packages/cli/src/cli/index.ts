@@ -28,13 +28,7 @@ import { loadConfig } from "../config/load";
 import type { ConfigError } from "../config/types";
 import { blockingExitCode } from "../plan/diagnostics";
 import { plan } from "../plan/index";
-import type {
-  ApplyOptions,
-  ApplyOutcome,
-  Diagnostic,
-  Plan,
-  PlanOptions,
-} from "../plan/types";
+import type { ApplyOptions, ApplyOutcome, Diagnostic, Plan, PlanOptions } from "../plan/types";
 import { interactiveFromProcess } from "../ui";
 
 const EXIT_OK = 0;
@@ -228,7 +222,9 @@ interface AddFlags {
 
 async function runAdd(refs: string[], flags: AddFlags, command: Command): Promise<number> {
   if (refs.length === 0) {
-    process.stderr.write("manteen add: name at least one item, e.g. `manteen add @house/data-table`.\n\n");
+    process.stderr.write(
+      "manteen add: name at least one item, e.g. `manteen add @house/data-table`.\n\n",
+    );
     process.stderr.write(command.helpInformation());
     return EXIT_USAGE;
   }
@@ -263,7 +259,7 @@ async function runAdd(refs: string[], flags: AddFlags, command: Command): Promis
    * kind: an EACCES on `tsconfig.json`, or a bug. Both are still exit 2, because
    * both happened before there was a Plan to refuse.
    */
-  let loaded;
+  let loaded: ReturnType<typeof loadConfig>;
   try {
     loaded = loadConfig(root);
   } catch (error) {
@@ -317,7 +313,8 @@ async function runAdd(refs: string[], flags: AddFlags, command: Command): Promis
   // because it names the thing the user has to fix first. `force: false` here is
   // correct rather than a dropped flag — `plan.diagnostics` has already been
   // downgraded by the aggregator, so re-applying it would forgive a second time.
-  if (!planned.ok) return blockingExitCode(planned.diagnostics, false) === 2 ? EXIT_USAGE : EXIT_REFUSED;
+  if (!planned.ok)
+    return blockingExitCode(planned.diagnostics, false) === 2 ? EXIT_USAGE : EXIT_REFUSED;
 
   const applyOptions: ApplyOptions = { interactive, overwrite, dryRun: flags.dryRun };
 

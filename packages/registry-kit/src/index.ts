@@ -1,17 +1,17 @@
 export {
+  buildIndex,
   type CompileResult,
+  compileRegistry,
+  createWireValidator,
+  FILE_TYPE,
   type FileRole,
+  ITEM_TYPE,
   type Kind,
   type MantineItem,
   type MantineRegistry,
-  type WireItem,
-  FILE_TYPE,
-  ITEM_TYPE,
-  buildIndex,
-  compileRegistry,
-  createWireValidator,
   toWireItem,
   validateCatalog,
+  type WireItem,
   writeRegistry,
 } from "./build-registry";
 

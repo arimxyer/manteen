@@ -1,4 +1,4 @@
-import { Button, Card, Modal, Paper, createTheme } from "@mantine/core";
+import { Button, Card, createTheme, Modal, Paper } from "@mantine/core";
 
 /**
  * House Mantine theme.
@@ -10,8 +10,7 @@ import { Button, Card, Modal, Paper, createTheme } from "@mantine/core";
 export const theme = createTheme({
   primaryColor: "indigo",
   defaultRadius: "md",
-  fontFamily:
-    "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+  fontFamily: "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
   headings: {
     fontWeight: "600",
   },

@@ -22,8 +22,8 @@
 import { bareNameOf } from "../config/registries";
 import { diag } from "../plan/diagnostics";
 import type { CanonicalId, Diagnostic, ReceiptIndex, ReceiptOwnerRef } from "../plan/types";
-import { ownerOf } from "../receipt/read";
 import { toReceiptPath } from "../receipt/path";
+import { ownerOf } from "../receipt/read";
 import { resolutionApplied } from "./collision";
 
 export interface ReceiptGateInput {

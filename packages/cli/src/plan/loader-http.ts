@@ -30,7 +30,7 @@
  */
 import { isUrlId } from "./ref";
 import { LIMITS } from "./resolve";
-import type { CanonicalId, ItemLoader, ItemRequest, LoadedDoc } from "./types";
+import type { CanonicalId, ItemLoader, ItemRequest } from "./types";
 
 /**
  * Whole-exchange budget for one request, in milliseconds.
@@ -463,7 +463,7 @@ function itemNamesOf(doc: unknown): string[] {
   const list = Array.isArray(doc)
     ? doc
     : typeof doc === "object" && doc !== null && Array.isArray((doc as { items?: unknown }).items)
-      ? ((doc as { items: unknown[] }).items)
+      ? (doc as { items: unknown[] }).items
       : null;
   if (list === null) return [];
 
@@ -503,7 +503,13 @@ function nearest(wanted: string, names: readonly string[]): string[] {
   }
 
   scored.sort((a, b) =>
-    a.distance !== b.distance ? a.distance - b.distance : a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
+    a.distance !== b.distance
+      ? a.distance - b.distance
+      : a.name < b.name
+        ? -1
+        : a.name > b.name
+          ? 1
+          : 0,
   );
   return scored.slice(0, MAX_SUGGESTIONS).map((entry) => entry.name);
 }

@@ -70,7 +70,7 @@ export function mergeTheme(argv: string[]): number {
     return 0;
   }
 
-  let result;
+  let result: ReturnType<typeof mergeThemeSource>;
   try {
     result = mergeThemeSource(readFileSync(args.base, "utf8"), incomingText, {
       prefer: args.prefer,

@@ -12,11 +12,10 @@
  */
 export { apply } from "./apply/index";
 export { loadConfig } from "./config/load";
-export { plan } from "./plan/index";
-
 // `export *` rather than an enumerated list: `plan/types.ts` is the sole
 // declaration site for the contract, and a hand-maintained re-export list is one
 // more place for it to fall out of step. It carries values as well as types
 // (`RECEIPT_FILENAME`, `RECEIPT_VERSION`), so `export type *` would drop them.
 export * from "./config/types";
+export { plan } from "./plan/index";
 export * from "./plan/types";

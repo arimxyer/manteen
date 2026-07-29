@@ -12,9 +12,9 @@
  * been written at all.
  */
 import {
-  RECEIPT_VERSION,
   type CanonicalId,
   type Plan,
+  RECEIPT_VERSION,
   type Receipt,
   type ReceiptFile,
   type ReceiptItem,

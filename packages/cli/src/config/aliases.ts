@@ -271,8 +271,13 @@ export function createAliasResolver(
 
       if (placeholder !== undefined) {
         const alias = TARGET_PLACEHOLDER[placeholder];
-        if (alias === undefined) return refuse("target-refused-type", `unknown target placeholder ${placeholder}`);
-        return contain(placeUnderAlias(alias, file.target.slice(placeholder.length)), root, item.id);
+        if (alias === undefined)
+          return refuse("target-refused-type", `unknown target placeholder ${placeholder}`);
+        return contain(
+          placeUnderAlias(alias, file.target.slice(placeholder.length)),
+          root,
+          item.id,
+        );
       }
 
       // `~/` is the interchange format's spelling of "the project root".

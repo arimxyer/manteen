@@ -22,10 +22,5 @@
       "@/lib/*": ["./registry/lib/*"]
     }
   },
-  "include": [
-    "registry/**/*",
-    "test/**/*",
-    "packages/*/src/**/*",
-    "packages/*/test/**/*"
-  ]
+  "include": ["registry/**/*", "test/**/*", "packages/*/src/**/*", "packages/*/test/**/*"]
 }

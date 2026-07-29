@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
 import { Divider, Group, Stack, Text, Title } from "@mantine/core";
+import type { ReactNode } from "react";
 
 export interface PageHeaderProps {
   title: string;
@@ -8,12 +8,7 @@ export interface PageHeaderProps {
   withDivider?: boolean;
 }
 
-export function PageHeader({
-  title,
-  description,
-  actions,
-  withDivider = true,
-}: PageHeaderProps) {
+export function PageHeader({ title, description, actions, withDivider = true }: PageHeaderProps) {
   return (
     <Stack gap="sm" mb="lg">
       <Group justify="space-between" align="flex-start" wrap="nowrap">

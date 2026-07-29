@@ -1,14 +1,13 @@
+import { describe, expect, test } from "bun:test";
 import { join, resolve } from "node:path";
 
-import { describe, expect, test } from "bun:test";
-
 import {
-  type MantineRegistry,
-  type WireItem,
   compileRegistry,
   createWireValidator,
+  type MantineRegistry,
   toWireItem,
   validateCatalog,
+  type WireItem,
 } from "../src/build-registry";
 
 const FIXTURES = resolve(import.meta.dirname, "../fixtures");
@@ -89,8 +88,9 @@ describe("meta.mantine", () => {
     // If it leaked into `files`, every client would drop a stray theme module
     // into the consumer's project instead of merging it.
     const dataGrid = itemNamed(compileRegistry(BASE).items, "data-grid");
-    const meta = (dataGrid.meta as { mantine: { themeFragment: { path: string; content: string } } })
-      .mantine;
+    const meta = (
+      dataGrid.meta as { mantine: { themeFragment: { path: string; content: string } } }
+    ).mantine;
     const files = dataGrid.files as { path: string }[];
 
     expect(meta.themeFragment.path).toBe("src/data-grid.theme.ts");

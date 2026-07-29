@@ -119,7 +119,11 @@ export async function startRegistryServer(options = {}) {
 
     const mount = mountName === undefined ? undefined : mounts.get(mountName);
     if (mount === undefined) {
-      send(response, 404, JSON.stringify({ error: `no registry is mounted at /${mountName ?? ""}` }));
+      send(
+        response,
+        404,
+        JSON.stringify({ error: `no registry is mounted at /${mountName ?? ""}` }),
+      );
       return;
     }
 

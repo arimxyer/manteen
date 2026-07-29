@@ -13,9 +13,12 @@
     "typecheck": "tsc --noEmit",
     "verify:node": "bun run build:kit && node packages/registry-kit/dist/cli.mjs build",
     "build:site": "node scripts/build-site.mjs",
-    "serve": "bun run build:registry && bun run build:site && bunx --bun serve public -p 4321"
+    "serve": "bun run build:registry && bun run build:site && bunx --bun serve public -p 4321",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.6",
     "@mantine/core": "^9.5.0",
     "@mantine/hooks": "^9.5.0",
     "@tabler/icons-react": "^3.45.0",

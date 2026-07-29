@@ -25,8 +25,8 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readFileSync,
   readdirSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -36,7 +36,11 @@ import { after, test } from "node:test";
 
 import { compileRegistry, writeRegistry } from "manteen-kit";
 
-import { MALFORMED_MOUNT, OVERSIZE_MOUNT, startRegistryServer } from "./helpers/registry-server.mjs";
+import {
+  MALFORMED_MOUNT,
+  OVERSIZE_MOUNT,
+  startRegistryServer,
+} from "./helpers/registry-server.mjs";
 
 const PKG_ROOT = resolve(import.meta.dirname, "..");
 const REPO_ROOT = resolve(PKG_ROOT, "..", "..");
@@ -52,10 +56,7 @@ assert.equal(
   "the e2e tier must run under node — use `node --test packages/cli/e2e/*.mjs`",
 );
 
-assert.ok(
-  existsSync(CLI),
-  `${CLI} is missing. Run \`bun --cwd=packages/cli run build\` first.`,
-);
+assert.ok(existsSync(CLI), `${CLI} is missing. Run \`bun --cwd=packages/cli run build\` first.`);
 
 // ---- the secret --------------------------------------------------------------
 
@@ -553,7 +554,11 @@ test("a 404 from a registry with an index suggests the nearest item", async () =
   // that asks for it.
   const index = requestsTo("open").filter((request) => request.name === "registry.json");
   assert.equal(index.length, 1, "the index must be fetched exactly once to produce a suggestion");
-  assert.equal(index[0].query.channel, "stable", "the index request must carry the registry's params");
+  assert.equal(
+    index[0].query.channel,
+    "stable",
+    "the index request must carry the registry's params",
+  );
   assert.deepEqual(manifest(project), before, "a refused run must write nothing");
 });
 

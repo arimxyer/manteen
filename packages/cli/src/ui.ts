@@ -20,14 +20,14 @@
  * diagnostics have to be greppable on stderr.
  */
 import {
+  type Option as ClackOption,
   cancel as clackCancel,
   confirm as clackConfirm,
   intro as clackIntro,
-  isCancel,
   multiselect as clackMultiselect,
   note as clackNote,
   outro as clackOutro,
-  type Option as ClackOption,
+  isCancel,
 } from "@clack/prompts";
 
 /**

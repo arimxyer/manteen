@@ -72,10 +72,7 @@ export interface Expansion {
  * an unset one — and the whole point of the check is to say which variable to
  * set.
  */
-export function expandVars(
-  template: string,
-  env: Record<string, string | undefined>,
-): Expansion {
+export function expandVars(template: string, env: Record<string, string | undefined>): Expansion {
   const missing = new Set<string>();
   const text = template.replace(varPattern(), (whole, name: string) => {
     const value = env[name];
@@ -233,6 +230,7 @@ function encodeKeepingVars(value: string): string {
   let out = "";
   let last = 0;
   let match: RegExpExecArray | null;
+  // biome-ignore lint/suspicious/noAssignInExpressions: the standard exec() iteration idiom; the alternative duplicates the call above and below the loop.
   while ((match = pattern.exec(value)) !== null) {
     out += encodeURIComponent(value.slice(last, match.index)) + match[0];
     last = match.index + match[0].length;

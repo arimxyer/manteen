@@ -1,10 +1,4 @@
-import {
-  Node,
-  ObjectLiteralExpression,
-  Project,
-  SourceFile,
-  SyntaxKind,
-} from "ts-morph";
+import { Node, type ObjectLiteralExpression, Project, type SourceFile, SyntaxKind } from "ts-morph";
 
 export interface MergeConflict {
   /** Dotted path into the theme object, e.g. `components.Button.defaultProps.radius`. */
@@ -122,9 +116,7 @@ function propertyName(node: Node): string | null {
 }
 
 function findProperty(object: ObjectLiteralExpression, name: string) {
-  return object
-    .getProperties()
-    .find((property) => propertyName(property) === name);
+  return object.getProperties().find((property) => propertyName(property) === name);
 }
 
 /**
@@ -292,7 +284,11 @@ function mergeExtendObject(
         ? "callback form cannot be merged automatically"
         : "both sides set this value";
 
-    if (ctx.prefer === "incoming" && !isCallback(baseInitializer) && !isCallback(incomingInitializer)) {
+    if (
+      ctx.prefer === "incoming" &&
+      !isCallback(baseInitializer) &&
+      !isCallback(incomingInitializer)
+    ) {
       baseProperty.setInitializer(incomingInitializer.getText());
       ctx.mutations += 1;
     }
@@ -403,8 +399,7 @@ function findMantineImport(file: SourceFile) {
 }
 
 const caseSensitive = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
-const caseInsensitive = (a: string, b: string) =>
-  a.toLowerCase().localeCompare(b.toLowerCase());
+const caseInsensitive = (a: string, b: string) => a.toLowerCase().localeCompare(b.toLowerCase());
 
 /**
  * Infer the file's own import-ordering convention instead of imposing one.

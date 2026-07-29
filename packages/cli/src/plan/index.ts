@@ -25,7 +25,7 @@ import { resolve as resolvePath } from "node:path";
 
 import { addDependencyCommand, detectPackageManager, type PackageManagerName } from "nypm";
 import { satisfies } from "semver";
-
+import { hashFileBytes } from "../apply/preflight";
 import { loadEnv } from "../config/load";
 import { splitItemId } from "../config/registries";
 import type { LoadedConfig } from "../config/types";
@@ -37,17 +37,15 @@ import { checkReceipt } from "../gates/receipt";
 import { aggregate } from "../gates/report";
 import { installedVersion, resolveMantineInstall } from "../gates/resolve-mantine-install";
 import { reportStylesApi } from "../gates/styles-api";
-import { hashFileBytes } from "../apply/preflight";
 import { createReceiptReader, createReceiptValidator } from "../receipt/load";
 import { toReceiptPath } from "../receipt/path";
 import { buildIndex, ownerOf, readReceipt } from "../receipt/read";
 import { diag } from "./diagnostics";
-import { createHttpLoader, isHttpUrl, type IndexResolver, type IndexSource } from "./loader-http";
+import { createHttpLoader, type IndexResolver, type IndexSource, isHttpUrl } from "./loader-http";
 import { createFileLoader, isFileUrl } from "./loader-local";
 import { expandVars } from "./registry-source";
 import { resolve as resolveGraph } from "./resolve";
 import { foldTheme } from "./theme-fold";
-import { RECEIPT_VERSION } from "./types";
 import type {
   Diagnostic,
   Disposition,
@@ -56,13 +54,14 @@ import type {
   Plan,
   PlanFn,
   PlanItem,
-  PlanOptions,
   PlannedDependency,
   PlannedFile,
+  PlanOptions,
   ReceiptState,
   ResolvedItem,
   ResolvePorts,
 } from "./types";
+import { RECEIPT_VERSION } from "./types";
 
 /**
  * Never reached while `plan.ok` is false, which is the only state it can be in
@@ -75,11 +74,7 @@ const NO_PACKAGE_MANAGER = "npm" as PackageManagerName;
 
 export const plan = planImpl satisfies PlanFn;
 
-async function planImpl(
-  config: LoadedConfig,
-  refs: string[],
-  options: PlanOptions,
-): Promise<Plan> {
+async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptions): Promise<Plan> {
   const root = config.root;
   const force = options.force === true;
 
@@ -153,7 +148,8 @@ async function planImpl(
   // ---- one hash pass over every planned destination -------------------------
   const existing: Map<string, string | null> = new Map();
   for (const file of graph.files) {
-    if (!existing.has(file.destination)) existing.set(file.destination, hashFileBytes(file.destination));
+    if (!existing.has(file.destination))
+      existing.set(file.destination, hashFileBytes(file.destination));
   }
 
   diagnostics.push(
@@ -353,7 +349,11 @@ function indexResolverFor(
 
 // ---- resolved -> planned ----------------------------------------------------
 
-function toPlanItem(item: ResolvedItem, existing: ExistingHashes, index: ReturnType<typeof buildIndex>): PlanItem {
+function toPlanItem(
+  item: ResolvedItem,
+  existing: ExistingHashes,
+  index: ReturnType<typeof buildIndex>,
+): PlanItem {
   const files: PlannedFile[] = item.files.map((file) => {
     // Of the UTF-8 encoding of the STRING we would write. `existing` hashes RAW
     // BYTES. The two compare equal only because write-files.ts writes with an
@@ -540,7 +540,8 @@ function installCommandFor(
 
   // `range === ""` renders as a bare name: an unversioned spec is `react`, and
   // `react@` is a 404.
-  const render = (d: PlannedDependency): string => (d.range === "" ? d.name : `${d.name}@${d.range}`);
+  const render = (d: PlannedDependency): string =>
+    d.range === "" ? d.name : `${d.name}@${d.range}`;
 
   const prod = dependencies.filter((d) => !d.dev).map(render);
   const dev = dependencies.filter((d) => d.dev).map(render);

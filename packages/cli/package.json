@@ -16,11 +16,21 @@
     "./schema": "./schema/manteen.schema.json",
     "./schema/*": "./schema/*"
   },
-  "files": ["dist", "schema", "README.md"],
+  "files": [
+    "dist",
+    "schema",
+    "README.md"
+  ],
   "engines": {
     "node": ">=22.12"
   },
-  "keywords": ["mantine", "registry", "components", "cli", "shadcn"],
+  "keywords": [
+    "mantine",
+    "registry",
+    "components",
+    "cli",
+    "shadcn"
+  ],
   "scripts": {
     "build": "tsdown",
     "test": "bun test",

@@ -152,7 +152,9 @@ export async function installDeps(
       // it: a second line repeating the headline's own count reads as a
       // correction rather than as progress.
       if (batch.dev && batches.length > 1) {
-        progress?.message(`Installing ${count(batch.names.length, true)} with ${plan.packageManager}`);
+        progress?.message(
+          `Installing ${count(batch.names.length, true)} with ${plan.packageManager}`,
+        );
       }
       const result = await add({
         names: batch.names,

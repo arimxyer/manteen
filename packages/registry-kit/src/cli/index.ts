@@ -14,20 +14,30 @@ Commands:
 Run a command with --help for its options.
 `;
 
-const [command, ...rest] = process.argv.slice(2);
-
-switch (command) {
-  case "build":
-    process.exit(build(rest));
-  case "merge-theme":
-    process.exit(mergeTheme(rest));
-  case "-h":
-  case "--help":
-  case undefined:
-    process.stdout.write(USAGE);
-    process.exit(command === undefined ? 2 : 0);
-  default:
-    process.stderr.write(`Unknown command: ${command}\n\n${USAGE}`);
-    process.stderr.write(`\n${BUILD_USAGE}\n${MERGE_USAGE}`);
-    process.exit(2);
+/**
+ * Every branch RETURNS an exit code and the process exits once, at the call
+ * site. The previous shape called `process.exit()` inside each case with no
+ * `break`, so nothing but "exit never returns" stopped `build` from falling
+ * through into `merge-theme` — a hazard that surfaces the day someone captures
+ * the code instead of exiting on it.
+ */
+function run(command: string | undefined, rest: string[]): number {
+  switch (command) {
+    case "build":
+      return build(rest);
+    case "merge-theme":
+      return mergeTheme(rest);
+    case "-h":
+    case "--help":
+    case undefined:
+      process.stdout.write(USAGE);
+      return command === undefined ? 2 : 0;
+    default:
+      process.stderr.write(`Unknown command: ${command}\n\n${USAGE}`);
+      process.stderr.write(`\n${BUILD_USAGE}\n${MERGE_USAGE}`);
+      return 2;
+  }
 }
+
+const [command, ...rest] = process.argv.slice(2);
+process.exit(run(command, rest));

@@ -1,4 +1,4 @@
-import { Skeleton, Table, createTheme } from "@mantine/core";
+import { createTheme, Skeleton, Table } from "@mantine/core";
 
 /**
  * Theme fragment for the `data-table` item.

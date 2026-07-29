@@ -215,8 +215,8 @@ function message(identifier: string, items: readonly CanonicalId[], report: Walk
 
   if (identifier === DEFAULT_PROVIDER) {
     lines.push(
-      "Mantine components throw at render without it — \"MantineProvider was not found",
-      "in component tree\". Mount one at the root of your app:",
+      'Mantine components throw at render without it — "MantineProvider was not found',
+      'in component tree". Mount one at the root of your app:',
       "",
       '  import "@mantine/core/styles.css";',
       '  import { MantineProvider } from "@mantine/core";',

@@ -56,6 +56,29 @@ Two checks encode rules that a reader could otherwise silently break:
 
 Prefer a guard over a convention whenever the rule is mechanically checkable.
 
+## Linting
+
+Biome, one binary for both lint and format. `tsc --noEmit` already covers type
+correctness, so the type-aware rules ESLint would add are largely redundant here.
+
+`biome.json` is pure JSON with no comments — **comments inside arrays make it fail to
+parse, and Biome then silently falls back to its defaults** rather than erroring loudly. That
+is a bad failure mode: a `--write` run under defaults reformatted the whole repo with tabs and
+ignored every rule override. Verify a config change with `biome check biome.json` before
+letting it write anything.
+
+Three rules are off, each because the codebase does the flagged thing on purpose:
+
+| Rule | Why |
+| --- | --- |
+| `noTemplateCurlyInString` | `${VAR}` in a plain string *is* the redaction design — a registry URL keeps the literal `${TOKEN}` so the expanded secret never reaches a diagnostic. |
+| `useLiteralKeys` | Every hit is a `Record<string, unknown>` read while parsing untrusted JSON. `root["lockfileVersion"]` says "dynamic data of unknown shape". |
+| `noConsole` | A CLI writes to stdout and stderr; that is its job. |
+
+Everything else that fires is either fixed or carries a `biome-ignore` naming the reason.
+Prefer a targeted ignore over switching a rule off globally — the rules that flagged an
+`exec()` loop and an index key on fixed-length placeholders catch real bugs elsewhere.
+
 ## Verification
 
 A phase is done when its behaviour is observable, not when it compiles.

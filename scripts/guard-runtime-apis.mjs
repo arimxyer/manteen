@@ -59,7 +59,11 @@ const PORTABLE_ONLY = ["import.meta.dir"];
  * `bun test` tier which only has to stay portable in its path handling.
  */
 const SCOPES = [
-  { label: "shipped", roots: ["packages/cli/src", "packages/cli/e2e", "packages/registry-kit/src"], rules: ALL },
+  {
+    label: "shipped",
+    roots: ["packages/cli/src", "packages/cli/e2e", "packages/registry-kit/src"],
+    rules: ALL,
+  },
   { label: "bun tests", roots: ["packages/registry-kit/test", "test"], rules: PORTABLE_ONLY },
 ];
 
@@ -72,11 +76,11 @@ function selfTest() {
   const cases = [
     // The lookahead: the portable form is never a hit, in any context.
     { rule: "import.meta.dir", text: "const d = import.meta.dirname;", hit: false },
-    { rule: "import.meta.dir", text: "resolve(import.meta.dirname, \"..\")", hit: false },
+    { rule: "import.meta.dir", text: 'resolve(import.meta.dirname, "..")', hit: false },
     { rule: "import.meta.dir", text: "import.meta.dirname", hit: false },
     // …and the Bun form is, however it terminates.
     { rule: "import.meta.dir", text: "const d = import.meta.dir;", hit: true },
-    { rule: "import.meta.dir", text: "resolve(import.meta.dir, \"..\")", hit: true },
+    { rule: "import.meta.dir", text: 'resolve(import.meta.dir, "..")', hit: true },
     { rule: "import.meta.dir", text: "const d = import.meta.dir", hit: true },
     { rule: "import.meta.dir", text: "${import.meta.dir}/schema", hit: true },
     { rule: "import.meta.dir", text: "import.meta.dir\n", hit: true },

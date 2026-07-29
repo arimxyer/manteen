@@ -17,7 +17,7 @@ const REPO_URL = "https://github.com/arimxyer/manteen";
 const index = JSON.parse(readFileSync(join(PUBLIC, "r", "registry.json"), "utf8"));
 
 /** The page interpolates registry-authored strings, so every one is escaped. */
-const escape = (value) =>
+const escapeHtml = (value) =>
   String(value).replace(
     /[&<>"']/g,
     (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char],
@@ -36,12 +36,12 @@ const items = index.items
     const requires = item.meta?.mantine?.requires;
     return `      <li class="item">
         <div class="row">
-          <code class="name">@house/${escape(item.name)}</code>
-          <span class="kind">${escape(KIND[item.type] ?? item.type)}</span>
-          ${requires ? `<span class="req">mantine ${escape(requires)}</span>` : ""}
+          <code class="name">@house/${escapeHtml(item.name)}</code>
+          <span class="kind">${escapeHtml(KIND[item.type] ?? item.type)}</span>
+          ${requires ? `<span class="req">mantine ${escapeHtml(requires)}</span>` : ""}
         </div>
-        ${item.description ? `<p class="desc">${escape(item.description)}</p>` : ""}
-        <code class="cmd">npx shadcn@latest add @house/${escape(item.name)}</code>
+        ${item.description ? `<p class="desc">${escapeHtml(item.description)}</p>` : ""}
+        <code class="cmd">npx shadcn@latest add @house/${escapeHtml(item.name)}</code>
       </li>`;
   })
   .join("\n");

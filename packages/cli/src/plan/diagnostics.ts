@@ -195,10 +195,7 @@ export function isBlocking(diagnostic: Diagnostic, force: boolean): boolean {
  * warning, and both the printed report and `--json` still carry it. Returns a
  * new array — the caller's list is the record of what the gates actually said.
  */
-export function downgradeForced(
-  diagnostics: readonly Diagnostic[],
-  force: boolean,
-): Diagnostic[] {
+export function downgradeForced(diagnostics: readonly Diagnostic[], force: boolean): Diagnostic[] {
   if (!force) return [...diagnostics];
   return diagnostics.map((d) =>
     d.severity === "error" && d.forceable ? { ...d, severity: "warn" as const } : d,
@@ -212,10 +209,7 @@ export function downgradeForced(
  * 2 wins a tie with 1 because it names the thing the user has to fix first —
  * a refused install is downstream of having no package manager at all.
  */
-export function blockingExitCode(
-  diagnostics: readonly Diagnostic[],
-  force: boolean,
-): 0 | 1 | 2 {
+export function blockingExitCode(diagnostics: readonly Diagnostic[], force: boolean): 0 | 1 | 2 {
   let code: 0 | 1 | 2 = 0;
   for (const diagnostic of diagnostics) {
     if (!isBlocking(diagnostic, force)) continue;

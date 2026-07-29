@@ -41,8 +41,8 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readFileSync,
   readdirSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -528,7 +528,11 @@ test("no theme is folded when config declares none, and the drop is reported", (
 
   assert.match(result.stderr, /warn {2}meta-degraded/, result.all);
   assert.match(result.stderr, /theme contribution\(s\) were dropped/, result.all);
-  assert.equal(existsSync(join(project, THEME_REL)), false, "nothing may be invented at the default path");
+  assert.equal(
+    existsSync(join(project, THEME_REL)),
+    false,
+    "nothing may be invented at the default path",
+  );
   assert.equal(receiptOf(project).theme, null, "a dropped contribution owns no theme");
 });
 
@@ -694,7 +698,11 @@ test("criterion: @mantine/core 8.2.1 against a conflicting ^9 exits 1 with ONE g
 
   // The three parts the criterion enumerates, in order.
   assert.match(result.stderr, / {2}installed {2}8\.2\.1/, result.all);
-  assert.match(result.stderr, / {2}read from {2}\S*node_modules\/@mantine\/core\/package\.json/, result.all);
+  assert.match(
+    result.stderr,
+    / {2}read from {2}\S*node_modules\/@mantine\/core\/package\.json/,
+    result.all,
+  );
   assert.match(result.stderr, /^ {4}>=9\s+requires\s+.*@house\/data-table/m, result.all);
 
   // "Proves the gate reads the installed version, not the range." The consumer's

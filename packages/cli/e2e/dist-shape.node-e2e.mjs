@@ -15,7 +15,7 @@
  */
 import { strict as assert } from "node:assert";
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { test } from "node:test";
 
@@ -38,7 +38,7 @@ test("dist is flat — every entry sits one level below the package root", () =>
   assert.deepEqual(
     nested,
     [],
-    "a subdirectory under dist/ breaks `resolve(<module dir>, \"../schema/...\")` for every entry inside it",
+    'a subdirectory under dist/ breaks `resolve(<module dir>, "../schema/...")` for every entry inside it',
   );
 });
 

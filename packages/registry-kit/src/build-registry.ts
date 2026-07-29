@@ -208,7 +208,10 @@ export function writeRegistry(result: CompileResult, outDir: string): void {
   mkdirSync(outDir, { recursive: true });
 
   for (const item of result.items) {
-    writeFileSync(join(outDir, `${item.name as string}.json`), `${JSON.stringify(item, null, 2)}\n`);
+    writeFileSync(
+      join(outDir, `${item.name as string}.json`),
+      `${JSON.stringify(item, null, 2)}\n`,
+    );
   }
 
   writeFileSync(join(outDir, "registry.json"), `${JSON.stringify(result.index, null, 2)}\n`);

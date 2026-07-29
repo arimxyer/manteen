@@ -59,10 +59,7 @@ function edgesOf(
  * a cyclic import graph is legal TypeScript and refusing it would block a valid
  * registry. Recursion is bounded by the resolver's 200-node ceiling.
  */
-export function findCycles(
-  nodes: readonly CanonicalId[],
-  dependsOn: DependsOn,
-): CanonicalId[][] {
+export function findCycles(nodes: readonly CanonicalId[], dependsOn: DependsOn): CanonicalId[][] {
   const known = new Set(nodes);
   const index = new Map<CanonicalId, number>();
   const low = new Map<CanonicalId, number>();
@@ -122,10 +119,7 @@ export function findCycles(
  * emitted and the walk continues, so SCC members come out in id order and the
  * caller still gets a defined total order. `findCycles` is what reports it.
  */
-export function topoSort(
-  nodes: readonly CanonicalId[],
-  dependsOn: DependsOn,
-): CanonicalId[] {
+export function topoSort(nodes: readonly CanonicalId[], dependsOn: DependsOn): CanonicalId[] {
   const known = new Set(nodes);
   const remaining = new Set(known);
   const pending = new Map<CanonicalId, number>();

@@ -20,7 +20,7 @@
  * shadcn and its aliases are not shadcn's.
  */
 import { existsSync, readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 
 import { createPathsMatcher, parseTsconfig, type TsConfigResult } from "get-tsconfig";
 
@@ -43,7 +43,7 @@ import {
   type MantineConfig,
   type Registry,
 } from "./types";
-import { checkSemantics, createConfigValidator, pointer, type ConfigValidator } from "./validate";
+import { type ConfigValidator, checkSemantics, createConfigValidator, pointer } from "./validate";
 
 export const CONFIG_FILENAME = "manteen.json";
 

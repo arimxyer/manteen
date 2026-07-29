@@ -123,7 +123,9 @@ export function createJournal(): Journal {
           else place(entry.destination, entry.preImage);
         } catch (error) {
           unrestored.push(entry.destination);
-          details.push(`${entry.destination}: ${error instanceof Error ? error.message : String(error)}`);
+          details.push(
+            `${entry.destination}: ${error instanceof Error ? error.message : String(error)}`,
+          );
         }
       }
 

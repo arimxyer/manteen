@@ -1,6 +1,5 @@
-import { resolve } from "node:path";
-
 import { describe, expect, test } from "bun:test";
+import { resolve } from "node:path";
 import { compileRegistry } from "manteen-kit";
 
 const CATALOG = resolve(import.meta.dirname, "../manteen.registry.json");

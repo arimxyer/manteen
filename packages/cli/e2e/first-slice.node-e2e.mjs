@@ -21,8 +21,8 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readFileSync,
   readdirSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -50,10 +50,7 @@ assert.equal(
   "the e2e tier must run under node, not bun — use `node --test packages/cli/e2e/*.mjs`",
 );
 
-assert.ok(
-  existsSync(CLI),
-  `${CLI} is missing. Run \`bun --cwd=packages/cli run build\` first.`,
-);
+assert.ok(existsSync(CLI), `${CLI} is missing. Run \`bun --cwd=packages/cli run build\` first.`);
 
 /**
  * The consumer's tsconfig. Four `paths` keys, one backing each alias.
@@ -231,13 +228,21 @@ test("add writes the component at its paths-resolved destination", () => {
     0,
     "package.json must be untouched — @mantine/core is already declared and satisfied",
   );
-  for (const lockfile of ["package-lock.json", "bun.lock", "bun.lockb", "pnpm-lock.yaml", "yarn.lock"]) {
+  for (const lockfile of [
+    "package-lock.json",
+    "bun.lock",
+    "bun.lockb",
+    "pnpm-lock.yaml",
+    "yarn.lock",
+  ]) {
     assert.equal(existsSync(join(installed, lockfile)), false, `${lockfile} must not appear`);
   }
 });
 
 test("re-running reports identical and rewrites nothing", () => {
-  const before = createHash("sha256").update(readFileSync(join(installed, DESTINATION))).digest("hex");
+  const before = createHash("sha256")
+    .update(readFileSync(join(installed, DESTINATION)))
+    .digest("hex");
 
   const result = run(installed, ["add", "@base/empty-state"]);
   assert.equal(result.status, 0, result.all);
@@ -251,7 +256,9 @@ test("re-running reports identical and rewrites nothing", () => {
   );
   assert.match(result.stdout, /^identical\s+src\/components\/ui\/empty-state\.tsx$/m, result.all);
 
-  const after = createHash("sha256").update(readFileSync(join(installed, DESTINATION))).digest("hex");
+  const after = createHash("sha256")
+    .update(readFileSync(join(installed, DESTINATION)))
+    .digest("hex");
   assert.equal(after, before, "an identical disposition must not rewrite the file");
 });
 
@@ -303,12 +310,12 @@ test("an alias with no backing paths key exits 2 and lists the keys present", ()
   // 2, not 1: this is a config problem, found before there is a Plan to refuse.
   assert.equal(result.status, 2, result.all);
   // `ConfigError.pointer` is a JSON Pointer into manteen.json, not a dotted path.
-  assert.ok(result.stderr.includes("/aliases/ui"), `stderr must point at /aliases/ui\n${result.all}`);
+  assert.ok(
+    result.stderr.includes("/aliases/ui"),
+    `stderr must point at /aliases/ui\n${result.all}`,
+  );
   for (const key of PATHS_KEYS) {
-    assert.ok(
-      result.stderr.includes(key),
-      `stderr must list the paths key ${key}\n${result.all}`,
-    );
+    assert.ok(result.stderr.includes(key), `stderr must list the paths key ${key}\n${result.all}`);
   }
 
   // The assertion that would silently pass under `[] === unresolvable`: with

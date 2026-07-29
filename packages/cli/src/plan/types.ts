@@ -27,21 +27,42 @@ export type CanonicalId = string; // "@house/data-table" | "url:https://x/r/a.js
 export type Severity = "error" | "warn" | "info";
 
 export type DiagnosticCode =
-  | "unknown-namespace" | "missing-env" | "fetch-failed" | "wire-invalid"
-  | "file-no-content"   | "meta-invalid-requires" | "meta-degraded"
-  | "target-collision"  | "target-escapes-root"   | "target-refused-type"
-  | "resolution-applied"| "dependency-cycle"      | "bare-dep-assumed-local"
-  | "bare-dep-unresolvable" | "name-mismatch"
-  | "dependency-range-conflict" | "dependency-range-narrowed"
-  | "mantine-version-mismatch"  | "mantine-version-unknown" | "mantine-malformed-metadata"
-  | "provider-missing"  | "styles-api"
-  | "theme-base-unmergeable" | "theme-conflict"
-  | "destination-exists" | "no-package-manager"
-  | "depth-exceeded" | "node-limit" | "response-too-large"
+  | "unknown-namespace"
+  | "missing-env"
+  | "fetch-failed"
+  | "wire-invalid"
+  | "file-no-content"
+  | "meta-invalid-requires"
+  | "meta-degraded"
+  | "target-collision"
+  | "target-escapes-root"
+  | "target-refused-type"
+  | "resolution-applied"
+  | "dependency-cycle"
+  | "bare-dep-assumed-local"
+  | "bare-dep-unresolvable"
+  | "name-mismatch"
+  | "dependency-range-conflict"
+  | "dependency-range-narrowed"
+  | "mantine-version-mismatch"
+  | "mantine-version-unknown"
+  | "mantine-malformed-metadata"
+  | "provider-missing"
+  | "styles-api"
+  | "theme-base-unmergeable"
+  | "theme-conflict"
+  | "destination-exists"
+  | "no-package-manager"
+  | "depth-exceeded"
+  | "node-limit"
+  | "response-too-large"
   // ---- beyond §1's list, kept contiguous so the §1 block stays auditable ----
   // Install receipt (§5a). Cross-RUN ownership; `target-collision` is the
   // in-run case.
-  | "receipt-collision" | "receipt-stale" | "receipt-unreadable" | "receipt-drift"
+  | "receipt-collision"
+  | "receipt-stale"
+  | "receipt-unreadable"
+  | "receipt-drift"
   /**
    * §5a resolution 4: the version gate reads `@mantine/core` ONLY, so a
    * `@mantine/hooks@^9` sitting on a mismatched major would otherwise pass in
@@ -55,25 +76,30 @@ export type DiagnosticCode =
 export interface Diagnostic {
   code: DiagnosticCode;
   severity: Severity;
-  message: string;                 // rendered text; never contains an expanded secret
-  items?: CanonicalId[];           // who this is about
-  path?: string;                   // destination or config path, when relevant
-  forceable: boolean;              // whether --force may downgrade error -> warn
+  message: string; // rendered text; never contains an expanded secret
+  items?: CanonicalId[]; // who this is about
+  path?: string; // destination or config path, when relevant
+  forceable: boolean; // whether --force may downgrade error -> warn
 }
 
 // ---- ports -----------------------------------------------------------------
 
 export interface ItemRequest {
   id: CanonicalId;
-  url: string;                     // expanded — never stored on the Plan
-  redactedUrl: string;             // ${VAR} left literal — this is what the Plan stores
+  url: string; // expanded — never stored on the Plan
+  redactedUrl: string; // ${VAR} left literal — this is what the Plan stores
   headers: Record<string, string>; // expanded — never stored on the Plan
 }
 
 export type LoadedDoc =
-  | { ok: true;  doc: unknown; redactedUrl: string }
-  | { ok: false; reason: "network" | "status" | "not-json" | "too-large";
-      status?: number; redactedUrl: string; detail?: string };
+  | { ok: true; doc: unknown; redactedUrl: string }
+  | {
+      ok: false;
+      reason: "network" | "status" | "not-json" | "too-large";
+      status?: number;
+      redactedUrl: string;
+      detail?: string;
+    };
 
 export type ItemLoader = (req: ItemRequest) => Promise<LoadedDoc>;
 
@@ -99,9 +125,9 @@ export interface ResolvePorts {
  */
 export interface ResolvedFile {
   itemId: CanonicalId;
-  sourcePath: string;              // files[].path, verbatim from the wire item
-  wireType: string;                // "registry:ui" | ...
-  destination: string;             // ABSOLUTE, proven inside root
+  sourcePath: string; // files[].path, verbatim from the wire item
+  wireType: string; // "registry:ui" | ...
+  destination: string; // ABSOLUTE, proven inside root
   content: string;
 }
 
@@ -110,13 +136,13 @@ export interface ResolvedItem {
   namespace: string | null;
   name: string;
   wireType: string;
-  sourceUrl: string;               // REDACTED
+  sourceUrl: string; // REDACTED
   requestedBy: (CanonicalId | "<root>")[];
   dependsOn: CanonicalId[];
-  requires?: string;               // meta.mantine.requires, only when validRange
-  provider?: string;               // meta.mantine.provider identifier
+  requires?: string; // meta.mantine.requires, only when validRange
+  provider?: string; // meta.mantine.provider identifier
   stylesApi?: Record<string, string[]>;
-  files: ResolvedFile[];           // theme-destination files are NOT here (D5)
+  files: ResolvedFile[]; // theme-destination files are NOT here (D5)
 }
 
 /**
@@ -144,10 +170,10 @@ export interface ThemeFragment {
  * index) arrives as a separate parameter.
  */
 export interface ResolvedGraph {
-  root: string;                    // absolute project root = dirname(manteen.json)
+  root: string; // absolute project root = dirname(manteen.json)
   configPath: string;
-  items: ResolvedItem[];           // topologically sorted, lexicographic tiebreak
-  files: ResolvedFile[];           // flattened in item order — the write list
+  items: ResolvedItem[]; // topologically sorted, lexicographic tiebreak
+  files: ResolvedFile[]; // flattened in item order — the write list
   dependencies: PlannedDependency[];
   themeFragments: ThemeFragment[]; // fold order; empty when nothing contributes
   diagnostics: Diagnostic[];
@@ -166,8 +192,8 @@ export interface ResolvedGraph {
 export type Disposition = "create" | "overwrite" | "identical";
 
 export interface PlannedFile extends ResolvedFile {
-  sha256: string;                        // of `content`
-  existing: { sha256: string } | null;   // pre-image hash, for TOCTOU + disposition
+  sha256: string; // of `content`
+  existing: { sha256: string } | null; // pre-image hash, for TOCTOU + disposition
   disposition: Disposition;
   /**
    * Who the receipt says owns this destination; null when unowned, when there
@@ -182,21 +208,21 @@ export interface PlannedFile extends ResolvedFile {
 }
 
 export interface PlannedDependency {
-  name: string;                    // "@mantine/core"
-  range: string;                   // "^9"
+  name: string; // "@mantine/core"
+  range: string; // "^9"
   dev: boolean;
   wantedBy: CanonicalId[];
 }
 
 export interface PlannedTheme {
-  destination: string;             // ABSOLUTE = resolved config.theme
+  destination: string; // ABSOLUTE = resolved config.theme
   base: { sha256: string } | null; // null when the file does not exist yet
-  text: string;                    // FINAL folded text — apply writes exactly this
+  text: string; // FINAL folded text — apply writes exactly this
   sha256: string;
-  changed: boolean;                // false => apply skips phase 4 entirely
+  changed: boolean; // false => apply skips phase 4 entirely
   added: string[];
   importsAdded: string[];
-  conflicts: MergeConflict[];      // re-exported from manteen-kit
+  conflicts: MergeConflict[]; // re-exported from manteen-kit
   sources: { itemId: CanonicalId; kind: ThemeSourceKind; path: string }[]; // fold order
 }
 
@@ -217,30 +243,30 @@ export interface PlanItem {
   namespace: string | null;
   name: string;
   wireType: string;
-  sourceUrl: string;               // REDACTED
+  sourceUrl: string; // REDACTED
   requestedBy: (CanonicalId | "<root>")[];
   dependsOn: CanonicalId[];
-  requires?: string;               // meta.mantine.requires, only when validRange
-  provider?: string;               // meta.mantine.provider identifier
+  requires?: string; // meta.mantine.requires, only when validRange
+  provider?: string; // meta.mantine.provider identifier
   stylesApi?: Record<string, string[]>;
-  files: PlannedFile[];            // theme-destination files are NOT here (D5)
+  files: PlannedFile[]; // theme-destination files are NOT here (D5)
 }
 
 export interface Plan {
   version: 1;
-  root: string;                    // absolute project root = dirname(manteen.json)
+  root: string; // absolute project root = dirname(manteen.json)
   configPath: string;
-  items: PlanItem[];               // topologically sorted, lexicographic tiebreak
-  files: PlannedFile[];            // flattened in item order — the write list
+  items: PlanItem[]; // topologically sorted, lexicographic tiebreak
+  files: PlannedFile[]; // flattened in item order — the write list
   dependencies: PlannedDependency[];
-  packageManager: PackageManagerName;   // from nypm, resolved at plan time
-  installCommand: string | null;   // exactly what apply will run, corepack prefix included
+  packageManager: PackageManagerName; // from nypm, resolved at plan time
+  installCommand: string | null; // exactly what apply will run, corepack prefix included
   theme: PlannedTheme | null;
   mantine: MantineInstall;
   /** Read once in plan(); apply() re-reads only to hash-verify in preflight. */
   receipt: ReceiptState;
   diagnostics: Diagnostic[];
-  ok: boolean;                     // see the refusal contract in §1
+  ok: boolean; // see the refusal contract in §1
 }
 
 export interface PlanOptions {
@@ -318,13 +344,9 @@ export interface ApplyOutcome {
  * implementations live in `plan/index.ts` and `apply/index.ts` and should be
  * written `satisfies PlanFn` / `satisfies ApplyFn`.
  */
-export type PlanFn = (
-  config: LoadedConfig, refs: string[], options: PlanOptions,
-) => Promise<Plan>;
+export type PlanFn = (config: LoadedConfig, refs: string[], options: PlanOptions) => Promise<Plan>;
 
-export type ApplyFn = (
-  plan: Plan, options: ApplyOptions,
-) => Promise<ApplyOutcome>;
+export type ApplyFn = (plan: Plan, options: ApplyOptions) => Promise<ApplyOutcome>;
 
 // ---- install receipt (manteen.lock.json) -----------------------------------
 // Records item -> registry -> destination -> content hash so a destination owned
@@ -388,7 +410,7 @@ export interface Receipt {
    *  preserved verbatim when already present, so it does not churn each run. */
   $schema?: string;
   lockfileVersion: typeof RECEIPT_VERSION;
-  items: ReceiptItem[];            // sorted by id
+  items: ReceiptItem[]; // sorted by id
   theme: ReceiptTheme | null;
 }
 
@@ -402,9 +424,17 @@ export type ReceiptUnreadable = "unparseable" | "invalid" | "future-version";
  */
 export type ReceiptState =
   | { present: false; path: string }
-  | { present: true; ok: true;  path: string; sha256: string; raw: string; receipt: Receipt }
-  | { present: true; ok: false; path: string; sha256: string; raw: string;
-      reason: ReceiptUnreadable; detail: string; sawVersion?: number };
+  | { present: true; ok: true; path: string; sha256: string; raw: string; receipt: Receipt }
+  | {
+      present: true;
+      ok: false;
+      path: string;
+      sha256: string;
+      raw: string;
+      reason: ReceiptUnreadable;
+      detail: string;
+      sawVersion?: number;
+    };
 
 export interface ReceiptOwnerRef {
   itemId: CanonicalId;

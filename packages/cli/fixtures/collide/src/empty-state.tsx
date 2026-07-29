@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
 import { Button, Center, Stack, Text, Title } from "@mantine/core";
+import type { ReactNode } from "react";
 
 /**
  * The incompatible half of the collision fixture.

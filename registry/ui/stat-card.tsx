@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
 import { Group, Paper, Text, ThemeIcon } from "@mantine/core";
 import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react";
+import type { ReactNode } from "react";
 
 export interface StatCardProps {
   label: string;

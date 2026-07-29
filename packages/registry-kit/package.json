@@ -14,11 +14,20 @@
     },
     "./schema": "./schema/manteen.registry.schema.json"
   },
-  "files": ["dist", "schema", "README.md"],
+  "files": [
+    "dist",
+    "schema",
+    "README.md"
+  ],
   "engines": {
     "node": ">=20.11"
   },
-  "keywords": ["mantine", "registry", "components", "codemod"],
+  "keywords": [
+    "mantine",
+    "registry",
+    "components",
+    "codemod"
+  ],
   "scripts": {
     "build": "tsdown",
     "test": "bun test",

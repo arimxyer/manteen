@@ -20,7 +20,9 @@ export type ConfigValidator = (document: unknown) => ConfigError[] | null;
 
 /** JSON Pointer escaping, for keys that may contain `/` (a multi-segment item name). */
 export function pointer(...segments: string[]): string {
-  return segments.map((segment) => `/${segment.replaceAll("~", "~0").replaceAll("/", "~1")}`).join("");
+  return segments
+    .map((segment) => `/${segment.replaceAll("~", "~0").replaceAll("/", "~1")}`)
+    .join("");
 }
 
 /** `/aliases/components` -> `aliases.components`, which is how the field is spoken about. */
@@ -46,7 +48,9 @@ export function createConfigValidator(schema: object): ConfigValidator {
     // A failing `oneOf` reports the wrapper AND every branch. The branch errors
     // say what is actually wrong ("must match pattern \\{name\\}"); the wrapper
     // says only "must match exactly one schema in oneOf", which helps nobody.
-    const paths = new Set(errors.filter((error) => error.keyword !== "oneOf").map((e) => e.instancePath));
+    const paths = new Set(
+      errors.filter((error) => error.keyword !== "oneOf").map((e) => e.instancePath),
+    );
 
     return errors
       .filter((error) => error.keyword !== "oneOf" || !paths.has(error.instancePath))
@@ -103,7 +107,7 @@ export function checkSemantics(config: MantineConfig): ConfigError[] {
         message: `"${value}" is a filesystem path, not an import prefix`,
         hint:
           `${problem} manteen writes files verbatim, so the import specifiers inside them — ` +
-          "`import { EmptyState } from \"@/components/ui/empty-state\"` — have to resolve in your " +
+          '`import { EmptyState } from "@/components/ui/empty-state"` — have to resolve in your ' +
           "project. Use the prefix your tsconfig `paths` declares.",
       });
     }

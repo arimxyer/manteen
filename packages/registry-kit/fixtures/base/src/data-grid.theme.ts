@@ -1,4 +1,4 @@
-import { Table, createTheme } from "@mantine/core";
+import { createTheme, Table } from "@mantine/core";
 
 export const theme = createTheme({
   components: {

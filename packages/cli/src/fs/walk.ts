@@ -41,7 +41,7 @@
  * whole tree, so a caller can say "not found" and "stopped looking" in different
  * sentences.
  */
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { type Dirent, readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join } from "node:path";
 
 /** One file the walk read, handed to the visitor. */
@@ -89,7 +89,7 @@ export interface WalkReport {
 }
 
 /** `true` stops the walk. Any other return continues it. */
-export type WalkVisitor = (file: WalkedFile) => boolean | void;
+export type WalkVisitor = (file: WalkedFile) => boolean | undefined;
 
 export type SourceWalker = (root: string, visit: WalkVisitor) => WalkReport;
 
@@ -205,7 +205,7 @@ export function walkSources(root: string, visit: WalkVisitor, limits: WalkLimits
     const frame = stack.pop();
     if (frame === undefined) break;
 
-    let entries;
+    let entries: Dirent[];
     try {
       entries = readdirSync(frame.dir, { withFileTypes: true });
     } catch {

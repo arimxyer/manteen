@@ -35,13 +35,14 @@
  * `registry:font` refusal: `validate-item.ts` owns all three, because all three
  * are statements about the document rather than about the graph.
  */
-import { resolutionApplied } from "../gates/collision";
+
 import type { LoadedConfig } from "../config/types";
+import { resolutionApplied } from "../gates/collision";
 import { type DependencyClaim, unionDependencies } from "./deps";
 import { diag, sortDiagnostics } from "./diagnostics";
 import { findCycles, topoSort } from "./graph";
-import { type ResolvableRef, bareNameOfRef, parseDependencyRef, parseRef } from "./ref";
-import { type NormalizedRegistry, ambiguousBareRef, toRequest } from "./registry-source";
+import { bareNameOfRef, parseDependencyRef, parseRef, type ResolvableRef } from "./ref";
+import { ambiguousBareRef, type NormalizedRegistry, toRequest } from "./registry-source";
 import type {
   CanonicalId,
   Diagnostic,
@@ -53,7 +54,7 @@ import type {
   ResolvePorts,
   ThemeFragment,
 } from "./types";
-import { type ItemValidator, createItemValidator } from "./validate-item";
+import { createItemValidator, type ItemValidator } from "./validate-item";
 
 /**
  * D25's ceilings, declared once.
@@ -134,6 +135,7 @@ export async function resolve(
   refs: readonly string[],
   validator?: ItemValidator,
 ): Promise<ResolvedGraph> {
+  // biome-ignore lint/suspicious/noAssignInExpressions: lazy memoisation, so the two schema reads happen once per process rather than once per resolve().
   const validate = validator ?? (sharedValidator ??= createItemValidator());
   const registries = normalizeRegistries(config);
 

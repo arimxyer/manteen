@@ -11,7 +11,7 @@
  * listed here fails just as loudly as one that goes missing, so finishing a
  * phase forces the list to be updated rather than left to drift.
  */
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const SRC = resolve(import.meta.dirname, "../src");

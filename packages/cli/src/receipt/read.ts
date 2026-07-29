@@ -37,9 +37,7 @@ import { fromReceiptPath, receiptPathProblem } from "./path";
  * from `null` and destroy every prior ownership record. This requirement now
  * lives in the injected implementation, so it is stated at the injection point.
  */
-export type ReceiptRead =
-  | { present: false }
-  | { present: true; raw: string; sha256: string };
+export type ReceiptRead = { present: false } | { present: true; raw: string; sha256: string };
 
 export type ReceiptReader = (path: string) => ReceiptRead;
 
@@ -75,7 +73,14 @@ export function readReceipt(
 
   const parsed = parseReceipt(found.raw, validate);
   if (parsed.ok) {
-    return { present: true, ok: true, path, sha256: found.sha256, raw: found.raw, receipt: parsed.receipt };
+    return {
+      present: true,
+      ok: true,
+      path,
+      sha256: found.sha256,
+      raw: found.raw,
+      receipt: parsed.receipt,
+    };
   }
   return {
     present: true,
@@ -216,7 +221,8 @@ function structuralProblem(root: Record<string, unknown>): string | null {
     for (const key of ["sourceUrl", "wireType"] as const) {
       if (typeof item[key] !== "string") return `item "${id}" has a missing or non-string ${key}`;
     }
-    if (typeof item["direct"] !== "boolean") return `item "${id}" has a missing or non-boolean direct`;
+    if (typeof item["direct"] !== "boolean")
+      return `item "${id}" has a missing or non-boolean direct`;
 
     const files = item["files"];
     if (!Array.isArray(files)) return `item "${id}" has a missing or non-array files`;
@@ -265,8 +271,10 @@ function themeProblem(raw: unknown): string | null {
   for (const rawSource of sources) {
     const source = asRecord(rawSource);
     if (!source) return "theme.sources contains an entry that is not an object";
-    if (typeof source["itemId"] !== "string") return "a theme source has a missing or non-string itemId";
-    if (typeof source["path"] !== "string") return "a theme source has a missing or non-string path";
+    if (typeof source["itemId"] !== "string")
+      return "a theme source has a missing or non-string itemId";
+    if (typeof source["path"] !== "string")
+      return "a theme source has a missing or non-string path";
     if (!THEME_SOURCE_KINDS.includes(source["kind"] as ThemeSourceKind)) {
       return `a theme source has an unknown kind (expected ${THEME_SOURCE_KINDS.join(" or ")})`;
     }

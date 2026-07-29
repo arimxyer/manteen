@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
 import { Group, Skeleton, Stack, Table, Text, UnstyledButton } from "@mantine/core";
 import { IconChevronDown, IconChevronUp, IconSelector } from "@tabler/icons-react";
+import type { ReactNode } from "react";
 
 import { EmptyState } from "@/components/ui/empty-state";
 import { useDataTable } from "@/hooks/use-data-table";
@@ -41,6 +41,7 @@ export function DataTable<T extends Record<string, unknown>>({
     return (
       <Stack gap="xs">
         {Array.from({ length: loadingRows }, (_, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length loading placeholders with no identity and no reordering, so the index IS the stable key.
           <Skeleton key={i} height={40} radius="sm" />
         ))}
       </Stack>

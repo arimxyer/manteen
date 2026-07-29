@@ -66,13 +66,7 @@ import { mergeThemeSource } from "manteen-kit";
 
 import { toReceiptPath } from "../receipt/path";
 import { diag } from "./diagnostics";
-import type {
-  CanonicalId,
-  Diagnostic,
-  MergeConflict,
-  PlannedTheme,
-  ThemeFragment,
-} from "./types";
+import type { CanonicalId, Diagnostic, MergeConflict, PlannedTheme, ThemeFragment } from "./types";
 
 export interface ThemeFoldInput {
   /**
@@ -195,7 +189,7 @@ export function foldTheme(input: ThemeFoldInput): ThemeFoldResult {
   const attributed: { source: ThemeFragment; conflict: MergeConflict }[] = [];
 
   for (const fragment of pending) {
-    let merged;
+    let merged: ReturnType<typeof mergeThemeSource>;
     try {
       merged = mergeThemeSource(text, fragment.content, { prefer: "base" });
     } catch (error) {
@@ -289,7 +283,8 @@ export function foldTheme(input: ThemeFoldInput): ThemeFoldResult {
  * iterate, so no mutations, no conflicts and no added imports — which is what
  * makes it usable as a pure validity probe.
  */
-const EMPTY_THEME_PROBE = 'import { createTheme } from "@mantine/core";\nexport const theme = createTheme({});\n';
+const EMPTY_THEME_PROBE =
+  'import { createTheme } from "@mantine/core";\nexport const theme = createTheme({});\n';
 
 /**
  * Whether `source` is something the kit can read as a theme.
@@ -338,8 +333,7 @@ const REQUIRED_SHAPE = [
 ];
 
 /** D7's guarantee, said to the user in the one place it is load-bearing. */
-const NOTHING_WRITTEN =
-  "The whole merge runs before manteen touches disk, so nothing was written.";
+const NOTHING_WRITTEN = "The whole merge runs before manteen touches disk, so nothing was written.";
 
 /**
  * The base theme on disk cannot be read as a theme.
@@ -471,7 +465,9 @@ function noThemeDeclared(fragments: readonly ThemeFragment[]): Diagnostic {
     "meta-degraded",
     `${fragments.length} theme contribution(s) were dropped because manteen.json declares no \`theme\`: ${fragments
       .map((f) => `${f.itemId} (${f.path})`)
-      .join(", ")}. Set \`theme\` to the file that exports your createTheme(...) call to fold them in.`,
+      .join(
+        ", ",
+      )}. Set \`theme\` to the file that exports your createTheme(...) call to fold them in.`,
     { items: uniqueIds(fragments) },
   );
 }

@@ -139,10 +139,7 @@ export type DependencyRef =
   | { ok: false; bare: true; name: string }
   | { ok: false; bare: false; input: string; reason: string };
 
-export function parseDependencyRef(
-  spec: string,
-  parentNamespace: string | null,
-): DependencyRef {
+export function parseDependencyRef(spec: string, parentNamespace: string | null): DependencyRef {
   const ref = parseRef(spec);
 
   if (ref.kind === "namespaced" || ref.kind === "url") {

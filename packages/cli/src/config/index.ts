@@ -12,30 +12,30 @@
 export {
   ALIAS_PROBE,
   ALIAS_WIRE_TYPE,
-  REFUSED_FILE_TYPES,
-  TARGET_REQUIRED_FILE_TYPES,
-  WIRE_TYPE_ALIAS,
   aliasProbe,
   assertInsideRoot,
   createAliasResolver,
   isInsideRoot,
   matchesPathsPattern,
+  REFUSED_FILE_TYPES,
+  TARGET_REQUIRED_FILE_TYPES,
   unbackedAliases,
+  WIRE_TYPE_ALIAS,
 } from "./aliases";
 
-export { envReferences, expandEnv, expandEnvAll, type Expansion } from "./env";
+export { type Expansion, envReferences, expandEnv, expandEnvAll } from "./env";
 
 export { CONFIG_FILENAME, loadConfig, loadEnv } from "./load";
 
 export {
-  NAME_PLACEHOLDER,
-  URL_ID_PREFIX,
   bareNameOf,
   buildItemUrl,
-  normalizeRegistry,
-  splitItemId,
   type ItemUrl,
+  NAME_PLACEHOLDER,
+  normalizeRegistry,
   type SplitId,
+  splitItemId,
+  URL_ID_PREFIX,
 } from "./registries";
 
 export {
@@ -52,9 +52,9 @@ export {
 } from "./types";
 
 export {
+  type ConfigValidator,
   checkSemantics,
   createConfigValidator,
   formatConfigErrors,
   pointer,
-  type ConfigValidator,
 } from "./validate";

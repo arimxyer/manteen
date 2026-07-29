@@ -35,8 +35,9 @@
 // `src/receipt/write.ts`, with the impure fs + ajv half split into
 // `src/receipt/load.ts`. The split is the purity boundary that label was arguing
 // for, so the path moved rather than the design.
-import { mergeReceipt, serializeReceipt } from "../receipt/write";
+
 import type { ApplyFn, ApplyOptions, ApplyOutcome, Plan, WriteResult } from "../plan/types";
+import { mergeReceipt, serializeReceipt } from "../receipt/write";
 import { installDeps } from "./install-deps";
 import { createJournal } from "./journal";
 import { preflight } from "./preflight";
@@ -108,10 +109,14 @@ function emptyOutcome(plan: Plan, options: ApplyOptions): ApplyOutcome {
   };
 }
 
-function outcomeFiles(plan: Plan, results: ReadonlyMap<string, WriteResult>): ApplyOutcome["files"] {
+function outcomeFiles(
+  plan: Plan,
+  results: ReadonlyMap<string, WriteResult>,
+): ApplyOutcome["files"] {
   return plan.files.map((file) => {
     const result = results.get(file.destination);
-    if (result === undefined) throw new Error(`apply: phase 1 recorded no decision for ${file.destination}.`);
+    if (result === undefined)
+      throw new Error(`apply: phase 1 recorded no decision for ${file.destination}.`);
     return { destination: file.destination, result };
   });
 }

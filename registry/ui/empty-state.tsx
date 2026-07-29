@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
 import { Button, Center, Stack, Text, ThemeIcon, Title } from "@mantine/core";
 import { IconInbox } from "@tabler/icons-react";
+import type { ReactNode } from "react";
 
 export interface EmptyStateProps {
   title?: string;

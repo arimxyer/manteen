@@ -17,7 +17,7 @@ export function build(argv: string[]): number {
   const catalog = resolve(argv[0] ?? "manteen.registry.json");
   const outDir = resolve(argv[1] ?? resolve(catalog, "../public/r"));
 
-  let result;
+  let result: ReturnType<typeof compileRegistry>;
   try {
     result = compileRegistry(catalog);
   } catch (error) {
@@ -38,7 +38,9 @@ export function build(argv: string[]): number {
   writeRegistry(result, outDir);
 
   for (const item of result.items) {
-    process.stdout.write(`  ${item.name as string} → ${item.name as string}.json (${item.type as string})\n`);
+    process.stdout.write(
+      `  ${item.name as string} → ${item.name as string}.json (${item.type as string})\n`,
+    );
   }
   process.stdout.write(`  index → registry.json (${result.items.length} items)\n`);
   process.stdout.write(

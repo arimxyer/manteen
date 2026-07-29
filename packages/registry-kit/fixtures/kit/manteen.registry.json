@@ -9,10 +9,7 @@
       "title": "Callout",
       "description": "Inline informational alert.",
       "mantine": ">=9",
-      "npm": [
-        "@mantine/core@^9",
-        "@tabler/icons-react@^3"
-      ],
+      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
       "files": [
         {
           "path": "src/callout.tsx",
