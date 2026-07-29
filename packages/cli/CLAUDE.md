@@ -19,7 +19,8 @@ apply/            Writes, in six ordered phases. → see apply/CLAUDE.md
 
 Supporting: `config/` (manteen.json, aliases, tsconfig paths, `${VAR}` expansion),
 `gates/` (the eight refusal checks plan calls), `inventory/` (installed + available readers),
-`receipt/` (manteen.lock.json), `fs/walk.ts`.
+`receipt/` (manteen.lock.json), `init/` (W6's separate project-initialization contract),
+`fs/walk.ts`.
 
 ## Conventions worth knowing before you edit
 
@@ -32,13 +33,14 @@ exported it looks, and typecheck will not tell you. This was a real defect found
 
 **Diagnostics are data, not strings.** `plan/diagnostics.ts` holds `DIAGNOSTIC_CODES`, a
 `Record<DiagnosticCode, DiagnosticSpec>` — so adding a union member without a row is a compile
-error, and `scripts/guard-diagnostics.mjs` fails if a code has no emitter. Currently 34/34, 0
-pending. Never add a code without an emitter and a test.
+error, and `scripts/guard-diagnostics.mjs` fails if a code lacks an emitter or a §1 table entry.
+Currently 41/41 emitted and documented, 0 pending. Never add a code without an emitter and a test.
 
-**Interactivity changes exactly one behaviour**, `destination-exists`: a terminal gets a prompt,
-CI gets an error naming `--overwrite` / `--no-overwrite`. `add` and `update` are the only two
-commands that can reach it — `diff` passes `overwrite: true` on purpose, and `list`/`info` never
-plan a write. Both carry a shared `NON-INTERACTIVE` help block. `init` will need it too.
+**In the shipped command set, interactivity changes exactly one behaviour**,
+`destination-exists`: a terminal gets a prompt, CI gets an error naming `--overwrite` /
+`--no-overwrite`. `add` and `update` are the only two commands that can reach it — `diff` passes
+`overwrite: true` on purpose, and `list`/`info` never plan a write. W6 `init` has a separate frozen
+rule: one all-or-nothing confirmation for the coherent init plan, never a per-file selection.
 
 **`isInteractive` is `isTTY && !isCI() && !--yes`, and clack's `isCI` tests `CI === "true"`
 exactly.** `CI=1` is falsy to it, so a harness setting `CI=1` takes the interactive branch and
@@ -48,7 +50,7 @@ blocks forever on a prompt. Tests must use `CI=true`. (D14.)
 
 | Tier | Runs | Command |
 | --- | --- | --- |
-| unit | bun, source | `bun test` — 84 |
+| unit | bun, source | `bun test` — 90 |
 | e2e | **node, built `dist/`** | `node --test packages/cli/e2e/*.node-e2e.mjs` — 82 |
 
 `e2e/helpers/child-env.mjs` owns every child process's environment. Use it rather than spreading

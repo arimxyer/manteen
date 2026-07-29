@@ -16,6 +16,7 @@ import { join, resolve } from "node:path";
 
 const SRC = resolve(import.meta.dirname, "../src");
 const TYPES = join(SRC, "plan/types.ts");
+const BUILD_PLAN = resolve(import.meta.dirname, "../../../docs/client-build-plan.md");
 
 /**
  * Declared, not yet emitted, with the phase that will land it.
@@ -51,6 +52,20 @@ if (start === -1) {
 const end = start + types.slice(start).search(/;\s*$/m);
 const declared = [...types.slice(start, end).matchAll(/"([a-z0-9-]+)"/g)].map((m) => m[1]);
 
+const buildPlan = readFileSync(BUILD_PLAN, "utf8");
+const refusalStart = buildPlan.indexOf("### Refusal contract (one table, every path)");
+if (refusalStart === -1) {
+  console.error("guard-diagnostics: no refusal-contract heading in docs/client-build-plan.md");
+  process.exit(1);
+}
+const refusalTail = buildPlan.slice(refusalStart);
+const refusalEnd = refusalTail.indexOf("\n---");
+if (refusalEnd === -1) {
+  console.error("guard-diagnostics: refusal-contract table has no closing section divider");
+  process.exit(1);
+}
+const refusalContract = refusalTail.slice(0, refusalEnd);
+
 const sources = walk(SRC).filter((path) => path !== TYPES);
 const corpus = sources.map((path) => readFileSync(path, "utf8")).join("\n");
 const emitted = (code) =>
@@ -65,6 +80,9 @@ for (const code of declared) {
   if (has && PENDING.has(code)) {
     failures.push(`  ${code}: now emitted — remove it from PENDING (${PENDING.get(code)})`);
   }
+  if (!refusalContract.includes(`\`${code}\``)) {
+    failures.push(`  ${code}: missing from §1's refusal table in docs/client-build-plan.md`);
+  }
 }
 for (const code of PENDING.keys()) {
   if (!declared.includes(code)) failures.push(`  ${code}: in PENDING but no longer declared`);
@@ -77,5 +95,5 @@ if (failures.length > 0) {
 
 const pending = declared.filter((code) => PENDING.has(code)).length;
 console.log(
-  `guard-diagnostics: ${declared.length} codes, ${declared.length - pending} emitted, ${pending} pending.`,
+  `guard-diagnostics: ${declared.length} codes, ${declared.length - pending} emitted, ${declared.length} documented, ${pending} pending.`,
 );

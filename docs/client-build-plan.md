@@ -220,19 +220,24 @@ ok = diagnostics.every(d =>
 | Code | Severity | Forceable | Phase | Exit |
 |---|---|---|---|---|
 | `target-collision` (two distinct ids, one destination) | error | **no** | plan | 1 |
+| `receipt-collision` (different recorded owner at this destination) | error | **no** | plan | 1 |
 | `target-escapes-root` | error | **no** | plan + apply preflight | 1 |
 | `target-refused-type` (registry:style/base/theme/item at file level) | error | no | plan | 1 |
 | `file-no-content` | error | no | plan | 1 |
-| `theme-base-unmergeable` | error | no | plan | 1 |
+| `theme-base-unmergeable` | error | yes | plan | 1 |
 | `dependency-range-conflict` (ranges provably disjoint) | error | yes | plan | 1 |
 | `mantine-version-mismatch` (state `found`, `satisfies` false) | error | **yes** | plan | 1 |
+| `receipt-unreadable` | error | yes | plan | 1 |
 | `unknown-namespace`, `missing-env`, `fetch-failed`, `wire-invalid` | error | no | plan | 1 |
 | `depth-exceeded`, `node-limit`, `response-too-large` | error | no | plan | 1 |
+| `meta-invalid-requires`, `bare-dep-unresolvable` | error | no | plan | 1 |
 | `no-package-manager` | error | no | plan | 2 |
 | `destination-exists` + non-interactive + neither `--overwrite`/`--no-overwrite` | error | via `--overwrite` | plan | 1 |
-| `mantine-version-unknown`, `mantine-malformed-metadata` | warn | — | plan | 0 |
-| `provider-missing`, `dependency-range-narrowed`, `bare-dep-assumed-local`, `dependency-cycle`, `resolution-applied`, `name-mismatch`, `meta-degraded`, `theme-conflict` | warn | — | plan | 0 |
-| `styles-api` | info | — | plan | 0 |
+| `init-framework-unrecognized`, `init-framework-ambiguous`, `init-framework-mismatch`, `init-config-conflict` | error | no | init plan | 2 |
+| `init-source-unsupported`, `init-postcss-unsupported`, `init-path-escapes-root` | error | no | init plan | 1 |
+| `mantine-version-unknown`, `mantine-malformed-metadata`, `mantine-non-core-unsatisfied` | warn | — | plan | 0 |
+| `provider-missing`, `dependency-range-narrowed`, `bare-dep-assumed-local`, `dependency-cycle`, `resolution-applied`, `name-mismatch`, `meta-degraded`, `theme-conflict`, `receipt-stale` | warn | — | plan | 0 |
+| `styles-api`, `receipt-drift` | info | — | plan | 0 |
 | config error (missing/malformed/unresolvable alias) | — | — | load | 2 |
 | user cancel at a prompt | — | — | CLI | 130 |
 
@@ -460,6 +465,31 @@ Consequences that bind every phase:
 - `manteen diff` and `manteen update` stay deferred, but are no longer blocked on format design.
 
 Rows in §6 for "Install receipt / `manteen.lock.json`" and the open question below are superseded.
+
+---
+
+## 5b. W6 contract decisions — approved 2026-07-29
+
+The probe checkpoint in `w6-init-handoff.md` closed these choices before implementation:
+
+| # | Decision |
+|---|---|
+| 1 | Generated config uses the documented live `@house` registry; the current schema does not permit an empty registry map. |
+| 2 | Init may make bounded `@/*` tsconfig and Vite `resolve.tsconfigPaths` patches; explicit conflicts refuse before mutation. |
+| 3 | Theme lives at `<alias source root>/lib/theme.ts`, so every framework imports `@/lib/theme`. |
+| 4 | Only structurally proven source seams are patched; dynamic or unsupported shapes refuse with instructions and are never replaced wholesale. |
+| 5 | Init extends `DiagnosticCode`, `DIAGNOSTIC_CODES` and §1 rather than creating a second refusal system. |
+| 6 | Codemods use a directly declared AST dependency when implementation imports it; a transitive `manteen-kit` dependency is not a contract. |
+| 7 | The programmatic surface will export `planInit`/`applyInit` with every port factory needed to construct their arguments. |
+| 8 | `--framework` accepts `vite`, `next-app`, `next-pages`, `next-hybrid`, `react-router`, `manual`; it resolves absent/ambiguous detection but cannot authorize a contradictory filesystem shape. |
+| 9 | `@tailwindcss/postcss` remains byte-identical. The run emits a structured required instruction, reports `ok: true` / `complete: false`, and exits 0. Empty second-plan semantics apply to mutation entries, not repeated required instructions. |
+
+The frozen type contract is separate from registry `Plan`: init files have no item id, wire type,
+registry lineage or receipt ownership. `InitPlan.files` contains only create/update mutations with
+absolute destinations, final UTF-8 text, final hashes and pre-image hashes. Apply re-verifies those
+hashes, installs dependencies before writes, and writes every file through one shared pre-image
+journal. Interactive apply has one all-or-nothing confirmation; cancellation exits 130 before the
+install phase. Dry-run performs read-only preflight, prompts for nothing, and exits before install.
 
 ---
 

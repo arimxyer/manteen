@@ -1,7 +1,7 @@
 # W6 handoff — `manteen init`
 
-Status: probe stage complete on 2026-07-29. W6 is paused at the required human checkpoint; no
-implementation or shared contract has been frozen yet.
+Status: probe stage and human checkpoint complete on 2026-07-29. The shared contract is frozen in
+`packages/cli/src/init/types.ts`; framework adapter implementation is next.
 
 ## The question
 
@@ -136,10 +136,10 @@ The evidence is point-in-time. Generator tags, template heads and npm latest ver
 the committed W6 e2e fixtures must record their generator version and provenance rather than call
 `@latest` during tests.
 
-## Human checkpoint — proposed contract decisions
+## Approved contract decisions
 
-The probes narrow the remaining product choices. The recommendations below are not frozen until a
-human approves this checkpoint.
+The 2026-07-29 human checkpoint approved the following decisions and authorized the contract
+freeze.
 
 1. **Default registry — use the live `@house` registry.** An empty map is not a valid current
    `manteen.json` (`registries` has `minProperties: 1`), while requiring a registry flag makes the
@@ -174,13 +174,12 @@ human approves this checkpoint.
 9. **Tailwind outcome — make manual completion explicit in the result contract.** Continue the
    non-PostCSS parts, leave `@tailwindcss/postcss` byte-identical, return the exact Mantine block as
    a structured manual action and render the run as incomplete rather than silently “fully
-   initialized.” The checkpoint still needs to choose whether that incomplete outcome exits 0 or
-   1; the recommendation is 0 because this is the accepted coexistence path, provided text and JSON
-   output both name the pending action and the second-run guarantee is scoped to mutation entries.
+   initialized.” This accepted coexistence path exits 0; text and JSON both name the pending action,
+   and the second-run guarantee is scoped to mutation entries.
 
-## Contract-freeze output
+## Frozen contract output
 
-After the checkpoint, one solo pass freezes only the shared surface:
+The solo pass froze only the shared surface:
 
 - framework-set and detection-result types;
 - an `InitPlan` whose file entries carry absolute destinations, final bytes, pre-image hashes and
@@ -191,13 +190,20 @@ After the checkpoint, one solo pass freezes only the shared surface:
 - exact ownership of shared files (`cli/index.ts`, package exports, schemas and e2e wiring) by the
   later integrator.
 
+`packages/cli/src/init/types.ts` is the sole declaration site. `InitPlan.files` contains mutations
+only, so idempotency means `files: []` and `dependencies: []`; Tailwind/manual instructions remain a
+separate required-work channel. `InitApplyOutcome.ok` can therefore be true while `.complete` is
+false, which is the exact exit-0-but-not-finished state approved above. Seven init diagnostics extend
+the guarded §1 vocabulary: detection and authored-config problems exit 2; unsafe transformations
+exit 1; none is forceable.
+
 Do not force init-shaped writes into the registry `Plan`: its files require item ids, wire types,
 receipt ownership and registry lineage that init files do not have. Reuse the journal and package
 manager mechanisms behind an init-specific plan/apply contract instead.
 
 ## Implementation and verification shape
 
-Once the contract is frozen, adapters can fan out by disjoint ownership: Vite, Next App, Next
+With the contract frozen, adapters can fan out by disjoint ownership: Vite, Next App, Next
 Pages, React Router, and PostCSS/Tier B. Integration follows after every adapter is complete; review
 follows integration, never alongside it.
 

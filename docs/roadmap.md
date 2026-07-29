@@ -17,15 +17,15 @@ and something a stranger can depend on, and how the remaining work is sequenced.
 6. **Maintainable** — a linter, dependency automation, and a license file that matches what
    `package.json` claims.
 
-Today: 1, 2 and the mechanical part of 6 are implemented and locally verified. W6's `init` probes
-are complete and paused at their human checkpoint; implementation, the portability matrix,
-publication and release-grade documentation remain, so the tool is not yet something a stranger
-can install and depend on.
+Today: 1, 2 and the mechanical part of 6 are implemented and locally verified. W6's `init` probes,
+human checkpoint and shared-contract freeze are complete; adapter/integration implementation, the
+portability matrix, publication and release-grade documentation remain, so the tool is not yet
+something a stranger can install and depend on.
 
 ## Known gaps, by kind
 
-**Client.** W4's apply surface and W5's command set are complete. W6 `init` has completed its
-probe stage and is awaiting contract approval, followed by W7 portability and runtime hardening.
+**Client.** W4's apply surface and W5's command set are complete. W6 `init` has a frozen shared
+contract and is entering adapter implementation, followed by W7 portability and runtime hardening.
 
 **Commands.** `add`, `list`, `info`, `diff` and `update` ship. `search` does not exist and is not
 currently assigned to a wave; whether it belongs in v1 remains undecided.
@@ -55,7 +55,7 @@ is a judgment call, which is exactly why they are separate runs.
 |---|---|---|---|
 | W4 | Apply surface | narrow + deep: 2–3 agents on one seam, adversarial | Prompt/TTY/CI behaviour is where subtle bugs live. `CI=1` already nearly shipped a hang. Parallelism buys nothing; probing buys everything. |
 | W5 | Command set — `list`, `info`, `diff`, `update` | wide: 4 parallel, shared receipt reader frozen first | Four genuinely independent commands over one contract. The classic freeze-then-fan-out. |
-| W6 | [`init`](w6-init-handoff.md) | probe complete; human checkpoint; then per-framework parallel | The 2026-07-29 probes corrected Vite color-scheme handling, pinned current generator shapes and proved the candidate integrations build. Contract decisions remain before implementation. |
+| W6 | [`init`](w6-init-handoff.md) | probe/checkpoint/contract complete; per-framework parallel next | The 2026-07-29 probes corrected Vite color-scheme handling, pinned current generators and proved candidate integrations. The approved contract now separates mutations from required manual actions. |
 | W7 | Hardening | matrix-driven: agents per platform/runtime, findings-first | The work is discovering what breaks, not writing features. Needs real Windows CI. |
 | W8 | Release | mostly sequential, small | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
 | Wc | Registry content | wide, parallel per component | Independent of all of the above; can run any time. Doubles as client stress-testing. |
@@ -76,8 +76,8 @@ hygiene ..................... done, direct
 **Done so far.** W4 closed the write seam (overwrite decision, dry-run, cancel,
 failure reporting). W5 added `list`, `info`, `diff` and `update` over one frozen
 inventory contract, with `update` routed through the existing `plan()`/`apply()`
-rather than writing files itself. W6's dated probe receipt is complete; next is the human
-checkpoint in `w6-init-handoff.md`, then the shared-contract freeze.
+rather than writing files itself. W6's dated probes, human checkpoint and shared-contract freeze
+are complete; next is the disjoint adapter implementation described in `w6-init-handoff.md`.
 
 W5 and W6 are independent of each other and could run back to back or as parallel tracks of one
 program. W7 must follow both, because it hardens whatever exists. W8 must be last.

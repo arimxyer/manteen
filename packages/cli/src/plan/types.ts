@@ -71,7 +71,18 @@ export type DiagnosticCode =
    * against — and it warns rather than refuses, because the range it doubts is
    * a registry author's declaration about a package we do not gate.
    */
-  | "mantine-non-core-unsatisfied";
+  | "mantine-non-core-unsatisfied"
+  // ---- W6 init ------------------------------------------------------------
+  // Detection/config problems exit 2; transform refusals exit 1. None are
+  // forceable: a flag cannot make an ambiguous framework or an unsafe source
+  // rewrite deterministic.
+  | "init-framework-unrecognized"
+  | "init-framework-ambiguous"
+  | "init-framework-mismatch"
+  | "init-config-conflict"
+  | "init-source-unsupported"
+  | "init-postcss-unsupported"
+  | "init-path-escapes-root";
 
 export interface Diagnostic {
   code: DiagnosticCode;
