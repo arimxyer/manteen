@@ -1,5 +1,12 @@
 # manteen
 
+## 0.1.1
+
+First trusted release.
+
+This release has the same CLI behavior as 0.1.0. It moves publication to the repository's GitHub
+Actions OIDC workflow so npm can attach provenance without a stored registry token.
+
 ## 0.1.0
 
 First release.
