@@ -49,7 +49,8 @@ outside contributors.
 initial six-component Mantine UI-derived tranche. That tranche compiles, installs and production
 builds in a generated disposable Vite consumer; its exact evidence and non-evidence are recorded in
 the [`Wc handoff`](wc-registry-content-handoff.md). Public HTTPS consumption, cross-framework visual
-acceptance, the required-global-styles contract and a second live registry remain. Every new item
+acceptance, production implementation of the now-frozen
+[`required-global-styles contract`](global-styles-handoff.md) and a second live registry remain. Every new item
 exercises the client harder than a fixture does.
 
 ## The program
@@ -90,8 +91,9 @@ runtime, OS, package-manager, real-prompt and packed-tarball boundaries through 
 W8 completed the manual bootstrap, trusted-publisher binding, ordered tagged releases and
 independent npm provenance verification.
 
-W4 through W8 are complete. Wc's first six-component tranche is locally dogfooded; Wc remains an
-independent, ongoing content stream rather than a release blocker.
+W4 through W8 are complete. Wc's first six-component tranche is locally dogfooded. Its next staged
+milestone implements the frozen import-only global-styles contract and admits Carousel and Dropzone;
+Wc remains an independent, ongoing content stream rather than a release blocker.
 
 ## On one large program workflow
 

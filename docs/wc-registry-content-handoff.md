@@ -67,8 +67,14 @@ Mantine Carousel and Dropzone were considered and deliberately deferred. Both re
 global stylesheet imports. A copied component cannot safely inject those imports across Vite, Next
 App, Next Pages and React Router, and the current registry contract has no required-global-style
 integration channel. Shipping either now would prove file copying while leaving supported consumers
-unstyled or framework-invalid. That contract is the next content-driven decision, not a comment to
-ignore.
+unstyled or framework-invalid.
+
+The follow-up disposable framework probe established a viable import arrangement, and the
+[`required-global-styles handoff`](global-styles-handoff.md) now freezes the production contract:
+the existing wire `css` field carries import-only declarations; `init` wires one explicitly
+configured Manteen-owned stylesheet; and receipt v2 tracks per-item contributions plus final bytes.
+The probe did not exercise that CLI lifecycle, so Carousel and Dropzone remain deferred until the
+implementation and acceptance boundary in that handoff passes.
 
 ## Local verification receipt — 2026-07-30
 
@@ -115,6 +121,6 @@ local `file:` source. It is not yet evidence that GitHub Pages serves the new it
    using public `manteen`.
 2. Repeat browser acceptance in the other supported framework shapes as those fixtures become
    available; this Vite run is not cross-framework proof.
-3. Decide the required-global-styles contract before admitting Carousel, Dropzone or other Mantine
-   extension packages.
+3. Implement and verify the frozen required-global-styles contract before admitting Carousel,
+   Dropzone or other Mantine extension packages.
 4. Continue Wc in small attributed tranches; do not bulk-import the remaining upstream examples.
