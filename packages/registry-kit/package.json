@@ -5,7 +5,7 @@
   "type": "module",
   "license": "MIT",
   "bin": {
-    "manteen-kit": "./dist/cli.mjs"
+    "manteen-kit": "dist/cli.mjs"
   },
   "exports": {
     ".": {
@@ -18,7 +18,8 @@
     "dist",
     "schema",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20.11"

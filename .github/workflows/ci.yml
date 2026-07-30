@@ -34,6 +34,7 @@ jobs:
       - run: bun run lint
       - run: node scripts/guard-runtime-apis.mjs
       - run: node packages/cli/scripts/guard-diagnostics.mjs
+      - run: node scripts/guard-release.mjs
 
   built-node:
     name: Built Node ${{ matrix.node }} on ${{ matrix.os }}

@@ -61,7 +61,7 @@ is a judgment call, which is exactly why they are separate runs.
 | W5 | Command set — `list`, `info`, `diff`, `update` | wide: 4 parallel, shared receipt reader frozen first | Four genuinely independent commands over one contract. The classic freeze-then-fan-out. |
 | W6 | [`init`](w6-init-handoff.md) | complete: probe → checkpoint → contract → per-framework adapters → integration → built-Node review → disposable dogfood | The adapters preserve generated work; the shared plan/apply boundary makes dry-run, cancellation, install failure and rollback observable; required Tailwind/manual work is separate from mutations; fresh config is list-ready. |
 | W7 | [`Hardening`](w7-hardening-handoff.md) | complete: matrix-driven, findings-first, hosted retry | Real Windows and macOS CI exposed path and line-ending defects that local Linux could not. |
-| W8 | Release | mostly sequential, small | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
+| W8 | [`Release`](w8-release-handoff.md) | active: local preparation complete; hosted validation and publication pending | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
 | Wc | Registry content | wide, parallel per component | Independent of all of the above; can run any time. Doubles as client stress-testing. |
 
 **Not workflow-shaped, do directly:** the hygiene set (LICENSE, linter, SECURITY, CONTRIBUTING,
@@ -122,24 +122,27 @@ made Phase 3 work depends on a human reading the probe.
 
 ## Releasing
 
-`.github/workflows/release.yml` is designed to publish on a per-package tag
-(`manteen-kit-v0.1.0`) using npm **trusted publishing over OIDC** — no stored token, and every
-published version carries a provenance attestation. W7's audit found that the checked-in Node/npm
-pair is now below npm's trusted-publishing minimum and that the client lacks exact repository
-metadata. W8 must repair those two prerequisites before treating the workflow as executable.
+`.github/workflows/release.yml` is designed to publish on a per-package tag using npm **trusted
+publishing over OIDC** — no stored token. W7's audit found that the checked-in Node/npm pair was
+below npm's trusted-publishing minimum and that the client lacked exact repository metadata. W8's
+[`release handoff`](w8-release-handoff.md) freezes the repair at Node 24.18.1, npm 11.18.0 and Bun
+1.3.14, plus a mechanical pre-publish guard.
 
-**The first release of each package cannot use it.** A trusted publisher is configured on a
-package's settings page on npmjs.com, and a package that has never been published has no
-settings page. npm's docs do not cover this case; it follows from where the setting lives.
+**The first release of each package cannot use it.** npm requires a package to have been published
+before a trusted publisher can be configured, so an unpublished package has no trusted-publisher
+path yet.
 
-So, once per package:
+So, once per package, the maintainer performs the private bootstrap:
 
 1. `npm login` (in a terminal, not through an agent session — nothing about it belongs in a
    transcript).
-2. `cd packages/registry-kit && npm publish --access public`.
-3. On npmjs.com, add the trusted publisher: `arimxyer` / `manteen` / `release.yml`.
+2. Publish `0.1.0` with `--provenance=false`; the package manifest requests provenance, but a local
+   bootstrap has no OIDC attestation and must not imply one.
+3. On npmjs.com, or with npm 11.15+, add the trusted publisher: `arimxyer` / `manteen` /
+   `release.yml`, allowing `npm publish`.
 
-After that, releases are `git tag manteen-kit-v0.1.1 && git push --tags`.
+After that, `0.1.1` is the first trusted release, tagged one package at a time. The kit must publish
+and resolve before the client tag is pushed.
 
 The tradeoff: that first version has no provenance attestation, because provenance requires
 the OIDC path. Storing an `NPM_TOKEN` just for it would reintroduce the long-lived credential
