@@ -1,8 +1,8 @@
 # Required global styles handoff
 
-Status: **contract frozen; production implementation in progress.** The disposable framework probe
-proved the proposed import arrangement. It did not exercise Manteen ownership, receipt migration,
-drift handling or rollback; those are the acceptance boundary for admitting Carousel and Dropzone.
+Status: **contract implemented and locally accepted.** The original disposable probe proved the
+import arrangement; the production implementation now covers Manteen ownership, receipt migration,
+drift handling, preflight and rollback. Carousel and Dropzone have passed the resulting contract.
 
 ## Question and stopping condition
 
@@ -22,7 +22,7 @@ This milestone stops when:
 7. the built Node CLI installs Carousel and Dropzone into disposable Vite, Next App, Next Pages,
    Next hybrid and React Router consumers, including the Tailwind coexistence probe.
 
-## Evidence already produced
+## Initial probe evidence
 
 The disposable probe wrote this import-only managed stylesheet:
 
@@ -123,15 +123,38 @@ operations leave the original receipt byte-identical.
 - `diff` reports local and upstream axes for managed styles just as it does for the composed theme.
   `update` continues to route through the ordinary plan/apply pipeline.
 
-## Acceptance matrix
+## Acceptance receipt — 2026-07-30
 
-The contract is not complete until automated tests cover import parsing, missing runtime
-dependencies, deterministic composition/dedupe, v1-to-v2 migration, an existing-project `init`
-migration, malformed CSS, unconfigured/uninitialized state, stylesheet drift with and without
-`--force`, no-op repeat installs, update removal/replacement, preflight races and rollback.
+The automated tiers now cover import parsing, missing runtime dependencies, deterministic
+composition/dedupe, v1-to-v2 migration, an existing-project `init` migration, malformed CSS,
+unconfigured/uninitialized state, stylesheet drift with and without `--force`, no-op repeat
+installs, update removal/replacement, preflight races and rollback:
 
-Built-Node disposable acceptance then covers all four adapters plus Next hybrid, and includes a
-current Next + Tailwind project. The Tailwind probe must show that Manteen adds only a TS/TSX
-side-effect import and its separate managed CSS file; it must leave the project's PostCSS ordering
-untouched.
+- source tier: 168 passed, 0 failed, 613 assertions;
+- typecheck, Biome and all four guards: clean;
+- built Node e2e: 100 tests, 99 passed, 1 intentional package-manager-selected skip; and
+- actual compiled `@house/cards-carousel` and `@house/dropzone-button` documents installed five
+  files, one shared license, the managed stylesheet and receipt-v2 provenance, then repeated and
+  diffed cleanly.
 
+Fresh disposable consumers used `create-vite@9.1.2`, `create-next-app@16.2.12` and
+`create-react-router@8.3.0`. The built Node CLI initialized and installed both real items into Vite,
+Next App, Next Pages, a valid Next hybrid, Next App with Tailwind 4, and React Router. All six final
+production builds passed after `update`, and every final `diff --stat` reported five unchanged
+files.
+
+The Tailwind consumer emitted the intended required-work notice and exited 0 incomplete. Manteen
+added its TSX side-effect import and separate managed stylesheet but left `postcss.config.mjs`
+byte-identical; its SHA-256 was
+`dfac7ac2d86d326a0e5adb024e7943c181393ed17a5fcb8f0315b24c7da6ddde` before and after.
+
+Browser dogfood navigated the Carousel and observed the selected-card callback, uploaded a PDF
+through Dropzone and observed the upload callback, and reported no page errors. The first axe pass
+found an unlabeled hidden file input and contrast defects. After correcting the registry source,
+the WCAG A/AA rerun reported zero violations. Axe left image-backed white text for manual review;
+the 55% black overlay guarantees a worst-case 4.76:1 contrast ratio.
+
+This is product evidence for the built local CLI and compiled local registry under Linux. It is not
+yet public-HTTPS registry proof, a release of the post-`0.1.1` implementation, or new macOS/Windows
+evidence for this stylesheet lifecycle. W7's general hosted portability matrix remains the platform
+boundary.

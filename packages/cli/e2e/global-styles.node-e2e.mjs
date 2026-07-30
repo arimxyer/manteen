@@ -1,7 +1,15 @@
 /** Managed package styles through the built CLI under real Node. */
 import { strict as assert } from "node:assert";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { after, test } from "node:test";
@@ -11,6 +19,7 @@ import { childEnv } from "./helpers/child-env.mjs";
 
 const PKG_ROOT = resolve(import.meta.dirname, "..");
 const CLI = join(PKG_ROOT, "dist", "cli.mjs");
+const API = join(PKG_ROOT, "dist", "index.mjs");
 const WORK = mkdtempSync(join(tmpdir(), "manteen-global-styles-"));
 const REGISTRY = join(WORK, "registry");
 const PROJECT = join(WORK, "project");
@@ -21,6 +30,9 @@ const SCAFFOLD =
 
 assert.equal(process.versions.bun, undefined, "the e2e tier must run under node");
 assert.ok(existsSync(CLI), `${CLI} is missing; build the CLI first`);
+assert.ok(existsSync(API), `${API} is missing; build the CLI first`);
+
+const { apply, loadConfig, plan } = await import(pathToFileURL(API).href);
 
 after(() => rmSync(WORK, { recursive: true, force: true }));
 
@@ -158,4 +170,95 @@ test("repeat install is clean and owned drift refuses until forced", () => {
     readFileSync(STYLES, "utf8"),
     `${SCAFFOLD}@import "@mantine/carousel/styles.css";\n`,
   );
+});
+
+function makeLifecycleProject(name) {
+  const root = join(WORK, name);
+  const styles = join(root, "src", "manteen.css");
+  mkdirSync(join(root, "src"), { recursive: true });
+  mkdirSync(join(root, "node_modules", "@mantine", "carousel"), { recursive: true });
+  writeFileSync(
+    join(root, "package.json"),
+    `${JSON.stringify(
+      {
+        name,
+        private: true,
+        packageManager: "npm@10.9.2",
+        dependencies: { "@mantine/carousel": "^9.0.0" },
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  writeFileSync(
+    join(root, "node_modules", "@mantine", "carousel", "package.json"),
+    `${JSON.stringify({ name: "@mantine/carousel", version: "9.0.0" }, null, 2)}\n`,
+  );
+  writeFileSync(join(root, "tsconfig.json"), readFileSync(join(PROJECT, "tsconfig.json")));
+  writeFileSync(
+    join(root, "manteen.json"),
+    `${JSON.stringify(
+      {
+        registries: { "@test": `${pathToFileURL(REGISTRY).href}/{name}.json` },
+        aliases: {
+          components: "@/components",
+          ui: "@/components/ui",
+          hooks: "@/hooks",
+          lib: "@/lib",
+        },
+        styles: "src/manteen.css",
+        tsconfig: "tsconfig.json",
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  writeFileSync(styles, SCAFFOLD);
+  return { root, styles };
+}
+
+async function stylePlan(root) {
+  const loaded = loadConfig(root);
+  assert.equal(loaded.ok, true, JSON.stringify(loaded.errors ?? null));
+  const planned = await plan(loaded.config, ["@test/styled"], {
+    interactive: false,
+    overwrite: true,
+  });
+  assert.equal(planned.ok, true, JSON.stringify(planned.diagnostics, null, 2));
+  return planned;
+}
+
+test("managed stylesheet participates in apply preflight", async () => {
+  const project = makeLifecycleProject("preflight-race");
+  const planned = await stylePlan(project.root);
+  writeFileSync(project.styles, `${SCAFFOLD}/* raced after plan */\n`);
+
+  const outcome = await apply(planned, { interactive: false, overwrite: true });
+
+  assert.equal(outcome.ok, false);
+  assert.equal(outcome.failure?.kind, "stale-plan");
+  assert.equal(readFileSync(project.styles, "utf8"), `${SCAFFOLD}/* raced after plan */\n`);
+  assert.equal(existsSync(join(project.root, "manteen.lock.json")), false);
+});
+
+const CAN_DENY_WRITES = process.platform !== "win32" && process.getuid?.() !== 0;
+
+test("a failed receipt write rolls the managed stylesheet back", {
+  skip: !CAN_DENY_WRITES,
+}, async () => {
+  const project = makeLifecycleProject("styles-rollback");
+  const planned = await stylePlan(project.root);
+
+  chmodSync(project.root, 0o555);
+  let outcome;
+  try {
+    outcome = await apply(planned, { interactive: false, overwrite: true });
+  } finally {
+    chmodSync(project.root, 0o755);
+  }
+
+  assert.equal(outcome.ok, false);
+  assert.match(outcome.failure?.kind ?? "", /^(write-failed|rollback-failed)$/);
+  assert.equal(readFileSync(project.styles, "utf8"), SCAFFOLD);
+  assert.equal(existsSync(join(project.root, "manteen.lock.json")), false);
 });

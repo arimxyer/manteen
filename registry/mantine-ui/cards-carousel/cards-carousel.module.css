@@ -1,0 +1,29 @@
+/*
+ * Adapted from Mantine UI's CardsCarousel at
+ * ffbf61c559f374a7ea28fcf00355e84dcbe9a908. MIT licensed; see
+ * LICENSES/MANTINE-UI.txt after installation.
+ */
+.card {
+  display: flex;
+  height: 440px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  background-position: center;
+  background-size: cover;
+}
+
+.title {
+  margin-top: var(--mantine-spacing-xs);
+  color: var(--mantine-color-white);
+  font-family: var(--mantine-font-family-headings);
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.category {
+  color: var(--mantine-color-white);
+  font-weight: 700;
+  text-transform: uppercase;
+}

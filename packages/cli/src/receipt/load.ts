@@ -38,7 +38,7 @@ const LOCK_V1_SCHEMA_FILE = "manteen.lock.v1.schema.json";
  * it.
  *
  * The hash is of the RAW BYTES and `raw` is those same bytes decoded as UTF-8.
- * Both ride together because apply's preflight compares the hash while phase 5
+ * Both ride together because apply's preflight compares the hash while phase 6
  * compares the text, and re-deriving either from the other is where the hash
  * domain quietly diverges.
  */

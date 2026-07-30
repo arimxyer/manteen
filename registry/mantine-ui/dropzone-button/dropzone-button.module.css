@@ -1,0 +1,33 @@
+/*
+ * Adapted from Mantine UI's DropzoneButton at
+ * ffbf61c559f374a7ea28fcf00355e84dcbe9a908. MIT licensed; see
+ * LICENSES/MANTINE-UI.txt after installation.
+ */
+.wrapper {
+  position: relative;
+  margin-bottom: 30px;
+}
+
+.dropzone {
+  padding-bottom: 50px;
+  color: var(--mantine-color-bright);
+  border-width: 1px;
+}
+
+.icon {
+  color: light-dark(var(--mantine-color-gray-4), var(--mantine-color-white));
+}
+
+.control {
+  position: absolute;
+  bottom: -20px;
+  left: calc(50% - 125px);
+  width: 250px;
+}
+
+.description {
+  margin-top: var(--mantine-spacing-xs);
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-4));
+  font-size: var(--mantine-font-size-sm);
+  text-align: center;
+}

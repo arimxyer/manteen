@@ -1,8 +1,8 @@
 # Wc registry-content handoff
 
-Status: **initial six-component tranche implemented and locally dogfooded; public-registry
-deployment proof remains.** Wc is an ongoing content stream, not a release blocker or a reason to
-reopen the completed W4-W8 client program.
+Status: **eight adapted items implemented and locally dogfooded, including the Carousel/Dropzone
+extension stress cases; public-registry deployment proof remains.** Wc is an ongoing content stream,
+not a release blocker or a reason to reopen the completed W4-W8 client program.
 
 ## Question and stopping condition
 
@@ -10,7 +10,7 @@ Can a curated Mantine UI component move from preview-and-copy source into the li
 catalog while preserving its CSS, npm requirements, upstream attribution, install ownership and
 maintenance behavior?
 
-This first tranche stops when six representative items:
+This content milestone stops when eight representative items:
 
 1. compile through the authoring and wire schemas;
 2. typecheck as registry source;
@@ -30,7 +30,7 @@ observed 2026-07-30. Mantine UI is MIT-licensed.
 This is a curated port, not a mirror. Storybook stories, repository-local tests and preview
 `attributes.json` files are not consumer payloads. Demo data becomes typed props, upstream-only
 imports may be replaced, and filenames are normalized. Every adapted source and stylesheet names
-the pinned revision. All six items depend on `@house/mantine-ui-license`, which installs the
+the pinned revision. All eight items depend on `@house/mantine-ui-license`, which installs the
 verbatim upstream notice once at `LICENSES/MANTINE-UI.txt`.
 
 ## Tranche
@@ -43,8 +43,10 @@ verbatim upstream notice once at `LICENSES/MANTINE-UI.txt`.
 | `dnd-list` | `@dnd-kit/*`, `clsx`, keyboard/pointer behavior + CSS module | Periodic-table fixture became a reusable item and reorder contract. |
 | `stats-grid` | Responsive block + React-node inputs + icons | Fixed metrics became consumer-owned data, icons and comparison labels. |
 | `table-sort` | Derived search/sort state + empty state + CSS module | Fixed rows became props; filtered rows are derived rather than copied into stale state. |
+| `cards-carousel` | `@mantine/carousel`, package CSS + image-backed interaction | Demo data became props and callbacks; a dark overlay makes the white labels contrast-safe. |
+| `dropzone-button` | `@mantine/dropzone`, package CSS + file input behavior | Accepted files and labels became inputs; the hidden input has an accessible name. |
 
-The catalog now contains 12 items: the existing five, six adapted components/blocks, and the
+The catalog now contains 14 items: the existing five, eight adapted components/blocks, and the
 shared license item.
 
 ## Findings
@@ -63,20 +65,15 @@ Browser dogfood also caught content defects that build-only checks could not:
 - the drag list registered a generic keyboard sensor without sortable coordinates. It now uses
   `sortableKeyboardCoordinates`, and a keyboard lift/move/drop retest reordered the items.
 
-Mantine Carousel and Dropzone were considered and deliberately deferred. Both require package-level
-global stylesheet imports. A copied component cannot safely inject those imports across Vite, Next
-App, Next Pages and React Router, and the current registry contract has no required-global-style
-integration channel. Shipping either now would prove file copying while leaving supported consumers
-unstyled or framework-invalid.
+Carousel and Dropzone initially exposed a real client boundary: both require package-level global
+stylesheet imports, while copied source and CSS modules alone cannot install those requirements
+safely across supported frameworks. The resulting
+[`required-global-styles contract`](global-styles-handoff.md) is now implemented and accepted. The
+existing wire `css` field carries a strict import-only subset; `init` wires one configured,
+Manteen-owned stylesheet; and receipt v2 tracks per-item contributions plus final bytes. That closes
+the deferral rather than special-casing either component.
 
-The follow-up disposable framework probe established a viable import arrangement, and the
-[`required-global-styles handoff`](global-styles-handoff.md) now freezes the production contract:
-the existing wire `css` field carries import-only declarations; `init` wires one explicitly
-configured Manteen-owned stylesheet; and receipt v2 tracks per-item contributions plus final bytes.
-The probe did not exercise that CLI lifecycle, so Carousel and Dropzone remain deferred until the
-implementation and acceptance boundary in that handoff passes.
-
-## Local verification receipt — 2026-07-30
+## Initial-tranche local verification receipt — 2026-07-30
 
 Repository verification:
 
@@ -115,12 +112,37 @@ This is real generated-consumer and package-install evidence, but the registry U
 local `file:` source. It is not yet evidence that GitHub Pages serves the new items, that the public
 `manteen@0.1.1` fetches them, or that the tranche works visually across every supported framework.
 
+## Extension-tranche local verification receipt — 2026-07-30
+
+Repository verification after admitting Carousel and Dropzone:
+
+- catalog build: 14 items, zero authoring or wire-schema failures;
+- source tier: 168 passed, 0 failed, 613 assertions;
+- typecheck, Biome and all four guards: clean; and
+- built Node e2e: 100 tests, 99 passed, 1 intentional package-manager-selected skip.
+
+Fresh disposable Vite, Next App, Next Pages, valid Next hybrid, Next App + Tailwind 4 and React
+Router consumers all ran the built `init`, installed the two actual compiled registry items, and
+passed final production builds after `update`. Each final `diff --stat` reported five unchanged
+files. The Tailwind project's PostCSS config remained byte-identical while Manteen emitted the
+existing non-failing required-work notice.
+
+Chromium dogfood navigated the Carousel, exercised its callback, uploaded a PDF through Dropzone and
+observed the upload callback with no page errors. It also found defects that production builds could
+not: an unlabeled hidden file input and insufficient contrast. The registry source now names the
+input and uses contrast-safe colors and a 55% black image overlay. The final WCAG A/AA axe pass had
+zero violations; the one remaining image-background manual review has a calculated worst-case
+4.76:1 white-text contrast ratio.
+
+This is built-CLI and real-content evidence, but all registries were local `file:` URLs and all
+fresh framework consumers ran on Linux. It does not prove the new items are deployed at the public
+HTTPS registry, published in a newer CLI release, or newly exercised on macOS/Windows.
+
 ## Next boundary
 
 1. Deploy the catalog and repeat a smaller clean consumer smoke against the HTTPS `@house` URLs
-   using public `manteen`.
+   using a published version that contains the managed-styles implementation.
 2. Repeat browser acceptance in the other supported framework shapes as those fixtures become
    available; this Vite run is not cross-framework proof.
-3. Implement and verify the frozen required-global-styles contract before admitting Carousel,
-   Dropzone or other Mantine extension packages.
+3. Exercise the toolchain against a second independently authored live registry.
 4. Continue Wc in small attributed tranches; do not bulk-import the remaining upstream examples.

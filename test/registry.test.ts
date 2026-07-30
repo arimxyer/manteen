@@ -9,7 +9,9 @@ const MANTINE_UI_ITEMS = [
   "article-card",
   "authentication-form",
   "button-progress",
+  "cards-carousel",
   "dnd-list",
+  "dropzone-button",
   "stats-grid",
   "table-sort",
 ] as const;
@@ -57,5 +59,17 @@ describe("house catalog", () => {
     expect(files).toHaveLength(1);
     expect(files[0]!.target).toBe("~/LICENSES/MANTINE-UI.txt");
     expect(files[0]!.content).toContain("Copyright (c) 2022 Vitaly Rtischev");
+  });
+
+  test("extension items compile their package-level stylesheet requirements", () => {
+    const { items } = compileRegistry(CATALOG);
+    const compiled = new Map(items.map((item) => [item.name as string, item]));
+
+    expect(compiled.get("cards-carousel")!.css).toEqual({
+      '@import "@mantine/carousel/styles.css"': {},
+    });
+    expect(compiled.get("dropzone-button")!.css).toEqual({
+      '@import "@mantine/dropzone/styles.css"': {},
+    });
   });
 });

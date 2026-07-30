@@ -45,13 +45,13 @@ attestations. The exact run, commit, hash and registry receipts are in the
 `SECURITY.md` and contributor ceremony remain deliberately deferred until the repository has
 outside contributors.
 
-**Content.** The catalog now has 12 items: the original five, a shared upstream-license item and an
-initial six-component Mantine UI-derived tranche. That tranche compiles, installs and production
-builds in a generated disposable Vite consumer; its exact evidence and non-evidence are recorded in
-the [`Wc handoff`](wc-registry-content-handoff.md). Public HTTPS consumption, cross-framework visual
-acceptance, production implementation of the now-frozen
-[`required-global-styles contract`](global-styles-handoff.md) and a second live registry remain. Every new item
-exercises the client harder than a fixture does.
+**Content.** The catalog now has 14 items: the original five, a shared upstream-license item and
+eight adapted Mantine UI components/blocks. The initial six-item tranche and the Carousel/Dropzone
+extension stress cases compile, install and production-build in disposable consumers; their exact
+evidence and non-evidence are recorded in the [`Wc handoff`](wc-registry-content-handoff.md). The
+[`required-global-styles contract`](global-styles-handoff.md) is implemented and locally accepted.
+Public HTTPS consumption, broader cross-framework visual acceptance and a second live registry
+remain. Every new item exercises the client harder than a fixture does.
 
 ## The program
 
@@ -91,9 +91,10 @@ runtime, OS, package-manager, real-prompt and packed-tarball boundaries through 
 W8 completed the manual bootstrap, trusted-publisher binding, ordered tagged releases and
 independent npm provenance verification.
 
-W4 through W8 are complete. Wc's first six-component tranche is locally dogfooded. Its next staged
-milestone implements the frozen import-only global-styles contract and admits Carousel and Dropzone;
-Wc remains an independent, ongoing content stream rather than a release blocker.
+W4 through W8 are complete. Wc's first eight adapted items are locally dogfooded, including the
+implemented import-only global-styles lifecycle and its Carousel/Dropzone stress cases. Wc remains
+an independent, ongoing content stream rather than a release blocker; its next boundaries are
+public HTTPS proof, a second live registry and further small curated tranches.
 
 ## On one large program workflow
 

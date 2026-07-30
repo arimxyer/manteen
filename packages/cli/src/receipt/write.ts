@@ -2,7 +2,7 @@
  * Producing the next `manteen.lock.json`: merge, then bytes.
  *
  * Pure — this module writes nothing. `apply()` owns the write, as its final
- * mutation (phase 5), inside the same pre-image journal as phases 3 and 4.
+ * mutation (phase 6), inside the same pre-image journal as phases 3 through 5.
  * That ordering is the whole invariant: a rolled-back run leaves a receipt
  * describing the state its files were restored to, and a SIGKILL mid-write
  * leaves one that UNDER-claims. Under-claiming costs a missed cross-run refusal;
@@ -24,7 +24,7 @@ import {
 } from "../plan/types";
 import { toReceiptPath } from "./path";
 
-/** ABSOLUTE destination -> what phases 3 and 4 actually did there. */
+/** ABSOLUTE destination -> what phase 3 actually did there. */
 export type WriteResults = ReadonlyMap<string, WriteResult>;
 
 /**

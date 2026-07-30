@@ -191,6 +191,45 @@ describe("managed stylesheet composition", () => {
       },
     ]);
   });
+
+  test("removes a touched item's contribution when its updated item declares no css", () => {
+    const priorText = `${INIT_STYLES_SOURCE}@import "@mantine/carousel/styles.css";\n@import "@mantine/shared/styles.css";\n`;
+    const prior: ReceiptStyles = {
+      destination: "src/manteen.css",
+      sha256: hash(priorText),
+      sources: [
+        {
+          itemId: "@house/carousel",
+          dependsOn: [],
+          imports: ["@mantine/carousel/styles.css"],
+        },
+        {
+          itemId: "@house/untouched",
+          dependsOn: [],
+          imports: ["@mantine/shared/styles.css"],
+        },
+      ],
+    };
+    const result = foldStyles({
+      root: "/project",
+      destination: "/project/src/manteen.css",
+      prior,
+      base: { text: priorText, sha256: hash(priorText) },
+      items: [resolved("@house/carousel", [])],
+    });
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.styles?.sources).toEqual([
+      {
+        itemId: "@house/untouched",
+        dependsOn: [],
+        imports: ["@mantine/shared/styles.css"],
+      },
+    ]);
+    expect(result.styles?.text).toBe(
+      `${INIT_STYLES_SOURCE}@import "@mantine/shared/styles.css";\n`,
+    );
+  });
 });
 
 describe("receipt v2", () => {

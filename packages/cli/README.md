@@ -35,9 +35,9 @@ manteen init
 
 `init` detects Vite, Next App Router, Next Pages Router, a Next hybrid, or framework-mode
 React Router. It preserves the generated entry structure while adding Mantine's provider,
-framework-appropriate color-scheme setup, styles, theme, PostCSS pipeline, aliases and
-`manteen.json`. Detection can be selected explicitly with `--framework`; unsupported projects can
-use `--framework manual` for the shared setup plus a required integration instruction.
+framework-appropriate color-scheme setup, core and managed styles, theme, PostCSS pipeline,
+aliases and `manteen.json`. Detection can be selected explicitly with `--framework`; unsupported
+projects can use `--framework manual` for the shared setup plus a required integration instruction.
 
 The command is transactional at the file layer: dry-run prompts for and writes nothing, interactive
 apply asks one all-or-nothing question, dependencies install before file writes, and every init file
@@ -74,6 +74,7 @@ a `paths` key in your application tsconfig, and the theme file to fold into. A V
     "hooks": "@/hooks",
     "lib": "@/lib"
   },
+  "styles": "src/manteen.css",
   "theme": "src/lib/theme.ts",
   "tsconfig": "tsconfig.app.json"
 }
@@ -91,5 +92,10 @@ manteen update
 Every install is recorded in `manteen.lock.json` — which item came from which registry
 and what was written where. Commit it: it is what stops a same-named component from a
 second registry silently replacing one you already installed.
+
+Items may also require package-level styles such as `@mantine/carousel/styles.css`. Manteen composes
+those imports into the configured `styles` file and records each item's contribution in receipt v2.
+The file is Manteen-owned; put project overrides in the host stylesheet imported after it. Manteen
+does not rewrite that host stylesheet or a project's Tailwind/PostCSS plugin order.
 
 `manteen` never reads or writes `components.json`, and it does not wrap `shadcn`.

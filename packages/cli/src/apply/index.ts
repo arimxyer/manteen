@@ -9,7 +9,8 @@
  *   2 install deps subprocess, OUTSIDE the journal
  *   3 write files  ┐
  *   4 write theme  ├ one shared pre-image journal
- *   5 write receipt┘
+ *   5 write styles ┤
+ *   6 write receipt┘
  *
  * Phase 4 is one `journal.write` of `plan.theme.text` and nothing more. It has
  * no `write-theme.ts` module because there is nothing for one to hold: D7 put
@@ -25,7 +26,7 @@
  *   receipt describing files that no longer exist, and a SIGKILL leaves one that
  *   under-claims. Under-claiming costs a redundant overwrite prompt; over-claiming
  *   authorizes a future run to silently replace content manteen never wrote.
- *   Every early exit in this function sits ABOVE phase 5 for that reason.
+ *   Every early exit in this function sits ABOVE phase 6 for that reason.
  *
  * Deps are not rolled back (D18). A package manager is not transactional, so
  * `removeDependency` after a partial install can remove something that was
@@ -231,7 +232,7 @@ async function applyPlan(
 
     // ---- phase 4: write theme ----------------------------------------------
     // `journal`, the SAME one phase 3 just wrote through — not a second journal.
-    // That is what makes a phase-5 failure unwind the folded theme along with the
+    // That is what makes any later failure unwind the folded theme along with the
     // components it was folded for, and it is asserted from both directions in
     // `e2e/gates.node-e2e.mjs`. The rest of the rule lives in write-theme.ts.
     themeWritten = writeTheme(plan.theme, journal);

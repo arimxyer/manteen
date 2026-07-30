@@ -243,7 +243,7 @@ export async function update(
   // `installed.notes` carries `no-receipt` / `receipt-unreadable`. Both yield an
   // empty item list, so both fall out below as "no candidates" — which is the
   // point: an UNREADABLE receipt must never reach plan()/apply(). Planning zero
-  // refs under `--force` would push past `receipt-unreadable`, and phase 5 would
+  // refs under `--force` would push past `receipt-unreadable`, and phase 6 would
   // then merge from `null` and delete every ownership record in the file.
   const notes: InventoryNote[] = [...installed.notes];
   const skipped: UpdateSkip[] = [];
@@ -282,12 +282,12 @@ export async function update(
    * back `up-to-date`.
    *
    * Short-circuiting on "nothing changed" looks like a free optimisation and is
-   * not: an all-`identical` plan is exactly the run `apply/index.ts` phase 5
+   * not: an all-`identical` plan is exactly the run `apply/index.ts` phase 6
    * calls out as the most valuable one to record — a destination that already
    * holds our bytes but has no ownership record (a new transitive item, or a
    * project installed before receipts existed) gets claimed by that run and by
    * no other. apply is a no-op when there is genuinely nothing to do: identical
-   * files are never written, and phase 5 is gated on the receipt BYTES
+   * files are never written, and phase 6 is gated on the receipt BYTES
    * differing, so an up-to-date project ends with an untouched tree.
    */
   const outcome = await ports.apply(

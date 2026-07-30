@@ -27,7 +27,7 @@ import { fromReceiptPath, receiptPathProblem } from "./path";
  * What the injected reader hands back.
  *
  * `sha256` is of the RAW BYTES, and `raw` is those bytes decoded as UTF-8. Both
- * ride together because apply's preflight compares the hash while phase 5
+ * ride together because apply's preflight compares the hash while phase 6
  * compares the text, and re-deriving either from the other is where the hash
  * domain quietly diverges.
  *
@@ -60,7 +60,7 @@ export function receiptPathFor(root: string): string {
  *
  * The raw bytes and their hash are captured on BOTH present arms: preflight
  * needs the hash even for an unreadable file that `--force` is about to
- * overwrite, and phase 5 needs the text for its byte-equality skip.
+ * overwrite, and phase 6 needs the text for its byte-equality skip.
  */
 export function readReceipt(
   root: string,

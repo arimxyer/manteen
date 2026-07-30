@@ -6,6 +6,7 @@ import { mergeThemeSource } from "manteen-kit";
 
 import { HOUSE_REGISTRY_INDEX_URL, HOUSE_REGISTRY_ITEM_URL } from "../src/config/defaults";
 import { INIT_THEME_SOURCE, planShared } from "../src/init/shared";
+import { INIT_STYLES_SOURCE } from "../src/init/styles";
 import { frameworkSetFor, type InitProjectSnapshot } from "../src/init/types";
 
 const ROOT = "/project";
@@ -146,6 +147,46 @@ describe("W6 shared init planning", () => {
         (file) => file.kind === "manteen-config",
       ),
     ).toEqual([]);
+  });
+
+  test("adds the styles path and scaffold to a compatible pre-styles config", () => {
+    const project = snapshot();
+    const initialized = applyProposals(project, planShared(project, frameworkSetFor("vite")).files);
+    const configPath = join(ROOT, "manteen.json");
+    const stylesPath = join(ROOT, "src/manteen.css");
+    const legacy = JSON.parse(initialized.files.get(configPath) ?? "null");
+    delete legacy.styles;
+    initialized.files.set(configPath, `${JSON.stringify(legacy, null, 2)}\n`);
+    initialized.files.delete(stylesPath);
+
+    const migration = planShared(initialized, frameworkSetFor("vite"));
+
+    expect(migration.diagnostics).toEqual([]);
+    expect(
+      JSON.parse(migration.files.find((file) => file.kind === "manteen-config")?.content ?? "null")
+        .styles,
+    ).toBe("src/manteen.css");
+    expect(migration.files.find((file) => file.kind === "styles")?.content).toBe(
+      INIT_STYLES_SOURCE,
+    );
+  });
+
+  test("refuses unknown stylesheet bytes before a pre-styles config adopts the path", () => {
+    const project = snapshot();
+    const initialized = applyProposals(project, planShared(project, frameworkSetFor("vite")).files);
+    const configPath = join(ROOT, "manteen.json");
+    const stylesPath = join(ROOT, "src/manteen.css");
+    const legacy = JSON.parse(initialized.files.get(configPath) ?? "null");
+    delete legacy.styles;
+    initialized.files.set(configPath, `${JSON.stringify(legacy, null, 2)}\n`);
+    initialized.files.set(stylesPath, "body { color: rebeccapurple; }\n");
+
+    const migration = planShared(initialized, frameworkSetFor("vite"));
+
+    expect(migration.files.some((file) => file.kind === "styles")).toBe(false);
+    expect(migration.diagnostics).toContainEqual(
+      expect.objectContaining({ code: "init-config-conflict", path: stylesPath }),
+    );
   });
 
   test("adds the house index without dropping request metadata", () => {

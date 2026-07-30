@@ -218,6 +218,52 @@
         }
       ],
       "docs": "Adapted from Mantine UI TableSort at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; accepts consumer data and derives filtered rows without duplicating prop state."
+    },
+    {
+      "name": "cards-carousel",
+      "kind": "component",
+      "title": "Cards Carousel",
+      "description": "Responsive image-card carousel with consumer-owned data and optional actions.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/carousel@^9", "@mantine/core@^9", "@mantine/hooks@^9"],
+      "css": ["@mantine/carousel/styles.css"],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/cards-carousel/cards-carousel.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/cards-carousel/cards-carousel.module.css",
+          "as": "style",
+          "target": "@ui/cards-carousel.module.css"
+        }
+      ],
+      "docs": "Adapted from Mantine UI CardsCarousel at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; hardcoded travel data became typed items with links or selection callbacks."
+    },
+    {
+      "name": "dropzone-button",
+      "kind": "component",
+      "title": "Dropzone Button",
+      "description": "Drag-and-drop file input with explicit accept, reject and picker behavior.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/core@^9", "@mantine/dropzone@^9", "@tabler/icons-react@^3"],
+      "css": ["@mantine/dropzone/styles.css"],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/dropzone-button/dropzone-button.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/dropzone-button/dropzone-button.module.css",
+          "as": "style",
+          "target": "@ui/dropzone-button.module.css"
+        }
+      ],
+      "docs": "Adapted from Mantine UI DropzoneButton at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; drop/reject callbacks, constraints and user-facing text are configurable."
     }
   ]
 }

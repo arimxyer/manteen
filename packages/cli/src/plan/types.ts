@@ -465,7 +465,7 @@ export type ReceiptUnreadable = "unparseable" | "invalid" | "future-version";
 /**
  * `sha256` is of the RAW BYTES on disk. Apply's preflight re-reads and compares
  * it — the same TOCTOU defence every planned destination gets. `raw` is the
- * pre-image the journal records and the text phase 5 compares against for the
+ * pre-image the journal records and the text phase 6 compares against for the
  * byte-equality skip.
  */
 export type ReceiptState =
