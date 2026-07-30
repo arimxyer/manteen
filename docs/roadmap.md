@@ -17,25 +17,25 @@ and something a stranger can depend on, and how the remaining work is sequenced.
 6. **Maintainable** — a linter, dependency automation, and a license file that matches what
    `package.json` claims.
 
-Today: 1, 2 and the mechanical part of 6 are implemented and locally verified. W6 `init` is
-complete through its built-Node acceptance tier. W7 is locally integrated across the runtime and
-package-manager matrix; its hosted macOS and Windows receipts remain. Publication and release-grade
-documentation also remain, so the tool is not yet something a stranger can install and depend on.
+Today: 1, 2, 3 and the mechanical part of 6 are implemented and verified. W6 `init` is complete
+through its built-Node acceptance tier, and W7 closed with a green hosted runtime, OS and
+package-manager matrix. Publication and release-grade documentation remain, so the tool is not yet
+something a stranger can install and depend on.
 
 ## Known gaps, by kind
 
-**Client.** W4's apply surface, W5's command set and W6 `init` are complete. W7 portability and
-runtime hardening is locally integrated under the frozen
-[`w7-hardening-handoff.md`](w7-hardening-handoff.md) matrix; the hosted macOS/Windows receipt is the
-remaining gate.
+**Client.** W4's apply surface, W5's command set, W6 `init`, and W7 portability hardening are
+complete. The findings and hosted closure receipt are recorded in
+[`w7-hardening-handoff.md`](w7-hardening-handoff.md).
 
 **Commands.** `init`, `add`, `list`, `info`, `diff` and `update` ship. `search` does not exist and
 is not currently assigned to a wave; whether it belongs in v1 remains undecided.
 
-**Portability, hosted receipt pending.** The built tier passes locally on exact Node 22.12, 24 and
-26, and the packed-consumer harness passes npm, pnpm, Yarn PnP and Bun on the Node floor. Native
-Windows `.cmd`/caret behavior and the macOS pty path remain unproven until the configured hosted
-jobs run. `jsconfig`-only projects refuse — the refusal has never been read by a human.
+**Portability.** The built tier passes on Linux Node 22.12, 24 and 26 plus macOS and Windows at the
+Node floor. Packed npm, pnpm, Yarn PnP and Bun consumers pass, including the native Windows
+`.cmd`/caret path. The macOS image lacks a usable supported `script(1)` invocation, so its pty cases
+skip with that named reason while Linux supplies the positive 3/3 pty probe. `jsconfig`-only
+projects refuse — the refusal has never been read by a human.
 
 **Distribution.** Nothing is published. The kit has a changelog, the repository has a `0.x`
 version policy, and the release workflow requests npm provenance. The first publish still needs
@@ -60,7 +60,7 @@ is a judgment call, which is exactly why they are separate runs.
 | W4 | Apply surface | narrow + deep: 2–3 agents on one seam, adversarial | Prompt/TTY/CI behaviour is where subtle bugs live. `CI=1` already nearly shipped a hang. Parallelism buys nothing; probing buys everything. |
 | W5 | Command set — `list`, `info`, `diff`, `update` | wide: 4 parallel, shared receipt reader frozen first | Four genuinely independent commands over one contract. The classic freeze-then-fan-out. |
 | W6 | [`init`](w6-init-handoff.md) | complete: probe → checkpoint → contract → per-framework adapters → integration → built-Node review → disposable dogfood | The adapters preserve generated work; the shared plan/apply boundary makes dry-run, cancellation, install failure and rollback observable; required Tailwind/manual work is separate from mutations; fresh config is list-ready. |
-| W7 | Hardening | matrix-driven: agents per platform/runtime, findings-first | The work is discovering what breaks, not writing features. Needs real Windows CI. |
+| W7 | [`Hardening`](w7-hardening-handoff.md) | complete: matrix-driven, findings-first, hosted retry | Real Windows and macOS CI exposed path and line-ending defects that local Linux could not. |
 | W8 | Release | mostly sequential, small | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
 | Wc | Registry content | wide, parallel per component | Independent of all of the above; can run any time. Doubles as client stress-testing. |
 
@@ -72,7 +72,7 @@ pure overhead.
 
 ```
 Phase 3 ✔ ─> W4 apply surface ✔ ─┬─> W5 command set ✔ ──┐
-                                 └─> W6 init ✔ ─────────┴─> W7 hardening ─> W8 release
+                                 └─> W6 init ✔ ─────────┴─> W7 hardening ✔ ─> W8 release
 Wc registry content ......... any time, independent
 hygiene ..................... done, direct
 ```
@@ -83,11 +83,10 @@ inventory contract, with `update` routed through the existing `plan()`/`apply()`
 writing files itself. W6 added finite framework detection, four AST adapters, bounded shared
 config transforms, an init-specific plan/apply contract, text/JSON CLI output and built-Node
 fixtures for Vite, both Next routers, their hybrid and React Router. A disposable full-app run then
-closed the generated-config-to-`list` seam and added exact legacy migration. W7 is locally
-integrated and awaits its hosted portability receipt.
+closed the generated-config-to-`list` seam and added exact legacy migration. W7 then closed the
+runtime, OS, package-manager, real-prompt and packed-tarball boundaries through its hosted matrix.
 
-W5 and W6 were independent tracks. Both are now complete, so W7 is hardening the full surface. W8
-must be last.
+W4 through W7 are complete. W8 is next and must be last.
 
 ## On one large program workflow
 
@@ -114,9 +113,9 @@ made Phase 3 work depends on a human reading the probe.
 - **Windows is best-effort.** Not a target; say so in the README rather than implying support.
   *Caveat worth keeping visible:* being a Node tool does not make it portable by itself —
   path separators, `.cmd` shims, and argument quoting around a `^` range all differ, and the
-  code already carries Windows-aware handling in places. The cheap move in W7 is one
-  `windows-latest` runner: if it passes, real support is free; if it fails, the README claim is
-  accurate rather than assumed.
+  code already carries Windows-aware handling in places. W7's `windows-latest` built and packed
+  jobs now pass, including the native `.cmd`/caret path. That is current positive evidence, while
+  the best-effort policy keeps future platform drift from becoming an unsupported promise.
 - **`update` re-merges directly.** No confirmation diff. `mergeThemeSource` is idempotent and
   keeps existing values on conflict, and the receipt records pre-update hashes, so the operation
   is recoverable. `manteen diff` still ships for people who want to look first.
@@ -146,7 +145,7 @@ The tradeoff: that first version has no provenance attestation, because provenan
 the OIDC path. Storing an `NPM_TOKEN` just for it would reintroduce the long-lived credential
 the whole setup exists to avoid, for the sake of one version.
 
-## Carried into W7 — closed locally
+## Carried into W7 — closed
 
 **Test the real `clackOverwritePrompt` through a pty.** The header of
 `packages/cli/e2e/apply-surface.node-e2e.mjs` states that neither tier runs it — the ~15 lines
@@ -174,8 +173,10 @@ Readiness has to be detected some other way. Two that would:
 
 W7 implemented quiescence plus an explicit platform/mechanism skip in
 `packages/cli/e2e/pty-prompt.node-e2e.mjs`. Keep, select and cancel now pass through the real widget
-on Linux; the configured macOS runner is the remaining platform receipt. Windows remains a named
-skip because this mechanism is a Unix pty test.
+on Linux. The hosted macOS image reports that its BSD `script(1)` invocation cannot establish the
+supported pty mechanism, so those three cases skip with that exact reason and the Linux 3/3 run is
+the smaller positive replacement. Windows remains a named skip because this mechanism is a Unix
+pty test.
 
 ## Deferred, with a reason
 

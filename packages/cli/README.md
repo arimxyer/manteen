@@ -20,9 +20,9 @@ bun add -d manteen      # or: pnpm add -D manteen / yarn add -D manteen / npm i 
 Requires Node 22.12 or newer.
 
 The portability gate runs the built CLI on Node 22.12, 24 and 26, exercises npm, pnpm, Yarn PnP and
-Bun from packed tarballs, and includes native macOS and Windows jobs. Windows remains best-effort
-until that hosted `.cmd`/caret-range install is green; Linux emulation is not treated as Windows
-evidence.
+Bun from packed tarballs, and includes native macOS and Windows jobs. The hosted Windows
+`.cmd`/caret-range install is green as of the Wave 7 receipt; Windows remains best-effort so that
+current evidence is not presented as an indefinite support guarantee.
 
 ## Use
 

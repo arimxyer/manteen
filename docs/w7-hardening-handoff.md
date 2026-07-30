@@ -15,7 +15,8 @@ Wave 7 stops when all of the following are true:
 2. The complete built-Node e2e tier passes on macOS at the minimum supported Node, or any excluded
    case has a named platform reason and a smaller positive replacement probe.
 3. A real `windows-latest` job exercises the built `.cmd` shim and proves a dependency range that
-   contains `^` survives through install. Windows remains best-effort until this evidence is green.
+   contains `^` survives through install. A green result closes the current evidence gap without
+   changing the repository's best-effort Windows policy.
 4. npm, pnpm, Yarn and Bun each run the packed client against the same `file:` registry fixture and
    perform a real dependency install in a disposable project.
 5. Yarn PnP reaches the documented `undeterminable` Mantine-version warning under the packed CLI;
@@ -34,7 +35,7 @@ of Windows is not enough to close the Windows/macOS claims.
 | --- | --- | --- |
 | Built-Node matrix | The shipped `dist/` executes under each named Node and OS runner. | That an npm tarball contains installable dependency metadata. |
 | Packed-consumer matrix | A consumer installs tarballs, invokes the generated bin and lets manteen spawn the selected package manager. | Publication, provenance or registry availability. |
-| Windows install | The real npm `.cmd` path preserves `package@^range` and writes both dependency and component. | Native Windows is a supported target until the job is actually green. |
+| Windows install | The real npm `.cmd` path preserves `package@^range` and writes both dependency and component. | An indefinite Windows support guarantee; the policy remains best-effort. |
 | Yarn PnP | The packed CLI runs through Yarn's loader and emits the intentional PnP warning. | That arbitrary third-party PnP plugins are compatible. |
 | Unix pty | Real clack keystrokes translate to keep/select/cancel outcomes. | Windows terminal rendering, where the test is skipped deliberately. |
 
@@ -100,10 +101,10 @@ and the fallback assertion compared an absent `process.getuid` to `0`. The same 
 installed manifest using hard-coded `/` separators even though the diagnostic intentionally prints
 the native absolute path it read.
 
-**Resolved locally.** Both permission injections now carry the same explicit non-root Unix guard,
+**Resolved and hosted.** Both permission injections now carry the same explicit non-root Unix guard,
 so a skip cannot be mistaken for rollback evidence, and the manifest-path assertion accepts both
-native separators. This removes static Windows blockers; only the hosted runner can establish that
-no others remain.
+native separators. The corrected full Windows built tier passed with its eight named platform skips
+and no failures.
 
 ### F3 — the real overwrite widget had only a manual recipe
 
@@ -111,11 +112,12 @@ The downstream `OverwritePrompt` contract was exhaustive, but the clack multisel
 was outside both automated tiers. Waiting for a phrase is invalid because clack redraws one
 character at a time; a fixed sleep was the only mechanism in the old hand-run recipe.
 
-**Resolved locally.** `pty-prompt.node-e2e.mjs` uses a real util-linux/BSD `script(1)` pty and sends
+**Resolved and hosted.** `pty-prompt.node-e2e.mjs` uses a real util-linux/BSD `script(1)` pty and sends
 input only after 250 ms of output quiescence. Bare Enter keeps the file, Space then Enter overwrites
 it, and Ctrl-C reports the CLI's own exit 130 with whole-tree equality. It skips with a named reason
-on Windows or without a supported pty. The Linux focused run passed 3/3; the hosted macOS run is
-still required for the cross-platform receipt.
+on Windows or without a supported pty. Linux passed 3/3. The hosted macOS image could not establish
+the supported BSD `script(1)` invocation, so it produced the named skip required by the contract and
+Linux remains the smaller positive replacement probe.
 
 ### F4 — the release workflow has a separate W8 trusted-publishing blocker
 
@@ -177,9 +179,8 @@ distinct portability defects:
   look like a whole-file replacement. The kit now preserves the base file's CRLF style and has a
   direct regression test.
 
-**Resolved locally; hosted retry required.** The source tier now passes 152 tests, the complete
-local built-Node tier passes 93 with the one opt-in packed-smoke skip, and the isolated npm packed
-consumer passes. Wave 7 remains open until the corrected commit is green on both hosted platforms.
+**Resolved and hosted.** The corrected commit passed all 11 jobs in the hosted retry described
+below, including the full macOS and Windows built tiers and the native Windows packed npm consumer.
 
 ## Local integrated receipt — 2026-07-29
 
@@ -195,7 +196,21 @@ The integrated branch has the following local evidence:
 - Workflow shape: `actionlint` 1.7.7 reported no findings. It was run in Docker, which validates
   the workflow statically but is not macOS or Windows runtime evidence.
 
-This receipt does **not** close Wave 7. The first GitHub-hosted run produced the F7 findings above;
-the corrected commit has not yet passed its hosted retry. Until it does, the native Windows
-`.cmd`/caret path and the macOS pty mechanism remain unclosed. The retry result, rather than the
-locally green replacement tests, is the remaining evidence boundary.
+This local receipt alone did **not** close Wave 7. The hosted receipt below does.
+
+## Hosted closure receipt — 2026-07-29
+
+[GitHub Actions run 30501066891](https://github.com/arimxyer/manteen/actions/runs/30501066891)
+completed successfully against remediation commit `af2f227c346e7d135529ff0d4e4bcb8891376a16`:
+
+- All 11 jobs passed: quality; built Node on Ubuntu 22.12/24/26, macOS 22.12 and Windows 22.12;
+  packed npm/pnpm/Yarn/Bun on Ubuntu; and packed npm on Windows.
+- The macOS built tier discovered 94 tests: 90 passed, 0 failed and 4 skipped. One skip is the
+  isolated packed-consumer test; the three pty skips name the unavailable supported BSD
+  `script(1)` invocation, with Linux's 3/3 pty run supplying the positive replacement.
+- The Windows built tier discovered 94 tests: 86 passed, 0 failed and 8 named platform skips. The
+  isolated Windows packed npm job passed 1/1, proving the native `.cmd` invocation, exact caret
+  range, dependency install, component write and receipt.
+
+This satisfies every stopping condition above. Wave 7 is complete; publication, provenance and the
+release workflow prerequisites remain explicitly W8 work.
