@@ -130,6 +130,7 @@ export function toWireItem(item: MantineItem, namespace: string, root: string): 
   if (item.description) wire.description = item.description;
   if (item.npm?.length) wire.dependencies = item.npm;
   if (item.npmDev?.length) wire.devDependencies = item.npmDev;
+  if (item.docs) wire.docs = item.docs;
 
   if (item.uses?.length) {
     // Bare names are local to this registry. Qualifying them here keeps authors

@@ -45,8 +45,12 @@ attestations. The exact run, commit, hash and registry receipts are in the
 `SECURITY.md` and contributor ceremony remain deliberately deferred until the repository has
 outside contributors.
 
-**Content.** Five registry items. Every new item exercises the client harder than a fixture
-does, and a second real registry would prove multi-registry outside the test suite.
+**Content.** The catalog now has 12 items: the original five, a shared upstream-license item and an
+initial six-component Mantine UI-derived tranche. That tranche compiles, installs and production
+builds in a generated disposable Vite consumer; its exact evidence and non-evidence are recorded in
+the [`Wc handoff`](wc-registry-content-handoff.md). Public HTTPS consumption, cross-framework visual
+acceptance, the required-global-styles contract and a second live registry remain. Every new item
+exercises the client harder than a fixture does.
 
 ## The program
 
@@ -60,7 +64,7 @@ is a judgment call, which is exactly why they are separate runs.
 | W6 | [`init`](w6-init-handoff.md) | complete: probe → checkpoint → contract → per-framework adapters → integration → built-Node review → disposable dogfood | The adapters preserve generated work; the shared plan/apply boundary makes dry-run, cancellation, install failure and rollback observable; required Tailwind/manual work is separate from mutations; fresh config is list-ready. |
 | W7 | [`Hardening`](w7-hardening-handoff.md) | complete: matrix-driven, findings-first, hosted retry | Real Windows and macOS CI exposed path and line-ending defects that local Linux could not. |
 | W8 | [`Release`](w8-release-handoff.md) | complete: both `0.1.1` packages published through tagged OIDC with provenance | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
-| Wc | Registry content | wide, parallel per component | Independent of all of the above; can run any time. Doubles as client stress-testing. |
+| Wc | [`Registry content`](wc-registry-content-handoff.md) | ongoing: small curated tranches | Independent of all of the above; doubles as client stress-testing without turning fixtures into product evidence. |
 
 **Not workflow-shaped, do directly:** the hygiene set (LICENSE, linter, SECURITY, CONTRIBUTING,
 dependabot, README rename). Single-file, single-concern, no discovery — a workflow would be
@@ -86,8 +90,8 @@ runtime, OS, package-manager, real-prompt and packed-tarball boundaries through 
 W8 completed the manual bootstrap, trusted-publisher binding, ordered tagged releases and
 independent npm provenance verification.
 
-W4 through W8 are complete. Wc remains independent registry-content work rather than a release
-blocker.
+W4 through W8 are complete. Wc's first six-component tranche is locally dogfooded; Wc remains an
+independent, ongoing content stream rather than a release blocker.
 
 ## On one large program workflow
 

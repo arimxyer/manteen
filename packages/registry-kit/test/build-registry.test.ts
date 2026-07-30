@@ -44,6 +44,21 @@ describe("vocabulary mapping", () => {
 
     expect(files[0]!.content).toContain("export function EmptyState");
   });
+
+  test("carries author documentation into the installable item", () => {
+    const documented = toWireItem(
+      {
+        name: "documented",
+        kind: "component",
+        files: [{ path: "src/callout.tsx", as: "component" }],
+        docs: "Source and usage notes.",
+      },
+      "@kit",
+      join(FIXTURES, "kit"),
+    );
+
+    expect(documented.docs).toBe("Source and usage notes.");
+  });
 });
 
 describe("dependency qualification", () => {

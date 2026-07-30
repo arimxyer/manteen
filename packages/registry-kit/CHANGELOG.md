@@ -1,5 +1,10 @@
 # manteen-kit
 
+## Unreleased
+
+- Preserve an authored item's `docs` field in the compiled registry item instead of accepting and
+  silently dropping it.
+
 ## 0.1.1
 
 First trusted release.

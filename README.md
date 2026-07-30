@@ -23,9 +23,9 @@ Any client that speaks the registry format can install from it today:
 
 `manteen` adds what that client cannot express — safe framework initialization, a Mantine version
 gate, provider setup, theme-fragment composition, maintenance commands, and refusal when two
-registries would overwrite each other's component. It is in active development and unpublished;
+registries would overwrite each other's component. `manteen` and `manteen-kit` are public on npm;
 see [packages/cli](packages/cli/README.md) for usage and [docs/roadmap.md](docs/roadmap.md) for the
-remaining hardening/release work.
+current content work.
 
 ```bash
 manteen init --dry-run
@@ -66,6 +66,12 @@ correctly. Verified in both directions — see [Interop](#interop).
 
 Rule of thumb: if an upstream maintainer will keep fixing it, it belongs in `package.json`.
 If nobody but you maintains it and every project wants to tweak it, it belongs here.
+
+The first Wc content tranche also curates six MIT-licensed
+[Mantine UI](https://ui.mantine.dev/) examples into prop-driven registry items. Their source is
+pinned and attributed, and installing any of them brings one deduplicated upstream license notice
+with it. See the [Wc handoff](docs/wc-registry-content-handoff.md) for the selection, adaptation and
+verification boundary.
 
 ## Layout
 

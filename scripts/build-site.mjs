@@ -41,7 +41,7 @@ const items = index.items
           ${requires ? `<span class="req">mantine ${escapeHtml(requires)}</span>` : ""}
         </div>
         ${item.description ? `<p class="desc">${escapeHtml(item.description)}</p>` : ""}
-        <code class="cmd">npx shadcn@latest add @house/${escapeHtml(item.name)}</code>
+        <code class="cmd">npx manteen add @house/${escapeHtml(item.name)}</code>
       </li>`;
   })
   .join("\n");
@@ -95,14 +95,12 @@ const html = `<!doctype html>
   <h1>manteen</h1>
   <p class="tagline">A component registry for <a href="https://mantine.dev">Mantine</a>. Components you copy in, own, and edit &mdash; not another dependency.</p>
 
-  <h2>Point a client at it</h2>
-  <pre>{
-  "registries": {
-    "@house": "https://arimxyer.github.io/manteen/r/{name}.json"
-  }
-}</pre>
-  <p class="tagline">That shape works in <code>components.json</code> today, so any client that speaks the
-  registry format can install these. <code>manteen</code>, the Mantine-aware client, is still in development.</p>
+  <h2>Install from it</h2>
+  <pre>npm install --save-dev manteen
+npx manteen init
+npx manteen add @house/article-card</pre>
+  <p class="tagline"><code>init</code> configures this <code>@house</code> registry by default. The compiled
+  item documents also remain readable by other clients that speak the interchange format.</p>
 
   <h2>${index.items.length} item${index.items.length === 1 ? "" : "s"}</h2>
   <ul>

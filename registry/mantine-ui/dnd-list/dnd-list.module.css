@@ -1,0 +1,36 @@
+/*
+ * Adapted from Mantine UI's DndList at
+ * ffbf61c559f374a7ea28fcf00355e84dcbe9a908. MIT licensed; see
+ * LICENSES/MANTINE-UI.txt after installation.
+ */
+.item {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--mantine-spacing-sm);
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-lg);
+  cursor: grab;
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-5));
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+  border-radius: var(--mantine-radius-md);
+  touch-action: none;
+}
+
+.item:active {
+  cursor: grabbing;
+}
+
+.itemDragging {
+  box-shadow: var(--mantine-shadow-sm);
+}
+
+.leading {
+  display: grid;
+  min-width: 60px;
+  font-size: 30px;
+  font-weight: 700;
+  place-items: center start;
+}
+
+.description {
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-4));
+}
