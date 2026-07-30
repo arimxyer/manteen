@@ -19,6 +19,7 @@ function input(content: string): InitAdapterInput {
         configPath: `${ROOT}/vite.config.ts`,
         themePath: `${SOURCE_ROOT}/lib/theme.ts`,
         themeImport: "@/lib/theme",
+        stylesPath: `${SOURCE_ROOT}/manteen.css`,
       },
       files: new Map([[ENTRY, content]]),
       declaredDependencies: new Map(),
@@ -58,6 +59,11 @@ describe("W6 Vite entry adapter", () => {
 
     const content = result.files[0]?.content ?? "";
     expect(content).toContain("import '@mantine/core/styles.css';");
+    expect(content).toContain("import './manteen.css';");
+    expect(content.indexOf("@mantine/core/styles.css")).toBeLessThan(
+      content.indexOf("./manteen.css"),
+    );
+    expect(content.indexOf("./manteen.css")).toBeLessThan(content.indexOf("./App.css"));
     expect(content).toContain("import { MantineProvider } from '@mantine/core';");
     expect(content).toContain("import { theme } from '@/lib/theme';");
     expect(content).toContain("<MantineProvider theme={theme}>");

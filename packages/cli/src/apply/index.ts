@@ -44,6 +44,7 @@ import { installDeps } from "./install-deps";
 import { createJournal } from "./journal";
 import { preflight } from "./preflight";
 import { writeFiles } from "./write-files";
+import { writeStyles } from "./write-styles";
 import { writeTheme } from "./write-theme";
 
 export type {
@@ -87,6 +88,7 @@ function emptyOutcome(plan: Plan, options: ApplyOptions): ApplyOutcome {
     // belongs to the reporter.
     dependencies: { installed: false, command: null },
     theme: plan.theme === null ? null : { path: plan.theme.destination, written: false },
+    styles: plan.styles === null ? null : { path: plan.styles.destination, written: false },
     receipt: { path: plan.receipt.path, written: false },
     failure: null,
   };
@@ -220,6 +222,7 @@ async function applyPlan(
   // two flags whose default must be `false`: every failure path unwinds the
   // journal, so a run that threw wrote neither.
   let themeWritten = false;
+  let stylesWritten = false;
   let receiptWritten = false;
 
   try {
@@ -233,7 +236,10 @@ async function applyPlan(
     // `e2e/gates.node-e2e.mjs`. The rest of the rule lives in write-theme.ts.
     themeWritten = writeTheme(plan.theme, journal);
 
-    // ---- phase 5: write receipt --------------------------------------------
+    // ---- phase 5: write managed package styles -----------------------------
+    stylesWritten = writeStyles(plan.styles, journal);
+
+    // ---- phase 6: write receipt --------------------------------------------
     // An unreadable receipt forced past merges from `null`: the prior records are
     // discarded, which the receipt-unreadable diagnostic states before the user
     // forces.
@@ -244,7 +250,7 @@ async function applyPlan(
     // `overwrite` may never have been written. Recording its sha256 would claim
     // content we did not write and authorize a future silent overwrite of a file
     // that is entirely the user's.
-    const text = serializeReceipt(mergeReceipt(prior, plan, results, themeWritten));
+    const text = serializeReceipt(mergeReceipt(prior, plan, results, themeWritten, stylesWritten));
 
     // Gated on bytes and on NOTHING else. Not on "any file was written", not on
     // plan.theme.changed: a project installed before receipts existed reports
@@ -300,6 +306,7 @@ async function applyPlan(
     // Every OTHER return in this function keeps the `false` correctly — the
     // journal unwound, or nothing ran at all.
     theme: plan.theme === null ? null : { path: plan.theme.destination, written: themeWritten },
+    styles: plan.styles === null ? null : { path: plan.styles.destination, written: stylesWritten },
     receipt: { path: plan.receipt.path, written: receiptWritten },
   };
 }

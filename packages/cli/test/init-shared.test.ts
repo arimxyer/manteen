@@ -37,6 +37,7 @@ export default defineConfig({ plugins: [] });
       configPath: join(ROOT, "manteen.json"),
       themePath: join(ROOT, "src/lib/theme.ts"),
       themeImport: "@/lib/theme",
+      stylesPath: join(ROOT, "src/manteen.css"),
     },
     files,
     declaredDependencies: new Map(),
@@ -74,6 +75,7 @@ describe("W6 shared init planning", () => {
       "framework-config",
       "manteen-config",
       "postcss",
+      "styles",
       "theme",
       "tsconfig",
     ]);
@@ -93,6 +95,7 @@ describe("W6 shared init planning", () => {
         lib: "@/lib",
       },
       theme: "src/lib/theme.ts",
+      styles: "src/manteen.css",
       tsconfig: "tsconfig.app.json",
     });
 

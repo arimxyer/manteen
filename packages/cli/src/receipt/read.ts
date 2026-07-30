@@ -96,10 +96,9 @@ export function readReceipt(
 
 /**
  * Check order is load-bearing and easy to invert: JSON -> version -> schema ->
- * structure. `lockfileVersion` is read BEFORE validation because a v2 file will
- * fail a v1 schema, and reporting "corrupt" for a file written by a newer
- * manteen is both wrong and alarming. It is also the seam a v2 reader dispatches
- * on — no `migrate()` stub is shipped for a migration that does not exist yet.
+ * structure. `lockfileVersion` is read BEFORE validation so the validator can
+ * dispatch to the frozen v1 schema or current v2 schema, and so a future file
+ * is reported as version skew rather than corruption.
  */
 export function parseReceipt(text: string, validate: ReceiptValidator): ParsedReceipt {
   let doc: unknown;
@@ -133,10 +132,16 @@ export function parseReceipt(text: string, validate: ReceiptValidator): ParsedRe
   // rules that keep a hand-edited receipt from redirecting a write out of the
   // project or claiming one destination twice. JSON Schema cannot express the
   // cross-entry uniqueness at all.
-  const structural = structuralProblem(root);
+  const structural = structuralProblem(root, version);
   if (structural) return bad("invalid", structural);
 
-  return { ok: true, receipt: root as unknown as Receipt };
+  return {
+    ok: true,
+    receipt:
+      version === 1
+        ? ({ ...root, lockfileVersion: RECEIPT_VERSION, styles: null } as unknown as Receipt)
+        : (root as unknown as Receipt),
+  };
 }
 
 /**
@@ -185,7 +190,7 @@ function asRecord(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
-function structuralProblem(root: Record<string, unknown>): string | null {
+function structuralProblem(root: Record<string, unknown>, version: number): string | null {
   if (root["$schema"] !== undefined && typeof root["$schema"] !== "string") {
     return "$schema is present but is not a string";
   }
@@ -194,6 +199,14 @@ function structuralProblem(root: Record<string, unknown>): string | null {
   if (theme !== null) {
     const problem = themeProblem(theme);
     if (problem) return problem;
+  }
+
+  if (version >= 2) {
+    const styles = root["styles"];
+    if (styles !== null) {
+      const problem = stylesProblem(styles);
+      if (problem) return problem;
+    }
   }
 
   const items = root["items"];
@@ -253,6 +266,51 @@ function structuralProblem(root: Record<string, unknown>): string | null {
     }
   }
 
+  return null;
+}
+
+function stylesProblem(raw: unknown): string | null {
+  const styles = asRecord(raw);
+  if (!styles) return "styles is neither an object nor null";
+
+  const pathProblem = receiptPathProblem(styles["destination"]);
+  if (pathProblem) return `styles.destination ${pathProblem}`;
+  if (typeof styles["sha256"] !== "string" || !SHA256.test(styles["sha256"])) {
+    return "styles.sha256 is not 64 lowercase hex characters";
+  }
+
+  const sources = styles["sources"];
+  if (!Array.isArray(sources)) return "styles.sources is missing or is not an array";
+  const seen = new Set<string>();
+  for (const rawSource of sources) {
+    const source = asRecord(rawSource);
+    if (!source) return "styles.sources contains an entry that is not an object";
+    const itemId = source["itemId"];
+    if (typeof itemId !== "string" || itemId === "") {
+      return "a style source has a missing or empty itemId";
+    }
+    if (seen.has(itemId)) return `styles.sources contains two entries for "${itemId}"`;
+    seen.add(itemId);
+
+    const dependsOn = source["dependsOn"];
+    if (!Array.isArray(dependsOn) || dependsOn.some((value) => typeof value !== "string")) {
+      return `style source "${itemId}" has invalid dependsOn`;
+    }
+    const imports = source["imports"];
+    if (
+      !Array.isArray(imports) ||
+      imports.length === 0 ||
+      imports.some((value) => typeof value !== "string" || value === "")
+    ) {
+      return `style source "${itemId}" has invalid imports`;
+    }
+    if (new Set(dependsOn).size !== dependsOn.length) {
+      return `style source "${itemId}" has duplicate dependencies`;
+    }
+    if (new Set(imports).size !== imports.length) {
+      return `style source "${itemId}" has duplicate imports`;
+    }
+  }
   return null;
 }
 

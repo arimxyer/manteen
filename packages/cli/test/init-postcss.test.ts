@@ -12,6 +12,7 @@ function project(files: Record<string, string>): InitProjectSnapshot {
       configPath: "/project/manteen.json",
       themePath: "/project/src/lib/theme.ts",
       themeImport: "@/lib/theme",
+      stylesPath: "/project/src/manteen.css",
     },
     files: new Map(Object.entries(files)),
     declaredDependencies: new Map(),

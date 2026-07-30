@@ -113,6 +113,8 @@ export interface InitProjectLayout {
   themePath: string;
   /** Always `@/lib/theme`, backed by the broad `@/*` paths key. */
   themeImport: "@/lib/theme";
+  /** `<sourceRoot>/manteen.css`; the Manteen-owned composed stylesheet. */
+  stylesPath: string;
 }
 
 /**
@@ -132,7 +134,8 @@ export type InitFileKind =
   | "framework-config"
   | "entry"
   | "postcss"
-  | "theme";
+  | "theme"
+  | "styles";
 
 /** Adapter output before the shared planner reads and hashes destinations. */
 export interface InitProposedFile {

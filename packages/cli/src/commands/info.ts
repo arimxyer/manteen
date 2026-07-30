@@ -585,6 +585,7 @@ export function renderInfo(report: InfoReport): string {
     out.push(...section("dependencies", detail.dependencies.map(clean)));
     out.push(...section("devDependencies", detail.devDependencies.map(clean)));
     out.push(...section("registryDependencies", detail.registryDependencies.map(clean)));
+    out.push(...section("css imports", detail.cssImports.map(clean)));
   }
 
   out.push(...section("installed", installedRows(report)));

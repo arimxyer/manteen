@@ -639,6 +639,7 @@ export function toItemDetail(item: ValidatedItem, redactedUrl: string): ItemDeta
     dependencies: item.dependencies,
     devDependencies: item.devDependencies,
     registryDependencies: item.registryDependencies,
+    cssImports: item.cssImports,
     meta,
   };
 }

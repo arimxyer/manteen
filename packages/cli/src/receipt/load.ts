@@ -25,6 +25,7 @@ import type { ReceiptReader, ReceiptValidator } from "./read";
 
 const SCHEMA_CANDIDATES = ["../schema", "../../schema"] as const;
 const LOCK_SCHEMA_FILE = "manteen.lock.schema.json";
+const LOCK_V1_SCHEMA_FILE = "manteen.lock.v1.schema.json";
 
 /**
  * Reads the receipt, or reports absence.
@@ -71,10 +72,21 @@ export function createReceiptReader(): ReceiptReader {
  * and the user fixes them in an editor, in one pass.
  */
 export function createReceiptValidator(): ReceiptValidator {
-  const ajv = new Ajv({ strict: false, allErrors: true });
-  const validate = ajv.compile(readLockSchema());
+  // The frozen v1 schema deliberately keeps its original $id, so compile the
+  // two versions in separate Ajv registries rather than mutating either schema.
+  const validateV1 = new Ajv({ strict: false, allErrors: true }).compile(
+    readLockSchema(LOCK_V1_SCHEMA_FILE),
+  );
+  const validateV2 = new Ajv({ strict: false, allErrors: true }).compile(
+    readLockSchema(LOCK_SCHEMA_FILE),
+  );
 
   return (doc) => {
+    const version =
+      typeof doc === "object" && doc !== null && !Array.isArray(doc)
+        ? (doc as Record<string, unknown>)["lockfileVersion"]
+        : undefined;
+    const validate = version === 1 ? validateV1 : validateV2;
     if (validate(doc)) return true;
     return (validate.errors ?? [])
       .map((error) => `${error.instancePath || "/"} ${error.message ?? "is invalid"}`)
@@ -82,17 +94,17 @@ export function createReceiptValidator(): ReceiptValidator {
   };
 }
 
-function readLockSchema(): Record<string, unknown> {
+function readLockSchema(filename: string): Record<string, unknown> {
   let lastError: unknown;
   for (const candidate of SCHEMA_CANDIDATES) {
     try {
-      const path = resolve(import.meta.dirname, candidate, LOCK_SCHEMA_FILE);
+      const path = resolve(import.meta.dirname, candidate, filename);
       return JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
     } catch (error) {
       lastError = error;
     }
   }
   throw new Error(
-    `${LOCK_SCHEMA_FILE} is missing from the manteen package (looked in ${SCHEMA_CANDIDATES.join(" and ")} relative to ${import.meta.dirname}): ${String(lastError)}`,
+    `${filename} is missing from the manteen package (looked in ${SCHEMA_CANDIDATES.join(" and ")} relative to ${import.meta.dirname}): ${String(lastError)}`,
   );
 }

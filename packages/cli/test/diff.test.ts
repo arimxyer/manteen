@@ -186,7 +186,7 @@ function makeProject(options: FixtureOptions = {}): string {
   if (options.noReceipt === true) return root;
 
   const receipt: Receipt = {
-    lockfileVersion: 1,
+    lockfileVersion: 2,
     items: [
       {
         id: "@house/offline",
@@ -237,6 +237,7 @@ function makeProject(options: FixtureOptions = {}): string {
       sha256: sha(THEME_RECORDED),
       sources: [{ itemId: "@house/widget", kind: "meta-fragment", path: "theme.ts" }],
     },
+    styles: null,
   };
 
   write(root, "manteen.lock.json", `${JSON.stringify(receipt, null, 2)}\n`);
@@ -287,6 +288,7 @@ function config(root: string): LoadedConfig {
     aliases: ALIASES,
     aliasBacking,
     themeDestination: resolve(root, "src", "lib", "theme.ts"),
+    stylesDestination: null,
     tsconfigPath: join(root, "tsconfig.json"),
     tsconfig: { path: join(root, "tsconfig.json"), config: TSCONFIG } as LoadedConfig["tsconfig"],
     resolutions: new Map(),
@@ -344,6 +346,7 @@ function stubPlan(options: StubOptions = {}): DiffPorts["plan"] {
       packageManager: "npm",
       installCommand: null,
       theme: options.theme ?? null,
+      styles: null,
       mantine: { state: "not-installed" },
       receipt,
       diagnostics: options.diagnostics ?? [],
@@ -362,6 +365,7 @@ function widget(root: string): PlanItem {
     sourceUrl: "file:///house/widget.json",
     requestedBy: ["<root>"],
     dependsOn: [],
+    cssImports: [],
     files: [
       plannedFile("@house/widget", root, `${UI}/unchanged.tsx`, UNCHANGED),
       plannedFile("@house/widget", root, `${UI}/local.tsx`, RECORDED_LOCAL),
@@ -808,6 +812,7 @@ describe("buildDiff is pure with respect to the receipt", () => {
         packageManager: "npm",
         installCommand: null,
         theme: null,
+        styles: null,
         mantine: { state: "not-installed" },
         receipt: { present: false, path: join(root, "manteen.lock.json") },
         diagnostics: [],

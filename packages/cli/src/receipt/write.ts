@@ -71,6 +71,17 @@ export function serializeReceipt(receipt: Receipt): string {
         })),
       }
     : null;
+  canonical["styles"] = receipt.styles
+    ? {
+        destination: receipt.styles.destination,
+        sha256: receipt.styles.sha256,
+        sources: receipt.styles.sources.map((source) => ({
+          itemId: source.itemId,
+          dependsOn: [...source.dependsOn],
+          imports: [...source.imports],
+        })),
+      }
+    : null;
 
   return `${JSON.stringify(canonical, null, 2)}\n`;
 }
@@ -87,6 +98,7 @@ export function mergeReceipt(
   plan: Plan,
   results: WriteResults,
   themeWritten: boolean,
+  stylesWritten: boolean,
 ): Receipt {
   const root = plan.root;
   const priorItems = new Map<CanonicalId, ReceiptItem>();
@@ -154,6 +166,7 @@ export function mergeReceipt(
   // 5. The theme merges cumulatively — computed before the ghost sweep, which
   //    consults it.
   const theme = mergeTheme(prior, plan, themeWritten, root);
+  const styles = mergeStyles(prior, plan, stylesWritten, root);
 
   // 3. Prune stale claims, keyed on what step 1 actually RECORDED — not on what
   //    it planned. Keying on planned would delete a carried-over owner's record
@@ -161,14 +174,17 @@ export function mergeReceipt(
   //    should change in the receipt. Only reachable via an authorized takeover,
   //    but a receipt must never hold two claims on one destination — that is
   //    precisely what `parseReceipt` refuses.
-  const themeItemIds = new Set(theme?.sources.map((source) => source.itemId) ?? []);
+  const artifactItemIds = new Set([
+    ...(theme?.sources.map((source) => source.itemId) ?? []),
+    ...(styles?.sources.map((source) => source.itemId) ?? []),
+  ]);
   const survivors: ReceiptItem[] = [];
   for (const item of carried) {
     const files = item.files.filter((file) => !recorded.has(file.destination));
     // 4. Ghost items: zero files AND no theme contribution. The theme.sources
     //    consultation is what keeps an item whose only file was absorbed by the
     //    fold (D5) from being collected away.
-    if (files.length === 0 && !themeItemIds.has(item.id)) continue;
+    if (files.length === 0 && !artifactItemIds.has(item.id)) continue;
     survivors.push({ ...item, files });
   }
 
@@ -176,10 +192,30 @@ export function mergeReceipt(
     lockfileVersion: RECEIPT_VERSION,
     items: [...rebuilt, ...survivors].sort((a, b) => compare(a.id, b.id)),
     theme,
+    styles,
   };
   // 6. `$schema` survives so a user who wired up editor completion keeps it.
   if (prior?.$schema !== undefined) next.$schema = prior.$schema;
   return next;
+}
+
+function mergeStyles(
+  prior: Receipt | null,
+  plan: Plan,
+  stylesWritten: boolean,
+  root: string,
+): Receipt["styles"] {
+  if (!plan.styles) return prior?.styles ?? null;
+  if (plan.styles.changed && !stylesWritten) return prior?.styles ?? null;
+  return {
+    destination: toReceiptPath(plan.styles.destination, root),
+    sha256: plan.styles.sha256,
+    sources: plan.styles.sources.map((source) => ({
+      itemId: source.itemId,
+      dependsOn: [...source.dependsOn],
+      imports: [...source.imports],
+    })),
+  };
 }
 
 function mergeTheme(

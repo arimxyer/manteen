@@ -413,6 +413,7 @@ export async function resolve(
         dependsOn: [],
         ...(view.meta.requires === undefined ? {} : { requires: view.meta.requires }),
         ...(view.meta.provider === undefined ? {} : { provider: view.meta.provider }),
+        cssImports: view.cssImports,
         ...(view.meta.stylesApi === undefined ? {} : { stylesApi: view.meta.stylesApi }),
         files,
       });

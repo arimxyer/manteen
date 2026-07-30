@@ -25,10 +25,10 @@ import {
 } from "ts-morph";
 
 import { initSourceUnsupported } from "../diagnostics";
+import { ensureManagedStyleImports, managedStylesImport } from "../styles";
 import type { InitAdapter, InitAdapterInput, InitAdapterResult } from "../types";
 
 const MANTINE_CORE = "@mantine/core";
-const MANTINE_STYLES = "@mantine/core/styles.css";
 
 type ComponentFunction = FunctionDeclaration | FunctionExpression | ArrowFunction;
 type JsxRoot = JsxElement | JsxSelfClosingElement | JsxFragment;
@@ -133,7 +133,10 @@ function transformEntry(
   }
 
   // All refusal checks precede mutation, even though this project is in-memory.
-  ensureStylesImport(sourceFile);
+  ensureManagedStyleImports(
+    sourceFile,
+    managedStylesImport(entryPath, input.project.layout.stylesPath),
+  );
   ensureProviderImport(sourceFile, providerTag, existingProviderTag);
   ensureThemeImport(sourceFile, input.project.layout.themeImport, themeLocal, existingThemeLocal);
 
@@ -309,17 +312,6 @@ function findJsxAttribute(opening: JsxOpeningLikeElement, name: string): JsxAttr
     }
   }
   return undefined;
-}
-
-function ensureStylesImport(sourceFile: SourceFile): void {
-  if (
-    sourceFile
-      .getImportDeclarations()
-      .some((declaration) => declaration.getModuleSpecifierValue() === MANTINE_STYLES)
-  ) {
-    return;
-  }
-  sourceFile.insertImportDeclaration(0, { moduleSpecifier: MANTINE_STYLES });
 }
 
 function ensureProviderImport(

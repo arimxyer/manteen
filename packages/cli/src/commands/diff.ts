@@ -70,6 +70,7 @@ import type {
   DiffFile,
   DiffItem,
   DiffResult,
+  DiffStyles,
   DiffTheme,
   FileChange,
   Installed,
@@ -479,6 +480,7 @@ export function buildDiff(input: DiffInput): DiffResult {
     root,
     items: items.sort((a, b) => byCodeUnit(a.id, b.id)),
     theme: asked ? compareTheme(installed, plan.theme, snapshot, patches) : null,
+    styles: asked ? compareStyles(installed, plan.styles, snapshot, patches) : null,
     notes: sortNotes([...input.notes, ...installed.notes]),
   };
 }
@@ -696,6 +698,47 @@ function themeChange(local: LocalStatus, changed: boolean): FileChange {
   return changed ? "upstream-only" : "unchanged";
 }
 
+function compareStyles(
+  installed: Installed,
+  planned: Plan["styles"],
+  snapshot: FileSnapshot,
+  patches: boolean,
+): DiffStyles | null {
+  const styles = installed.styles;
+  if (styles === null) return null;
+
+  const upstream = planned !== null && planned.destination === styles.destination ? planned : null;
+  const change: FileChange =
+    styles.currentSha256 === null
+      ? "missing"
+      : upstream === null
+        ? "unavailable"
+        : artifactChange(
+            styles.currentSha256 !== styles.recordedSha256,
+            upstream.sha256 !== styles.recordedSha256,
+          );
+
+  return {
+    destination: styles.destination,
+    receiptPath: styles.receiptPath,
+    recordedSha256: styles.recordedSha256,
+    currentSha256: styles.currentSha256,
+    upstreamSha256: upstream?.sha256 ?? null,
+    change,
+    patch:
+      patches && upstream !== null && change !== "unchanged"
+        ? themePatch(styles.receiptPath, snapshot.text(styles.destination) ?? "", upstream.text)
+        : null,
+  };
+}
+
+function artifactChange(localChanged: boolean, upstreamChanged: boolean): FileChange {
+  if (localChanged && upstreamChanged) return "both";
+  if (localChanged) return "local-only";
+  if (upstreamChanged) return "upstream-only";
+  return "unchanged";
+}
+
 // ---- patches ------------------------------------------------------------------
 
 /**
@@ -785,6 +828,15 @@ export function renderDiff(result: DiffResult): string {
     }
   }
 
+  const styles = result.styles;
+  if (styles !== null) {
+    if (styles.change === "unchanged") unchanged += 1;
+    else {
+      changed += 1;
+      blocks.push(renderBlock("styles", [styles]));
+    }
+  }
+
   return `${[...blocks, summarize(result, changed, unchanged)].join("\n")}\n`;
 }
 
@@ -804,7 +856,7 @@ export function renderDiff(result: DiffResult): string {
 function summarize(result: DiffResult, changed: number, unchanged: number): string {
   if (changed > 0) return `${count(changed, "change")}, ${unchanged} unchanged.`;
 
-  const empty = result.items.length === 0 && result.theme === null;
+  const empty = result.items.length === 0 && result.theme === null && result.styles === null;
   if (empty && result.notes.length > 0) {
     return `Nothing to compare — see the ${count(result.notes.length, "note")} above.`;
   }

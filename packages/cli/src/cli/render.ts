@@ -201,6 +201,10 @@ export function renderDryRun(planned: Plan): string {
     const verb = planned.theme.changed ? "merge" : "unchanged";
     lines.push(`${verb.padEnd(VERB_WIDTH)}  ${display(planned.theme.destination, planned.root)}`);
   }
+  if (planned.styles) {
+    const verb = planned.styles.changed ? "compose" : "unchanged";
+    lines.push(`${verb.padEnd(VERB_WIDTH)}  ${display(planned.styles.destination, planned.root)}`);
+  }
   lines.push("", "Dry run — nothing was written.");
 
   const patch = themePatch(planned);
@@ -269,6 +273,10 @@ export function renderOutcome(outcome: ApplyOutcome, root: string): string {
   if (outcome.theme) {
     const verb = outcome.theme.written ? "written" : "unchanged";
     lines.push(`${verb.padEnd(VERB_WIDTH)}  ${display(outcome.theme.path, root)}`);
+  }
+  if (outcome.styles) {
+    const verb = outcome.styles.written ? "written" : "unchanged";
+    lines.push(`${verb.padEnd(VERB_WIDTH)}  ${display(outcome.styles.path, root)}`);
   }
   if (outcome.receipt.written) {
     lines.push(`${"written".padEnd(VERB_WIDTH)}  ${display(outcome.receipt.path, root)}`);

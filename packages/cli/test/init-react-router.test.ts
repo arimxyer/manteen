@@ -17,6 +17,7 @@ function snapshot(source?: string): InitProjectSnapshot {
       configPath: resolve(root, "manteen.json"),
       themePath: resolve(sourceRoot, "lib/theme.ts"),
       themeImport: "@/lib/theme",
+      stylesPath: resolve(sourceRoot, "manteen.css"),
     },
     files: new Map(source === undefined ? [] : [[rootPath, source]]),
     declaredDependencies: new Map(),

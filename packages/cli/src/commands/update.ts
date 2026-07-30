@@ -667,6 +667,14 @@ function toUpdateJson(
             changed: plan.theme.changed,
             written: outcome?.theme?.written ?? false,
           },
+    styles:
+      plan?.styles == null
+        ? null
+        : {
+            destination: toReceiptPath(plan.styles.destination, root),
+            changed: plan.styles.changed,
+            written: outcome?.styles?.written ?? false,
+          },
     dependencies:
       outcome === null
         ? null

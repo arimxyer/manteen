@@ -45,6 +45,7 @@ import { diag } from "./diagnostics";
 import { createHttpLoader, type IndexResolver, type IndexSource, isHttpUrl } from "./loader-http";
 import { createFileLoader, isFileUrl } from "./loader-local";
 import { resolve as resolveGraph } from "./resolve";
+import { foldStyles, needsStylePlan, type StyleBase } from "./styles-fold";
 import { foldTheme } from "./theme-fold";
 import type {
   CanonicalId,
@@ -237,6 +238,22 @@ async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptio
   diagnostics.push(...folded.diagnostics);
   const theme = folded.theme;
 
+  // ---- managed package styles (D26-D31) -----------------------------------
+  const priorStyles = receipt.present && receipt.ok ? receipt.receipt.styles : null;
+  const styleBase = readStylesBase(
+    config.stylesDestination,
+    needsStylePlan(graph.items, priorStyles),
+  );
+  const foldedStyles = foldStyles({
+    root,
+    destination: config.stylesDestination,
+    prior: priorStyles,
+    items: graph.items,
+    base: styleBase,
+  });
+  diagnostics.push(...foldedStyles.diagnostics);
+  const styles = foldedStyles.styles;
+
   const report = aggregate(diagnostics, force);
 
   return {
@@ -249,10 +266,26 @@ async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptio
     packageManager,
     installCommand: detected === undefined ? null : installCommandFor(detected, deps),
     theme,
+    styles,
     mantine,
     receipt,
     diagnostics: report.diagnostics,
     ok: report.ok,
+  };
+}
+
+function readStylesBase(destination: string | null, needed: boolean): StyleBase | null {
+  if (destination === null || !needed) return null;
+  let bytes: Buffer;
+  try {
+    bytes = readFileSync(destination);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  }
+  return {
+    text: bytes.toString("utf8"),
+    sha256: createHash("sha256").update(bytes).digest("hex"),
   };
 }
 
@@ -654,7 +687,7 @@ function receiptUnreadable(state: Extract<ReceiptState, { present: true; ok: fal
 
   const forcing =
     state.reason === "future-version"
-      ? "Forcing rewrites it at version 1, discarding fields this version does not understand,"
+      ? `Forcing rewrites it at version ${RECEIPT_VERSION}, discarding fields this version does not understand,`
       : "Forcing discards the ownership records of every previously installed item,";
 
   return diag(
