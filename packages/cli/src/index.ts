@@ -53,6 +53,10 @@ export { loadConfig } from "./config/load";
 // more place for it to fall out of step. It carries values as well as types
 // (`RECEIPT_FILENAME`, `RECEIPT_VERSION`), so `export type *` would drop them.
 export * from "./config/types";
+export { applyInit } from "./init/apply";
+export { planInit } from "./init/plan";
+export { createInitApplyPorts, createInitPlanPorts } from "./init/ports";
+export * from "./init/types";
 // The inventory contract — `Installed`, `Available`, `DiffResult`,
 // `UpdateResult` and the readers behind them. Exported here rather than from
 // `inventory/index.ts` itself, which is deliberately not wired into an entry

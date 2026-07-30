@@ -57,7 +57,7 @@
   },
   "definitions": {
     "registrySource": {
-      "description": "Either the item URL template on its own, or an object when the registry also needs headers or query parameters.",
+      "description": "Either the item URL template on its own, or an object when the registry also publishes an index or needs headers or query parameters.",
       "oneOf": [
         { "$ref": "#/definitions/urlTemplate" },
         {

@@ -18,6 +18,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { test } from "node:test";
+import { pathToFileURL } from "node:url";
 
 import { createWireValidator } from "manteen-kit";
 
@@ -64,7 +65,7 @@ test("the built binary runs under node and prints its version", () => {
 
 test("manteen-kit stayed external and its wire validator still works", async () => {
   // Half the proof: the built programmatic surface loads under real node.
-  const manteen = await import(join(DIST, "index.mjs"));
+  const manteen = await import(pathToFileURL(join(DIST, "index.mjs")).href);
   assert.equal(typeof manteen.plan, "function");
   assert.equal(typeof manteen.apply, "function");
   assert.equal(typeof manteen.loadConfig, "function");

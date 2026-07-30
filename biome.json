@@ -13,7 +13,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "complexity": { "useLiteralKeys": "off" },
       "style": { "noNonNullAssertion": "off", "useNamingConvention": "off" },
       "suspicious": { "noTemplateCurlyInString": "off", "noConsole": "off" }

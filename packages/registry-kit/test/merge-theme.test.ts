@@ -318,4 +318,23 @@ export const theme = createTheme({
     expect(result.text).toContain("// House palette — do not change without design sign-off.");
     expect(result.text).toContain("// intentional");
   });
+
+  test("keeps the base file's CRLF line endings after a mutation", () => {
+    const incoming = `import { Table, createTheme } from "@mantine/core";
+
+export const theme = createTheme({
+  components: {
+    Table: Table.extend({ defaultProps: { verticalSpacing: "sm" } }),
+  },
+});
+`;
+    const crlfBase = BASE.replace(/\n/g, "\r\n");
+
+    const result = mergeThemeSource(crlfBase, incoming);
+
+    expect(result.changed).toBe(true);
+    expect(result.text).toContain("\r\n");
+    expect(result.text.replace(/\r\n/g, "")).not.toContain("\n");
+    expect(result.text).toContain("Table: Table.extend");
+  });
 });

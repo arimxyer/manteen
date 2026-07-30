@@ -32,6 +32,7 @@ import {
   matchesPathsPattern,
   unbackedAliases,
 } from "./aliases";
+import { houseRegistrySource } from "./defaults";
 import { normalizeRegistry } from "./registries";
 import {
   ALIAS_KEYS,
@@ -47,18 +48,10 @@ import { type ConfigValidator, checkSemantics, createConfigValidator, pointer } 
 
 export const CONFIG_FILENAME = "manteen.json";
 
-/**
- * Removed by phase 5, which is when it stops being true.
- *
- * A named constant rather than an inline string so that removal is one edit and
- * cannot leave a stale copy behind in a second message.
- */
-const NO_INIT_YET = "There is no `manteen init` yet; write the file by hand for now.";
-
 /** Printed when the config is missing. Kept as a value so it is provably valid JSON. */
 const MINIMAL_CONFIG: MantineConfig = {
   $schema: "./node_modules/manteen/schema/manteen.schema.json",
-  registries: { "@house": "https://example.com/r/{name}.json" },
+  registries: { "@house": houseRegistrySource() },
   aliases: {
     components: "@/components",
     ui: "@/components/ui",
@@ -331,7 +324,7 @@ function missingConfig(root: string): ConfigError {
     "Each alias must be backed by a `paths` key in your tsconfig — manteen writes files",
     "verbatim, so the import specifiers inside them have to resolve in your project.",
     "",
-    NO_INIT_YET,
+    "Run `manteen init` to detect a supported framework and create this setup safely.",
   ];
 
   // Probed, never read. Its presence means the project uses shadcn, and saying

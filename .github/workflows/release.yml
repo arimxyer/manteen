@@ -23,11 +23,11 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
       # npm does the publishing even though bun does the installing: `npm
       # publish` is what implements OIDC and provenance.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22.12"
           registry-url: "https://registry.npmjs.org"
@@ -70,8 +70,10 @@ jobs:
           fi
           echo "publishing $(node -p "require('./package.json').name")@$declared"
 
-      # `workspace:*` is meaningless to a consumer. bun rewrites it when it
-      # packs, so this asserts the rewrite happened rather than trusting it.
+      # `workspace:*` is meaningless to a consumer, and npm pack preserves it
+      # verbatim. The client therefore declares a real kit range even while Bun
+      # links the matching workspace package locally. Keep this assertion as a
+      # last-line release guard over the actual tarball.
       - name: Reject a workspace protocol in the tarball
         working-directory: ${{ steps.pkg.outputs.dir }}
         run: |

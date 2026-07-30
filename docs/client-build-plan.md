@@ -19,8 +19,8 @@
 
 ```
 packages/cli/
-  package.json                      bin.mantine -> ./dist/cli.mjs; type module; engines.node >=20.11
-  tsdown.config.ts                  entry { index: src/index.ts, cli: src/cli/index.ts }, FLAT dist
+  package.json                      bin.mantine -> ./dist/cli.mjs; type module; engines.node >=22.12
+  tsdown.config.mjs                 entry { index: src/index.ts, cli: src/cli/index.ts }, FLAT dist
   README.md
   schema/mantine.schema.json        consumer config schema; $schema = http://json-schema.org/draft-07/schema#
   schema/mantine-item-meta.schema.json   meta.mantine (wire schema leaves `meta` open)
@@ -56,7 +56,11 @@ packages/cli/
   scripts/guard-runtime-apis.mjs    static guard over src/** and test/**
 ```
 
-`mantine-registry-kit` is a runtime `dependency` (`workspace:*`) and must stay **external**. Its `createWireValidator` resolves schemas via `resolve(import.meta.dirname, "..")` = the *kit's* package root (build-registry.ts:27). Bundling it repoints that at `packages/cli/` and throws ENOENT at runtime only.
+`manteen-kit@^0.1.0` is a runtime dependency and must stay **external**. Bun links the matching
+workspace package during development, while the packed manifest retains that publishable range.
+The kit's `createWireValidator` resolves schemas via `resolve(import.meta.dirname, "..")` = the
+*kit's* package root (build-registry.ts:27). Bundling it repoints that at `packages/cli/` and throws
+ENOENT at runtime only.
 
 ### Purity convention — stated once, binds every module
 
@@ -220,19 +224,24 @@ ok = diagnostics.every(d =>
 | Code | Severity | Forceable | Phase | Exit |
 |---|---|---|---|---|
 | `target-collision` (two distinct ids, one destination) | error | **no** | plan | 1 |
+| `receipt-collision` (different recorded owner at this destination) | error | **no** | plan | 1 |
 | `target-escapes-root` | error | **no** | plan + apply preflight | 1 |
 | `target-refused-type` (registry:style/base/theme/item at file level) | error | no | plan | 1 |
 | `file-no-content` | error | no | plan | 1 |
-| `theme-base-unmergeable` | error | no | plan | 1 |
+| `theme-base-unmergeable` | error | yes | plan | 1 |
 | `dependency-range-conflict` (ranges provably disjoint) | error | yes | plan | 1 |
 | `mantine-version-mismatch` (state `found`, `satisfies` false) | error | **yes** | plan | 1 |
+| `receipt-unreadable` | error | yes | plan | 1 |
 | `unknown-namespace`, `missing-env`, `fetch-failed`, `wire-invalid` | error | no | plan | 1 |
 | `depth-exceeded`, `node-limit`, `response-too-large` | error | no | plan | 1 |
+| `meta-invalid-requires`, `bare-dep-unresolvable` | error | no | plan | 1 |
 | `no-package-manager` | error | no | plan | 2 |
 | `destination-exists` + non-interactive + neither `--overwrite`/`--no-overwrite` | error | via `--overwrite` | plan | 1 |
-| `mantine-version-unknown`, `mantine-malformed-metadata` | warn | — | plan | 0 |
-| `provider-missing`, `dependency-range-narrowed`, `bare-dep-assumed-local`, `dependency-cycle`, `resolution-applied`, `name-mismatch`, `meta-degraded`, `theme-conflict` | warn | — | plan | 0 |
-| `styles-api` | info | — | plan | 0 |
+| `init-framework-unrecognized`, `init-framework-ambiguous`, `init-framework-mismatch`, `init-config-conflict` | error | no | init plan | 2 |
+| `init-source-unsupported`, `init-postcss-unsupported`, `init-path-escapes-root` | error | no | init plan | 1 |
+| `mantine-version-unknown`, `mantine-malformed-metadata`, `mantine-non-core-unsatisfied` | warn | — | plan | 0 |
+| `provider-missing`, `dependency-range-narrowed`, `bare-dep-assumed-local`, `dependency-cycle`, `resolution-applied`, `name-mismatch`, `meta-degraded`, `theme-conflict`, `receipt-stale` | warn | — | plan | 0 |
+| `styles-api`, `receipt-drift` | info | — | plan | 0 |
 | config error (missing/malformed/unresolvable alias) | — | — | load | 2 |
 | user cancel at a prompt | — | — | CLI | 130 |
 
@@ -244,7 +253,7 @@ Exit convention extends the kit's (`src/cli/index.ts` exits 2 on unknown command
 
 ### Phase 0 — Skeleton, build, and the guards that make every later phase checkable
 
-**Ships:** `package.json`, `tsdown.config.ts` (copied from the kit including its flat-dist rationale comment), `README.md`, a commander program with `--version`/`--cwd` and one stub subcommand, `scripts/guard-runtime-apis.mjs`, `e2e/dist-shape.node-e2e.mjs`.
+**Ships:** `package.json`, `tsdown.config.mjs` (copied from the kit including its flat-dist rationale comment), `README.md`, a commander program with `--version`/`--cwd` and one stub subcommand, `scripts/guard-runtime-apis.mjs`, `e2e/dist-shape.node-e2e.mjs`.
 
 **Unblocks:** everything. The flat-dist + kit-external contract is what `schema/` resolution and `createWireValidator()` both depend on.
 
@@ -305,24 +314,37 @@ Exit convention extends the kit's (`src/cli/index.ts` exits 2 on unknown command
 - `CI=true` + non-TTY + an existing differing destination + no flags exits 1 with a message containing both `--overwrite` and `--no-overwrite`, and the existing file is byte-identical. A companion guard asserts `CI=1` does **not** take the non-interactive branch (see D14).
 - Mutating a planned destination between `plan()` and `apply()` exits 1 telling the user to re-run; the file retains the user's edit.
 
-### Phase 5 — `mantine init`
+### Phase 5 — `manteen init`
 
-**Ships:** `src/init/*` for Tier A (Vite, Next App Router, Next Pages Router, React Router): framework-set detection, PostCSS plan (create-or-patch with the corrected precedence rule and the five `postcss-simple-vars` breakpoints), entry-point codemods, theme scaffold, `mantine.json` emission, dependency plan.
+**Ships:** `src/init/*` for Tier A (Vite, Next App Router, Next Pages Router, React
+Router): finite framework detection, PostCSS create-or-patch planning, bounded tsconfig/Vite config
+patches, entry-point codemods, theme/config scaffolds, dependency planning, exact-byte preflight,
+transactional apply, production ports and the text/JSON `manteen init` shell. Tier B is
+`--framework manual`: shared automation plus a structured required integration instruction.
 
-**Done when:**
-- Vite fixture with a pre-existing `postcss.config.mjs`: `mantine init --dry-run` shows a patch to the `.mjs` and **no** new `postcss.config.cjs`. Same assertion for a Next fixture. *(Both directions — postcss-load-config searches `.cjs` before `.mjs`, Next-webpack searches it last; either way a new file is never created when one exists.)*
+**Verified 2026-07-29:**
+- Vite fixture with a pre-existing `postcss.config.mjs`: `manteen init --dry-run` shows a patch to the `.mjs` and **no** new `postcss.config.cjs`. The same assertion holds for a non-Tailwind Next fixture. *(Both directions — postcss-load-config searches `.cjs` before `.mjs`, Next searches it before `.cjs`; either way a new file is never created when one exists.)*
 - The emitted PostCSS config carries `postcss-preset-mantine` and `postcss-simple-vars` with `mantine-breakpoint-{xs,sm,md,lg,xl}` = `36em/48em/62em/75em/88em`.
+- The emitted `@house` registry declares both its item URL and index URL. A hermetic built-Node `init → list` case consumes the generated object through a compiled `file:` registry, and the exact legacy string form migrates without dropping authored registries or resolutions.
 - A Vite SPA using `react-router` as a library (no `@react-router/dev`, no `app/root.tsx` — mantinedev/vite-template's shape) detects as Vite.
 - A hybrid Next project produces edits to `app/layout.tsx`, `pages/_app.tsx` **and** `pages/_document.tsx`.
 - The emitted theme scaffold, passed to the kit's `mergeThemeSource` against `packages/registry-kit/fixtures/base/src/data-grid.theme.ts`, merges without throwing.
-- Running `init` twice produces an empty second plan and exit 0.
-- **The Phase 1 missing-config hint no longer says "there is no `mantine init` yet"** — this string is a cross-phase coupling and ships stale if not changed here.
+- The built-Node tier runs Vite, Next App, Next Pages, Next hybrid and React Router through dry-run, apply, `loadConfig()` and an empty second mutation plan. Generated metadata, document machinery, providers/props, app bodies and styles survive.
+- Current default Next Tailwind output keeps `postcss.config.mjs` byte-identical and exits 0 with `ok: true`, `complete: false` plus the exact required Mantine block in both text and JSON.
+- Detection/config/transform refusals and declined confirmation are zero-mutation. Install failure precedes journal creation; write failure unwinds every init file through the shared journal.
+- An active PostCSS object inside `package.json` plus missing init dependencies refuses with `init-config-conflict`: install and an exact-byte config patch cannot safely own the same manifest in one run.
+- **The Phase 1 missing-config hint now directs the user to `manteen init`** instead of claiming the command does not exist.
 
 ### Phase 6 — Release hardening
 
-**Ships:** CI matrix (`node` 20.11 / 22 / 24 running the e2e tier; `windows-latest` running one install to check `^` survival through `.cmd` shims), publish ordering (kit first; `workspace:*` rewritten to a real range), README.
+**Ships:** CI matrix (Node 22.12 / 24 / 26 running the built e2e tier; macOS at the Node floor;
+`windows-latest` running the tier plus one packed install to check `^` survival through `.cmd`
+shims), packed npm/pnpm/Yarn/Bun consumer smokes, publish ordering (kit first; the client declares
+the real `manteen-kit@^0.1.0` range), README.
 
-**Done when:** the e2e tier passes on all three Node versions, and a `npm pack` of `mantine-cli` installed into an empty temp dir can run `mantine add` against a `file:` registry.
+**Done when:** the e2e tier passes on all named Node/OS runners, and packed `manteen-kit` plus
+`manteen` installed into disposable consumers can run `manteen add` against a `file:` registry
+through npm, pnpm, Yarn PnP and Bun. Windows must exercise its native `.cmd` shim.
 
 ---
 
@@ -339,9 +361,9 @@ node <repo>/packages/cli/dist/cli.mjs add @base/empty-state
 
 **Files to write (in order):**
 
-1. `packages/cli/package.json` — `type: module`, `engines.node >=20.11`, `bin.mantine`, `exports` with `.mjs`/`.d.mts` and `"./schema"`, `files: ["dist","schema","README.md"]`. Deps for the slice: `mantine-registry-kit` (`workspace:*`), `commander ^15`, `ajv ^8`, `get-tsconfig ^4.14`. Dev: `tsdown`, `@types/bun`. *(No `@types/diff` — diff@9 ships its own types. `@types/semver` is required when semver lands in phase 3.)*
-2. `packages/cli/tsdown.config.ts` — verbatim from the kit's, with `entry: { index: "src/index.ts", cli: "src/cli/index.ts" }`.
-3. `packages/cli/schema/mantine.schema.json` — draft-07 with the **`http://`** dialect id (so no `delete schema.$schema` workaround is needed; only the kit's *vendored wire* schema declares the `https://` form). `additionalProperties: false`. Properties: `$schema?`, `registries` (keys `^@[a-z0-9-]+$`, values a URL template string containing the literal `{name}`), `aliases` (all four of `components`/`ui`/`hooks`/`lib` required), `theme?`, `tsconfig?`, `resolutions?`.
+1. `packages/cli/package.json` — `type: module`, `engines.node >=22.12`, `bin.manteen`, `exports` with `.mjs`/`.d.mts` and `"./schema"`, `files: ["dist","schema","README.md"]`. Deps for the slice: `manteen-kit` (`^0.1.0`; Bun links the matching workspace package locally), `commander ^15`, `ajv ^8`, `get-tsconfig ^4.14`. Dev: `tsdown`, `@types/bun`. *(No `@types/diff` — diff@9 ships its own types. `@types/semver` is required when semver lands in phase 3.)*
+2. `packages/cli/tsdown.config.mjs` — verbatim from the kit's, with `entry: { index: "src/index.ts", cli: "src/cli/index.ts" }`.
+3. `packages/cli/schema/mantine.schema.json` — draft-07 with the **`http://`** dialect id (so no `delete schema.$schema` workaround is needed; only the kit's *vendored wire* schema declares the `https://` form). `additionalProperties: false`. Properties: `$schema?`, `registries` (keys `^@[a-z0-9-]+$`; values are either the `{name}` URL template or an object with required `url` plus optional `index`/`headers`/`params`), `aliases` (all four of `components`/`ui`/`hooks`/`lib` required), `theme?`, `tsconfig?`, `resolutions?`.
 4. `src/config/types.ts` — `MantineConfig`, `RegistrySource`, `AliasKey`, `LoadedConfig`, `ConfigError` (carries `pointer` + `hint`).
 5. `src/config/aliases.ts` — pure. Exports:
    ```ts
@@ -357,7 +379,7 @@ node <repo>/packages/cli/dist/cli.mjs add @base/empty-state
    export const REFUSED_FILE_TYPES: readonly string[];
    ```
    `matchesPathsPattern` implements TS's own rule (at most one `*`; exact patterns beat wildcards; longest static prefix wins) against the **parsed `paths` keys** and is the *only* detector of "this alias is unbacked". `createPathsMatcher` is called only to compute the destination once a key is known to match. Note the type is `TsConfigResult` (capital C), not `TsconfigResult`.
-6. `src/config/validate.ts`, `src/config/registries.ts` (string form + `splitItemId` on the first slash), `src/config/load.ts` (`<cwd>/mantine.json` only, no upward walk; `config.tsconfig` resolved against the config's directory with **no `basename()`**, existence required).
+6. `src/config/validate.ts`, `src/config/registries.ts` (string/object normalization + `splitItemId` on the first slash), `src/config/load.ts` (`<cwd>/mantine.json` only, no upward walk; `config.tsconfig` resolved against the config's directory with **no `basename()`**, existence required).
 7. `src/plan/types.ts` — the full type block from §1.
 8. `src/plan/{ref,diagnostics,validate-item,loader-local,resolve}.ts` — `resolve()` without cycle detection or dependency union for the slice (`@base/empty-state` has no `uses`), but with canonical-id dedupe and the destination-collision pass already in place.
 9. `src/gates/collision.ts` — destination grouping only.
@@ -402,7 +424,7 @@ node <repo>/packages/cli/dist/cli.mjs add @base/empty-state
 | D18 | Apply phase order: 0 preflight (read-only) → 1 decide/prompt (read-only, one grouped multiselect) → 2 install deps → 3 write files → 4 write theme → 5 report. Phases 3 and 4 share one pre-image journal; phase 2 is outside it. Every write, including the theme, goes temp + `renameSync`. | Deps-first means the most likely failure (network + subprocess) leaves the source tree untouched, and leftover deps are inert while source importing missing packages is a broken build. All decisions in phase 1 means cancel is always zero-mutation. Rename-within-directory is atomic on POSIX, so a crash cannot truncate a file the user owns — and `src/lib/theme.ts` is by definition the most hand-edited file in the set, so it gets the same treatment. Package managers are not transactional, so `removeDependency` after a partial install can remove something pre-existing. | Direct `writeFileSync` for the theme; rolling back deps. |
 | D19 | `--dry-run` runs `plan()` **plus** apply's read-only phases 0 and 1, then exits 0 without entering phase 2. | The uniqueness, containment and hash invariants live in apply's preflight as defence in depth. A "plan-only" dry run structurally cannot report the collision it exists to preview — the user would see a clean preview then exit 1. | A `--dry-run` flag threaded through the writes; a preview that skips preflight. |
 | D20 | `meta.mantine` is validated against a CLI-vendored schema that is **strict on the four keys we act on and open to unknown keys**. `requires` fails closed (error); `stylesApi`/`themeFragment` fail open (warn, field dropped). A file with no `content` is a blocking error. | The wire schema declares `meta` as `additionalProperties: true`, so `{ requires: 12345, junk: true }` passes the kit's validator — and every Mantine-specific behavior reads `meta.mantine`. Open-on-unknown gives forward compatibility with a newer kit by construction. `requires` is a safety mechanism; `stylesApi` is documentation. The wire schema requires only `path` and `type`, so a contentless file validates, and we have no second channel to fetch bytes — writing an empty file over a user's component is the worst outcome. | Trusting `meta.mantine` and type-checking at each use site — scatters the same checks across three dimensions and produces `semver.validRange(12345)`-shaped errors. |
-| D21 | Registry URL values must contain the literal `{name}`, enforced by a `pattern` in the config schema. Per-registry `index?` is an optional second URL used only for did-you-mean on 404 and by future `list`/`search`. | One rule beats guessing whether to append `/{name}.json`; a wrong guess produces a 404 that reads as a missing item. Deriving the index by substituting `name="registry"` happens to work for the kit's emitted layout but breaks for any other template shape — so it is a declared field, not an inference. | Accepting a bare base URL; inferring the index. |
+| D21 | Registry URL values must contain the literal `{name}`, enforced by a `pattern` in the config schema. Per-registry `index?` is an optional second URL used by `list`, `info` and did-you-mean on 404. | One rule beats guessing whether to append `/{name}.json`; a wrong guess produces a 404 that reads as a missing item. Deriving the index by substituting `name="registry"` happens to work for the kit's emitted layout but breaks for any other template shape — so it is a declared field, not an inference. | Accepting a bare base URL; inferring the index. |
 | D22 | Refused **file-level** types are `registry:style`, `registry:base`, `registry:theme`, `registry:item`. `registry:font` is refused at the **item** level only. | The wire schema has two enums: the item-level `type` enum includes `registry:font`, the file-level `files[].type` enum has 11 entries and omits it. Since `destinationFor` dispatches on the file type, a font branch there is unreachable and its test would have to bypass validation to construct its input. | Listing `registry:font` in the per-file refusal table. |
 | D23 | `splitItemId` splits on the **first** slash and keeps multi-segment names whole, justified by third-party registries and shadcn's nested item names — **not** by the kit. | The kit cannot emit a nested name: `writeRegistry` (build-registry.ts:211) does `writeFileSync(join(outDir, \`${item.name}.json\`))` after a single `mkdirSync(outDir)`, so `blocks/data-table` would ENOENT at build time. Lines 138–140 only prefix a bare `used` with the namespace. | Citing build-registry.ts:138–140 as evidence for nesting. |
 | D24 | `mantine-registry-kit` is a runtime dependency kept external, and the config schema declares the **`http://`** draft-07 dialect id so no `delete schema.$schema` is needed. | Probed ajv 8: the `http://` form compiles fine; only the `https://` form throws `no schema with key or ref`. Only the kit's *vendored wire* schema uses `https://` — which is exactly what build-registry.ts:84–88 says. Copying the delete into a schema we author ourselves ships a misleading comment in the module whose stated job is keeping the gotcha discoverable. | Copying the workaround verbatim. |
@@ -460,6 +482,31 @@ Consequences that bind every phase:
 - `manteen diff` and `manteen update` stay deferred, but are no longer blocked on format design.
 
 Rows in §6 for "Install receipt / `manteen.lock.json`" and the open question below are superseded.
+
+---
+
+## 5b. W6 contract decisions — approved 2026-07-29
+
+The probe checkpoint in `w6-init-handoff.md` closed these choices before implementation:
+
+| # | Decision |
+|---|---|
+| 1 | Generated config uses the documented live `@house` item and index URLs, so a fresh project can both fetch named items and run `list`; the current schema does not permit an empty registry map. |
+| 2 | Init may make bounded `@/*` tsconfig and Vite `resolve.tsconfigPaths` patches; explicit conflicts refuse before mutation. |
+| 3 | Theme lives at `<alias source root>/lib/theme.ts`, so every framework imports `@/lib/theme`. |
+| 4 | Only structurally proven source seams are patched; dynamic or unsupported shapes refuse with instructions and are never replaced wholesale. |
+| 5 | Init extends `DiagnosticCode`, `DIAGNOSTIC_CODES` and §1 rather than creating a second refusal system. |
+| 6 | Codemods use a directly declared AST dependency when implementation imports it; a transitive `manteen-kit` dependency is not a contract. |
+| 7 | The programmatic surface will export `planInit`/`applyInit` with every port factory needed to construct their arguments. |
+| 8 | `--framework` accepts `vite`, `next-app`, `next-pages`, `next-hybrid`, `react-router`, `manual`; it resolves absent/ambiguous detection but cannot authorize a contradictory filesystem shape. |
+| 9 | `@tailwindcss/postcss` remains byte-identical. The run emits a structured required instruction, reports `ok: true` / `complete: false`, and exits 0. Empty second-plan semantics apply to mutation entries, not repeated required instructions. |
+
+The frozen type contract is separate from registry `Plan`: init files have no item id, wire type,
+registry lineage or receipt ownership. `InitPlan.files` contains only create/update mutations with
+absolute destinations, final UTF-8 text, final hashes and pre-image hashes. Apply re-verifies those
+hashes, installs dependencies before writes, and writes every file through one shared pre-image
+journal. Interactive apply has one all-or-nothing confirmation; cancellation exits 130 before the
+install phase. Dry-run performs read-only preflight, prompts for nothing, and exits before install.
 
 ---
 

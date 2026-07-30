@@ -368,7 +368,14 @@ test("re-running the same install rewrites nothing at all", () => {
   assert.deepEqual(manifest(folded), before, "a repeat install must be a no-op");
 });
 
-test("a failed receipt write unwinds the folded theme", () => {
+/**
+ * Mode-bit denial is meaningful only for a non-root Unix process. Windows
+ * ignores these POSIX bits, while root can write through them; calling either
+ * outcome a pass would claim rollback coverage the runner did not execute.
+ */
+const CAN_DENY_WRITES = process.platform !== "win32" && process.getuid?.() !== 0;
+
+test("a failed receipt write unwinds the folded theme", { skip: !CAN_DENY_WRITES }, () => {
   // THE discriminating test for "phase 4 is joined to the same pre-image journal
   // as phase 3". A theme written through a journal of its own would satisfy
   // every other assertion in this file — including the one below it — because a
@@ -407,7 +414,7 @@ test("a failed receipt write unwinds the folded theme", () => {
   assert.deepEqual(manifest(project), before, "an unwound run leaves the tree as it found it");
 });
 
-test("a failed theme write unwinds the component files with it", () => {
+test("a failed theme write unwinds the component files with it", { skip: !CAN_DENY_WRITES }, () => {
   // The other direction: phase 4 throws and phase 3's writes must not survive.
   // Weaker than the test above on its own — a separate theme journal would also
   // pass this one, since the outer journal still unwinds the components — but it
@@ -701,7 +708,7 @@ test("criterion: @mantine/core 8.2.1 against a conflicting ^9 exits 1 with ONE g
   assert.match(result.stderr, / {2}installed {2}8\.2\.1/, result.all);
   assert.match(
     result.stderr,
-    / {2}read from {2}\S*node_modules\/@mantine\/core\/package\.json/,
+    / {2}read from {2}\S*node_modules[\\/]@mantine[\\/]core[\\/]package\.json/,
     result.all,
   );
   assert.match(result.stderr, /^ {4}>=9\s+requires\s+.*@house\/data-table/m, result.all);

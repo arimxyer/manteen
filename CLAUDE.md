@@ -6,7 +6,8 @@ A Mantine-native component registry toolchain. Two packages:
   vocabulary; it compiles to the shadcn-compatible interchange format other clients already read.
   Finished, not yet published.
 - **`packages/cli`** (`manteen`) — consuming. Installs registry items into a project, and keeps
-  them: `add`, `list`, `info`, `diff`, `update`. `init` is next.
+  them: `init`, `add`, `list`, `info`, `diff`, `update`. W6 `init` is implemented and locally
+  verified; W7 portability/runtime hardening is next.
 
 The repo root is also a live registry (`manteen.registry.json` → `public/r/`), which is what the
 e2e tier installs from.
@@ -18,9 +19,10 @@ usually the point. Do not re-derive them from the code.
 
 | File | Answers |
 | --- | --- |
-| `docs/client-build-plan.md` | What the client is and why. §1 has the refusal table — every diagnostic, its severity, whether `--force` clears it, and the exit code. §4 is D1–D25, the numbered decisions the code cites by name. §5a records later overrides. |
+| `docs/client-build-plan.md` | What the client is and why. §1 has the refusal table — every diagnostic, its severity, whether `--force` clears it, and the exit code. §4 is D1–D25, the numbered decisions the code cites by name. §5a–§5b record later overrides. |
 | `docs/roadmap.md` | What is left, in what order, and what each wave (W4–W8, Wc) is shaped like. Also the release procedure and the first-publish constraint. |
 | `docs/build-process.md` | How work gets done here — the workflow shape, the guards and what each encodes, the Biome trap, and the incident rules. |
+| `docs/w6-init-handoff.md` | W6's settled boundary, probe receipts, approved decisions, frozen contract and implementation ownership. |
 
 A `Dnn` in a code comment refers to §4 of the build plan. A "§1's refusal table" reference means
 `docs/client-build-plan.md` line ~230.
@@ -28,14 +30,14 @@ A `Dnn` in a code comment refers to §4 of the build plan. A "§1's refusal tabl
 ## Commands
 
 ```bash
-bun run test        # builds the kit first, then bun test — 84 tests
+bun run test        # builds the kit first, then bun test
 bun run typecheck   # runs guard-workspace, then tsc --noEmit
 bun run lint        # biome check .
 bun run guard       # all three guards: workspace, runtime-apis, diagnostics
 
 # The e2e tier. Runs the BUILT bundle under real node — never bun.
 bun run build:registry && bun --cwd=packages/cli run build
-node --test packages/cli/e2e/*.node-e2e.mjs        # 82 tests
+node --test packages/cli/e2e/*.node-e2e.mjs
 ```
 
 The glob is required, not stylistic: node's directory discovery only matches its own filename

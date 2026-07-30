@@ -5,12 +5,26 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
+  quality:
+    name: Source, types, lint, guards
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22.12.0"
       - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
       - run: bun install --frozen-lockfile
       # Immediately after install, so a bad install is named as one rather than
       # surfacing later as several hundred type errors in untouched files.
@@ -20,8 +34,96 @@ jobs:
       - run: bun run lint
       - run: node scripts/guard-runtime-apis.mjs
       - run: node packages/cli/scripts/guard-diagnostics.mjs
-      - run: bun --cwd=packages/cli run build
+
+  built-node:
+    name: Built Node ${{ matrix.node }} on ${{ matrix.os }}
+    needs: quality
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            node: "22.12.0"
+          - os: ubuntu-latest
+            node: "24"
+          - os: ubuntu-latest
+            node: "26"
+          - os: macos-latest
+            node: "22.12.0"
+          - os: windows-latest
+            node: "22.12.0"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+      - run: bun install --frozen-lockfile
+      - run: node scripts/guard-workspace.mjs
+      - run: bun run build:kit
       # The dist-shape e2e validates public/r/empty-state.json, which is generated
       # and gitignored — without this it is simply absent on a fresh checkout.
       - run: bun run build:registry
-      - run: node --test packages/cli/e2e/*.node-e2e.mjs
+      - run: bun --cwd=packages/cli run build
+      - run: node packages/cli/scripts/run-e2e.mjs
+
+  packed-consumer:
+    name: Packed consumer — ${{ matrix.manager }} on ${{ matrix.os }}
+    needs: quality
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            manager: npm
+          - os: ubuntu-latest
+            manager: pnpm
+          - os: ubuntu-latest
+            manager: yarn
+          - os: ubuntu-latest
+            manager: bun
+          # The native npm shim is `manteen.cmd`; this is also the positive
+          # caret-range test through tinyexec's Windows argv escaping.
+          - os: windows-latest
+            manager: npm
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22.12.0"
+      - name: Provision the selected package manager
+        shell: bash
+        run: |
+          case "${{ matrix.manager }}" in
+            npm)  npm install --global npm@10.9.2 ;;
+            pnpm)
+              npm install --global corepack@0.34.0
+              corepack enable
+              corepack install --global pnpm@10.30.1
+              ;;
+            yarn)
+              npm install --global corepack@0.34.0
+              corepack enable
+              corepack install --global yarn@4.9.2
+              ;;
+            bun)  bun --version ;;
+          esac
+      - run: bun install --frozen-lockfile
+      - run: node scripts/guard-workspace.mjs
+      - run: bun run build:kit
+      - run: bun run build:registry
+      - run: bun --cwd=packages/cli run build
+      - name: Install and exercise the packed CLI
+        shell: bash
+        env:
+          MANTEEN_E2E_PM: ${{ matrix.manager }}
+        run: node --test packages/cli/e2e/packed-consumer.node-e2e.mjs

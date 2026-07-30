@@ -23,9 +23,9 @@ export interface DiagnosticSpec {
    * Process exit code when this diagnostic blocks the run. `0` on every
    * non-blocking row.
    *
-   * Only `no-package-manager` is `2`: the exit convention reserves 2 for
-   * usage/config problems, and "there is no package manager here" is a property
-   * of the project, not a verdict about the items being installed.
+   * Exit 2 is reserved for usage/config problems. `no-package-manager` and
+   * W6's framework/config detection failures are properties of the project or
+   * command selection, not verdicts about an install payload.
    */
   exit: 0 | 1 | 2;
 }
@@ -80,6 +80,15 @@ export const DIAGNOSTIC_CODES: Record<DiagnosticCode, DiagnosticSpec> = {
 
   // ---- blocking, exit 2 -----------------------------------------------------
   "no-package-manager": { severity: "error", forceable: false, exit: 2 },
+  "init-framework-unrecognized": { severity: "error", forceable: false, exit: 2 },
+  "init-framework-ambiguous": { severity: "error", forceable: false, exit: 2 },
+  "init-framework-mismatch": { severity: "error", forceable: false, exit: 2 },
+  "init-config-conflict": { severity: "error", forceable: false, exit: 2 },
+
+  // ---- W6 transform refusals -----------------------------------------------
+  "init-source-unsupported": { severity: "error", forceable: false, exit: 1 },
+  "init-postcss-unsupported": { severity: "error", forceable: false, exit: 1 },
+  "init-path-escapes-root": { severity: "error", forceable: false, exit: 1 },
 
   // ---- context-dependent ----------------------------------------------------
   /**

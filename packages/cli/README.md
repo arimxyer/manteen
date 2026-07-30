@@ -14,14 +14,42 @@ name of the component library this tool installs components *for*.
 ## Install
 
 ```bash
-bun add -d manteen      # or: pnpm add -D manteen / npm i -D manteen
+bun add -d manteen      # or: pnpm add -D manteen / yarn add -D manteen / npm i -D manteen
 ```
 
 Requires Node 22.12 or newer.
 
+The portability gate runs the built CLI on Node 22.12, 24 and 26, exercises npm, pnpm, Yarn PnP and
+Bun from packed tarballs, and includes native macOS and Windows jobs. The hosted Windows
+`.cmd`/caret-range install is green as of the Wave 7 receipt; Windows remains best-effort so that
+current evidence is not presented as an indefinite support guarantee.
+
 ## Use
 
-Point `manteen.json` at the registries you want, then add items by their qualified name:
+Initialize a supported project from its root, inspect the exact plan, then apply it:
+
+```bash
+manteen init --dry-run
+manteen init
+```
+
+`init` detects Vite, Next App Router, Next Pages Router, a Next hybrid, or framework-mode
+React Router. It preserves the generated entry structure while adding Mantine's provider,
+framework-appropriate color-scheme setup, styles, theme, PostCSS pipeline, aliases and
+`manteen.json`. Detection can be selected explicitly with `--framework`; unsupported projects can
+use `--framework manual` for the shared setup plus a required integration instruction.
+
+The command is transactional at the file layer: dry-run prompts for and writes nothing, interactive
+apply asks one all-or-nothing question, dependencies install before file writes, and every init file
+shares one rollback journal. A second run has no mutation entries. Use `--json` for a single
+machine-readable plan/outcome document, and `--pm` when a fresh project has no lockfile or
+`packageManager` field.
+
+Next's current default Tailwind config uses `@tailwindcss/postcss`. `init` deliberately leaves that
+file byte-identical because plugin order is project-owned; it exits 0 with `complete: false` and
+prints the exact Mantine block still required. This is accepted manual work, not a silent success.
+
+After initialization, add items by their qualified name:
 
 ```bash
 manteen add @house/data-table
@@ -29,13 +57,16 @@ manteen add @house/data-table
 
 Configuration lives in `manteen.json` at your project root — the registries you trust,
 the four import aliases (`components`, `ui`, `hooks`, `lib`) that must each be backed by
-a `paths` key in your `tsconfig.json`, and the theme file to fold into.
+a `paths` key in your application tsconfig, and the theme file to fold into. A Vite project emits:
 
 ```jsonc
 {
   "$schema": "./node_modules/manteen/schema/manteen.schema.json",
   "registries": {
-    "@house": "https://example.com/r/{name}.json"
+    "@house": {
+      "url": "https://arimxyer.github.io/manteen/r/{name}.json",
+      "index": "https://arimxyer.github.io/manteen/r/registry.json"
+    }
   },
   "aliases": {
     "components": "@/components",
@@ -43,8 +74,18 @@ a `paths` key in your `tsconfig.json`, and the theme file to fold into.
     "hooks": "@/hooks",
     "lib": "@/lib"
   },
-  "theme": "src/lib/theme.ts"
+  "theme": "src/lib/theme.ts",
+  "tsconfig": "tsconfig.app.json"
 }
+```
+
+The remaining commands keep and inspect what was installed:
+
+```bash
+manteen list
+manteen info @house/data-table
+manteen diff
+manteen update
 ```
 
 Every install is recorded in `manteen.lock.json` — which item came from which registry
