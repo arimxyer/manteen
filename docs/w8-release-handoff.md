@@ -1,9 +1,9 @@
 # Wave 8 — release handoff
 
-Status: **repository preparation complete locally; hosted validation and publication pending.**
-Wave 8 is not complete until both packages have a real trusted-publisher release receipt. Preparing
-a tarball, parsing a workflow or passing `npm publish --dry-run` is deliberately not described as
-publication evidence.
+Status: **complete — both `0.1.1` packages are public through the tagged GitHub OIDC workflow and
+carry npm provenance attestations.** Preparing a tarball, parsing a workflow or passing
+`npm publish --dry-run` was deliberately not treated as publication evidence; the completion
+receipt below records the hosted runs and independent registry observations.
 
 ## Scope and stopping condition
 
@@ -64,9 +64,11 @@ the explicit package `publishConfig.provenance` remains as a fail-closed stateme
 The kit publishes first because `manteen@0.1.0` declares `manteen-kit@^0.1.0`. The client is not
 published until that exact public dependency resolves from npm.
 
-No agent runs `npm login`, reads an npm session, accepts a 2FA prompt, publishes a package or
-changes npm package settings. Those are external maintainer actions. The repository work proceeds
-through dry runs and stops with exact commands plus tarball hashes at that boundary.
+No agent runs `npm login`, reads an npm session, accepts a 2FA prompt or changes npm package
+settings. Those are external maintainer actions. The manual bootstrap remained private. After the
+maintainer configured both trusted publishers and explicitly authorized the release, the agent
+pushed one reviewed tag at a time; the repository workflow, not a local npm session, performed
+each trusted publish.
 
 ## Evidence and non-evidence
 
@@ -115,8 +117,32 @@ Two release-maintenance findings were repaired rather than suppressed:
 
 This receipt proves the local source, built bundle and tarball boundaries. It does **not** prove npm
 name ownership, authentication, registry availability, a GitHub OIDC exchange, publication or
-provenance. Hosted CI is the next repository gate; the private manual bootstrap remains after the
-preparation PR merges.
+provenance. Those boundaries were still pending at this checkpoint and are closed by the receipt
+below.
+
+## Trusted publication receipt — 2026-07-30 ET
+
+The maintainer privately published both `0.1.0` bootstrap versions and configured npm trusted
+publishers for `arimxyer/manteen` / `release.yml`. npm's registry timestamps show that the client
+bootstrap became visible 22 seconds before the kit bootstrap, contrary to the planned order. That
+created a brief interval in which the client's `manteen-kit@^0.1.0` dependency could not resolve;
+both packages resolved before the trusted sequence began. The `0.1.1` sequence then enforced the
+intended fail-stop order: kit publish and verification first, client tag second.
+
+| Package | Merge and tag | Hosted verification | npm receipt |
+| --- | --- | --- | --- |
+| `manteen-kit@0.1.1` | PR [#6](https://github.com/arimxyer/manteen/pull/6), commit `d9608c6f875ef32294f793975733f506ac3f88ef`, tag `manteen-kit-v0.1.1` | CI [30513827499](https://github.com/arimxyer/manteen/actions/runs/30513827499); release [30514035486](https://github.com/arimxyer/manteen/actions/runs/30514035486) | Published `2026-07-30T04:31:20.096Z`; SHA-1 `42cb687e2571227fc4361eb4260cbd35f4cbb9b4`; integrity `sha512-UUvdDiQ4dC3VdqJmdVScIkRRh5Wfldu7sF/pyWXsYrc+u9WodNmA7U72D9TqoKtgaKY0d1mudoOkc1WecI8AQQ==` |
+| `manteen@0.1.1` | PR [#7](https://github.com/arimxyer/manteen/pull/7), commit `b3006bc25c201accb9705ef981235068a7a95bb0`, tag `manteen-v0.1.1` | CI [30514210692](https://github.com/arimxyer/manteen/actions/runs/30514210692); release [30514369692](https://github.com/arimxyer/manteen/actions/runs/30514369692) | Published `2026-07-30T04:38:43.499Z`; SHA-1 `e8f08ab67b1b7890688114fd469172a6928f1440`; integrity `sha512-QhR2JgM+CPO2+gqVur+WqPUy4ktWcDnYnh624eQpD5C1UzUYPt9Zw/rOMNZU/JaQORxpCA4YxAK2TY7BIBzzvA==` |
+
+Each release log records `npm publish --provenance --access public`, a signed provenance statement
+with GitHub Actions source/build information and a successful package/version result. Independent
+npm metadata reported `0.1.1` as `latest` and exposed two Sigstore attestations per package: npm's
+publish predicate and SLSA provenance v1. Clean temporary consumers then fetched the public
+packages: `manteen-kit --help` printed its command surface, and `manteen --version` printed `0.1.1`.
+
+This closes W8's publication boundary for these exact versions and runs. It does not prove that a
+future tag will publish; every future release must rerun the tag guard, hosted checks and registry
+verification.
 
 ## Execution sequence
 

@@ -17,10 +17,9 @@ and something a stranger can depend on, and how the remaining work is sequenced.
 6. **Maintainable** — a linter, dependency automation, and a license file that matches what
    `package.json` claims.
 
-Today: 1, 2, 3 and the mechanical part of 6 are implemented and verified. W6 `init` is complete
-through its built-Node acceptance tier, and W7 closed with a green hosted runtime, OS and
-package-manager matrix. Publication and release-grade documentation remain, so the tool is not yet
-something a stranger can install and depend on.
+Today: all six criteria are implemented for the first public `0.1` line. W6 `init` is complete
+through its built-Node acceptance tier, W7 closed with a green hosted runtime, OS and
+package-manager matrix, and W8 published provenance-bearing `0.1.1` releases of both packages.
 
 ## Known gaps, by kind
 
@@ -37,11 +36,10 @@ Node floor. Packed npm, pnpm, Yarn PnP and Bun consumers pass, including the nat
 skip with that named reason while Linux supplies the positive 3/3 pty probe. `jsconfig`-only
 projects refuse — the refusal has never been read by a human.
 
-**Distribution.** Nothing is published. The kit has a changelog, the repository has a `0.x`
-version policy, and the release workflow requests npm provenance. The first publish still needs
-the manual bootstrap below. The client tarball already declares the publishable
-`manteen-kit@^0.1.0` range; W8 still owns the trusted-publishing prerequisites and real publication
-receipt.
+**Distribution.** `manteen-kit@0.1.1` and `manteen@0.1.1` are public on npm as `latest`. Both were
+published from the tagged GitHub Actions OIDC workflow and expose npm publish plus SLSA provenance
+attestations. The exact run, commit, hash and registry receipts are in the
+[`W8 release handoff`](w8-release-handoff.md).
 
 **Project hygiene.** The MIT license, Biome, Dependabot, editorconfig and rename are done.
 `SECURITY.md` and contributor ceremony remain deliberately deferred until the repository has
@@ -61,7 +59,7 @@ is a judgment call, which is exactly why they are separate runs.
 | W5 | Command set — `list`, `info`, `diff`, `update` | wide: 4 parallel, shared receipt reader frozen first | Four genuinely independent commands over one contract. The classic freeze-then-fan-out. |
 | W6 | [`init`](w6-init-handoff.md) | complete: probe → checkpoint → contract → per-framework adapters → integration → built-Node review → disposable dogfood | The adapters preserve generated work; the shared plan/apply boundary makes dry-run, cancellation, install failure and rollback observable; required Tailwind/manual work is separate from mutations; fresh config is list-ready. |
 | W7 | [`Hardening`](w7-hardening-handoff.md) | complete: matrix-driven, findings-first, hosted retry | Real Windows and macOS CI exposed path and line-ending defects that local Linux could not. |
-| W8 | [`Release`](w8-release-handoff.md) | active: local preparation complete; hosted validation and publication pending | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
+| W8 | [`Release`](w8-release-handoff.md) | complete: both `0.1.1` packages published through tagged OIDC with provenance | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
 | Wc | Registry content | wide, parallel per component | Independent of all of the above; can run any time. Doubles as client stress-testing. |
 
 **Not workflow-shaped, do directly:** the hygiene set (LICENSE, linter, SECURITY, CONTRIBUTING,
@@ -72,7 +70,7 @@ pure overhead.
 
 ```
 Phase 3 ✔ ─> W4 apply surface ✔ ─┬─> W5 command set ✔ ──┐
-                                 └─> W6 init ✔ ─────────┴─> W7 hardening ✔ ─> W8 release
+                                 └─> W6 init ✔ ─────────┴─> W7 hardening ✔ ─> W8 release ✔
 Wc registry content ......... any time, independent
 hygiene ..................... done, direct
 ```
@@ -85,8 +83,11 @@ config transforms, an init-specific plan/apply contract, text/JSON CLI output an
 fixtures for Vite, both Next routers, their hybrid and React Router. A disposable full-app run then
 closed the generated-config-to-`list` seam and added exact legacy migration. W7 then closed the
 runtime, OS, package-manager, real-prompt and packed-tarball boundaries through its hosted matrix.
+W8 completed the manual bootstrap, trusted-publisher binding, ordered tagged releases and
+independent npm provenance verification.
 
-W4 through W7 are complete. W8 is next and must be last.
+W4 through W8 are complete. Wc remains independent registry-content work rather than a release
+blocker.
 
 ## On one large program workflow
 
@@ -128,11 +129,11 @@ below npm's trusted-publishing minimum and that the client lacked exact reposito
 [`release handoff`](w8-release-handoff.md) freezes the repair at Node 24.18.1, npm 11.18.0 and Bun
 1.3.14, plus a mechanical pre-publish guard.
 
-**The first release of each package cannot use it.** npm requires a package to have been published
-before a trusted publisher can be configured, so an unpublished package has no trusted-publisher
-path yet.
+**The first release of each package could not use it.** npm requires a package to have been
+published before a trusted publisher can be configured, so an unpublished package had no
+trusted-publisher path yet.
 
-So, once per package, the maintainer performs the private bootstrap:
+The maintainer therefore performed this private bootstrap once per package:
 
 1. `npm login` (in a terminal, not through an agent session — nothing about it belongs in a
    transcript).
@@ -141,8 +142,9 @@ So, once per package, the maintainer performs the private bootstrap:
 3. On npmjs.com, or with npm 11.15+, add the trusted publisher: `arimxyer` / `manteen` /
    `release.yml`, allowing `npm publish`.
 
-After that, `0.1.1` is the first trusted release, tagged one package at a time. The kit must publish
-and resolve before the client tag is pushed.
+After that, `0.1.1` became the first trusted release, tagged one package at a time. The kit
+published and resolved before the client tag was pushed. The exact hosted and npm receipts are in
+[`w8-release-handoff.md`](w8-release-handoff.md).
 
 The tradeoff: that first version has no provenance attestation, because provenance requires
 the OIDC path. Storing an `NPM_TOKEN` just for it would reintroduce the long-lived credential
