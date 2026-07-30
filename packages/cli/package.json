@@ -19,7 +19,9 @@
   "files": [
     "dist",
     "schema",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=22.12"
@@ -56,5 +58,18 @@
     "@types/bun": "^1.3.14",
     "@types/semver": "^7.7.1",
     "tsdown": "^0.22.14"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arimxyer/manteen.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/arimxyer/manteen/tree/main/packages/cli#readme",
+  "bugs": {
+    "url": "https://github.com/arimxyer/manteen/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }

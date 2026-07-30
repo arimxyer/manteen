@@ -18,7 +18,8 @@
     "dist",
     "schema",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20.11"
