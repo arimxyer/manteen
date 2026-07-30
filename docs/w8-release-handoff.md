@@ -1,8 +1,9 @@
 # Wave 8 — release handoff
 
-Status: **contract frozen; repository preparation in progress.** Wave 8 is not complete until both
-packages have a real trusted-publisher release receipt. Preparing a tarball, parsing a workflow or
-passing `npm publish --dry-run` is deliberately not described as publication evidence.
+Status: **repository preparation complete locally; hosted validation and publication pending.**
+Wave 8 is not complete until both packages have a real trusted-publisher release receipt. Preparing
+a tarball, parsing a workflow or passing `npm publish --dry-run` is deliberately not described as
+publication evidence.
 
 ## Scope and stopping condition
 
@@ -79,6 +80,43 @@ through dry runs and stops with exact commands plus tarball hashes at that bound
 
 The public npm registry returned `E404` for both names on 2026-07-29 ET. That is an observation,
 not a reservation; only the successful manual bootstrap claims each unscoped name.
+
+## Local preparation receipt — 2026-07-29 ET
+
+The release rehearsal used Bun `1.3.14`, Node `24.18.1` and npm `11.18.0`. It produced:
+
+- 152 source tests passing with 501 assertions, followed by clean typecheck, lint and all four
+  guards;
+- 93 built-Node e2e tests passing, with the one packed-smoke case intentionally skipped because
+  the isolated npm consumer owns that boundary;
+- the real Linux pty prompt probe passing 3/3;
+- an isolated npm consumer preparing, packing, installing and executing both packages from a
+  temporary directory;
+- clean tag-specific guards for `manteen-kit-v0.1.0` and `manteen-v0.1.0`, plus an intentional
+  `manteen-v9.9.9` refusal; and
+- clean `npm publish --dry-run --provenance=false --access public --json` preparation for both
+  packages. npm still reports that publication requires login, as expected at the authority
+  boundary.
+
+The exact locally packed artifacts were:
+
+| Artifact | Size | SHA-256 |
+| --- | ---: | --- |
+| `manteen-kit-0.1.0.tgz` | 14,852 bytes | `670cdfda3a91b4e6af9674375a92f6ff9833088a09413f091e69d36d072f2258` |
+| `manteen-0.1.0.tgz` | 162,587 bytes | `ac67456b188e569f74833b07e79cdf466e9ed8696130488acc73d2aca3272e83` |
+
+Two release-maintenance findings were repaired rather than suppressed:
+
+1. Each package now carries its own MIT `LICENSE`; the client's changelog is also part of its
+   explicit publish surface.
+2. Both `bin` targets use npm's canonical `dist/cli.mjs` spelling. This removed npm's package
+   normalization warning, and the release guard now refuses a regression to the non-canonical
+   spelling.
+
+This receipt proves the local source, built bundle and tarball boundaries. It does **not** prove npm
+name ownership, authentication, registry availability, a GitHub OIDC exchange, publication or
+provenance. Hosted CI is the next repository gate; the private manual bootstrap remains after the
+preparation PR merges.
 
 ## Execution sequence
 

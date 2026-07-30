@@ -61,7 +61,7 @@ is a judgment call, which is exactly why they are separate runs.
 | W5 | Command set — `list`, `info`, `diff`, `update` | wide: 4 parallel, shared receipt reader frozen first | Four genuinely independent commands over one contract. The classic freeze-then-fan-out. |
 | W6 | [`init`](w6-init-handoff.md) | complete: probe → checkpoint → contract → per-framework adapters → integration → built-Node review → disposable dogfood | The adapters preserve generated work; the shared plan/apply boundary makes dry-run, cancellation, install failure and rollback observable; required Tailwind/manual work is separate from mutations; fresh config is list-ready. |
 | W7 | [`Hardening`](w7-hardening-handoff.md) | complete: matrix-driven, findings-first, hosted retry | Real Windows and macOS CI exposed path and line-ending defects that local Linux could not. |
-| W8 | [`Release`](w8-release-handoff.md) | active: contract frozen, mostly sequential | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
+| W8 | [`Release`](w8-release-handoff.md) | active: local preparation complete; hosted validation and publication pending | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
 | Wc | Registry content | wide, parallel per component | Independent of all of the above; can run any time. Doubles as client stress-testing. |
 
 **Not workflow-shaped, do directly:** the hygiene set (LICENSE, linter, SECURITY, CONTRIBUTING,
@@ -128,9 +128,9 @@ below npm's trusted-publishing minimum and that the client lacked exact reposito
 [`release handoff`](w8-release-handoff.md) freezes the repair at Node 24.18.1, npm 11.18.0 and Bun
 1.3.14, plus a mechanical pre-publish guard.
 
-**The first release of each package cannot use it.** A trusted publisher is configured on a
-package's settings page on npmjs.com, and a package that has never been published has no
-settings page. npm's docs do not cover this case; it follows from where the setting lives.
+**The first release of each package cannot use it.** npm requires a package to have been published
+before a trusted publisher can be configured, so an unpublished package has no trusted-publisher
+path yet.
 
 So, once per package, the maintainer performs the private bootstrap:
 
