@@ -5,7 +5,7 @@
   "type": "module",
   "license": "MIT",
   "bin": {
-    "manteen-kit": "./dist/cli.mjs"
+    "manteen-kit": "dist/cli.mjs"
   },
   "exports": {
     ".": {

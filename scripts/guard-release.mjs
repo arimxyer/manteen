@@ -122,6 +122,10 @@ function inspectManifest(spec) {
     manifest.publishConfig?.provenance === true,
     `${spec.name}: publishConfig.provenance must be true`,
   );
+  expect(
+    manifest.bin?.[spec.name] === "dist/cli.mjs",
+    `${spec.name}: bin must use npm's canonical dist/cli.mjs spelling`,
+  );
 
   for (const required of ["dist", "schema", "README.md", "CHANGELOG.md", "LICENSE"]) {
     expect(manifest.files?.includes(required), `${spec.name}: files must include ${required}`);

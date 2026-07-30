@@ -5,7 +5,7 @@
   "type": "module",
   "license": "MIT",
   "bin": {
-    "manteen": "./dist/cli.mjs"
+    "manteen": "dist/cli.mjs"
   },
   "//exports": "schema/ holds three documents — the consumer config, the meta.mantine subschema and the install receipt — so the `./schema/*` pattern is needed alongside the bare `./schema`, which stays as the one a user puts in their $schema field. The comment lives out here because an `exports` object may not mix keys that start with `.` and keys that do not; a `//` key inside it is ERR_INVALID_PACKAGE_CONFIG.",
   "exports": {
