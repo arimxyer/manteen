@@ -34,7 +34,7 @@ that originated in the brief itself twice.
 
 ## Guards, not vigilance
 
-Three checks encode rules that a reader could otherwise silently break:
+Four checks encode rules that a reader could otherwise silently break:
 
 - `scripts/guard-workspace.mjs` — every symlink under a `node_modules` resolves
   and does not point at itself. Runs in front of `tsc` in the `typecheck` script
@@ -67,6 +67,11 @@ Three checks encode rules that a reader could otherwise silently break:
   emitter reads exactly like a forgotten one. The pending list is required to
   *shrink*: a code that gains an emitter while still listed fails as loudly as
   one that goes missing.
+- `scripts/guard-release.mjs` — both publishable manifests carry exact repository,
+  license, changelog and provenance metadata; no `workspace:` protocol can reach
+  npm; and the release workflow stays on the pinned credential-free toolchain.
+  The tag-specific form additionally binds one tag to one package version and
+  inspects the built `npm pack --dry-run` file surface before publication.
 
 Prefer a guard over a convention whenever the rule is mechanically checkable.
 
