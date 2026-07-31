@@ -1,8 +1,9 @@
 # Required global styles handoff
 
-Status: **contract implemented and locally accepted.** The original disposable probe proved the
-import arrangement; the production implementation now covers Manteen ownership, receipt migration,
-drift handling, preflight and rollback. Carousel and Dropzone have passed the resulting contract.
+Status: **contract implemented, released and publicly accepted.** The original disposable probe
+proved the import arrangement; the production implementation now covers Manteen ownership, receipt
+migration, drift handling, preflight and rollback. Carousel and Dropzone have passed the resulting
+contract through both local framework coverage and a public npm-plus-HTTPS consumer.
 
 ## Question and stopping condition
 
@@ -158,3 +159,12 @@ This is product evidence for the built local CLI and compiled local registry und
 yet public-HTTPS registry proof, a release of the post-`0.1.1` implementation, or new macOS/Windows
 evidence for this stylesheet lifecycle. W7's general hosted portability matrix remains the platform
 boundary.
+
+## Public acceptance receipt — 2026-07-30 ET
+
+`manteen-kit@0.2.0` and `manteen@0.2.0` published with SLSA provenance before the 14-item registry
+was manually deployed. A fresh Vite React TypeScript project installed the public client and fetched
+the two stress cases from the live `@house` HTTPS registry. It produced receipt v2 with the two
+item-attributed imports, production-built both rendered components, and reported five unchanged
+files. The exact receipts and remaining non-evidence are frozen in the
+[`0.2 release handoff`](v0.2-release-handoff.md).

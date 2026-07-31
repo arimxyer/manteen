@@ -17,9 +17,10 @@ and something a stranger can depend on, and how the remaining work is sequenced.
 6. **Maintainable** — a linter, dependency automation, and a license file that matches what
    `package.json` claims.
 
-Today: all six criteria are implemented for the first public `0.1` line. W6 `init` is complete
+Today: all six criteria are implemented through the public `0.2` line. W6 `init` is complete
 through its built-Node acceptance tier, W7 closed with a green hosted runtime, OS and
-package-manager matrix, and W8 published provenance-bearing `0.1.1` releases of both packages.
+package-manager matrix, W8 established provenance-bearing releases, and `0.2.0` publicly carries
+the managed-styles and registry-content stress-case contract.
 
 ## Known gaps, by kind
 
@@ -36,10 +37,11 @@ Node floor. Packed npm, pnpm, Yarn PnP and Bun consumers pass, including the nat
 skip with that named reason while Linux supplies the positive 3/3 pty probe. `jsconfig`-only
 projects refuse — the refusal has never been read by a human.
 
-**Distribution.** `manteen-kit@0.1.1` and `manteen@0.1.1` are public on npm as `latest`. Both were
+**Distribution.** `manteen-kit@0.2.0` and `manteen@0.2.0` are public on npm as `latest`. Both were
 published from the tagged GitHub Actions OIDC workflow and expose npm publish plus SLSA provenance
-attestations. The exact run, commit, hash and registry receipts are in the
-[`W8 release handoff`](w8-release-handoff.md).
+attestations. The initial trusted-release receipts are in the
+[`W8 release handoff`](w8-release-handoff.md); the current package, Pages and public-consumer
+receipts are in the [`0.2 release handoff`](v0.2-release-handoff.md).
 
 **Project hygiene.** The MIT license, Biome, Dependabot, editorconfig and rename are done.
 `SECURITY.md` and contributor ceremony remain deliberately deferred until the repository has
@@ -49,9 +51,9 @@ outside contributors.
 eight adapted Mantine UI components/blocks. The initial six-item tranche and the Carousel/Dropzone
 extension stress cases compile, install and production-build in disposable consumers; their exact
 evidence and non-evidence are recorded in the [`Wc handoff`](wc-registry-content-handoff.md). The
-[`required-global-styles contract`](global-styles-handoff.md) is implemented and locally accepted.
-Public HTTPS consumption, broader cross-framework visual acceptance and a second live registry
-remain. Every new item exercises the client harder than a fixture does.
+[`required-global-styles contract`](global-styles-handoff.md) is implemented, released and accepted
+through a fresh public npm-plus-HTTPS Vite consumer. Broader cross-framework visual acceptance and
+a second live registry remain. Every new item exercises the client harder than a fixture does.
 
 ## The program
 
@@ -91,10 +93,10 @@ runtime, OS, package-manager, real-prompt and packed-tarball boundaries through 
 W8 completed the manual bootstrap, trusted-publisher binding, ordered tagged releases and
 independent npm provenance verification.
 
-W4 through W8 are complete. Wc's first eight adapted items are locally dogfooded, including the
-implemented import-only global-styles lifecycle and its Carousel/Dropzone stress cases. Wc remains
-an independent, ongoing content stream rather than a release blocker; its next boundaries are
-public HTTPS proof, a second live registry and further small curated tranches.
+W4 through W8 are complete. Wc's first eight adapted items are publicly dogfooded, including the
+released import-only global-styles lifecycle and its Carousel/Dropzone stress cases. Wc remains an
+independent, ongoing content stream rather than a release blocker; its next boundaries are a second
+live registry, broader framework-specific visual acceptance and further small curated tranches.
 
 ## On one large program workflow
 
@@ -156,7 +158,8 @@ published and resolved before the client tag was pushed. The exact hosted and np
 Future contract-bearing releases keep that fail-stop order: publish and verify `manteen-kit`, then
 publish and verify `manteen`, then manually dispatch the Pages registry deployment. Pages does not
 deploy on every `main` push because doing so could expose items that require an unpublished client
-contract.
+contract. The [`0.2 release handoff`](v0.2-release-handoff.md) records the first completed use of
+that sequence.
 
 The tradeoff: that first version has no provenance attestation, because provenance requires
 the OIDC path. Storing an `NPM_TOKEN` just for it would reintroduce the long-lived credential

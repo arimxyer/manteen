@@ -1,8 +1,8 @@
 # Wc registry-content handoff
 
-Status: **eight adapted items implemented and locally dogfooded, including the Carousel/Dropzone
-extension stress cases; public-registry deployment proof remains.** Wc is an ongoing content stream,
-not a release blocker or a reason to reopen the completed W4-W8 client program.
+Status: **eight adapted items released and publicly dogfooded, including the Carousel/Dropzone
+extension stress cases.** Wc is an ongoing content stream, not a release blocker or a reason to
+reopen the completed W4-W8 client program.
 
 ## Question and stopping condition
 
@@ -138,11 +138,23 @@ This is built-CLI and real-content evidence, but all registries were local `file
 fresh framework consumers ran on Linux. It does not prove the new items are deployed at the public
 HTTPS registry, published in a newer CLI release, or newly exercised on macOS/Windows.
 
+## Public release receipt — 2026-07-30 ET
+
+The first two limitations above are now closed. `manteen-kit@0.2.0` and `manteen@0.2.0` published
+through the tagged OIDC workflow with SLSA provenance, then the dispatch-only Pages workflow
+deployed the same merge commit. The live index contains all 14 items. A fresh Vite project installed
+the public client, fetched Carousel and Dropzone from the public `@house` HTTPS URLs, composed both
+package stylesheet imports into receipt v2, passed `tsc -b && vite build`, and reported five
+unchanged files.
+
+The exact commit, workflow, npm, hash and disposable-consumer receipts are in the
+[`0.2 release handoff`](v0.2-release-handoff.md). This public Vite smoke does not newly establish
+visual or lifecycle behavior on macOS/Windows; the earlier hosted W7 matrix remains the general
+platform boundary.
+
 ## Next boundary
 
-1. Deploy the catalog and repeat a smaller clean consumer smoke against the HTTPS `@house` URLs
-   using a published version that contains the managed-styles implementation.
+1. Exercise the toolchain against a second independently authored live registry.
 2. Repeat browser acceptance in the other supported framework shapes as those fixtures become
    available; this Vite run is not cross-framework proof.
-3. Exercise the toolchain against a second independently authored live registry.
-4. Continue Wc in small attributed tranches; do not bulk-import the remaining upstream examples.
+3. Continue Wc in small attributed tranches; do not bulk-import the remaining upstream examples.
