@@ -31,9 +31,6 @@
         }
       ],
       "themeFragment": "src/release-panel/release-panel.theme.ts",
-      "stylesApi": {
-        "ReleasePanel": ["root", "header", "slide"]
-      },
       "docs": "Render ReleasePanel inside MantineProvider and pass release highlights as data."
     }
   ]

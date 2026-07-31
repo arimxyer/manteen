@@ -1,0 +1,39 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+
+import RegistryCatalog from "../../components/RegistryCatalog.astro";
+import { itemPath, readRegistry, registryGroups } from "../../lib/registry";
+
+const { entries } = readRegistry();
+const sidebar = [
+  {
+    label: "Registry",
+    items: [{ label: `All items (${entries.length})`, link: "/registry/" }],
+  },
+  ...registryGroups(entries).map((group) => ({
+    label: group.label,
+    items: group.items.map(({ index }) => ({
+      label: index.title ?? index.name,
+      link: `/registry/${itemPath(index.name)}/`,
+    })),
+  })),
+];
+---
+
+<StarlightPage
+  frontmatter={{
+    title: "Registry",
+    description: "Browse installable Mantine-native source from the live Manteen registry.",
+    editUrl: false,
+    lastUpdated: false,
+    next: false,
+    prev: false,
+    tableOfContents: false,
+  }}
+  sidebar={sidebar}
+  hasSidebar={true}
+>
+  <div class="registry-custom-page registry-gallery-page">
+    <RegistryCatalog />
+  </div>
+</StarlightPage>

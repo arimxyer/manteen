@@ -39,10 +39,7 @@
       "description": "Metric tile with label, value, optional icon and a trend row.",
       "mantine": ">=9",
       "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
-      "files": [{ "path": "registry/ui/stat-card.tsx", "as": "component" }],
-      "stylesApi": {
-        "StatCard": ["root", "label", "value", "trend"]
-      }
+      "files": [{ "path": "registry/ui/stat-card.tsx", "as": "component" }]
     },
     {
       "name": "data-table",
@@ -92,6 +89,9 @@
           "target": "@ui/article-card.module.css"
         }
       ],
+      "stylesApi": {
+        "ArticleCard": ["root", "image", "rating", "title", "footer", "action"]
+      },
       "docs": "Adapted from Mantine UI ArticleCard at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; demo data removed and replaced with typed props."
     },
     {

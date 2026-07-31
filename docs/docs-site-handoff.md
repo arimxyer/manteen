@@ -64,8 +64,9 @@ Package READMEs link into the public guide. The CLI README also documents direct
 
 `examples/registry-starter` is a standalone `manteen-kit@^0.2.0` project. Its self-contained
 `release-panel` contains a React component, hook, CSS module, `@mantine/carousel` package style,
-three runtime dependencies, a Paper theme fragment, provider/version metadata, Styles API
-selectors, and author documentation.
+three runtime dependencies, a Paper theme fragment, provider/version metadata, and author
+documentation. It intentionally does not declare a Styles API: its CSS-module names are private
+implementation details rather than selectors exposed through public `classNames`/`styles` props.
 
 `bun run verify:docs:consumer` builds the current kit and CLI, then keeps every consumer byte under
 `mkdtemp()`. On 2026-07-31 ET it:

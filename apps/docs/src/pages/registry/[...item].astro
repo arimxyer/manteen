@@ -1,0 +1,55 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+
+import RegistryItemDetail from "../../components/RegistryItemDetail.astro";
+import {
+  itemPath,
+  readRegistry,
+  registryGroups,
+  type RegistryEntry,
+} from "../../lib/registry";
+
+interface Props {
+  entry: RegistryEntry;
+}
+
+export function getStaticPaths() {
+  const { entries } = readRegistry();
+  return entries.map((entry) => ({
+    params: { item: entry.index.name },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { entries } = readRegistry();
+const sidebar = [
+  {
+    label: "Registry",
+    items: [{ label: `All items (${entries.length})`, link: "/registry/" }],
+  },
+  ...registryGroups(entries).map((group) => ({
+    label: group.label,
+    items: group.items.map(({ index }) => ({
+      label: index.title ?? index.name,
+      link: `/registry/${itemPath(index.name)}/`,
+    })),
+  })),
+];
+---
+
+<StarlightPage
+  frontmatter={{
+    title: entry.index.title ?? entry.index.name,
+    description: entry.index.description,
+    editUrl: false,
+    lastUpdated: false,
+    next: false,
+    prev: false,
+    tableOfContents: false,
+  }}
+  sidebar={sidebar}
+  hasSidebar={true}
+>
+  <RegistryItemDetail entry={entry} />
+</StarlightPage>

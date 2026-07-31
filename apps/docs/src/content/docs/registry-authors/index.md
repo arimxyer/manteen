@@ -18,7 +18,7 @@ that is compiled during documentation verification. It demonstrates one shareabl
 - Mantine, Carousel, and Tabler package dependencies;
 - the Carousel package stylesheet;
 - a mergeable Mantine theme fragment; and
-- provider, version, Styles API, and human documentation metadata.
+- provider, version, and human documentation metadata.
 
 ## 1. Create the authoring project
 
@@ -82,9 +82,6 @@ my-manteen-registry/
         }
       ],
       "themeFragment": "src/release-panel/release-panel.theme.ts",
-      "stylesApi": {
-        "ReleasePanel": ["root", "header", "slide"]
-      },
       "docs": "Render ReleasePanel inside MantineProvider and pass release highlights as data."
     }
   ]
@@ -98,6 +95,10 @@ in this channel.
 
 `themeFragment` is merged into the consumer's configured theme; it is not copied as another source
 file. This prevents one registry theme from replacing local theme work wholesale.
+
+Only declare `stylesApi` when the component genuinely exposes the named parts through a public
+`classNames`/`styles` interface. Manteen carries and reports that author assertion but cannot infer
+or verify it generically; private CSS-module names are implementation details and do not qualify.
 
 ## 3. Build and validate
 

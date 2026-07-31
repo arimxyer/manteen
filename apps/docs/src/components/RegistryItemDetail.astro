@@ -1,0 +1,563 @@
+---
+import { Code, Icon } from "@astrojs/starlight/components";
+
+import {
+  acceptsProps,
+  codeLanguage,
+  fileName,
+  isVisualItem,
+  itemPath,
+  kindLabel,
+  packageStyleImports,
+  styleFiles,
+  type RegistryEntry,
+} from "../lib/registry";
+
+interface Props {
+  entry: RegistryEntry;
+}
+
+const { entry } = Astro.props;
+const { index, detail: item } = entry;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const type = kindLabel(index.type);
+const title = index.title ?? index.name;
+const command = `npx manteen add @house/${index.name}`;
+const rawJsonHref = `${base}/r/${itemPath(index.name)}.json`;
+const sourceHref = item.files?.[0]
+  ? `https://github.com/arimxyer/manteen/blob/main/${item.files[0].path}`
+  : "https://github.com/arimxyer/manteen";
+const mantine = item.meta?.mantine;
+const files = item.files ?? [];
+const installedStyles = styleFiles(item);
+const packageStyles = packageStyleImports(item);
+const stylesApi = mantine?.stylesApi;
+const hasStylesApi = Boolean(stylesApi && Object.keys(stylesApi).length > 0);
+const themeFragment = mantine?.themeFragment;
+---
+
+<div class="registry-custom-page registry-detail" data-registry-detail>
+  <nav class="registry-breadcrumb" aria-label="Breadcrumb">
+    <a href={`${base}/registry/`}>Registry</a>
+    <span aria-hidden="true">/</span>
+    <span>{type === "block" ? "Blocks" : type === "component" ? "Components" : type}</span>
+    <span aria-hidden="true">/</span>
+    <strong>{title}</strong>
+  </nav>
+
+  <header class="registry-detail__header">
+    <div class="registry-detail__copy">
+      <div class="registry-detail__labels">
+        <span class="registry-kind">{type}</span>
+        {mantine?.requires && <span class="registry-version">Mantine {mantine.requires}</span>}
+      </div>
+      <h1>{title}</h1>
+      <code class="registry-detail__name">@house/{index.name}</code>
+      {index.description && <p>{index.description}</p>}
+    </div>
+    <div class="registry-detail__actions">
+      <a class="registry-action" href={rawJsonHref}>
+        <Icon name="document" />
+        Registry JSON
+      </a>
+      <a class="registry-action" href={sourceHref}>
+        <Icon name="github" />
+        Source
+      </a>
+    </div>
+  </header>
+
+  <div class="registry-install">
+    <div>
+      <span>Install with Manteen</span>
+      <code>{command}</code>
+    </div>
+    <button type="button" data-copy-value={command} data-copy-label="Copy command">
+      <Icon name="document" />
+      <span>Copy command</span>
+    </button>
+  </div>
+
+  <div class="registry-detail__columns">
+    <main class="registry-detail__main">
+      <div class="registry-tabs" role="tablist" aria-label={`${title} documentation`}>
+        <button
+          id="registry-tab-preview"
+          type="button"
+          role="tab"
+          aria-selected="true"
+          aria-controls="registry-panel-preview"
+          tabindex="0"
+          data-registry-tab="preview"
+        >
+          Preview
+        </button>
+        <button
+          id="registry-tab-usage"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="registry-panel-usage"
+          tabindex="-1"
+          data-registry-tab="usage"
+        >
+          Usage
+        </button>
+        <button
+          id="registry-tab-props"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="registry-panel-props"
+          tabindex="-1"
+          data-registry-tab="props"
+        >
+          Props
+        </button>
+        <button
+          id="registry-tab-styling"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="registry-panel-styling"
+          tabindex="-1"
+          data-registry-tab="styling"
+        >
+          Styling
+        </button>
+        <button
+          id="registry-tab-source"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="registry-panel-source"
+          tabindex="-1"
+          data-registry-tab="source"
+        >
+          Source
+        </button>
+      </div>
+
+      <section
+        id="registry-panel-preview"
+        class="registry-tab-panel"
+        role="tabpanel"
+        aria-labelledby="registry-tab-preview"
+        tabindex="0"
+        data-registry-panel="preview"
+      >
+        <div class="registry-empty-state">
+          <span class="registry-empty-state__icon"><Icon name="puzzle" /></span>
+          <p class="registry-eyebrow">Preview boundary</p>
+          <h2>{isVisualItem(index.type) ? "Live preview not published yet" : "Preview does not apply"}</h2>
+          <p>
+            {
+              isVisualItem(index.type)
+                ? "This registry item does not publish a curated preview manifest. Manteen will not execute arbitrary registry source to manufacture one."
+                : `A live component preview is not meaningful for a ${type} item. Its installable payload remains available in Source.`
+            }
+          </p>
+        </div>
+      </section>
+
+      <section
+        id="registry-panel-usage"
+        class="registry-tab-panel"
+        role="tabpanel"
+        aria-labelledby="registry-tab-usage"
+        tabindex="0"
+        hidden
+        data-registry-panel="usage"
+      >
+        <div class="registry-panel-heading">
+          <div>
+            <p class="registry-eyebrow">Usage</p>
+            <h2>Install the source</h2>
+          </div>
+          <button type="button" data-copy-value={command} data-copy-label="Copy command">Copy command</button>
+        </div>
+        <Code code={command} lang="sh" meta='title="Terminal"' />
+        {
+          item.docs ? (
+            <div class="registry-note">
+              <h3>Author notes</h3>
+              <p>{item.docs}</p>
+            </div>
+          ) : (
+            <div class="registry-note registry-note--muted">
+              <h3>No authored usage notes</h3>
+              <p>The registry document does not include human-facing usage guidance for this item.</p>
+            </div>
+          )
+        }
+        <div class="registry-note registry-note--muted">
+          <h3>No structured usage example</h3>
+          <p>
+            Manteen does not infer JSX, imports, callback behavior, or sample data from source files.
+            A copy-ready example will appear here only when the registry author publishes one.
+          </p>
+        </div>
+      </section>
+
+      <section
+        id="registry-panel-props"
+        class="registry-tab-panel"
+        role="tabpanel"
+        aria-labelledby="registry-tab-props"
+        tabindex="0"
+        hidden
+        data-registry-panel="props"
+      >
+        <div class="registry-empty-state">
+          <span class="registry-empty-state__icon"><Icon name="setting" /></span>
+          <p class="registry-eyebrow">Props boundary</p>
+          <h2>{acceptsProps(index.type) ? "Structured props not published" : "Props do not apply"}</h2>
+          <p>
+            {
+              acceptsProps(index.type)
+                ? "This item document does not carry prop names, types, defaults, or descriptions. The source is available, but this page does not present source inference as authored API documentation."
+                : `This ${type} item does not expose a component or hook prop surface.`
+            }
+          </p>
+          {acceptsProps(index.type) && (
+            <button type="button" class="registry-inline-action" data-activate-tab="source">
+              Inspect the typed source
+            </button>
+          )}
+        </div>
+      </section>
+
+      <section
+        id="registry-panel-styling"
+        class="registry-tab-panel"
+        role="tabpanel"
+        aria-labelledby="registry-tab-styling"
+        tabindex="0"
+        hidden
+        data-registry-panel="styling"
+      >
+        <div class="registry-panel-heading">
+          <div>
+            <p class="registry-eyebrow">Styling</p>
+            <h2>{hasStylesApi ? "Author-declared Styles API" : "Installed styling surface"}</h2>
+          </div>
+          <span class:list={["registry-contract-status", { "is-declared": hasStylesApi }]}>
+            {hasStylesApi ? "Declared" : "No public API"}
+          </span>
+        </div>
+
+        {
+          hasStylesApi ? (
+            <div class="registry-note registry-note--warning">
+              <h3>Declaration boundary</h3>
+              <p>
+                These selectors are supplied by the registry author. Manteen reports the declaration
+                but does not verify that the component wires every selector to <code>classNames</code>,
+                <code>styles</code>, or a theme component entry.
+              </p>
+            </div>
+          ) : (
+            <div class="registry-note">
+              <h3>No public Styles API is declared</h3>
+              <p>
+                Installed CSS remains editable because the project owns the source. Internal class
+                names are implementation details, not a supported external customization contract.
+              </p>
+            </div>
+          )
+        }
+
+        {
+          stylesApi && Object.keys(stylesApi).length > 0 && (
+            <div class="registry-style-section">
+              <h3>Declared selectors</h3>
+              {Object.entries(stylesApi).map(([component, selectors]) => (
+                <div class="registry-selector-row">
+                  <code>{component}</code>
+                  <div>{selectors.map((selector) => <span>{selector}</span>)}</div>
+                </div>
+              ))}
+            </div>
+          )
+        }
+
+        {
+          installedStyles.length > 0 ? (
+            <div class="registry-style-section">
+              <div class="registry-style-section__heading">
+                <div>
+                  <h3>Editable installed styles</h3>
+                  <p>These files are copied into the consuming project with the component source.</p>
+                </div>
+                <span>{installedStyles.length} {installedStyles.length === 1 ? "file" : "files"}</span>
+              </div>
+              {installedStyles.map((file) =>
+                file.content?.trim() ? (
+                  <Code
+                    code={file.content}
+                    lang={codeLanguage(file.target ?? file.path)}
+                    meta={`title="${fileName(file)}"`}
+                  />
+                ) : (
+                  <p class="registry-muted">{fileName(file)} is empty.</p>
+                ),
+              )}
+            </div>
+          ) : (
+            <div class="registry-note registry-note--muted">
+              <h3>No installed stylesheet</h3>
+              <p>This item does not ship a CSS, Sass, Less, or registry style file.</p>
+            </div>
+          )
+        }
+
+        {
+          packageStyles.length > 0 && (
+            <div class="registry-style-section">
+              <h3>Required package-level styles</h3>
+              <p class="registry-muted">
+                Manteen composes these imports into the managed global stylesheet during install.
+              </p>
+              <ul class="registry-code-list">
+                {packageStyles.map((source) => <li><code>{source}</code></li>)}
+              </ul>
+            </div>
+          )
+        }
+
+        {
+          themeFragment?.content?.trim() && (
+            <div class="registry-style-section">
+              <h3>Theme fragment</h3>
+              <p class="registry-muted">Folded into the configured project theme; not written at this source path.</p>
+              <Code
+                code={themeFragment.content}
+                lang={codeLanguage(themeFragment.path)}
+                meta={`title="${themeFragment.path}"`}
+              />
+            </div>
+          )
+        }
+      </section>
+
+      <section
+        id="registry-panel-source"
+        class="registry-tab-panel"
+        role="tabpanel"
+        aria-labelledby="registry-tab-source"
+        tabindex="0"
+        hidden
+        data-registry-panel="source"
+      >
+        <div class="registry-panel-heading">
+          <div>
+            <p class="registry-eyebrow">Source</p>
+            <h2>Installable files</h2>
+          </div>
+          <span class="registry-file-count">{files.length} {files.length === 1 ? "file" : "files"}</span>
+        </div>
+        {
+          files.length > 0 ? (
+            <div class="registry-source-browser" data-source-browser>
+              <div class="registry-source-browser__files" aria-label="Source files">
+                {files.map((file, index) => (
+                  <button
+                    type="button"
+                    class:list={{ "is-active": index === 0 }}
+                    aria-pressed={index === 0 ? "true" : "false"}
+                    data-source-file={String(index)}
+                  >
+                    <Icon name="document" />
+                    <span>{fileName(file)}</span>
+                  </button>
+                ))}
+              </div>
+              <div class="registry-source-browser__code">
+                {files.map((file, index) => (
+                  <div hidden={index !== 0} data-source-panel={String(index)}>
+                    {file.content?.trim() ? (
+                      <Code
+                        code={file.content}
+                        lang={codeLanguage(file.target ?? file.path)}
+                        meta={`title="${file.path}"`}
+                      />
+                    ) : (
+                      <p class="registry-muted">This file has no content.</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div class="registry-empty-state">
+              <h2>No installable files</h2>
+              <p>The registry document does not contain a file payload.</p>
+            </div>
+          )
+        }
+      </section>
+    </main>
+
+    <aside class="registry-metadata" aria-label={`${title} metadata`}>
+      <section>
+        <h2>Requirements</h2>
+        <dl>
+          <div><dt>Mantine</dt><dd>{mantine?.requires ?? "Not declared"}</dd></div>
+          <div><dt>Provider</dt><dd>{mantine?.provider ?? "Not declared"}</dd></div>
+          <div><dt>Global styles</dt><dd>{packageStyles.length || "None"}</dd></div>
+        </dl>
+      </section>
+
+      <section>
+        <h2>Dependencies</h2>
+        {
+          item.dependencies?.length ? (
+            <ul class="registry-metadata__list">
+              {item.dependencies.map((dependency) => <li><code>{dependency}</code></li>)}
+            </ul>
+          ) : (
+            <p class="registry-muted">No npm dependencies declared.</p>
+          )
+        }
+      </section>
+
+      {
+        item.registryDependencies?.length && (
+          <section>
+            <h2>Registry dependencies</h2>
+            <ul class="registry-metadata__list">
+              {item.registryDependencies.map((dependency) => {
+                const local = dependency.startsWith("@house/") ? dependency.slice(7) : null;
+                return (
+                  <li>
+                    {local ? <a href={`${base}/registry/${itemPath(local)}/`}>{dependency}</a> : <code>{dependency}</code>}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )
+      }
+
+      <section>
+        <h2>Installed files</h2>
+        {
+          files.length ? (
+            <ul class="registry-files">
+              {files.map((file) => (
+                <li>
+                  <Icon name="document" />
+                  <span><code>{fileName(file)}</code><small>{file.type.replace(/^registry:/, "")}</small></span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p class="registry-muted">No files.</p>
+          )
+        }
+      </section>
+
+      {
+        item.docs && (
+          <section>
+            <h2>Author notes</h2>
+            <p>{item.docs}</p>
+          </section>
+        )
+      }
+    </aside>
+  </div>
+</div>
+
+<script>
+  const copyText = async (value: string) => {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return;
+    }
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.append(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    textarea.remove();
+  };
+
+  for (const detail of document.querySelectorAll<HTMLElement>("[data-registry-detail]")) {
+    const tabs = [...detail.querySelectorAll<HTMLButtonElement>("[data-registry-tab]")];
+    const panels = [...detail.querySelectorAll<HTMLElement>("[data-registry-panel]")];
+
+    const activate = (name: string, focus = false) => {
+      const target = tabs.find((tab) => tab.dataset.registryTab === name) ?? tabs[0];
+      if (!target) return;
+      for (const tab of tabs) {
+        const selected = tab === target;
+        tab.setAttribute("aria-selected", String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+      }
+      for (const panel of panels) panel.hidden = panel.dataset.registryPanel !== target.dataset.registryTab;
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", target.dataset.registryTab ?? "preview");
+      history.replaceState(null, "", url);
+      if (focus) target.focus();
+    };
+
+    for (const [index, tab] of tabs.entries()) {
+      tab.addEventListener("click", () => activate(tab.dataset.registryTab ?? "preview"));
+      tab.addEventListener("keydown", (event) => {
+        let next = index;
+        if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
+        else if (event.key === "ArrowLeft") next = (index - 1 + tabs.length) % tabs.length;
+        else if (event.key === "Home") next = 0;
+        else if (event.key === "End") next = tabs.length - 1;
+        else return;
+        event.preventDefault();
+        activate(tabs[next]?.dataset.registryTab ?? "preview", true);
+      });
+    }
+
+    for (const button of detail.querySelectorAll<HTMLButtonElement>("[data-activate-tab]")) {
+      button.addEventListener("click", () => activate(button.dataset.activateTab ?? "preview", true));
+    }
+
+    const requested = new URL(window.location.href).searchParams.get("tab");
+    activate(requested ?? "preview");
+  }
+
+  for (const browser of document.querySelectorAll<HTMLElement>("[data-source-browser]")) {
+    const files = [...browser.querySelectorAll<HTMLButtonElement>("[data-source-file]")];
+    const panels = [...browser.querySelectorAll<HTMLElement>("[data-source-panel]")];
+    for (const button of files) {
+      button.addEventListener("click", () => {
+        const selected = button.dataset.sourceFile;
+        for (const file of files) {
+          const active = file === button;
+          file.classList.toggle("is-active", active);
+          file.setAttribute("aria-pressed", String(active));
+        }
+        for (const panel of panels) panel.hidden = panel.dataset.sourcePanel !== selected;
+      });
+    }
+  }
+
+  for (const button of document.querySelectorAll<HTMLButtonElement>("[data-copy-value]")) {
+    button.addEventListener("click", async () => {
+      const label = button.querySelector("span");
+      const idle = button.dataset.copyLabel ?? label?.textContent ?? button.textContent ?? "Copy";
+      try {
+        await copyText(button.dataset.copyValue ?? "");
+        if (label) label.textContent = "Copied";
+        else button.textContent = "Copied";
+      } catch {
+        if (label) label.textContent = "Copy failed";
+        else button.textContent = "Copy failed";
+      }
+      window.setTimeout(() => {
+        if (label) label.textContent = idle;
+        else button.textContent = idle;
+      }, 1600);
+    });
+  }
+</script>

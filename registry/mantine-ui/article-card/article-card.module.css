@@ -3,7 +3,7 @@
  * ffbf61c559f374a7ea28fcf00355e84dcbe9a908. MIT licensed; see
  * LICENSES/MANTINE-UI.txt after installation.
  */
-.card {
+.root {
   position: relative;
   overflow: visible;
   background-color: var(--mantine-color-body);

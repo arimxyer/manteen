@@ -57,6 +57,23 @@ through a fresh public npm-plus-HTTPS Vite consumer. A
 build and maintenance under two consumer-selected namespaces. Broader cross-framework visual
 acceptance remains. Every new item exercises the client harder than a fixture does.
 
+**Catalog detail and Styles API follow-on.** The completed documentation-site milestone remains
+closed; the richer registry browser is a separate additive track. Its detail contract is
+`Preview · Usage · Props · Styling · Source`, with tabs omitted or given an explicit not-applicable
+state when the item has no trustworthy data. The first implementation stage adds base-path-safe
+item routes, grouped navigation, copyable install commands and source/metadata views without
+requiring a live preview runtime or a registry-protocol change. Curated previews and prop
+descriptors follow one item at a time rather than being inferred from arbitrary source.
+
+Styles API support runs beside that work as a bounded contract milestone; it does not pause the
+site and is not implied by an editable CSS module. The present selector arrays are author
+declarations, and the audit found declarations that were not backed by public `classNames` /
+`styles` behavior. The safe sequence is to remove false claims, prove ArticleCard end to end with
+real named selectors and customization tests, render only the resulting truthful metadata, and
+then decide whether other suitable components should adopt the pattern. Broad conversion does not
+start until that vertical slice passes; opinionated blocks may legitimately keep editable internal
+CSS without exposing a public Styles API.
+
 ## The program
 
 Each phase gets a workflow **designed for its shape**, not templated. The gate between phases

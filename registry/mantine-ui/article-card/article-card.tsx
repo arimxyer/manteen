@@ -4,12 +4,32 @@
  * LICENSES/MANTINE-UI.txt after installation.
  */
 
-import { ActionIcon, Avatar, Badge, Card, Group, Image, Text } from "@mantine/core";
+import {
+  ActionIcon,
+  Avatar,
+  Badge,
+  type BoxProps,
+  Card,
+  type ElementProps,
+  type Factory,
+  factory,
+  Group,
+  Image,
+  type StylesApiProps,
+  Text,
+  useProps,
+  useStyles,
+} from "@mantine/core";
 import { IconBookmarkFilled, IconHeartFilled, IconShare2 } from "@tabler/icons-react";
 
 import classes from "./article-card.module.css";
 
-export interface ArticleCardProps {
+export type ArticleCardStylesNames = "root" | "image" | "rating" | "title" | "footer" | "action";
+
+export interface ArticleCardProps
+  extends BoxProps,
+    StylesApiProps<ArticleCardFactory>,
+    ElementProps<"div", "title"> {
   image: string;
   title: string;
   description: string;
@@ -22,29 +42,58 @@ export interface ArticleCardProps {
   onShare?: () => void;
 }
 
-export function ArticleCard({
-  image,
-  title,
-  description,
-  authorName,
-  authorAvatar,
-  rating,
-  href,
-  onLike,
-  onBookmark,
-  onShare,
-}: ArticleCardProps) {
+export type ArticleCardFactory = Factory<{
+  props: ArticleCardProps;
+  ref: HTMLDivElement;
+  stylesNames: ArticleCardStylesNames;
+}>;
+
+export const ArticleCard = factory<ArticleCardFactory>((_props) => {
+  const props = useProps("ArticleCard", null, _props);
+  const {
+    classNames,
+    className,
+    style,
+    styles,
+    unstyled,
+    vars,
+    attributes,
+    ref,
+    image,
+    title,
+    description,
+    authorName,
+    authorAvatar,
+    rating,
+    href,
+    onLike,
+    onBookmark,
+    onShare,
+    ...others
+  } = props;
+  const getStyles = useStyles<ArticleCardFactory>({
+    name: "ArticleCard",
+    classes,
+    props,
+    className,
+    style,
+    classNames,
+    styles,
+    unstyled,
+    attributes,
+    vars,
+  });
   const hasActions = Boolean(onLike || onBookmark || onShare);
 
   return (
-    <Card withBorder radius="md" className={classes.card}>
+    <Card ref={ref} withBorder radius="md" unstyled={unstyled} {...getStyles("root")} {...others}>
       <Card.Section component="a" href={href}>
-        <Image src={image} height={180} alt={title} className={classes.image} />
+        <Image src={image} height={180} alt={title} {...getStyles("image")} />
       </Card.Section>
 
       {rating && (
         <Badge
-          className={classes.rating}
+          {...getStyles("rating")}
           variant="gradient"
           gradient={{ from: "indigo.8", to: "violet.8", deg: 145 }}
         >
@@ -52,7 +101,7 @@ export function ArticleCard({
         </Badge>
       )}
 
-      <Text className={classes.title} component="a" href={href}>
+      <Text {...getStyles("title")} component="a" href={href}>
         {title}
       </Text>
 
@@ -60,7 +109,7 @@ export function ArticleCard({
         {description}
       </Text>
 
-      <Group justify="space-between" className={classes.footer}>
+      <Group justify="space-between" {...getStyles("footer")}>
         <Group gap="xs">
           <Avatar src={authorAvatar} size={24} alt="" />
           <Text fz="sm">{authorName}</Text>
@@ -71,7 +120,7 @@ export function ArticleCard({
             {onLike && (
               <ActionIcon
                 variant="subtle"
-                className={classes.action}
+                {...getStyles("action")}
                 aria-label="Like"
                 onClick={onLike}
               >
@@ -81,7 +130,7 @@ export function ArticleCard({
             {onBookmark && (
               <ActionIcon
                 variant="subtle"
-                className={classes.action}
+                {...getStyles("action")}
                 aria-label="Bookmark"
                 onClick={onBookmark}
               >
@@ -91,7 +140,7 @@ export function ArticleCard({
             {onShare && (
               <ActionIcon
                 variant="subtle"
-                className={classes.action}
+                {...getStyles("action")}
                 aria-label="Share"
                 onClick={onShare}
               >
@@ -103,4 +152,13 @@ export function ArticleCard({
       </Group>
     </Card>
   );
+});
+
+ArticleCard.classes = classes;
+ArticleCard.displayName = "ArticleCard";
+
+export namespace ArticleCard {
+  export type Props = ArticleCardProps;
+  export type StylesNames = ArticleCardStylesNames;
+  export type Factory = ArticleCardFactory;
 }

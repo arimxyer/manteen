@@ -27,7 +27,11 @@ Each item requires `name`, `kind`, and `files`.
 | `css` | Exact runtime package stylesheet imports, backed by the same item's `npm` entries. |
 | `files` | Source files and their component, hook, library, style, or file roles. |
 | `themeFragment` | A theme module merged into the consumer theme rather than copied. |
-| `stylesApi` | Documented Mantine Styles API selectors keyed by component name. |
+| `stylesApi` | Author-declared public Mantine Styles API selectors keyed by component name. |
+
+`stylesApi` asserts that the installed component genuinely exposes each named part through its
+public `classNames`/`styles` interface. Manteen carries and reports the declaration but cannot
+verify arbitrary third-party source; internal CSS-module class names do not qualify.
 
 For editor validation, set `$schema` to the installed kit schema:
 
