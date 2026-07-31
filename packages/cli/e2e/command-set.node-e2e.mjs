@@ -403,7 +403,7 @@ test("a second update is a no-op that says so, and writes nothing", () => {
   const result = run(project, ["update", "--overwrite"]);
   assert.equal(result.status, 0, result.all);
   // `identical` files are never written, so no `overwrite` line appears — but
-  // the run still happens, because apply's phase 5 is what claims a destination
+  // the run still happens, because apply's phase 6 is what claims a destination
   // that holds our bytes with no ownership record.
   assert.match(result.stderr, /skip {2}up-to-date {2}@base\/empty-state/, result.stderr);
 });

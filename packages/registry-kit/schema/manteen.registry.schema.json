@@ -55,6 +55,12 @@
           "items": { "type": "string" },
           "description": "Other items this one needs. Bare names resolve within this registry; `@other/name` crosses registries."
         },
+        "css": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true,
+          "description": "Runtime package stylesheet imports. Compiled to the import-only subset of the interchange `css` field."
+        },
         "files": {
           "type": "array",
           "items": {

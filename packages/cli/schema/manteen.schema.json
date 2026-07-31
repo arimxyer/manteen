@@ -37,6 +37,10 @@
       "type": "string",
       "description": "Path to your Mantine theme, relative to this file. Items that ship a theme file or a theme fragment are folded into it rather than written alongside it. Need not exist yet."
     },
+    "styles": {
+      "type": "string",
+      "description": "Path to the Manteen-owned composed package stylesheet, relative to this file. Consumer overrides belong in a host stylesheet imported after it."
+    },
     "tsconfig": {
       "type": "string",
       "description": "Path to the tsconfig whose `paths` back the aliases, relative to this file. Defaults to ./tsconfig.json. Resolved verbatim — name the file, not its directory."

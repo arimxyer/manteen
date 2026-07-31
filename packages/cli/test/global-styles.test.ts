@@ -1,0 +1,270 @@
+import { describe, expect, test } from "bun:test";
+import { createHash } from "node:crypto";
+
+import { INIT_STYLES_SOURCE } from "../src/init/styles";
+import { foldStyles } from "../src/plan/styles-fold";
+import type { ReceiptStyles, ResolvedItem } from "../src/plan/types";
+import { createItemValidator } from "../src/plan/validate-item";
+import { createReceiptValidator } from "../src/receipt/load";
+import { parseReceipt } from "../src/receipt/read";
+
+const context = {
+  id: "@house/styled",
+  expectedName: "styled",
+  redactedUrl: "https://example.test/r/styled.json",
+} as const;
+
+function item(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    name: "styled",
+    type: "registry:ui",
+    files: [],
+    dependencies: ["@mantine/carousel@^9"],
+    ...overrides,
+  };
+}
+
+describe("import-only registry css", () => {
+  test("accepts package imports whose package is a runtime dependency", () => {
+    const result = createItemValidator()(
+      item({ css: { '@import "@mantine/carousel/styles.css"': {} } }),
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.item.cssImports).toEqual(["@mantine/carousel/styles.css"]);
+    expect(result.diagnostics).toEqual([]);
+  });
+
+  test("refuses selectors, declarations and relative imports", () => {
+    const result = createItemValidator()(
+      item({
+        css: {
+          ".carousel": { color: "red" },
+          '@import "./carousel.css"': {},
+        },
+      }),
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.item.cssImports).toEqual([]);
+    expect(result.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
+      "css-unsupported",
+      "css-unsupported",
+    ]);
+    expect(result.diagnostics.every((diagnostic) => !diagnostic.forceable)).toBe(true);
+  });
+
+  test("refuses a package available only as a development dependency", () => {
+    const result = createItemValidator()(
+      item({
+        dependencies: [],
+        devDependencies: ["@mantine/dropzone@^9"],
+        css: { '@import "@mantine/dropzone/styles.css"': {} },
+      }),
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.item.cssImports).toEqual([]);
+    expect(result.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
+      "css-dependency-missing",
+    ]);
+  });
+});
+
+function hash(text: string): string {
+  return createHash("sha256").update(text, "utf8").digest("hex");
+}
+
+function resolved(id: string, cssImports: string[], dependsOn: string[] = []): ResolvedItem {
+  return {
+    id,
+    namespace: "@house",
+    name: id.split("/").at(-1) ?? id,
+    wireType: "registry:ui",
+    sourceUrl: `https://example.test/r/${id}.json`,
+    requestedBy: ["<root>"],
+    dependsOn,
+    cssImports,
+    files: [],
+  };
+}
+
+describe("managed stylesheet composition", () => {
+  test("orders dependencies first and deduplicates exact imports", () => {
+    const result = foldStyles({
+      root: "/project",
+      destination: "/project/src/manteen.css",
+      prior: null,
+      base: { text: INIT_STYLES_SOURCE, sha256: hash(INIT_STYLES_SOURCE) },
+      items: [
+        resolved(
+          "@house/carousel",
+          ["@mantine/carousel/styles.css", "@mantine/shared/styles.css"],
+          ["@house/base"],
+        ),
+        resolved("@house/base", ["@mantine/shared/styles.css"]),
+      ],
+    });
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.styles?.sources.map((source) => source.itemId)).toEqual([
+      "@house/base",
+      "@house/carousel",
+    ]);
+    expect(result.styles?.text).toBe(
+      `${INIT_STYLES_SOURCE}@import "@mantine/shared/styles.css";\n@import "@mantine/carousel/styles.css";\n`,
+    );
+  });
+
+  test("refuses an unconfigured or unknown unclaimed destination", () => {
+    const item = resolved("@house/carousel", ["@mantine/carousel/styles.css"]);
+    const unconfigured = foldStyles({
+      root: "/project",
+      destination: null,
+      prior: null,
+      base: null,
+      items: [item],
+    });
+    const uninitialized = foldStyles({
+      root: "/project",
+      destination: "/project/src/manteen.css",
+      prior: null,
+      base: { text: "body {}\n", sha256: hash("body {}\n") },
+      items: [item],
+    });
+
+    expect(unconfigured.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
+      "global-styles-unconfigured",
+    ]);
+    expect(uninitialized.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
+      "global-styles-uninitialized",
+    ]);
+    expect(unconfigured.styles).toBeNull();
+    expect(uninitialized.styles).toBeNull();
+  });
+
+  test("preserves untouched sources, replaces touched sources and reports owned drift", () => {
+    const prior: ReceiptStyles = {
+      destination: "src/manteen.css",
+      sha256: hash("old generated bytes\n"),
+      sources: [
+        {
+          itemId: "@house/untouched",
+          dependsOn: [],
+          imports: ["@mantine/shared/styles.css"],
+        },
+        {
+          itemId: "@house/carousel",
+          dependsOn: [],
+          imports: ["@mantine/carousel/old.css"],
+        },
+      ],
+    };
+    const result = foldStyles({
+      root: "/project",
+      destination: "/project/src/manteen.css",
+      prior,
+      base: { text: "edited\n", sha256: hash("edited\n") },
+      items: [resolved("@house/carousel", ["@mantine/carousel/styles.css"])],
+    });
+
+    expect(result.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
+      "global-styles-drift",
+    ]);
+    expect(result.diagnostics[0]?.forceable).toBe(true);
+    expect(result.styles?.sources).toEqual([
+      {
+        itemId: "@house/carousel",
+        dependsOn: [],
+        imports: ["@mantine/carousel/styles.css"],
+      },
+      {
+        itemId: "@house/untouched",
+        dependsOn: [],
+        imports: ["@mantine/shared/styles.css"],
+      },
+    ]);
+  });
+
+  test("removes a touched item's contribution when its updated item declares no css", () => {
+    const priorText = `${INIT_STYLES_SOURCE}@import "@mantine/carousel/styles.css";\n@import "@mantine/shared/styles.css";\n`;
+    const prior: ReceiptStyles = {
+      destination: "src/manteen.css",
+      sha256: hash(priorText),
+      sources: [
+        {
+          itemId: "@house/carousel",
+          dependsOn: [],
+          imports: ["@mantine/carousel/styles.css"],
+        },
+        {
+          itemId: "@house/untouched",
+          dependsOn: [],
+          imports: ["@mantine/shared/styles.css"],
+        },
+      ],
+    };
+    const result = foldStyles({
+      root: "/project",
+      destination: "/project/src/manteen.css",
+      prior,
+      base: { text: priorText, sha256: hash(priorText) },
+      items: [resolved("@house/carousel", [])],
+    });
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.styles?.sources).toEqual([
+      {
+        itemId: "@house/untouched",
+        dependsOn: [],
+        imports: ["@mantine/shared/styles.css"],
+      },
+    ]);
+    expect(result.styles?.text).toBe(
+      `${INIT_STYLES_SOURCE}@import "@mantine/shared/styles.css";\n`,
+    );
+  });
+});
+
+describe("receipt v2", () => {
+  test("validates v1 against its frozen schema and migrates only in memory", () => {
+    const v1 = `${JSON.stringify({ lockfileVersion: 1, items: [], theme: null }, null, 2)}\n`;
+    const result = parseReceipt(v1, createReceiptValidator());
+
+    expect(result).toEqual({
+      ok: true,
+      receipt: { lockfileVersion: 2, items: [], theme: null, styles: null },
+    });
+    expect(v1).toContain('"lockfileVersion": 1');
+  });
+
+  test("validates a v2 style provenance record", () => {
+    const result = parseReceipt(
+      JSON.stringify({
+        lockfileVersion: 2,
+        items: [],
+        theme: null,
+        styles: {
+          destination: "src/manteen.css",
+          sha256: "a".repeat(64),
+          sources: [
+            {
+              itemId: "@house/carousel",
+              dependsOn: [],
+              imports: ["@mantine/carousel/styles.css"],
+            },
+          ],
+        },
+      }),
+      createReceiptValidator(),
+    );
+
+    expect(result.ok).toBe(true);
+  });
+});

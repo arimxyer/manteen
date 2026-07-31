@@ -44,6 +44,38 @@ describe("vocabulary mapping", () => {
 
     expect(files[0]!.content).toContain("export function EmptyState");
   });
+
+  test("carries author documentation into the installable item", () => {
+    const documented = toWireItem(
+      {
+        name: "documented",
+        kind: "component",
+        files: [{ path: "src/callout.tsx", as: "component" }],
+        docs: "Source and usage notes.",
+      },
+      "@kit",
+      join(FIXTURES, "kit"),
+    );
+
+    expect(documented.docs).toBe("Source and usage notes.");
+  });
+
+  test("compiles package stylesheet imports through the wire css field", () => {
+    const styled = toWireItem(
+      {
+        name: "styled",
+        kind: "component",
+        npm: ["@mantine/carousel@^9"],
+        css: ["@mantine/carousel/styles.css"],
+        files: [{ path: "src/callout.tsx", as: "component" }],
+      },
+      "@kit",
+      join(FIXTURES, "kit"),
+    );
+
+    expect(styled.css).toEqual({ '@import "@mantine/carousel/styles.css"': {} });
+    expect(createWireValidator()(styled)).toBeNull();
+  });
 });
 
 describe("dependency qualification", () => {
@@ -163,6 +195,28 @@ describe("validation", () => {
     });
 
     expect(errors).not.toBeNull();
+  });
+
+  test("rejects duplicate or empty package stylesheet imports", () => {
+    const duplicate = {
+      name: "bad",
+      namespace: "@bad",
+      items: [
+        {
+          name: "x",
+          kind: "component",
+          css: ["@mantine/carousel/styles.css", "@mantine/carousel/styles.css"],
+          files: [{ path: "a.tsx", as: "component" }],
+        },
+      ],
+    };
+    const empty = {
+      ...duplicate,
+      items: [{ ...duplicate.items[0], css: [""] }],
+    };
+
+    expect(validateCatalog(duplicate)).not.toBeNull();
+    expect(validateCatalog(empty)).not.toBeNull();
   });
 
   test("compileRegistry throws rather than emitting junk for a missing catalog", () => {

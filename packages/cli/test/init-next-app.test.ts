@@ -54,6 +54,11 @@ describe("W6 Next App Router adapter", () => {
     expect(content).toContain('import { Geist, Geist_Mono } from "next/font/google";');
     expect(content.indexOf('from "next"')).toBeLessThan(content.indexOf('from "next/font/google"'));
     expect(content).toContain('import "@mantine/core/styles.css";');
+    expect(content).toContain('import "../manteen.css";');
+    expect(content.indexOf("@mantine/core/styles.css")).toBeLessThan(
+      content.indexOf("../manteen.css"),
+    );
+    expect(content.indexOf("../manteen.css")).toBeLessThan(content.indexOf("./globals.css"));
     expect(content).toContain(
       'import { MantineProvider, ColorSchemeScript, mantineHtmlProps } from "@mantine/core";',
     );
@@ -142,6 +147,7 @@ function input(layoutSource: string): InitAdapterInput {
         configPath: `${ROOT}/manteen.json`,
         themePath: `${SOURCE_ROOT}/lib/theme.ts`,
         themeImport: "@/lib/theme",
+        stylesPath: `${SOURCE_ROOT}/manteen.css`,
       },
       files: new Map([[LAYOUT, layoutSource]]),
       declaredDependencies: new Map(),

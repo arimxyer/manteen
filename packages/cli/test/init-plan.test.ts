@@ -32,6 +32,7 @@ function project(
       configPath: join(ROOT, "manteen.json"),
       themePath: join(sourceRoot, "lib/theme.ts"),
       themeImport: "@/lib/theme",
+      stylesPath: join(sourceRoot, "manteen.css"),
     },
     files,
     declaredDependencies,
@@ -81,6 +82,7 @@ describe("W6 init plan composition", () => {
     expect(planned.files.map((file) => file.kind).sort()).toEqual([
       "manteen-config",
       "postcss",
+      "styles",
       "theme",
       "tsconfig",
     ]);

@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://manteen.dev/schema/manteen.lock.schema.json",
+  "title": "manteen install receipt",
+  "description": "What manteen wrote, where, and on whose behalf. Committed to VCS: it is a safety record, not a cache, and its value is cross-machine and CI determinism. Never edited by hand except to hand a destination back, which is done by deleting an item's entry.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["lockfileVersion", "items", "theme"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Never emitted by manteen; preserved verbatim when present, so wiring up editor completion does not make the file churn on every run. Declared here only so `additionalProperties: false` does not reject it."
+    },
+    "lockfileVersion": {
+      "const": 1,
+      "description": "A reader accepts <= its own version and refuses >. Failing closed on version skew is the correct default for a file whose whole job is preventing a silent overwrite: a v2 field that CHANGES THE MEANING of a v1 field would otherwise pass unnoticed. The escape is --force."
+    },
+    "items": {
+      "type": "array",
+      "description": "Sorted by id. An array rather than an object map because a plain-object map returns a function for the INHERITED keys `toString` and `constructor`, so every lookup would need an Object.hasOwn guard. Cross-entry uniqueness of ids and of destinations is enforced in parseReceipt — JSON Schema cannot express it.",
+      "items": { "$ref": "#/definitions/item" }
+    },
+    "theme": {
+      "description": "The folded theme, or null when this project has no theme contribution. A theme file is folded, not owned (D5), so its destination never appears under an item.",
+      "oneOf": [{ "type": "null" }, { "$ref": "#/definitions/theme" }]
+    }
+  },
+  "definitions": {
+    "receiptPath": {
+      "type": "string",
+      "minLength": 1,
+      "description": "POSIX, relative to the project root. The pattern rejects a leading slash, a Windows drive letter and any backslash; the `.`/`..` segment rule is enforced in code, because a caller may inject a no-op validator and a hand-edited receipt must never redirect a write outside the project.",
+      "pattern": "^(?![A-Za-z]:)[^/\\\\][^\\\\]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Lowercase hex. Of the UTF-8 encoding of the STRING manteen wrote — not of the bytes on disk now. The gap between the two is the drift signal."
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["destination", "wireType", "sha256"],
+      "properties": {
+        "destination": { "$ref": "#/definitions/receiptPath" },
+        "wireType": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/definitions/sha256" }
+      }
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "registry", "sourceUrl", "wireType", "direct", "files"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Canonical id: `@namespace/name`, or `url:<redacted url>`."
+        },
+        "registry": {
+          "type": ["string", "null"],
+          "description": "The namespace this item came from; null for a bare `url:` reference, which has none. Reporters print `registry ?? sourceUrl` so two colliding url refs stay distinguishable."
+        },
+        "sourceUrl": {
+          "type": "string",
+          "minLength": 1,
+          "description": "REDACTED — `${VAR}` is left literal. This file is committed; an expanded token must never reach it."
+        },
+        "wireType": { "type": "string", "minLength": 1 },
+        "direct": {
+          "type": "boolean",
+          "description": "Appeared as a root ref in some run. Sticky across refreshes, because a transitive re-reach must not demote a user's explicit install."
+        },
+        "files": {
+          "type": "array",
+          "description": "Sorted by destination. May be empty: a theme item whose only file was absorbed by the fold keeps its entry and shows up in `theme.sources` instead.",
+          "items": { "$ref": "#/definitions/file" }
+        }
+      }
+    },
+    "themeSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["itemId", "kind", "path"],
+      "properties": {
+        "itemId": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["absorbed-file", "meta-fragment"] },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The SOURCE path inside the registry item, for provenance. Never a destination — nothing is written at it."
+        }
+      }
+    },
+    "theme": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["destination", "sha256", "sources"],
+      "properties": {
+        "destination": { "$ref": "#/definitions/receiptPath" },
+        "sha256": { "$ref": "#/definitions/sha256" },
+        "sources": {
+          "type": "array",
+          "description": "CUMULATIVE across runs, in fold order, deduped on (itemId, path). Deliberately NOT sorted: fold order is semantic (D6), and `prefer: \"base\"` makes it decide which leaf survives.",
+          "items": { "$ref": "#/definitions/themeSource" }
+        }
+      }
+    }
+  }
+}

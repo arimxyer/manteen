@@ -64,6 +64,7 @@ export function preflight(plan: Plan): ApplyFailure | null {
     assertInsideRoot(file.destination, plan.root);
   }
   if (plan.theme !== null) assertInsideRoot(plan.theme.destination, plan.root);
+  if (plan.styles !== null) assertInsideRoot(plan.styles.destination, plan.root);
   assertInsideRoot(plan.receipt.path, plan.root);
 
   const stale: string[] = [];
@@ -78,6 +79,7 @@ export function preflight(plan: Plan): ApplyFailure | null {
 
   for (const file of plan.files) note(file.destination, file.existing?.sha256 ?? null);
   if (plan.theme !== null) note(plan.theme.destination, plan.theme.base?.sha256 ?? null);
+  if (plan.styles !== null) note(plan.styles.destination, plan.styles.base?.sha256 ?? null);
 
   // The receipt's check is asymmetric and BOTH arms are required. `present:false`
   // asserts the file is still absent — if a concurrent run (or a pull, or a

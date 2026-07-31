@@ -44,6 +44,7 @@ function input(app = GENERATED_APP, document = GENERATED_DOCUMENT): InitAdapterI
         configPath: resolve(ROOT, "manteen.json"),
         themePath: resolve(SOURCE_ROOT, "lib/theme.ts"),
         themeImport: "@/lib/theme",
+        stylesPath: resolve(SOURCE_ROOT, "manteen.css"),
       },
       files: new Map([
         [APP_PATH, app],

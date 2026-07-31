@@ -59,6 +59,7 @@ const MINIMAL_CONFIG: MantineConfig = {
     lib: "@/lib",
   },
   theme: "src/lib/theme.ts",
+  styles: "src/manteen.css",
 };
 
 /**
@@ -244,6 +245,10 @@ export function loadConfig(cwd: string = process.cwd()): ConfigLoadResult {
     const themeError = outsideRoot("theme", raw.theme, root);
     if (themeError) return fail([themeError]);
   }
+  if (raw.styles !== undefined) {
+    const stylesError = outsideRoot("styles", raw.styles, root);
+    if (stylesError) return fail([stylesError]);
+  }
 
   const target = createAliasResolver(tsconfig, raw.aliases, root, existsSync);
 
@@ -274,6 +279,7 @@ export function loadConfig(cwd: string = process.cwd()): ConfigLoadResult {
     aliases: raw.aliases,
     aliasBacking,
     themeDestination: raw.theme === undefined ? null : resolve(root, raw.theme),
+    stylesDestination: raw.styles === undefined ? null : resolve(root, raw.styles),
     tsconfigPath,
     tsconfig,
     resolutions: new Map(Object.entries(raw.resolutions ?? {})),

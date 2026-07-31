@@ -22,6 +22,7 @@ const REPO_ROOT = resolve(import.meta.dirname, "..");
 const REPOSITORY_URL = "git+https://github.com/arimxyer/manteen.git";
 const BUGS_URL = "https://github.com/arimxyer/manteen/issues";
 const RELEASE_WORKFLOW = join(REPO_ROOT, ".github/workflows/release.yml");
+const PAGES_WORKFLOW = join(REPO_ROOT, ".github/workflows/pages.yml");
 
 const PACKAGES = [
   {
@@ -178,6 +179,18 @@ function inspectWorkflow() {
   );
 }
 
+function inspectPagesWorkflow() {
+  const source = readFileSync(PAGES_WORKFLOW, "utf8");
+  expect(
+    source.includes("workflow_dispatch:"),
+    "pages.yml: registry deployment must have an explicit manual dispatch",
+  );
+  expect(
+    !/push:\s*\n\s*branches:\s*\[main\]/.test(source),
+    "pages.yml: registry must not deploy automatically before its client contract is public",
+  );
+}
+
 function npmPackRecord(spec) {
   const run = spawnSync("npm", ["pack", "--dry-run", "--ignore-scripts", "--json"], {
     cwd: spec.packageRoot,
@@ -239,12 +252,15 @@ function requestedTag() {
 }
 
 const manifests = PACKAGES.map(inspectManifest).filter(Boolean);
+const kit = manifests.find((entry) => entry.name === "manteen-kit");
 const client = manifests.find((entry) => entry.name === "manteen");
+const expectedKitRange = kit ? `^${kit.manifest.version}` : null;
 expect(
-  client?.manifest.dependencies?.["manteen-kit"] === "^0.1.0",
-  "manteen: dependency must remain publishable manteen-kit@^0.1.0",
+  client?.manifest.dependencies?.["manteen-kit"] === expectedKitRange,
+  `manteen: dependency must match publishable manteen-kit@${String(expectedKitRange)}`,
 );
 inspectWorkflow();
+inspectPagesWorkflow();
 
 const tag = requestedTag();
 if (tag) {

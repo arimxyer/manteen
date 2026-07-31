@@ -151,6 +151,7 @@ function layoutFor(root: string, framework: InitFrameworkSet): InitProjectLayout
     configPath: join(root, "manteen.json"),
     themePath: join(sourceRoot, "lib", "theme.ts"),
     themeImport: "@/lib/theme",
+    stylesPath: join(sourceRoot, "manteen.css"),
   };
 }
 
@@ -194,6 +195,7 @@ export async function createProjectSnapshot(
     layout.configPath,
     ...(frameworkConfigPath === null ? [] : [frameworkConfigPath]),
     layout.themePath,
+    layout.stylesPath,
     ...ENTRY_PATHS.map((path) => join(root, path)),
     ...postcssCandidatePaths(framework).map((path) => join(root, path)),
   ]);

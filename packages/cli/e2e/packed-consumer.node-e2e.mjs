@@ -231,7 +231,7 @@ test(`packed consumer installs and runs with ${SELECTED_PM ?? "no selected packa
       packageManager: `${pm}@${PACKAGE_MANAGER_VERSIONS[pm]}`,
       // The kit does not exist on npm before W8's kit-first publish. Each
       // manager's ordinary resolution field keeps this pre-publish smoke
-      // hermetic while leaving the packed client's real ^0.1.0 edge intact.
+      // hermetic while leaving the packed client's real semver edge intact.
       ...localKitResolution(pm, kitTarball),
     });
     if (pm === "yarn") {
@@ -342,7 +342,8 @@ test(`packed consumer installs and runs with ${SELECTED_PM ?? "no selected packa
     );
 
     const receipt = JSON.parse(readFileSync(join(consumer, "manteen.lock.json"), "utf8"));
-    assert.equal(receipt.lockfileVersion, 1, added.transcript);
+    assert.equal(receipt.lockfileVersion, 2, added.transcript);
+    assert.equal(receipt.styles, null, added.transcript);
     assert.equal(receipt.items.length, 1, added.transcript);
     assert.equal(receipt.items[0].id, "@packed/portable-smoke", added.transcript);
     assert.equal(receipt.items[0].files.length, 1, added.transcript);

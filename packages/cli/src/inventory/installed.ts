@@ -40,6 +40,7 @@ import type {
   InstalledFile,
   InstalledItem,
   InstalledSource,
+  InstalledStyles,
   InstalledTheme,
   InventoryNote,
   LocalStatus,
@@ -107,7 +108,7 @@ export function fromReceiptState(state: ReceiptState, root: string, hash: FileHa
   const notes = noteFor(source, root);
 
   if (!state.present || !state.ok) {
-    return { root, source, items: [], theme: null, notes };
+    return { root, source, items: [], theme: null, styles: null, notes };
   }
 
   const items: InstalledItem[] = state.receipt.items
@@ -145,7 +146,20 @@ export function fromReceiptState(state: ReceiptState, root: string, hash: FileHa
     };
   }
 
-  return { root, source, items, theme, notes };
+  const receiptStyles = state.receipt.styles;
+  let styles: InstalledStyles | null = null;
+  if (receiptStyles !== null) {
+    const destination = fromReceiptPath(receiptStyles.destination, root);
+    styles = {
+      destination,
+      receiptPath: receiptStyles.destination,
+      recordedSha256: receiptStyles.sha256,
+      currentSha256: hash(destination),
+      sources: receiptStyles.sources,
+    };
+  }
+
+  return { root, source, items, theme, styles, notes };
 }
 
 /**

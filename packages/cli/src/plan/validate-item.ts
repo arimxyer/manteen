@@ -26,6 +26,7 @@ import { resolve } from "node:path";
 import Ajv, { type ValidateFunction } from "ajv";
 import { createWireValidator } from "manteen-kit";
 
+import { parseNpmSpec } from "./deps";
 import { diag } from "./diagnostics";
 import type { CanonicalId, Diagnostic } from "./types";
 
@@ -82,6 +83,7 @@ export interface ValidatedItem {
   dependencies: string[];
   devDependencies: string[];
   registryDependencies: string[];
+  cssImports: string[];
   meta: MantineMeta;
 }
 
@@ -195,6 +197,7 @@ export function createItemValidator(): ItemValidator {
     }
 
     const meta = readMeta(wire.meta, validateMeta, context, diagnostics);
+    const cssImports = readCssImports(wire.css, wire.dependencies ?? [], context, diagnostics);
 
     // No `diagnostics.some(error)` check here — see `ItemValidation`. An error
     // collected above has already dropped the field or file it was about, so
@@ -209,6 +212,7 @@ export function createItemValidator(): ItemValidator {
         dependencies: wire.dependencies ?? [],
         devDependencies: wire.devDependencies ?? [],
         registryDependencies: wire.registryDependencies ?? [],
+        cssImports,
         meta,
       },
       diagnostics,
@@ -222,8 +226,107 @@ interface WireDoc {
   dependencies?: string[];
   devDependencies?: string[];
   registryDependencies?: string[];
+  css?: unknown;
   files?: { path: string; type: string; target?: string; content?: unknown }[];
   meta?: unknown;
+}
+
+/**
+ * D26-D27: deliberately narrower than shadcn's full CSS object. The exact key
+ * emitted by the kit is the executable contract; everything else refuses
+ * instead of being partially interpreted or silently discarded.
+ */
+function readCssImports(
+  rawCss: unknown,
+  dependencies: readonly string[],
+  context: ValidateContext,
+  diagnostics: Diagnostic[],
+): string[] {
+  if (rawCss === undefined) return [];
+  if (!isPlainObject(rawCss)) {
+    diagnostics.push(
+      diag(
+        "css-unsupported",
+        `${context.id} has a css value outside Manteen's import-only contract. Declare package styles as keys shaped exactly like @import "package/styles.css" with an empty object value.`,
+        { items: [context.id] },
+      ),
+    );
+    return [];
+  }
+
+  const runtimePackages = new Set(dependencies.map((spec) => parseNpmSpec(spec).name));
+  const imports: string[] = [];
+
+  for (const [rule, value] of Object.entries(rawCss)) {
+    const match = /^@import "([^"]+)"$/.exec(rule);
+    const source = match?.[1];
+    if (source === undefined || !isPlainObject(value) || Object.keys(value).length > 0) {
+      diagnostics.push(
+        diag(
+          "css-unsupported",
+          `${context.id} declares unsupported CSS rule ${JSON.stringify(rule)}. Manteen accepts only exact package imports with empty object values.`,
+          { items: [context.id] },
+        ),
+      );
+      continue;
+    }
+
+    const packageName = packageNameForStyleImport(source);
+    if (packageName === null) {
+      diagnostics.push(
+        diag(
+          "css-unsupported",
+          `${context.id} declares ${JSON.stringify(source)}, which is not a bare package stylesheet import. Relative paths, URLs, media imports and other CSS forms are not supported.`,
+          { items: [context.id] },
+        ),
+      );
+      continue;
+    }
+
+    if (!runtimePackages.has(packageName)) {
+      diagnostics.push(
+        diag(
+          "css-dependency-missing",
+          `${context.id} imports ${JSON.stringify(source)} from ${packageName}, but that package is not declared in the item's runtime dependencies.`,
+          { items: [context.id] },
+        ),
+      );
+      continue;
+    }
+
+    imports.push(source);
+  }
+
+  return imports;
+}
+
+function packageNameForStyleImport(source: string): string | null {
+  if (
+    source === "" ||
+    source.startsWith(".") ||
+    source.startsWith("/") ||
+    source.includes(":") ||
+    source.includes("\\") ||
+    /\s/.test(source)
+  ) {
+    return null;
+  }
+
+  const segments = source.split("/");
+  if (segments.some((segment) => segment === "" || segment === "." || segment === ".."))
+    return null;
+  if (source.startsWith("@")) {
+    if (segments.length < 2 || !isPackageSegment(segments[0]!.slice(1))) return null;
+    if (!isPackageSegment(segments[1]!)) return null;
+    return `${segments[0]}/${segments[1]}`;
+  }
+
+  if (!isPackageSegment(segments[0]!)) return null;
+  return segments[0]!;
+}
+
+function isPackageSegment(value: string): boolean {
+  return /^[a-z0-9][a-z0-9._~-]*$/.test(value);
 }
 
 function compileMetaSchema(): ValidateFunction {

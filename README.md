@@ -23,9 +23,9 @@ Any client that speaks the registry format can install from it today:
 
 `manteen` adds what that client cannot express — safe framework initialization, a Mantine version
 gate, provider setup, theme-fragment composition, maintenance commands, and refusal when two
-registries would overwrite each other's component. It is in active development and unpublished;
+registries would overwrite each other's component. `manteen` and `manteen-kit` are public on npm;
 see [packages/cli](packages/cli/README.md) for usage and [docs/roadmap.md](docs/roadmap.md) for the
-remaining hardening/release work.
+current content work.
 
 ```bash
 manteen init --dry-run
@@ -66,6 +66,13 @@ correctly. Verified in both directions — see [Interop](#interop).
 
 Rule of thumb: if an upstream maintainer will keep fixing it, it belongs in `package.json`.
 If nobody but you maintains it and every project wants to tweak it, it belongs here.
+
+The first Wc content milestone also curates eight MIT-licensed
+[Mantine UI](https://ui.mantine.dev/) examples into prop-driven registry items. Their source is
+pinned and attributed, and installing any of them brings one deduplicated upstream license notice
+with it. Carousel and Dropzone exercise the managed package-styles lifecycle across supported
+framework shapes. See the [Wc handoff](docs/wc-registry-content-handoff.md) for the selection,
+adaptation and verification boundary.
 
 ## Layout
 
@@ -115,6 +122,7 @@ so they typecheck here and land correctly there.
   "mantine": ">=9",             // version GATE, checked against installed @mantine/core
   "provider": true,             // requires MantineProvider
   "npm": ["@mantine/core@^9"],
+  "css": ["@mantine/carousel/styles.css"], // exact package imports only
   "uses": ["empty-state"],      // bare name — namespaced at build time
   "files": [{ "path": "...", "as": "component" }],
   "themeFragment": "registry/lib/data-table.theme.ts",

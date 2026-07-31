@@ -49,6 +49,8 @@ export interface MantineConfig {
   registries: Record<string, RegistrySource>;
   aliases: Record<AliasKey, string>;
   theme?: string;
+  /** Manteen-owned composed package stylesheet, relative to this file. */
+  styles?: string;
   tsconfig?: string;
   resolutions?: Record<string, string>;
 }
@@ -112,6 +114,8 @@ export interface LoadedConfig {
   aliasBacking: Record<AliasKey, AliasBacking>;
   /** ABSOLUTE resolved `config.theme`, or null when unset. The file need not exist. */
   themeDestination: string | null;
+  /** ABSOLUTE resolved `config.styles`, or null for a pre-global-styles project. */
+  stylesDestination: string | null;
   /** ABSOLUTE, existence proven. */
   tsconfigPath: string;
   tsconfig: TsConfigResult;

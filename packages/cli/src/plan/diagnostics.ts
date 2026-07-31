@@ -67,6 +67,15 @@ export const DIAGNOSTIC_CODES: Record<DiagnosticCode, DiagnosticSpec> = {
   "depth-exceeded": { severity: "error", forceable: false, exit: 1 },
   "node-limit": { severity: "error", forceable: false, exit: 1 },
   "response-too-large": { severity: "error", forceable: false, exit: 1 },
+  /** D26-D27: the client intentionally implements only package-level import
+   * declarations from the wire css surface. */
+  "css-unsupported": { severity: "error", forceable: false, exit: 1 },
+  /** A package stylesheet must be present at consumer runtime. */
+  "css-dependency-missing": { severity: "error", forceable: false, exit: 1 },
+  /** No destination may be guessed for a composed, project-owned artifact. */
+  "global-styles-unconfigured": { severity: "error", forceable: false, exit: 1 },
+  /** Unknown pre-existing bytes cannot be silently adopted as Manteen-owned. */
+  "global-styles-uninitialized": { severity: "error", forceable: false, exit: 1 },
 
   // ---- blocking, forceable --------------------------------------------------
   /** Ranges provably disjoint (`semver.intersects` false, D10). */
@@ -77,6 +86,9 @@ export const DIAGNOSTIC_CODES: Record<DiagnosticCode, DiagnosticSpec> = {
    *  cross-run check off for the run, because `buildIndex` returns an empty map
    *  for an unreadable state. The message must say both. */
   "receipt-unreadable": { severity: "error", forceable: true, exit: 1 },
+  /** Explicit ownership makes force precise: restore generated imports while
+   * leaving the later host stylesheet untouched (D31). */
+  "global-styles-drift": { severity: "error", forceable: true, exit: 1 },
 
   // ---- blocking, exit 2 -----------------------------------------------------
   "no-package-manager": { severity: "error", forceable: false, exit: 2 },

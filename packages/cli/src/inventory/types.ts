@@ -30,6 +30,7 @@ import type {
   ApplyOutcome,
   CanonicalId,
   Plan,
+  PlannedStyleSource,
   ReceiptPath,
   ReceiptUnreadable,
   ThemeSourceKind,
@@ -182,6 +183,12 @@ export interface InstalledTheme extends HashPair {
   sources: readonly { itemId: CanonicalId; kind: ThemeSourceKind; path: string }[];
 }
 
+export interface InstalledStyles extends HashPair {
+  destination: string;
+  receiptPath: ReceiptPath;
+  sources: readonly PlannedStyleSource[];
+}
+
 /**
  * Where the inventory came from, so a command can say "no receipt yet" without
  * inspecting `items.length` and guessing.
@@ -211,6 +218,7 @@ export interface Installed {
    *  sorted rather than taken on trust. Empty unless `source.state` is `"ok"`. */
   items: InstalledItem[];
   theme: InstalledTheme | null;
+  styles: InstalledStyles | null;
   /** At most one, and only for `no-receipt` / `receipt-unreadable`. */
   notes: InventoryNote[];
 }
@@ -339,6 +347,7 @@ export interface ItemDetail {
   dependencies: string[];
   devDependencies: string[];
   registryDependencies: string[];
+  cssImports: string[];
   meta: DetailMeta;
 }
 
@@ -457,11 +466,20 @@ export interface DiffTheme extends HashPair {
   patch: string | null;
 }
 
+export interface DiffStyles extends HashPair {
+  destination: string;
+  receiptPath: ReceiptPath;
+  upstreamSha256: string | null;
+  change: FileChange;
+  patch: string | null;
+}
+
 export interface DiffResult {
   root: string;
   /** Sorted by id. */
   items: DiffItem[];
   theme: DiffTheme | null;
+  styles: DiffStyles | null;
   notes: InventoryNote[];
 }
 

@@ -61,7 +61,8 @@ the vendored interchange schema, exiting non-zero on either.
         { "path": "src/use-data-grid.ts", "as": "hook" }
       ],
       "themeFragment": "src/data-grid.theme.ts",
-      "stylesApi": { "DataGrid": ["root", "header", "row"] }
+      "stylesApi": { "DataGrid": ["root", "header", "row"] },
+      "docs": "Usage, source and attribution notes carried into the compiled item."
     }
   ]
 }
@@ -69,6 +70,10 @@ the vendored interchange schema, exiting non-zero on either.
 
 Unknown fields are rejected rather than dropped, so the authoring format can't quietly drift
 toward the wire format.
+
+`docs` is copied into the installable item document. Use it for human-facing usage, source and
+attribution notes; it is not a substitute for shipping any license notice required with copied
+source.
 
 `mantine`, `provider`, `themeFragment` and `stylesApi` have no wire-format equivalent, so
 they compile into `meta.mantine` — an open object that survives into both the item JSON and

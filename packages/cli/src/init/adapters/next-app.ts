@@ -7,15 +7,16 @@ import {
   type JsxSelfClosingElement,
   Node,
   Project,
+  QuoteKind,
   type SourceFile,
   SyntaxKind,
 } from "ts-morph";
 
 import { initSourceUnsupported } from "../diagnostics";
+import { ensureManagedStyleImports, managedStylesImport } from "../styles";
 import type { InitAdapter, InitAdapterInput, InitAdapterResult } from "../types";
 
 const MANTINE_CORE = "@mantine/core";
-const MANTINE_STYLES = "@mantine/core/styles.css";
 
 interface TextPatch {
   start: number;
@@ -60,7 +61,15 @@ function transformLayout(
   destination: string,
   source: string,
 ): InitAdapterResult {
-  const project = new Project({ useInMemoryFileSystem: true });
+  const project = new Project({
+    useInMemoryFileSystem: true,
+    manipulationSettings: {
+      quoteKind:
+        /(?:from\s*|import\s*)(['"])/m.exec(source)?.[1] === "'"
+          ? QuoteKind.Single
+          : QuoteKind.Double,
+    },
+  });
   const file = project.createSourceFile(destination, source);
   const rootFunctions = file.getFunctions().filter((candidate) => candidate.isDefaultExport());
 
@@ -183,11 +192,16 @@ function transformLayout(
   const imports = newImports(file, input, missingCoreBindings, theme);
   if (imports) patches.push(imports);
 
-  if (patches.length === 0) return emptyResult();
-
   for (const patch of patches.sort((left, right) => right.start - left.start)) {
     file.replaceText([patch.start, patch.end], patch.text);
   }
+
+  ensureManagedStyleImports(
+    file,
+    managedStylesImport(destination, input.project.layout.stylesPath),
+  );
+
+  if (file.getFullText() === source) return emptyResult();
 
   return {
     files: [{ kind: "entry", destination, content: file.getFullText() }],
@@ -277,10 +291,6 @@ function newImports(
 ): TextPatch | null {
   const imports: string[] = [];
   const quote = importQuote(file);
-
-  if (!file.getImportDeclaration(MANTINE_STYLES)) {
-    imports.push(`import ${quote}${MANTINE_STYLES}${quote};`);
-  }
 
   if (missingCore.length > 0) {
     const specifiers = missingCore.map((binding) =>

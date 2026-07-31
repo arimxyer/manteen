@@ -1,0 +1,22 @@
+/*
+ * Adapted from Mantine UI's ButtonProgress at
+ * ffbf61c559f374a7ea28fcf00355e84dcbe9a908. MIT licensed; see
+ * LICENSES/MANTINE-UI.txt after installation.
+ */
+.button {
+  position: relative;
+  transition: background-color 150ms ease;
+}
+
+.progress {
+  position: absolute;
+  z-index: 0;
+  inset: -1px;
+  height: auto;
+  background-color: transparent;
+}
+
+.label {
+  position: relative;
+  z-index: 1;
+}

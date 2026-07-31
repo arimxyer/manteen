@@ -57,6 +57,213 @@
         { "path": "registry/blocks/data-table/use-data-table.ts", "as": "hook" }
       ],
       "themeFragment": "registry/lib/data-table.theme.ts"
+    },
+    {
+      "name": "mantine-ui-license",
+      "kind": "file",
+      "title": "Mantine UI License",
+      "description": "Shared MIT license notice installed with Mantine UI-derived registry items.",
+      "files": [
+        {
+          "path": "registry/mantine-ui/LICENSE",
+          "as": "file",
+          "target": "~/LICENSES/MANTINE-UI.txt"
+        }
+      ],
+      "docs": "Verbatim MIT license from mantinedev/ui.mantine.dev at ffbf61c559f374a7ea28fcf00355e84dcbe9a908."
+    },
+    {
+      "name": "article-card",
+      "kind": "component",
+      "title": "Article Card",
+      "description": "Prop-driven article preview with author, rating and action affordances.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/article-card/article-card.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/article-card/article-card.module.css",
+          "as": "style",
+          "target": "@ui/article-card.module.css"
+        }
+      ],
+      "docs": "Adapted from Mantine UI ArticleCard at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; demo data removed and replaced with typed props."
+    },
+    {
+      "name": "authentication-form",
+      "kind": "block",
+      "title": "Authentication Form",
+      "description": "Login and registration form with validation and optional social callbacks.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": [
+        "@mantine/core@^9",
+        "@mantine/form@^9",
+        "@mantine/hooks@^9",
+        "@tabler/icons-react@^3"
+      ],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/authentication-form/authentication-form.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/authentication-form/google-button.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/authentication-form/github-button.tsx",
+          "as": "component"
+        }
+      ],
+      "docs": "Adapted from Mantine UI AuthenticationForm at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; submission and social actions are exposed as callbacks."
+    },
+    {
+      "name": "button-progress",
+      "kind": "component",
+      "title": "Progress Button",
+      "description": "Button with an integrated timed progress layer and completion callback.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/core@^9", "@mantine/hooks@^9"],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/button-progress/button-progress.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/button-progress/button-progress.module.css",
+          "as": "style",
+          "target": "@ui/button-progress.module.css"
+        }
+      ],
+      "docs": "Adapted from Mantine UI ButtonProgress at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; labels, duration and completion are configurable."
+    },
+    {
+      "name": "dnd-list",
+      "kind": "component",
+      "title": "Sortable List",
+      "description": "Accessible pointer and keyboard sortable list with reorder callbacks.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": [
+        "@dnd-kit/core@^6.3.1",
+        "@dnd-kit/sortable@^10.0.0",
+        "@dnd-kit/utilities@^3.2.2",
+        "@mantine/core@^9",
+        "@mantine/hooks@^9",
+        "clsx@^2.1.1"
+      ],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/dnd-list/dnd-list.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/dnd-list/dnd-list.module.css",
+          "as": "style",
+          "target": "@ui/dnd-list.module.css"
+        }
+      ],
+      "docs": "Adapted from Mantine UI DndList at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; hardcoded periodic-table data was replaced with a reusable item contract."
+    },
+    {
+      "name": "stats-grid",
+      "kind": "block",
+      "title": "Stats Grid",
+      "description": "Responsive metric grid with custom icons, comparison labels and trends.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/stats-grid/stats-grid.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/stats-grid/stats-grid.module.css",
+          "as": "style",
+          "target": "@ui/stats-grid.module.css"
+        }
+      ],
+      "docs": "Adapted from Mantine UI StatsGrid at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; metrics and icons are supplied by the consumer."
+    },
+    {
+      "name": "table-sort",
+      "kind": "block",
+      "title": "Sortable Table",
+      "description": "Searchable and sortable name, email and company table with an empty state.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/table-sort/table-sort.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/table-sort/table-sort.module.css",
+          "as": "style",
+          "target": "@ui/table-sort.module.css"
+        }
+      ],
+      "docs": "Adapted from Mantine UI TableSort at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; accepts consumer data and derives filtered rows without duplicating prop state."
+    },
+    {
+      "name": "cards-carousel",
+      "kind": "component",
+      "title": "Cards Carousel",
+      "description": "Responsive image-card carousel with consumer-owned data and optional actions.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/carousel@^9", "@mantine/core@^9", "@mantine/hooks@^9"],
+      "css": ["@mantine/carousel/styles.css"],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/cards-carousel/cards-carousel.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/cards-carousel/cards-carousel.module.css",
+          "as": "style",
+          "target": "@ui/cards-carousel.module.css"
+        }
+      ],
+      "docs": "Adapted from Mantine UI CardsCarousel at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; hardcoded travel data became typed items with links or selection callbacks."
+    },
+    {
+      "name": "dropzone-button",
+      "kind": "component",
+      "title": "Dropzone Button",
+      "description": "Drag-and-drop file input with explicit accept, reject and picker behavior.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/core@^9", "@mantine/dropzone@^9", "@tabler/icons-react@^3"],
+      "css": ["@mantine/dropzone/styles.css"],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/dropzone-button/dropzone-button.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/dropzone-button/dropzone-button.module.css",
+          "as": "style",
+          "target": "@ui/dropzone-button.module.css"
+        }
+      ],
+      "docs": "Adapted from Mantine UI DropzoneButton at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; drop/reject callbacks, constraints and user-facing text are configurable."
     }
   ]
 }

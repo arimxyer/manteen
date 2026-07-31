@@ -3,10 +3,10 @@ import { resolve } from "node:path";
 import { Node, Project, QuoteKind, type SourceFile, SyntaxKind } from "ts-morph";
 
 import { initSourceUnsupported } from "../diagnostics";
+import { ensureManagedStyleImports, managedStylesImport } from "../styles";
 import type { InitAdapter, InitAdapterResult } from "../types";
 
 const MANTINE_CORE = "@mantine/core";
-const MANTINE_STYLES = "@mantine/core/styles.css";
 const THEME_MODULE = "@/lib/theme";
 
 interface TextEdit {
@@ -90,7 +90,11 @@ export const reactRouterAdapter: InitAdapter = {
     }
 
     const jsxPatched = applyTextEdits(source, edits);
-    const content = ensureImports(rootPath, jsxPatched);
+    const content = ensureImports(
+      rootPath,
+      jsxPatched,
+      managedStylesImport(rootPath, input.project.layout.stylesPath),
+    );
 
     return {
       files: content === source ? [] : [{ kind: "entry", destination: rootPath, content }],
@@ -225,7 +229,7 @@ function firstMeaningfulChild(element: import("ts-morph").JsxElement) {
     .find((child) => !Node.isJsxText(child) || child.getText().trim().length > 0);
 }
 
-function ensureImports(path: string, source: string): string {
+function ensureImports(path: string, source: string, managedImport: string): string {
   const sourceFile = parseSource(path, source);
   const imports = sourceFile.getImportDeclarations();
 
@@ -274,25 +278,14 @@ function ensureImports(path: string, source: string): string {
     themeImport.addNamedImport("theme");
   }
 
-  const currentImports = sourceFile.getImportDeclarations();
-  const currentAppCssIndex = currentImports.findIndex(
-    (declaration) => declaration.getModuleSpecifierValue() === "./app.css",
-  );
-  const styleImport = currentImports.find(
-    (declaration) => declaration.getModuleSpecifierValue() === MANTINE_STYLES,
-  );
-  const styleIndex = styleImport ? currentImports.indexOf(styleImport) : -1;
-  if (styleImport && styleIndex > currentAppCssIndex) styleImport.remove();
-  if (!styleImport || styleIndex > currentAppCssIndex) {
-    additions.push({ moduleSpecifier: MANTINE_STYLES });
-  }
-
   if (additions.length > 0) {
     const destinationIndex = sourceFile
       .getImportDeclarations()
       .findIndex((declaration) => declaration.getModuleSpecifierValue() === "./app.css");
     sourceFile.insertImportDeclarations(destinationIndex, additions);
   }
+
+  ensureManagedStyleImports(sourceFile, managedImport);
 
   return sourceFile.getFullText();
 }

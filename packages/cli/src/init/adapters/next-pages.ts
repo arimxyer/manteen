@@ -17,6 +17,7 @@ import {
 } from "ts-morph";
 
 import { initSourceUnsupported } from "../diagnostics";
+import { ensureManagedStyleImports, managedStylesImport } from "../styles";
 import type { InitAdapter, InitAdapterInput, InitAdapterResult } from "../types";
 
 type JsxNode = JsxElement | JsxSelfClosingElement;
@@ -119,17 +120,6 @@ function ensureNamedImport(
   return localName;
 }
 
-function ensureSideEffectImport(source: SourceFile, moduleSpecifier: string): void {
-  if (
-    source
-      .getImportDeclarations()
-      .some((declaration) => declaration.getModuleSpecifierValue() === moduleSpecifier)
-  ) {
-    return;
-  }
-  source.addImportDeclaration({ moduleSpecifier });
-}
-
 function defaultExportRoot(source: SourceFile): MorphNode | undefined {
   const directFunction = source.getFunctions().find((declaration) => declaration.isDefaultExport());
   if (directFunction) return directFunction;
@@ -185,7 +175,12 @@ function hasAttribute(node: JsxElement | JsxSelfClosingElement, name: string): b
   return openingElement(node).getAttribute(name) !== undefined;
 }
 
-function transformApp(path: string, content: string, themeImport: string): TransformResult {
+function transformApp(
+  path: string,
+  content: string,
+  themeImport: string,
+  stylesPath: string,
+): TransformResult {
   const source = sourceFile(path, content);
   let root = defaultExportRoot(source);
   if (!root) {
@@ -209,7 +204,7 @@ function transformApp(path: string, content: string, themeImport: string): Trans
     ? hasAttribute(existingProvider, "theme")
     : false;
 
-  ensureSideEffectImport(source, "@mantine/core/styles.css");
+  ensureManagedStyleImports(source, managedStylesImport(path, stylesPath));
   const providerBinding = ensureNamedImport(source, "@mantine/core", "MantineProvider");
   const themeBinding = providerAlreadyHasTheme
     ? undefined
@@ -348,7 +343,12 @@ export const nextPagesAdapter: InitAdapter = {
     }
 
     try {
-      const app = transformApp(appPath, appContent, input.project.layout.themeImport);
+      const app = transformApp(
+        appPath,
+        appContent,
+        input.project.layout.themeImport,
+        input.project.layout.stylesPath,
+      );
       if (!app.ok) {
         return {
           files: [],

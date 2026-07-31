@@ -1,5 +1,13 @@
 # manteen-kit
 
+## Unreleased
+
+## 0.2.0
+
+- Compile exact package-level stylesheet imports through the shadcn-compatible wire `css` field.
+- Preserve an authored item's `docs` field in the compiled registry item instead of accepting and
+  silently dropping it.
+
 ## 0.1.1
 
 First trusted release.
