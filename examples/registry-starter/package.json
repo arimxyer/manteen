@@ -1,0 +1,12 @@
+{
+  "name": "manteen-registry-starter",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "manteen-kit build"
+  },
+  "devDependencies": {
+    "manteen-kit": "^0.2.0"
+  }
+}

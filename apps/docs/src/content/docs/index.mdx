@@ -1,0 +1,36 @@
+---
+title: manteen
+description: Build, share, install, and maintain Mantine-native component registries.
+template: splash
+hero:
+  title: Mantine code, made shareable
+  tagline: Author reusable components, hooks, blocks, and themes. Install them as source you own.
+  actions:
+    - text: Install your first item
+      link: ./getting-started/
+      icon: right-arrow
+    - text: Build a registry
+      link: ./registry-authors/
+      icon: open-book
+      variant: minimal
+    - text: GitHub
+      link: https://github.com/arimxyer/manteen
+      icon: external
+      variant: minimal
+---
+
+import RegistryCatalog from '../../components/RegistryCatalog.astro';
+
+Manteen has two public tools:
+
+- **`manteen-kit`** compiles a Mantine-shaped authoring catalog into portable registry JSON.
+- **`manteen`** initializes applications and safely installs, tracks, diffs, and updates that source.
+
+Mantine remains an ordinary npm dependency. Registries hold the composed layer your project is
+expected to own and edit.
+
+## Live registry
+
+<RegistryCatalog />
+
+Manteen is an independent project and is not affiliated with or endorsed by the Mantine team.

@@ -1,0 +1,65 @@
+:root {
+  --sl-color-accent-low: #172554;
+  --sl-color-accent: #4c6ef5;
+  --sl-color-accent-high: #dbe4ff;
+  --sl-content-width: 52rem;
+}
+
+:root[data-theme="light"] {
+  --sl-color-accent-low: #edf2ff;
+  --sl-color-accent: #364fc7;
+  --sl-color-accent-high: #172554;
+}
+
+.registry-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+  gap: 1rem;
+  margin-block: 1.25rem 2rem;
+}
+
+.registry-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.75rem;
+  background: var(--sl-color-bg-nav);
+}
+
+.registry-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.registry-card h3,
+.registry-card p {
+  margin: 0;
+}
+
+.registry-card p {
+  color: var(--sl-color-gray-2);
+}
+
+.registry-card code {
+  overflow-x: auto;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.45rem;
+  background: var(--sl-color-gray-6);
+  white-space: nowrap;
+}
+
+.registry-kind {
+  flex: none;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--sl-color-gray-4);
+  border-radius: 999px;
+  color: var(--sl-color-gray-2);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

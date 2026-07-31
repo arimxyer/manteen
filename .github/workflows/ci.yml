@@ -30,6 +30,8 @@ jobs:
       # surfacing later as several hundred type errors in untouched files.
       - run: node scripts/guard-workspace.mjs
       - run: bun run test
+      - run: bun run build:registry
+      - run: bun run build:site
       - run: bun run typecheck
       - run: bun run lint
       - run: node scripts/guard-runtime-apis.mjs

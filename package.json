@@ -16,8 +16,12 @@
     "guard": "node scripts/guard-workspace.mjs && node scripts/guard-runtime-apis.mjs && node packages/cli/scripts/guard-diagnostics.mjs && node scripts/guard-release.mjs",
     "guard:release": "node scripts/guard-release.mjs",
     "verify:node": "bun run build:kit && node packages/registry-kit/dist/cli.mjs build",
-    "build:site": "node scripts/build-site.mjs",
-    "serve": "bun run build:registry && bun run build:site && bunx --bun serve public -p 4321",
+    "docs:dev": "bun run build:registry && bun --cwd=apps/docs run dev",
+    "build:site": "bun --cwd=apps/docs run build",
+    "docs:preview": "bun run build:registry && bun run build:site && bun --cwd=apps/docs run preview",
+    "verify:docs": "bun run build:kit && node packages/registry-kit/dist/cli.mjs build examples/registry-starter/manteen.registry.json examples/registry-starter/public/r && bun run build:registry && bun run build:site",
+    "verify:docs:consumer": "bun run build:kit && bun --cwd=packages/cli run build && node scripts/verify-registry-starter.mjs",
+    "serve": "bun run docs:preview",
     "lint": "biome check .",
     "lint:fix": "biome check . --write"
   },
@@ -43,6 +47,7 @@
     "typescript": "^5.9.0"
   },
   "workspaces": [
+    "apps/*",
     "packages/*"
   ],
   "license": "MIT"

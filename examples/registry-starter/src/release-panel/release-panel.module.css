@@ -1,0 +1,17 @@
+.root {
+  display: grid;
+  gap: var(--mantine-spacing-lg);
+  padding: var(--mantine-spacing-lg);
+}
+
+.header {
+  padding-inline: var(--mantine-spacing-xs);
+}
+
+.slide {
+  min-height: 10rem;
+  justify-content: center;
+  padding: var(--mantine-spacing-xl);
+  border-radius: var(--mantine-radius-md);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+}

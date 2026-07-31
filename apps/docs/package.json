@@ -1,0 +1,15 @@
+{
+  "name": "@manteen/docs",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build && node ../../scripts/build-site.mjs",
+    "preview": "astro preview"
+  },
+  "devDependencies": {
+    "@astrojs/starlight": "^0.41.5",
+    "astro": "^7.1.6"
+  }
+}

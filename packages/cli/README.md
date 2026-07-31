@@ -55,6 +55,20 @@ After initialization, add items by their qualified name:
 manteen add @house/data-table
 ```
 
+A self-contained item can also be installed directly from an HTTP, HTTPS or `file:` URL without
+adding a registry entry:
+
+```bash
+manteen info https://example.com/r/release-panel.json
+manteen add https://example.com/r/release-panel.json
+```
+
+Direct URLs support the same files, npm dependencies, package styles and theme fragments as named
+items. They do not provide an index for `list`, request headers/parameters, or a namespace from
+which to resolve bare registry dependencies. See
+[URLs and namespaces](https://arimxyer.github.io/manteen/concepts/registry-references/) for the
+complete boundary.
+
 Configuration lives in `manteen.json` at your project root — the registries you trust,
 the four import aliases (`components`, `ui`, `hooks`, `lib`) that must each be backed by
 a `paths` key in your application tsconfig, and the theme file to fold into. A Vite project emits:

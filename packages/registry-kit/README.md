@@ -3,6 +3,10 @@
 Author Mantine component registries in Mantine's vocabulary; compile them to an interchange
 format any registry client can read.
 
+For a complete repository layout, multi-file item, publishing workflow, direct-URL install and
+configured-namespace workflow, follow the
+[registry-authoring guide](https://arimxyer.github.io/manteen/registry-authors/).
+
 ```bash
 bun add -d manteen-kit
 ```

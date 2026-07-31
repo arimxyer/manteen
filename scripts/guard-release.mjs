@@ -189,6 +189,14 @@ function inspectPagesWorkflow() {
     !/push:\s*\n\s*branches:\s*\[main\]/.test(source),
     "pages.yml: registry must not deploy automatically before its client contract is public",
   );
+  expect(
+    source.includes("bun run build:site"),
+    "pages.yml: the Starlight site and registry artifact must be built before upload",
+  );
+  expect(
+    source.includes("path: apps/docs/dist"),
+    "pages.yml: Pages must upload the Starlight artifact that contains the copied /r registry",
+  );
 }
 
 function npmPackRecord(spec) {

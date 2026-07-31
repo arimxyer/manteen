@@ -6,8 +6,9 @@ vocabulary, compiled to an interchange format any registry client can read.
 What ships through here is the *composed* layer — the components you're expected to open up
 and edit. Mantine itself stays an ordinary npm dependency in every consuming app.
 
-Live at **<https://arimxyer.github.io/manteen/>**, built from the catalog and deployed only after
-its required client contract is public.
+Documentation and the live catalog are at **<https://arimxyer.github.io/manteen/>**. The same
+static artifact serves the unchanged machine-readable registry under `/r/`, and it is deployed
+only after its required client contract is public.
 
 | | |
 | --- | --- |
@@ -89,8 +90,9 @@ public/r/*.json              # build output (gitignored)
 ```
 
 The toolchain is packaged rather than kept as repository-only scripts so any number of registries
-can share it. See [packages/registry-kit](packages/registry-kit/README.md) for authoring and
-[packages/cli](packages/cli/README.md) for consuming.
+can share it. Follow the public [registry-authoring guide](https://arimxyer.github.io/manteen/registry-authors/),
+or see [packages/registry-kit](packages/registry-kit/README.md) for the author package and
+[packages/cli](packages/cli/README.md) for the consumer package.
 
 ## Develop
 

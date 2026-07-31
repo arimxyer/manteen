@@ -1,0 +1,53 @@
+---
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+interface RegistryItem {
+  name: string;
+  type: string;
+  title?: string;
+  description?: string;
+  meta?: { mantine?: { requires?: string } };
+}
+
+interface RegistryIndex {
+  items: RegistryItem[];
+}
+
+const registryPath = resolve(process.cwd(), "../../public/r/registry.json");
+const registry = JSON.parse(readFileSync(registryPath, "utf8")) as RegistryIndex;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const kind = (type: string) =>
+  ({
+    "registry:ui": "component",
+    "registry:block": "block",
+    "registry:hook": "hook",
+    "registry:lib": "library",
+    "registry:file": "file",
+  })[type] ?? type;
+---
+
+<p>
+  The live <code>@house</code> catalog currently contains {registry.items.length} items. Each card
+  is generated from the compiled index that consumers discover.
+</p>
+
+<div class="registry-grid">
+  {
+    registry.items.map((item) => (
+      <article class="registry-card">
+        <header>
+          <h3>
+            <a href={`${base}/r/${item.name}.json`}>@house/{item.name}</a>
+          </h3>
+          <span class="registry-kind">{kind(item.type)}</span>
+        </header>
+        {item.description && <p>{item.description}</p>}
+        {item.meta?.mantine?.requires && (
+          <small>Mantine {item.meta.mantine.requires}</small>
+        )}
+        <code>npx manteen add @house/{item.name}</code>
+      </article>
+    ))
+  }
+</div>

@@ -1,0 +1,40 @@
+{
+  "$schema": "./node_modules/manteen-kit/schema/manteen.registry.schema.json",
+  "name": "acme-registry",
+  "namespace": "@acme",
+  "homepage": "https://github.com/arimxyer/manteen/tree/main/examples/registry-starter",
+  "items": [
+    {
+      "name": "release-panel",
+      "kind": "block",
+      "title": "Release Panel",
+      "description": "Carousel-backed release highlights with controlled selection.",
+      "mantine": ">=9 <10",
+      "provider": true,
+      "npm": ["@mantine/core@^9", "@mantine/carousel@^9", "@tabler/icons-react@^3"],
+      "css": ["@mantine/carousel/styles.css"],
+      "files": [
+        {
+          "path": "src/release-panel/release-panel.tsx",
+          "as": "component",
+          "target": "@ui/release-panel.tsx"
+        },
+        {
+          "path": "src/release-panel/release-panel.module.css",
+          "as": "style",
+          "target": "@ui/release-panel.module.css"
+        },
+        {
+          "path": "src/release-panel/use-release-carousel.ts",
+          "as": "hook",
+          "target": "@hooks/use-release-carousel.ts"
+        }
+      ],
+      "themeFragment": "src/release-panel/release-panel.theme.ts",
+      "stylesApi": {
+        "ReleasePanel": ["root", "header", "slide"]
+      },
+      "docs": "Render ReleasePanel inside MantineProvider and pass release highlights as data."
+    }
+  ]
+}

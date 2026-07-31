@@ -98,8 +98,12 @@ independent npm provenance verification.
 W4 through W8 are complete. Wc's first eight adapted items are publicly dogfooded, including the
 released import-only global-styles lifecycle and its Carousel/Dropzone stress cases. The second
 hand-authored live registry closes the client-agnostic boundary for the declared interchange
-subset. Wc remains an independent, ongoing content stream rather than a release blocker; its next
-boundaries are broader framework-specific visual acceptance and further small curated tranches.
+subset. The [documentation-site milestone](docs-site-handoff.md) adds a searchable Starlight
+surface and executable third-party authoring/sharing guide while preserving the `/r` contract; its
+implementation and local acceptance are complete, with the first hosted deployment receipt still
+pending. Wc remains an independent, ongoing content stream rather than a release blocker; after
+that hosted receipt, its next boundaries are broader framework-specific visual acceptance and
+further small curated tranches.
 
 ## On one large program workflow
 
