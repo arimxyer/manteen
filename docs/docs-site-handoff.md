@@ -1,6 +1,6 @@
 # Documentation site handoff
 
-Status: **implementation and local acceptance complete; first hosted Starlight deployment pending.**
+Status: **complete and publicly deployed.**
 
 ## Question and stopping condition
 
@@ -19,9 +19,10 @@ The implementation milestone stops when:
 6. repository CI builds that artifact while Pages remains explicitly dispatched; and
 7. a browser check covers the GitHub Pages base path, navigation, search, content, and console.
 
-Hosted acceptance is a separate final step: CI must pass on the implementation commit, the manual
-Pages workflow must deploy it, and the public docs plus an existing registry item must return the
-expected bytes before this handoff can claim public completion.
+Hosted acceptance remained a separate final step: CI had to pass on the implementation commit, the
+manual Pages workflow had to deploy it, and the public docs plus an existing registry item had to
+return the expected bytes before this handoff could claim public completion. The hosted receipt
+below closes that step for commit `8d2fa0128bbdee4ee895aad349c7da4ae492811b`.
 
 ## Architecture
 
@@ -96,12 +97,29 @@ HTTPS evidence for the starter registry.
 - Workspace guard after the deliberate docs dependency install: three `node_modules` roots, all
   links resolved.
 
+Hosted acceptance on 2026-07-31 ET:
+
+- [CI run 30647716606](https://github.com/arimxyer/manteen/actions/runs/30647716606) passed the
+  source/docs build and the full built-Node, OS, and packed-consumer matrix on the implementation
+  commit.
+- [Pages run 30648122312](https://github.com/arimxyer/manteen/actions/runs/30648122312) passed its
+  explicit build and deploy jobs for that same commit.
+- A browser opened [`/manteen/`](https://arimxyer.github.io/manteen/), rendered the generated
+  14-item catalog, followed the base-aware `Build a registry` link to `/registry-authors/`, and
+  returned the expected Pagefind results for `direct URL`; the browser reported no page errors.
+- Public HTTP requests returned `200` with `text/html` for the site and `application/json` for
+  `/r/registry.json` and `/r/article-card.json`.
+- The public registry index was byte-identical to `public/r/registry.json` at SHA-256
+  `3864f9ecb96607c68746056690d4208903e8b00951ac2bb1d578bccfa1b55f52`. The sampled public
+  `article-card` item was byte-identical to its compiled source at SHA-256
+  `250d2d8a0c0d5bb8fe2cc31672238d1494b22e1dadb1a9559c7dd4a52480b43f`.
+
 ## Non-evidence and next boundary
 
 This milestone does not add a component marketplace, live Mantine playground, documentation
 versioning, localization, analytics, authenticated registry, or central registry directory. The
 starter proves the documented lifecycle but is not itself a newly hosted third-party registry.
 
-After the hosted receipt closes this milestone, Wc returns to the previously agreed sequence:
-small useful attributed content tranches, followed by broader framework-specific browser
-acceptance for representative installed content.
+With the hosted receipt closed, Wc returns to the previously agreed sequence: small useful
+attributed content tranches, followed by broader framework-specific browser acceptance for
+representative installed content.
