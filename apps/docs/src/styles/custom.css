@@ -41,8 +41,10 @@
   border: 0;
 }
 
-body:has(.registry-custom-page) {
+html:has(.registry-custom-page) {
+  --sl-sidebar-width: 16rem;
   --sl-content-width: 76rem;
+  --sl-color-bg-sidebar: var(--sl-color-bg);
 }
 
 body:has(.registry-custom-page) main > .content-panel:first-of-type {
@@ -58,6 +60,12 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 .registry-explorer,
 .registry-detail {
   color: var(--manteen-text);
+}
+
+.registry-gallery-page .registry-explorer {
+  width: calc(100% - 0.25rem);
+  max-width: 70.25rem;
+  margin-inline-start: 0.25rem;
 }
 
 .registry-custom-page :where(h1, h2, h3, p, ul, dl),
@@ -101,7 +109,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   align-items: flex-end;
   justify-content: space-between;
   gap: 2rem;
-  margin-top: 1.25rem;
+  margin-top: 2rem;
 }
 
 .registry-explorer__hero > div:first-child {
@@ -109,16 +117,17 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 }
 
 .registry-explorer__hero h2 {
-  margin-top: 0.45rem;
+  margin-top: 0;
   color: var(--manteen-text);
-  font-size: clamp(2rem, 5vw, 3.25rem);
-  letter-spacing: -0.04em;
-  line-height: 1.02;
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  font-weight: 450;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
 }
 
 .registry-explorer__hero p:last-child {
   max-width: 44rem;
-  margin-top: 0.8rem;
+  margin-top: 1.25rem;
   color: var(--manteen-text-muted);
   line-height: 1.6;
 }
@@ -132,7 +141,8 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 
 .registry-explorer__count strong {
   color: var(--manteen-text);
-  font-size: 2rem;
+  font-family: var(--__sl-font-mono);
+  font-size: 1.85rem;
   line-height: 1;
 }
 
@@ -146,7 +156,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   display: flex;
   align-items: center;
   gap: 0.9rem;
-  margin-top: 1.8rem;
+  margin-top: 1.25rem;
 }
 
 .registry-search {
@@ -181,7 +191,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
 }
 
 .registry-filters button,
@@ -200,28 +210,72 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 }
 
 .registry-filters button {
-  height: 2.25rem;
-  padding: 0 0.75rem;
+  height: 2.5rem;
+  padding: 0 0.8rem;
   border-color: var(--manteen-border);
+  border-radius: 999px;
   background: var(--manteen-panel);
 }
 
-.registry-filters button:hover,
-.registry-filters button.is-active {
+.registry-filters button:hover {
   background: var(--manteen-panel-active);
   color: var(--manteen-text);
+}
+
+.registry-filters button.is-active {
+  border-color: var(--manteen-accent-soft);
+  background: var(--manteen-accent-soft);
+  color: #171a22;
+}
+
+:root[data-theme="light"] .registry-filters button.is-active {
+  color: #fff;
 }
 
 .registry-catalog-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 2rem;
+  margin-top: 0.125rem;
+}
+
+.registry-catalog-heading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
 .registry-catalog-heading h3 {
   color: var(--manteen-text);
-  font-size: 1rem;
+  font-size: 1.05rem;
+  font-weight: 450;
+}
+
+.registry-sort {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.registry-sort select {
+  height: 2.25rem;
+  padding: 0 2.15rem 0 0.75rem;
+  border: 1px solid var(--manteen-border);
+  border-radius: 0.45rem;
+  appearance: none;
+  background: var(--manteen-panel);
+  color: var(--manteen-text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.registry-sort svg {
+  position: absolute;
+  right: 0.7rem;
+  width: 0.75rem;
+  pointer-events: none;
 }
 
 .registry-grid {
@@ -232,10 +286,13 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 }
 
 .registry-card {
+  display: flex;
   min-width: 0;
+  height: 22.125rem;
+  flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.75rem;
+  border-radius: 0.65rem;
   background: var(--manteen-panel);
 }
 
@@ -243,45 +300,19 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   display: none;
 }
 
-.registry-card__preview {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto;
-  gap: 0.2rem 0.75rem;
-  min-height: 6.4rem;
-  align-content: center;
-  padding: 1rem;
-  border-bottom: 1px solid var(--manteen-border);
-  background: var(--manteen-panel-raised);
-}
-
-.registry-card__preview span {
-  align-self: end;
-  color: var(--manteen-text-faint);
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.registry-card__preview strong {
-  grid-row: 1 / span 2;
-  align-self: center;
-  color: var(--manteen-accent-soft);
-  font-family: var(--__sl-font-mono);
-  font-size: 2rem;
-}
-
-.registry-card__preview small {
-  color: var(--manteen-text-muted);
-  font-size: 0.75rem;
+.registry-card__preview-link {
+  display: block;
+  padding: 0.8125rem 0.8125rem 0;
+  text-decoration: none;
 }
 
 .registry-card__body {
   display: flex;
+  min-height: 0;
+  flex: 1;
   flex-direction: column;
-  gap: 0.65rem;
-  padding: 1rem;
+  gap: 0.35rem;
+  padding: 0.625rem 0.8125rem 0.8125rem;
 }
 
 .registry-card__header {
@@ -295,6 +326,10 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   color: var(--manteen-success);
   font-family: var(--__sl-font-mono);
   font-size: 0.65rem;
+}
+
+.registry-card__header h3 {
+  min-width: 0;
 }
 
 .registry-kind,
@@ -317,6 +352,8 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 
 .registry-card h3 {
   font-size: 1rem;
+  font-weight: 450;
+  line-height: 1.3;
 }
 
 .registry-card h3 a {
@@ -324,24 +361,43 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   text-decoration: none;
 }
 
-.registry-card__name {
-  color: var(--manteen-accent-soft);
-  font-size: 0.7rem;
+.registry-card .registry-kind {
+  min-height: 1.35rem;
+  flex: none;
+  padding-inline: 0.45rem;
+  background: var(--manteen-panel-active);
+  font-size: 0.57rem;
+  letter-spacing: 0.035em;
 }
 
 .registry-card p {
-  min-height: 3.8rem;
+  display: -webkit-box;
+  min-height: 2.25rem;
+  overflow: hidden;
   color: var(--manteen-text-muted);
-  font-size: 0.78rem;
-  line-height: 1.55;
+  font-size: 0.73rem;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
-.registry-card__facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem 0.75rem;
-  color: var(--manteen-text-faint);
-  font-size: 0.66rem;
+.registry-grid > * {
+  margin-top: 0;
+}
+
+.site-header site-search button[data-open-modal] {
+  width: 2rem;
+  height: 2rem;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 1rem;
+}
+
+.site-header site-search button[data-open-modal] > span,
+.site-header site-search button[data-open-modal] > kbd {
+  display: none;
 }
 
 .registry-card__command {
@@ -350,7 +406,9 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  min-height: 2.625rem;
   padding: 0.45rem 0.5rem 0.45rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--manteen-border) 78%, transparent);
   border-radius: 0.45rem;
   background: var(--manteen-panel-raised);
 }
@@ -358,6 +416,8 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 .registry-card__command code {
   min-width: 0;
   overflow: hidden;
+  padding: 0;
+  background: transparent;
   color: var(--manteen-text-muted);
   font-size: 0.62rem;
   text-overflow: ellipsis;
@@ -366,27 +426,13 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 
 .registry-card__command button {
   flex: none;
-  padding: 0.25rem 0.45rem;
+  min-width: 2rem;
+  padding: 0.3rem 0.45rem;
   color: var(--manteen-accent-soft);
 }
 
-.registry-card footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-top: 0.2rem;
-}
-
-.registry-card footer a {
-  color: var(--manteen-text-muted);
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.registry-card footer a:first-child {
-  color: var(--manteen-accent-soft);
+.registry-card__command button svg {
+  width: 0.9rem;
 }
 
 .registry-empty {
@@ -947,9 +993,18 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 
   .registry-explorer__hero,
   .registry-install,
-  .registry-panel-heading {
+  .registry-panel-heading,
+  .registry-catalog-heading {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .registry-catalog-heading {
+    gap: 0.75rem;
+  }
+
+  .registry-sort {
+    align-self: flex-start;
   }
 
   .registry-explorer__count {

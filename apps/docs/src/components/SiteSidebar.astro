@@ -1,0 +1,9 @@
+---
+import DefaultSidebar from "@astrojs/starlight/components/Sidebar.astro";
+
+import RegistrySidebar from "./RegistrySidebar.astro";
+
+const isRegistry = Astro.url.pathname.includes("/registry/");
+---
+
+{isRegistry ? <RegistrySidebar /> : <DefaultSidebar />}

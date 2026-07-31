@@ -1,12 +1,18 @@
 ---
 import { Icon } from "@astrojs/starlight/components";
+import { IconCopy } from "@tabler/icons-react";
 
-import { itemPath, kindLabel, readRegistry } from "../lib/registry";
+import { itemPath, readRegistry } from "../lib/registry";
+import {
+  orderRegistryEntries,
+  registryPresentationKind,
+} from "../lib/registry-presentation";
+import { RegistryCardPreview } from "./RegistryCardPreview";
 
 const { entries } = readRegistry();
+const orderedEntries = orderRegistryEntries(entries);
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const detailHref = (name: string) => `${base}/registry/${itemPath(name)}/`;
-const jsonHref = (name: string) => `${base}/r/${itemPath(name)}.json`;
 ---
 
 <section class="registry-explorer" data-registry-catalog>
@@ -18,16 +24,15 @@ const jsonHref = (name: string) => `${base}/r/${itemPath(name)}.json`;
 
   <header class="registry-explorer__hero">
     <div>
-      <p class="registry-eyebrow">Installable Mantine source</p>
       <h2>Explore the registry</h2>
       <p>
-        Browse components, blocks, themes, and supporting files. Every item is installed as source
-        your project owns.
+        Preview Mantine-native components, blocks, hooks, and themes. Copy one command to bring the
+        source into your project.
       </p>
     </div>
     <div class="registry-explorer__count">
       <strong>{entries.length}</strong>
-      <span>items available</span>
+      <span>published items</span>
     </div>
   </header>
 
@@ -35,7 +40,11 @@ const jsonHref = (name: string) => `${base}/r/${itemPath(name)}.json`;
     <label class="registry-search">
       <Icon name="magnifier" />
       <span class="sr-only">Search registry items</span>
-      <input type="search" placeholder="Search components, blocks, themes…" data-registry-search />
+      <input
+        type="search"
+        placeholder="Search components, blocks, hooks, and themes..."
+        data-registry-search
+      />
     </label>
     <div class="registry-filters" role="group" aria-label="Filter registry items">
       <button type="button" class="is-active" aria-pressed="true" data-registry-filter="all">
@@ -45,61 +54,67 @@ const jsonHref = (name: string) => `${base}/r/${itemPath(name)}.json`;
         Components
       </button>
       <button type="button" aria-pressed="false" data-registry-filter="block">Blocks</button>
-      <button type="button" aria-pressed="false" data-registry-filter="library">Libraries</button>
-      <button type="button" aria-pressed="false" data-registry-filter="file">Files</button>
+      <button type="button" aria-pressed="false" data-registry-filter="hook">Hooks</button>
+      <button type="button" aria-pressed="false" data-registry-filter="theme">Themes</button>
     </div>
   </div>
 
   <div class="registry-catalog-heading">
-    <h3>Available items</h3>
-    <span aria-live="polite" data-registry-count>{entries.length} shown</span>
+    <div>
+      <h3>Featured and newly added</h3>
+      <span class="sr-only" aria-live="polite" data-registry-count>{entries.length} shown</span>
+    </div>
+    <label class="registry-sort">
+      <span class="sr-only">Sort registry items</span>
+      <select data-registry-sort>
+        <option value="recommended">Recommended</option>
+        <option value="name">Name A–Z</option>
+      </select>
+      <Icon name="down-caret" />
+    </label>
   </div>
 
   <div class="registry-grid">
     {
-      entries.map(({ index, detail }) => {
-        const type = kindLabel(index.type);
+      orderedEntries.map(({ index }, rank) => {
+        const type = registryPresentationKind(index);
         const command = `npx manteen add @house/${index.name}`;
-        const fileCount = detail.files?.length ?? 0;
-        const dependencyCount = detail.dependencies?.length ?? 0;
         return (
           <article
             class="registry-card"
             data-registry-card
             data-registry-kind={type}
+            data-registry-rank={rank}
+            data-registry-title={(index.title ?? index.name).toLowerCase()}
             data-registry-search={`${index.name} ${index.title ?? ""} ${index.description ?? ""} ${type}`.toLowerCase()}
           >
-            <div class="registry-card__preview" aria-hidden="true">
-              <span>{type}</span>
-              <strong>{fileCount}</strong>
-              <small>{fileCount === 1 ? "source file" : "source files"}</small>
-            </div>
+            <a
+              class="registry-card__preview-link"
+              href={detailHref(index.name)}
+              aria-label={`View ${index.title ?? index.name}`}
+            >
+              <RegistryCardPreview name={index.name} />
+            </a>
             <div class="registry-card__body">
               <header class="registry-card__header">
+                <h3>
+                  <a href={detailHref(index.name)}>{index.title ?? index.name}</a>
+                </h3>
                 <span class="registry-kind">{type}</span>
-                {index.meta?.mantine?.requires && (
-                  <small>Mantine {index.meta.mantine.requires}</small>
-                )}
               </header>
-              <h3>
-                <a href={detailHref(index.name)}>{index.title ?? index.name}</a>
-              </h3>
-              <code class="registry-card__name">@house/{index.name}</code>
               {index.description && <p>{index.description}</p>}
-              <div class="registry-card__facts">
-                <span>{dependencyCount} npm {dependencyCount === 1 ? "dependency" : "dependencies"}</span>
-                <span>{detail.registryDependencies?.length ?? 0} registry dependencies</span>
-              </div>
               <div class="registry-card__command">
                 <code>{command}</code>
-                <button type="button" data-copy-value={command} data-copy-label="Copy">
-                  Copy
+                <button
+                  type="button"
+                  aria-label={`Copy install command for ${index.title ?? index.name}`}
+                  data-copy-value={command}
+                  data-copy-label={`Copy install command for ${index.title ?? index.name}`}
+                >
+                  <IconCopy size={15} stroke={1.6} />
+                  <span class="sr-only" data-copy-status>Copy</span>
                 </button>
               </div>
-              <footer>
-                <a href={detailHref(index.name)}>View details</a>
-                <a href={jsonHref(index.name)}>Raw JSON</a>
-              </footer>
             </div>
           </article>
         );
@@ -131,6 +146,8 @@ const jsonHref = (name: string) => `${base}/r/${itemPath(name)}.json`;
   for (const catalog of document.querySelectorAll<HTMLElement>("[data-registry-catalog]")) {
     const search = catalog.querySelector<HTMLInputElement>("[data-registry-search]");
     const cards = [...catalog.querySelectorAll<HTMLElement>("[data-registry-card]")];
+    const grid = catalog.querySelector<HTMLElement>(".registry-grid");
+    const sort = catalog.querySelector<HTMLSelectElement>("[data-registry-sort]");
     const count = catalog.querySelector<HTMLElement>("[data-registry-count]");
     const empty = catalog.querySelector<HTMLElement>("[data-registry-empty]");
     let activeFilter = "all";
@@ -149,6 +166,18 @@ const jsonHref = (name: string) => `${base}/r/${itemPath(name)}.json`;
     };
 
     search?.addEventListener("input", update);
+    sort?.addEventListener("change", () => {
+      const sortedCards = [...cards].sort((left, right) => {
+        if (sort.value === "name") {
+          return (left.dataset.registryTitle ?? "").localeCompare(
+            right.dataset.registryTitle ?? "",
+          );
+        }
+        return Number(left.dataset.registryRank) - Number(right.dataset.registryRank);
+      });
+      for (const card of sortedCards) grid?.append(card);
+      update();
+    });
     for (const button of catalog.querySelectorAll<HTMLButtonElement>("[data-registry-filter]")) {
       button.addEventListener("click", () => {
         activeFilter = button.dataset.registryFilter ?? "all";
@@ -164,15 +193,19 @@ const jsonHref = (name: string) => `${base}/r/${itemPath(name)}.json`;
 
   for (const button of document.querySelectorAll<HTMLButtonElement>("[data-copy-value]")) {
     button.addEventListener("click", async () => {
-      const idle = button.dataset.copyLabel ?? button.textContent ?? "Copy";
+      const idle = button.dataset.copyLabel ?? "Copy install command";
+      const status = button.querySelector<HTMLElement>("[data-copy-status]");
       try {
         await writeClipboard(button.dataset.copyValue ?? "");
-        button.textContent = "Copied";
+        button.setAttribute("aria-label", "Copied install command");
+        if (status) status.textContent = "Copied";
       } catch {
-        button.textContent = "Copy failed";
+        button.setAttribute("aria-label", "Copy failed");
+        if (status) status.textContent = "Copy failed";
       }
       window.setTimeout(() => {
-        button.textContent = idle;
+        button.setAttribute("aria-label", idle);
+        if (status) status.textContent = "Copy";
       }, 1600);
     });
   }

@@ -1,0 +1,265 @@
+---
+import { Icon } from "@astrojs/starlight/components";
+import { IconLayoutGrid } from "@tabler/icons-react";
+import MobileMenuFooter from "virtual:starlight/components/MobileMenuFooter";
+
+import { itemPath, readRegistry } from "../lib/registry";
+import { orderRegistryEntries, registryPresentationKind } from "../lib/registry-presentation";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const pathname = Astro.url.pathname;
+const routePath = pathname.startsWith(base) ? pathname.slice(base.length) : pathname;
+const entries = orderRegistryEntries(readRegistry().entries);
+const groups = [
+  {
+    label: "Components",
+    entries: entries.filter(({ index }) => registryPresentationKind(index) === "component"),
+  },
+  {
+    label: "Blocks",
+    entries: entries.filter(({ index }) => registryPresentationKind(index) === "block"),
+  },
+  {
+    label: "Hooks",
+    entries: entries.filter(({ index }) => registryPresentationKind(index) === "hook"),
+  },
+  {
+    label: "Themes & files",
+    entries: entries.filter(({ index }) =>
+      ["theme", "library", "file"].includes(registryPresentationKind(index)),
+    ),
+  },
+].filter((group) => group.entries.length > 0);
+const registryHref = `${base}/registry/`;
+---
+
+<div class="registry-rail" data-registry-rail>
+  <header class="registry-rail__header">
+    <div>
+      <strong>Registry</strong>
+      <span>{entries.length} items</span>
+    </div>
+    <p>Browse installable content</p>
+  </header>
+
+  <label class="registry-rail__search">
+    <Icon name="magnifier" />
+    <span class="sr-only">Find a registry item</span>
+    <input type="search" placeholder="Find an item" data-registry-rail-search />
+  </label>
+
+  <a
+    class:list={["registry-rail__all", { "is-active": routePath === "/registry/" }]}
+    href={registryHref}
+    data-registry-rail-item
+    data-registry-rail-search-value="all items"
+  >
+    <IconLayoutGrid size={15} stroke={1.6} />
+    <span>All items</span>
+    <strong>{entries.length}</strong>
+  </a>
+
+  <div class="registry-rail__groups">
+    {
+      groups.map((group) => (
+        <section data-registry-rail-group>
+          <h2>{group.label}</h2>
+          <ul>
+            {group.entries.map(({ index }) => {
+              const href = `${base}/registry/${itemPath(index.name)}/`;
+              const title = index.title ?? index.name;
+              return (
+                <li data-registry-rail-item data-registry-rail-search-value={title.toLowerCase()}>
+                  <a class:list={{ "is-active": routePath === `/registry/${itemPath(index.name)}/` }} href={href}>{title}</a>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+
+  <p class="registry-rail__empty" hidden data-registry-rail-empty>No matching items</p>
+</div>
+
+<div class="md:sl-hidden registry-rail__mobile-footer">
+  <MobileMenuFooter />
+</div>
+
+<script>
+  for (const rail of document.querySelectorAll<HTMLElement>("[data-registry-rail]")) {
+    const search = rail.querySelector<HTMLInputElement>("[data-registry-rail-search]");
+    const items = [...rail.querySelectorAll<HTMLElement>("[data-registry-rail-item]")];
+    const groups = [...rail.querySelectorAll<HTMLElement>("[data-registry-rail-group]")];
+    const empty = rail.querySelector<HTMLElement>("[data-registry-rail-empty]");
+
+    search?.addEventListener("input", () => {
+      const query = search.value.trim().toLowerCase();
+      let visible = 0;
+      for (const item of items) {
+        const match = !query || item.dataset.registryRailSearchValue?.includes(query);
+        item.hidden = !match;
+        if (match) visible += 1;
+      }
+      for (const group of groups) {
+        group.hidden = !group.querySelector("[data-registry-rail-item]:not([hidden])");
+      }
+      if (empty) empty.hidden = visible !== 0;
+    });
+  }
+</script>
+
+<style>
+  @layer starlight.core {
+    .registry-rail {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      width: calc(100% + 1rem);
+      padding-block: 1.1rem 1.5rem;
+      padding-inline: 0.95rem 0.25rem;
+    }
+
+    .registry-rail__header > div {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .registry-rail__header strong,
+    .registry-rail__groups h2 {
+      color: var(--sl-color-gray-2);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .registry-rail__header span {
+      color: var(--sl-color-gray-3);
+      font-family: var(--__sl-font-mono);
+      font-size: 0.65rem;
+    }
+
+    .registry-rail__header p {
+      margin: 0.3rem 0 0;
+      color: var(--sl-color-gray-3);
+      font-size: 0.68rem;
+    }
+
+    .registry-rail__search {
+      display: flex;
+      height: 2.65rem;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0 0.75rem;
+      border: 1px solid var(--sl-color-gray-5);
+      border-radius: 0.55rem;
+      color: var(--sl-color-gray-3);
+    }
+
+    .registry-rail__search svg {
+      width: 0.9rem;
+    }
+
+    .registry-rail__search input {
+      min-width: 0;
+      flex: 1;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--sl-color-white);
+      font: inherit;
+      font-size: 0.72rem;
+    }
+
+    .registry-rail__search:focus-within {
+      border-color: var(--sl-color-accent);
+    }
+
+    .registry-rail__all {
+      display: grid;
+      min-height: 2.45rem;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0 0.7rem;
+      border-radius: 0.45rem;
+      color: var(--sl-color-gray-2);
+      font-size: 0.75rem;
+      text-decoration: none;
+    }
+
+    .registry-rail__all svg {
+      width: 0.9rem;
+    }
+
+    .registry-rail__all strong {
+      font-family: var(--__sl-font-mono);
+      font-size: 0.65rem;
+    }
+
+    .registry-rail__all:hover,
+    .registry-rail__all.is-active {
+      background: var(--sl-color-accent-low);
+      color: var(--sl-color-white);
+    }
+
+    .registry-rail__groups {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .registry-rail__groups section[hidden] {
+      display: none;
+    }
+
+    .registry-rail__groups h2 {
+      margin: 0 0 0.35rem;
+      color: var(--sl-color-gray-3);
+      font-size: 0.6rem;
+    }
+
+    .registry-rail__groups ul {
+      display: flex;
+      flex-direction: column;
+      gap: 0.05rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .registry-rail__groups li[hidden] {
+      display: none;
+    }
+
+    .registry-rail__groups a {
+      display: block;
+      padding: 0.3rem 0.45rem;
+      border-radius: 0.35rem;
+      color: var(--sl-color-gray-2);
+      font-size: 0.72rem;
+      line-height: 1.25;
+      text-decoration: none;
+    }
+
+    .registry-rail__groups a:hover,
+    .registry-rail__groups a.is-active {
+      background: var(--sl-color-gray-6);
+      color: var(--sl-color-white);
+    }
+
+    .registry-rail__empty {
+      margin: 0;
+      color: var(--sl-color-gray-3);
+      font-size: 0.7rem;
+    }
+
+    .registry-rail__mobile-footer {
+      margin-top: auto;
+    }
+  }
+</style>

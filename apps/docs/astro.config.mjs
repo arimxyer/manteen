@@ -15,6 +15,10 @@ export default defineConfig({
         baseUrl: "https://github.com/arimxyer/manteen/edit/main/apps/docs/",
       },
       customCss: ["./src/styles/custom.css"],
+      components: {
+        Header: "./src/components/SiteHeader.astro",
+        Sidebar: "./src/components/SiteSidebar.astro",
+      },
       social: [
         {
           icon: "github",

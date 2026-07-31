@@ -1,0 +1,110 @@
+---
+import LanguageSelect from "virtual:starlight/components/LanguageSelect";
+import Search from "virtual:starlight/components/Search";
+import SiteTitle from "virtual:starlight/components/SiteTitle";
+import SocialIcons from "virtual:starlight/components/SocialIcons";
+import ThemeSelect from "virtual:starlight/components/ThemeSelect";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const pathname = Astro.url.pathname;
+const links = [
+  { label: "Docs", href: `${base}/getting-started/`, active: !pathname.includes("/registry") },
+  { label: "Registry", href: `${base}/registry/`, active: pathname.includes("/registry/") },
+  {
+    label: "Registry authors",
+    href: `${base}/registry-authors/`,
+    active: pathname.includes("/registry-authors"),
+  },
+];
+---
+
+<div class="site-header">
+  <div class="site-header__brand">
+    <SiteTitle />
+  </div>
+  <nav class="site-header__nav" aria-label="Primary">
+    {
+      links.map((link) => (
+        <a href={link.href} aria-current={link.active ? "page" : undefined}>{link.label}</a>
+      ))
+    }
+  </nav>
+  <div class="site-header__tools print:hidden">
+    <Search />
+    <div class="site-header__social">
+      <SocialIcons />
+    </div>
+    <ThemeSelect />
+    <LanguageSelect />
+  </div>
+</div>
+
+<style>
+  @layer starlight.core {
+    .site-header {
+      display: flex;
+      height: 100%;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .site-header__brand {
+      flex: none;
+    }
+
+    .site-header__nav {
+      display: none;
+      align-items: center;
+      gap: 1.55rem;
+    }
+
+    .site-header__nav a {
+      color: var(--sl-color-gray-2);
+      font-size: var(--sl-text-sm);
+      text-decoration: none;
+    }
+
+    .site-header__nav a:hover,
+    .site-header__nav a[aria-current="page"] {
+      color: var(--sl-color-white);
+    }
+
+    .site-header__tools,
+    .site-header__social {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .site-header__tools {
+      margin-inline-start: auto;
+    }
+
+    .site-header__social::after {
+      height: 1.5rem;
+      border-inline-end: 1px solid var(--sl-color-gray-5);
+      content: "";
+    }
+
+    :global(.site-header site-search button[data-open-modal]) {
+      width: 2rem;
+      height: 2rem;
+      justify-content: center;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      font-size: 1rem;
+    }
+
+    :global(.site-header site-search button[data-open-modal] > span),
+    :global(.site-header site-search button[data-open-modal] > kbd) {
+      display: none;
+    }
+
+    @media (min-width: 50rem) {
+      .site-header__nav {
+        display: flex;
+      }
+    }
+  }
+</style>

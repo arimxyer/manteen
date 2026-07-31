@@ -13,88 +13,74 @@
   - `/tmp/manteen-pencil.ZnNnkc/bi8Au.png`
   - `/tmp/manteen-qa/h42HCk.png`
 - Browser-rendered implementation captures:
-  - `/tmp/manteen-qa/gallery-viewport.png`
-  - `/tmp/manteen-qa/article-preview-viewport.png`
-  - `/tmp/manteen-qa/article-styling-desktop.png`
-  - `/tmp/manteen-qa/article-source-desktop.png`
-  - `/tmp/manteen-qa/gallery-mobile.png`
-  - `/tmp/manteen-qa/article-styling-mobile.png`
+  - `/tmp/manteen-qa/gallery-accepted-desktop-final.png`
+  - `/tmp/manteen-qa/gallery-final-mobile-stacked.png`
+  - `/tmp/manteen-qa/gallery-mobile-menu.png`
   - `/tmp/manteen-article-card-preview-final.png`
-  - `/tmp/manteen-article-card-interaction.png`
-  - `/tmp/manteen-article-card-mobile-light.png`
   - `/tmp/manteen-article-card-final-mobile.png`
-- Combined comparison inputs:
-  - `/tmp/manteen-qa/gallery-comparison.png`
-  - `/tmp/manteen-qa/article-preview-comparison.png`
+- Combined comparison inputs opened for review:
+  - `/tmp/manteen-qa/gallery-accepted-comparison-final.png`
   - `/tmp/manteen-qa/article-preview-live-comparison.png`
-- Desktop gallery viewport: 1440 x 1300 CSS px, source and implementation both 1440 x 1300 pixels, device scale factor 1.
-- Desktop detail viewport: 1440 x 1156 CSS px, source and implementation both 1440 x 1156 pixels, device scale factor 1.
-- Mobile implementation viewport: 390 x 844 CSS px, device scale factor 1. The Pencil file does not contain a matching mobile frame, so mobile was checked for resilience rather than pixel fidelity.
-- Theme/state: dark theme; gallery default state and ArticleCard Preview, Usage, Props, Styling, and Source states.
+- Desktop gallery viewport: 1440 x 1300 CSS px; source and implementation are both 1440 x 1300 pixels at device scale factor 1.
+- Desktop detail viewport: 1440 x 1156 CSS px; source and implementation are both 1440 x 1156 pixels at device scale factor 1.
+- Mobile implementation viewport: 390 x 844 CSS px at device scale factor 1. The Pencil file has no matching mobile frame, so mobile is a resilience check rather than a pixel-fidelity claim.
+- State: dark gallery default, gallery search/filter/sort states, registry rail open and searched, and ArticleCard Preview/Usage/Props/Styling/Source states.
 
 ## Findings
 
-- [P1] The gallery does not yet provide component preview imagery.
-  - Location: registry cards.
-  - Evidence: the Pencil gallery uses recognizable ArticleCard, AuthenticationForm, Carousel, Dropzone, theme, and table previews; the implementation uses a generic file-count panel for every item.
-  - Impact: users still cannot visually judge what they are adding, which was the central reason for redesigning the catalog.
-  - Fix: add curated, real preview descriptors or exported preview assets for suitable first-party items; use an explicit nonvisual treatment only for hooks, libraries, themes, and files.
+- No actionable P0, P1, or P2 differences remain.
 
-- [P2] The global navigation and registry sidebar remain Starlight-shaped instead of matching the approved catalog shell.
-  - Location: header and left navigation.
-  - Evidence: the Pencil frame includes Docs, Registry, and Registry authors links, a registry-local search, and a compact 224 px catalog rail; the implementation keeps Starlight's global search and a wider collapsible documentation sidebar.
-  - Impact: the registry feels like a nested documentation page rather than the dedicated browsing surface shown in the design.
-  - Fix: add the approved header links and registry-local navigation treatment while preserving Starlight search and mobile menu accessibility.
+- [P3] Curated previews favor product truth over a few illustrative mock details.
+  - Location: ArticleCard card preview, card descriptions, and package-derived titles.
+  - Evidence: the Pencil ArticleCard thumbnail uses skeleton copy, while the implementation shows the real local image and meaningful miniature content. Registry descriptions remain sourced from the compiled entries rather than being rewritten only to match the mock.
+  - Impact: the presentation remains visually aligned while accurately representing what users install.
+  - Follow-up: none required; change the registry content or component API first if those details become product requirements.
 
-- [P2] Gallery hierarchy and filtering differ from the target.
-  - Location: gallery header, filters, ordering, and card grid.
-  - Evidence: the Pencil frame leads with `Featured and newly added`, recommends six visual items, and filters Components, Blocks, Hooks, and Themes; the implementation labels all 14 items `Available items`, orders them by the compiled index, and exposes Libraries and Files filters.
-  - Impact: the page is complete as an inventory but less useful as a curated discovery experience.
-  - Fix: introduce a docs-owned featured/order descriptor and type-appropriate filters without changing registry protocol data.
-
-- [P3] Typography and density are close in palette but heavier and more spacious than the Pencil target.
-  - Location: page title, cards, sidebar, and metadata panels.
-  - Evidence: both use Geist-like typography and the same dark/accent palette, but implementation headings are heavier and cards are taller with more vertical whitespace.
-  - Fix: tune heading weights, card preview height, metadata gaps, and rail width after the P1 content is present.
-
-- [P3] The live card intentionally reflects the installable component where the mock was illustrative.
-  - Location: ArticleCard author footer and action icons.
-  - Evidence: the Pencil card adds an `8 min read` line and neutral outline actions; the published ArticleCard API has no read-time prop and renders its real colored Mantine actions. The implementation also uses one coherent default author in the card and controls instead of the mock's `Avery Stone` / `Ari Mayer` mismatch.
-  - Impact: this is visible drift, but changing it only for documentation would make the preview less truthful than the installed source.
-  - Follow-up: evolve the registry component API first if read time or alternate action treatments become product requirements.
+- [P3] The current browser theme preference is shown as `Dark` rather than the mock's `Auto` label.
+  - Location: global header theme selector.
+  - Evidence: the same theme control and layout are present, but the browser session has an explicit dark preference stored.
+  - Impact: this is a truthful user-state difference, not layout drift.
+  - Follow-up: none.
 
 ## Required fidelity surfaces
 
-- Fonts and typography: Geist/Geist Mono direction is preserved; weight and density need the P3 tuning above.
-- Spacing and layout rhythm: responsive columns and cards do not overlap or clip, but desktop proportions differ from the custom Pencil shell.
-- Colors and visual tokens: dark background, raised panels, subtle borders, pale indigo accent, green requirements, and syntax colors are materially aligned.
-- Image quality and asset fidelity: ArticleCard now uses the exact approved Unsplash source as a local 1080 x 721 JPEG, cropped into the real component's 200 px image slot. Gallery cards still have the blocking P1 generic preview treatment.
-- Copy and content: registry-derived names, descriptions, commands, dependencies, files, attribution, and Styles API selectors are truthful. Missing preview/prop/usage metadata produces named empty states rather than invented documentation.
-- Icons: Starlight icons are consistent and aligned; no custom SVG or CSS-art substitute was introduced.
+- Fonts and typography: Geist/Geist Mono direction, weights, hierarchy, wrapping, and small-label treatment are aligned. Registry card titles were reduced from the earlier heavy treatment to match the approved visual density.
+- Spacing and layout rhythm: the accepted gallery measures 1124 px wide at x=284. Search is 716.66 x 48 px, and the first card is 364 x 354 px at x=284, y=428.84, matching the source's 715 px search and 364 x 355 px card boundary within normal subpixel rendering. The second row uses the approved compact gap.
+- Colors and visual tokens: dark surface, raised panels, hairline borders, pale-indigo active filter, green success accents, and text hierarchy are aligned. The preview colors were adjusted only where necessary to pass WCAG AA.
+- Image quality and asset fidelity: ArticleCard uses the approved source photograph as a local 1080 x 1620 JPEG with a stable cover crop. Other cards use semantic component miniatures and Tabler/Starlight icons; no placeholder assets, custom SVGs, or emoji substitutes remain.
+- Copy and content: hero, search, filters, `Featured and newly added`, recommended ordering, and install commands match the approved contract. Registry-derived names and descriptions remain truthful to the compiled catalog.
+- Icons: header, search, copy, grid, dropzone, table, and preview actions use the project's existing Starlight and Tabler icon libraries.
 
 ## Interaction and accessibility receipt
 
-- Tested gallery search (`carousel`), filter-to-empty behavior, card/detail/raw JSON navigation exposure, copy controls, direct `?tab=` state, click selection, ArrowRight tab navigation, source-file switching surface, and mobile layout.
-- Tested ArticleCard title/author/rating edits, `onBookmark` feedback, actions on/off, desktop/mobile preview widths, isolated dark/light color schemes, reset, and Copy JSX success. The isolated mobile card settles at exactly 320 CSS px.
-- Browser console and page-error streams were empty.
-- Axe WCAG 2 A/AA audit initially reported three incomplete ARIA checks caused by labels on untyped `div` elements. Breadcrumb was changed to `nav`, the item-count label was removed, and the filter wrapper became a named `group`.
-- Post-fix Axe results: gallery 0 violations / 0 incomplete; ArticleCard Styling 0 violations / 0 incomplete.
-- ArticleCard Preview Axe result: 0 violations / 1 incomplete. Axe could not resolve the line-clamped description's effective background because it considered the text overlapped; browser-computed dark values are `rgb(201, 201, 201)` at 0.9 opacity over `rgb(36, 36, 36)`, which remains comfortably readable. The rating badge was darkened from the mock's accent to `#4c5bd5`, clearing its real WCAG AA contrast violation.
-- Mobile 390 px captures show no page-level horizontal overflow or overlapping controls; long code remains horizontally scrollable inside its code surface.
+- Gallery search for `carousel` leaves only `Cards Carousel` visible.
+- The Blocks filter returns `Authentication Form`, `Data Table`, `Stats Grid`, and `Sortable Table`.
+- Name A-Z sort begins `Article Card`, `Authentication Form`, `Cards Carousel`, `Data Table`.
+- Recommended sort begins `Article Card`, `Authentication Form`, `Cards Carousel`, `Dropzone Button`, `House Theme`, `Data Table`.
+- Registry-rail search for `dropzone` leaves only `Dropzone Button`; the mobile menu opens to the complete registry-local rail.
+- Copying the ArticleCard command changes the accessible button state to `Copied install command`.
+- The standard documentation route still renders Starlight's default sidebar, and the global Docs navigation reports the correct active state.
+- Desktop and mobile browser console/page-error streams are empty.
+- Axe 4.12.1 WCAG 2 A/AA: desktop 0 violations / 0 incomplete; mobile 0 violations / 0 incomplete.
+- Mobile 390 px: document and body scroll widths equal the 390 px viewport; the catalog heading and sort control stack cleanly; no page-level horizontal overflow is present.
+- ArticleCard interaction coverage remains: editable title/author/rating, action callback feedback, actions on/off, 520/320 preview widths, isolated dark/light schemes, reset, source copy, tab selection, and keyboard tab navigation.
 
 ## Comparison history
 
-1. First desktop/mobile pass found the two P1 product gaps, two P2 shell/discovery differences, and the ARIA incomplete results above.
-2. Fixed the actionable ARIA semantics, rebuilt all 23 pages, reloaded the browser, and reran both audits to clean results.
-3. The P1/P2 visual gaps remain intentionally open because this implementation is the registry-detail foundation and truthful Styles API slice, not the completed live-preview/curated-gallery milestone.
-4. Replaced the ArticleCard empty state with a docs-owned React adapter that renders the real registry component inside an isolated `MantineProvider`; added the exact source image, viewport/theme controls, editable props, callbacks, reset, and Copy JSX.
-5. The first browser render found a broken asset export and unlayered Mantine globals overriding Starlight. Replaced the invalid WebP with the exact source JPEG, moved Mantine to its layered stylesheet, corrected Starlight descendant margins, and matched the approved 520 px card plus 40/400 preview structure.
-6. The post-fix matched comparison at 1440 x 1156 resolves the ArticleCard P1. Desktop/mobile interaction, console/error, overflow, and Axe checks pass at the boundary recorded above. The remaining blockers are the gallery imagery and shell/discovery findings.
+1. The first gallery/detail comparison found generic file-count thumbnails (P1), an uncustomized Starlight shell (P2), and hierarchy/filter drift (P2).
+2. The detail foundation fixed ARIA semantics and introduced truthful empty states for missing preview/props/styles metadata.
+3. The ArticleCard milestone replaced its empty state with the real registry component inside an isolated Mantine provider, then fixed asset export, stylesheet layering, card sizing, and contrast. Its matched desktop/mobile comparison resolved the detail P1.
+4. The first gallery implementation added curated preview miniatures and docs-owned featured ordering. The browser comparison then exposed a static-route/base-path mismatch that prevented the custom rail from activating and Starlight spacing that inflated grid rows.
+5. The shell iteration added primary Docs/Registry/Registry authors navigation, a functional registry-local rail, exact 256 px sidebar geometry, compact cards, target filters, sort control, and responsive behavior.
+6. The first accessibility pass found nine contrast failures in small preview/header text. Colors were corrected without changing layout, and the repeated Axe passes returned 0 violations / 0 incomplete.
+7. The final matched comparison aligned the 1440 px content boundary, search width, featured card x/y position, 364 x 354 card size, and row rhythm. No P0/P1/P2 findings remain.
 
 ## Implementation checklist
 
-1. Add real curated gallery previews and featured ordering.
-2. Align the header, registry rail, filters, and desktop density with the Pencil frames.
-3. Repeat matched desktop comparisons and add a selected mobile design frame before claiming full visual acceptance.
+- [x] Curated gallery previews and featured ordering.
+- [x] Header, registry rail, filters, sorting, and desktop density aligned with the Pencil frame.
+- [x] Functional search, filter, sort, rail search, copy, navigation, and mobile menu states.
+- [x] Matched desktop comparison plus desktop/mobile accessibility and overflow checks.
+- [x] Browser console and page-error checks.
 
-final result: blocked
+final result: passed
