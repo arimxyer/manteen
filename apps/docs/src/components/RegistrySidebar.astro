@@ -1,7 +1,6 @@
 ---
 import { Icon } from "@astrojs/starlight/components";
 import { IconLayoutGrid } from "@tabler/icons-react";
-import MobileMenuFooter from "virtual:starlight/components/MobileMenuFooter";
 
 import { itemPath, readRegistry } from "../lib/registry";
 import { orderRegistryEntries, registryPresentationKind } from "../lib/registry-presentation";
@@ -83,10 +82,6 @@ const registryHref = `${base}/registry/`;
   <p class="registry-rail__empty" hidden data-registry-rail-empty>No matching items</p>
 </div>
 
-<div class="md:sl-hidden registry-rail__mobile-footer">
-  <MobileMenuFooter />
-</div>
-
 <script>
   for (const rail of document.querySelectorAll<HTMLElement>("[data-registry-rail]")) {
     const search = rail.querySelector<HTMLInputElement>("[data-registry-rail-search]");
@@ -130,34 +125,35 @@ const registryHref = `${base}/registry/`;
 
     .registry-rail__header strong,
     .registry-rail__groups h2 {
-      color: var(--sl-color-gray-2);
-      font-size: 0.68rem;
+      color: var(--manteen-text-muted);
+      font-size: var(--manteen-text-xs);
       font-weight: 700;
       letter-spacing: 0.09em;
       text-transform: uppercase;
     }
 
     .registry-rail__header span {
-      color: var(--sl-color-gray-3);
+      color: var(--manteen-text-faint);
       font-family: var(--__sl-font-mono);
-      font-size: 0.65rem;
+      font-size: var(--manteen-text-xs);
     }
 
     .registry-rail__header p {
       margin: 0.3rem 0 0;
-      color: var(--sl-color-gray-3);
-      font-size: 0.68rem;
+      color: var(--manteen-text-faint);
+      font-size: var(--manteen-text-xs);
     }
 
     .registry-rail__search {
       display: flex;
-      height: 2.65rem;
+      height: var(--manteen-control-md);
       align-items: center;
       gap: 0.6rem;
       padding: 0 0.75rem;
-      border: 1px solid var(--sl-color-gray-5);
-      border-radius: 0.55rem;
-      color: var(--sl-color-gray-3);
+      border: 1px solid var(--manteen-border);
+      border-radius: var(--manteen-radius-md);
+      background: var(--manteen-panel);
+      color: var(--manteen-text-faint);
     }
 
     .registry-rail__search svg {
@@ -170,9 +166,9 @@ const registryHref = `${base}/registry/`;
       border: 0;
       outline: 0;
       background: transparent;
-      color: var(--sl-color-white);
+      color: var(--manteen-text);
       font: inherit;
-      font-size: 0.72rem;
+      font-size: var(--manteen-text-sm);
     }
 
     .registry-rail__search:focus-within {
@@ -181,14 +177,14 @@ const registryHref = `${base}/registry/`;
 
     .registry-rail__all {
       display: grid;
-      min-height: 2.45rem;
+      min-height: var(--manteen-control-sm);
       grid-template-columns: auto 1fr auto;
       align-items: center;
       gap: 0.55rem;
       padding: 0 0.7rem;
-      border-radius: 0.45rem;
-      color: var(--sl-color-gray-2);
-      font-size: 0.75rem;
+      border-radius: var(--manteen-radius-sm);
+      color: var(--manteen-text-muted);
+      font-size: var(--manteen-text-sm);
       text-decoration: none;
     }
 
@@ -203,8 +199,8 @@ const registryHref = `${base}/registry/`;
 
     .registry-rail__all:hover,
     .registry-rail__all.is-active {
-      background: var(--sl-color-accent-low);
-      color: var(--sl-color-white);
+      background: var(--manteen-panel-active);
+      color: var(--manteen-text);
     }
 
     .registry-rail__groups {
@@ -219,8 +215,8 @@ const registryHref = `${base}/registry/`;
 
     .registry-rail__groups h2 {
       margin: 0 0 0.35rem;
-      color: var(--sl-color-gray-3);
-      font-size: 0.6rem;
+      color: var(--manteen-text-faint);
+      font-size: var(--manteen-text-xs);
     }
 
     .registry-rail__groups ul {
@@ -239,27 +235,23 @@ const registryHref = `${base}/registry/`;
     .registry-rail__groups a {
       display: block;
       padding: 0.3rem 0.45rem;
-      border-radius: 0.35rem;
-      color: var(--sl-color-gray-2);
-      font-size: 0.72rem;
+      border-radius: var(--manteen-radius-sm);
+      color: var(--manteen-text-muted);
+      font-size: var(--manteen-text-sm);
       line-height: 1.25;
       text-decoration: none;
     }
 
     .registry-rail__groups a:hover,
     .registry-rail__groups a.is-active {
-      background: var(--sl-color-gray-6);
-      color: var(--sl-color-white);
+      background: var(--manteen-panel-active);
+      color: var(--manteen-text);
     }
 
     .registry-rail__empty {
       margin: 0;
-      color: var(--sl-color-gray-3);
-      font-size: 0.7rem;
-    }
-
-    .registry-rail__mobile-footer {
-      margin-top: auto;
+      color: var(--manteen-text-faint);
+      font-size: var(--manteen-text-sm);
     }
   }
 </style>

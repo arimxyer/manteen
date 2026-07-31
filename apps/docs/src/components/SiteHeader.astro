@@ -7,13 +7,20 @@ import ThemeSelect from "virtual:starlight/components/ThemeSelect";
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const pathname = Astro.url.pathname;
+const routePath = pathname.startsWith(base) ? pathname.slice(base.length) : pathname;
 const links = [
-  { label: "Docs", href: `${base}/getting-started/`, active: !pathname.includes("/registry") },
-  { label: "Registry", href: `${base}/registry/`, active: pathname.includes("/registry/") },
+  {
+    label: "Docs",
+    href: `${base}/getting-started/`,
+    active: ["/getting-started/", "/concepts/", "/reference/"].some((prefix) =>
+      routePath.startsWith(prefix),
+    ),
+  },
+  { label: "Registry", href: `${base}/registry/`, active: routePath.startsWith("/registry/") },
   {
     label: "Registry authors",
     href: `${base}/registry-authors/`,
-    active: pathname.includes("/registry-authors"),
+    active: routePath.startsWith("/registry-authors/"),
   },
 ];
 ---
@@ -39,6 +46,60 @@ const links = [
   </div>
 </div>
 
+<script>
+  const enhanceCodeRegions = () => {
+    const regions = [...document.querySelectorAll<HTMLElement>("pre[data-language]")];
+    for (const [index, region] of regions.entries()) {
+      region.setAttribute("role", "region");
+      region.tabIndex = 0;
+      if (region.hasAttribute("aria-label") || region.hasAttribute("aria-labelledby")) continue;
+      const frameTitle = region.closest("figure")?.querySelector<HTMLElement>("figcaption, .title");
+      const language = region.dataset.language;
+      const subject = frameTitle?.textContent?.trim() || (language ? `${language} code` : "Code sample");
+      region.setAttribute("aria-label", `${subject}, example ${index + 1}`);
+    }
+  };
+
+  const enhanceTables = () => {
+    const tables = [...document.querySelectorAll<HTMLTableElement>(".sl-markdown-content table")];
+    for (const [index, table] of tables.entries()) {
+      let frame = table.closest<HTMLElement>(".manteen-table-scroll");
+      if (!frame) {
+        frame = document.createElement("div");
+        frame.className = "manteen-table-scroll";
+        table.before(frame);
+        frame.append(table);
+      }
+      const scrollable = frame.scrollWidth > frame.clientWidth;
+      if (scrollable) {
+        const pageTitle = document.querySelector("h1")?.textContent?.trim() || "Documentation";
+        frame.tabIndex = 0;
+        frame.setAttribute("role", "region");
+        frame.setAttribute("aria-label", `${pageTitle} table ${index + 1}`);
+      } else {
+        frame.removeAttribute("tabindex");
+        frame.removeAttribute("role");
+        frame.removeAttribute("aria-label");
+      }
+    }
+  };
+
+  const enhanceDocument = () => {
+    enhanceCodeRegions();
+    enhanceTables();
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => requestAnimationFrame(enhanceDocument), {
+      once: true,
+    });
+  } else {
+    requestAnimationFrame(enhanceDocument);
+  }
+  document.addEventListener("astro:page-load", () => requestAnimationFrame(enhanceDocument));
+  window.addEventListener("resize", enhanceTables, { passive: true });
+</script>
+
 <style>
   @layer starlight.core {
     .site-header {
@@ -61,12 +122,20 @@ const links = [
     .site-header__nav a {
       color: var(--sl-color-gray-2);
       font-size: var(--sl-text-sm);
+      font-weight: 600;
       text-decoration: none;
     }
 
     .site-header__nav a:hover,
     .site-header__nav a[aria-current="page"] {
       color: var(--sl-color-white);
+    }
+
+    .site-header__nav a[aria-current="page"] {
+      text-decoration: underline;
+      text-decoration-color: var(--sl-color-accent);
+      text-decoration-thickness: 2px;
+      text-underline-offset: 0.45rem;
     }
 
     .site-header__tools,
@@ -104,6 +173,51 @@ const links = [
     @media (min-width: 50rem) {
       .site-header__nav {
         display: flex;
+      }
+    }
+
+    @media (max-width: 49.999rem) {
+      :global(:root) {
+        --sl-nav-height: 6.5rem;
+      }
+
+      .site-header {
+        flex-wrap: wrap;
+        align-content: center;
+        gap: 0.55rem 0.8rem;
+        padding-block: 0.45rem;
+      }
+
+      .site-header__nav {
+        display: flex;
+        order: 3;
+        width: 100%;
+        gap: 0.25rem;
+        overflow-x: auto;
+      }
+
+      .site-header__nav a {
+        flex: 1;
+        min-width: max-content;
+        padding: 0.4rem 0.45rem;
+        border-radius: var(--manteen-radius-sm, 0.4rem);
+        font-size: 0.74rem;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      .site-header__nav a[aria-current="page"] {
+        background: var(--manteen-panel-active, var(--sl-color-gray-6));
+        text-decoration: none;
+      }
+
+      .site-header__tools,
+      .site-header__social {
+        gap: 0.7rem;
+      }
+
+      .site-header__social::after {
+        display: none;
       }
     }
   }

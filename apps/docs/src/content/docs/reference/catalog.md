@@ -5,6 +5,8 @@ sidebar:
   order: 2
 ---
 
+## Catalog root
+
 The catalog root requires `name`, `namespace`, and `items`. Unknown fields are rejected instead of
 being silently discarded.
 
@@ -14,6 +16,8 @@ being silently discarded.
 | `namespace` | Lowercase public namespace such as `@acme`; qualifies bare `uses` during compilation. |
 | `homepage` | Optional project or documentation URL included in the index. |
 | `items` | Components, blocks, hooks, libraries, themes, or files to compile. |
+
+## Item fields
 
 Each item requires `name`, `kind`, and `files`.
 
@@ -29,9 +33,13 @@ Each item requires `name`, `kind`, and `files`.
 | `themeFragment` | A theme module merged into the consumer theme rather than copied. |
 | `stylesApi` | Author-declared public Mantine Styles API selectors keyed by component name. |
 
+## Styles API declaration
+
 `stylesApi` asserts that the installed component genuinely exposes each named part through its
 public `classNames`/`styles` interface. Manteen carries and reports the declaration but cannot
 verify arbitrary third-party source; internal CSS-module class names do not qualify.
+
+## Editor schema
 
 For editor validation, set `$schema` to the installed kit schema:
 

@@ -5,6 +5,8 @@ sidebar:
   order: 1
 ---
 
+## Command overview
+
 All commands run from the application root unless `--cwd` names another directory.
 
 | Command | Purpose |
@@ -16,9 +18,13 @@ All commands run from the application root unless `--cwd` names another director
 | `manteen diff [ref...]` | Compare installed files with their recorded registry sources. |
 | `manteen update [ref...]` | Fetch current items and route them through the normal install safety checks. |
 
+## Planning and overwrite safety
+
 Use `--dry-run` before mutating commands to inspect their plan. In non-interactive environments,
 choose overwrite behavior explicitly with `--overwrite` or `--no-overwrite`; `--yes` implies
 overwrite. `--force` only downgrades diagnostics documented as forceable—it never suppresses them.
+
+## Help and runtime
 
 ```bash
 npx manteen init --help

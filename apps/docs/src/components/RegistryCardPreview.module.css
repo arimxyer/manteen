@@ -1,4 +1,24 @@
 .preview {
+  --manteen-demo-canvas: #111318;
+  --manteen-demo-panel: #22252d;
+  --manteen-demo-panel-active: #242833;
+  --manteen-demo-border: #363b48;
+  --manteen-demo-text: #f5f7ff;
+  --manteen-demo-text-muted: #b8bfcc;
+  --manteen-demo-text-faint: #858d9d;
+  --manteen-demo-success: #65d6ad;
+  --manteen-demo-accent-text: #c9d4ff;
+  --manteen-demo-accent: #5969dd;
+  --manteen-demo-accent-soft: #6c7cff;
+  --manteen-demo-accent-deep: #4c5bd5;
+  --manteen-panel-raised: var(--manteen-demo-panel);
+  --manteen-panel-active: var(--manteen-demo-panel-active);
+  --manteen-border: var(--manteen-demo-border);
+  --manteen-text: var(--manteen-demo-text);
+  --manteen-text-muted: var(--manteen-demo-text-muted);
+  --manteen-text-faint: var(--manteen-demo-text-faint);
+  --manteen-success: var(--manteen-demo-success);
+  --manteen-accent-soft: var(--manteen-demo-accent-text);
   display: flex;
   height: 8.875rem;
   align-items: center;
@@ -22,7 +42,7 @@
   min-height: 6.9rem;
   padding: 0.5rem;
   border-radius: 0.45rem;
-  background: #111318;
+  background: var(--manteen-demo-canvas);
 }
 
 .articleMini img {
@@ -44,7 +64,7 @@
 .articleMini span {
   padding: 0.16rem 0.45rem;
   border-radius: 999px;
-  background: #4c5bd5;
+  background: var(--manteen-demo-accent-deep);
   color: #f5f7ff;
   font-family: var(--__sl-font-mono);
   font-size: 0.55rem;
@@ -71,7 +91,7 @@
   gap: 0.48rem;
   padding: 0.75rem;
   border-radius: 0.5rem;
-  background: #111318;
+  background: var(--manteen-demo-canvas);
 }
 
 .authMini strong {
@@ -91,8 +111,8 @@
 }
 
 .authMini button {
-  border-color: #5969dd;
-  background: #5969dd;
+  border-color: var(--manteen-demo-accent);
+  background: var(--manteen-demo-accent);
   color: #fff;
   font-weight: 700;
 }
@@ -114,7 +134,7 @@
   border-radius: 0.45rem;
   color: #fff;
   font-size: 0.6rem;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .carouselMini li:nth-child(1) {
@@ -135,9 +155,9 @@
   align-items: center;
   justify-content: center;
   gap: 0.32rem;
-  border: 1px solid #6c7cff;
+  border: 1px solid var(--manteen-demo-accent-soft);
   border-radius: 0.5rem;
-  background: #111318;
+  background: var(--manteen-demo-canvas);
   color: var(--manteen-accent-soft);
 }
 
@@ -174,7 +194,7 @@
   font-size: 0.5rem;
 }
 .themeMini .primary {
-  background: #6c7cff;
+  background: var(--manteen-demo-accent-soft);
 }
 .themeMini .surface {
   background: #22252d;
@@ -193,7 +213,7 @@
   border-collapse: separate;
   border-spacing: 0;
   border-radius: 0.45rem;
-  background: #111318;
+  background: var(--manteen-demo-canvas);
   font-size: 0.52rem;
 }
 
@@ -206,7 +226,7 @@
 .tableMini th {
   background: var(--manteen-panel-raised);
   color: var(--manteen-text-faint);
-  font-weight: 650;
+  font-weight: 600;
 }
 .tableMini th:last-child {
   display: flex;
@@ -249,7 +269,7 @@
   margin-top: 0.2rem;
   padding: 0.28rem 0.55rem;
   border-radius: 0.3rem;
-  background: #5969dd;
+  background: var(--manteen-demo-accent);
   color: #fff;
   font-size: 0.52rem;
   font-weight: 700;
@@ -259,7 +279,7 @@
   width: 100%;
   padding: 0.8rem;
   border-radius: 0.45rem;
-  background: #111318;
+  background: var(--manteen-demo-canvas);
 }
 .headerMini > small {
   color: var(--manteen-text-faint);
@@ -277,7 +297,7 @@
 .headerMini span {
   padding: 0.3rem 0.5rem;
   border-radius: 0.3rem;
-  background: #4c5bd5;
+  background: var(--manteen-demo-accent-deep);
   font-size: 0.5rem;
 }
 .headerMini p {
@@ -291,7 +311,7 @@
   padding: 0.9rem;
   border: 1px solid var(--manteen-border);
   border-radius: 0.55rem;
-  background: #111318;
+  background: var(--manteen-demo-canvas);
 }
 .statMini small {
   display: block;
@@ -319,7 +339,7 @@
   padding: 0 0.8rem;
   border: 0;
   border-radius: 0.4rem;
-  background: #5969dd;
+  background: var(--manteen-demo-accent);
   color: #fff;
   font: inherit;
   font-size: 0.65rem;
@@ -355,7 +375,7 @@
   padding: 0 0.6rem;
   border: 1px solid var(--manteen-border);
   border-radius: 0.35rem;
-  background: #111318;
+  background: var(--manteen-demo-canvas);
   color: var(--manteen-text-muted);
   font-size: 0.6rem;
 }
@@ -376,7 +396,7 @@
   padding: 0.55rem;
   border: 1px solid var(--manteen-border);
   border-radius: 0.4rem;
-  background: #111318;
+  background: var(--manteen-demo-canvas);
   color: var(--manteen-accent-soft);
 }
 .statsGridMini small {

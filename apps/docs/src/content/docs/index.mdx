@@ -20,17 +20,10 @@ hero:
 ---
 
 import RegistryCatalog from '../../components/RegistryCatalog.astro';
+import HomeOverview from '../../components/HomeOverview.astro';
 
-Manteen has two public tools:
+<HomeOverview />
 
-- **`manteen-kit`** compiles a Mantine-shaped authoring catalog into portable registry JSON.
-- **`manteen`** initializes applications and safely installs, tracks, diffs, and updates that source.
-
-Mantine remains an ordinary npm dependency. Registries hold the composed layer your project is
-expected to own and edit.
-
-## Live registry
-
-<RegistryCatalog />
+<RegistryCatalog mode="embedded" />
 
 Manteen is an independent project and is not affiliated with or endorsed by the Mantine team.

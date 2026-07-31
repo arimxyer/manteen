@@ -1,4 +1,8 @@
 .scope {
+  --manteen-demo-canvas-dark: #22252d;
+  --manteen-demo-canvas-light: #eef1f7;
+  --manteen-demo-accent: #4c5bd5;
+  --manteen-demo-accent-soft: #6c7cff;
   color: var(--manteen-text);
 }
 
@@ -38,7 +42,7 @@
   margin: 0;
   padding: 0.2rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.5rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-panel);
 }
 
@@ -52,11 +56,11 @@
   justify-content: center;
   gap: 0.4rem;
   border: 1px solid transparent;
-  border-radius: 0.4rem;
+  border-radius: var(--manteen-radius-sm);
   background: transparent;
   color: var(--manteen-text-faint);
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: var(--manteen-text-sm);
   font-weight: 600;
 }
 
@@ -92,7 +96,7 @@
 .previewFrame {
   overflow: hidden;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.75rem;
+  border-radius: var(--manteen-radius-lg);
   background: var(--manteen-panel-raised);
 }
 
@@ -138,12 +142,12 @@
   justify-content: center;
   padding: 0.75rem;
   overflow: auto;
-  background: #22252d;
+  background: var(--manteen-demo-canvas-dark);
   transition: background 160ms ease;
 }
 
 .stage[data-preview-scheme="light"] {
-  background: #eef1f7;
+  background: var(--manteen-demo-canvas-light);
 }
 
 .articleCard {
@@ -165,7 +169,7 @@
   top: 1rem;
   right: auto;
   left: 1rem;
-  background-color: #4c5bd5;
+  background-color: var(--manteen-demo-accent);
   background-image: none;
   color: #f5f7ff;
 }
@@ -192,7 +196,7 @@
   margin-top: 1rem;
   padding: 1rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.75rem;
+  border-radius: var(--manteen-radius-lg);
   background: var(--manteen-panel);
 }
 
@@ -281,7 +285,7 @@
   justify-content: flex-end;
   padding: 0.12rem;
   border-radius: 999px;
-  background: #6c7cff;
+  background: var(--manteen-demo-accent-soft);
 }
 
 .switchTrack > span {

@@ -14,6 +14,7 @@ import {
   styleFiles,
   type RegistryEntry,
 } from "../lib/registry";
+import { registryPresentationKind } from "../lib/registry-presentation";
 
 interface Props {
   entry: RegistryEntry;
@@ -37,13 +38,33 @@ const stylesApi = mantine?.stylesApi;
 const hasStylesApi = Boolean(stylesApi && Object.keys(stylesApi).length > 0);
 const themeFragment = mantine?.themeFragment;
 const hasCuratedPreview = index.name === "article-card";
+const defaultTab = hasCuratedPreview ? "preview" : "usage";
+const presentationKind = registryPresentationKind(index);
+const presentationLabel =
+  presentationKind === "theme"
+    ? "Theme"
+    : presentationKind === "file"
+      ? "File"
+      : presentationKind.charAt(0).toUpperCase() + presentationKind.slice(1);
+const categoryLabel =
+  presentationKind === "component"
+    ? "Components"
+    : presentationKind === "block"
+      ? "Blocks"
+      : presentationKind === "hook"
+        ? "Hooks"
+        : presentationKind === "theme"
+          ? "Themes"
+          : presentationKind === "file"
+            ? "Files"
+            : "Libraries";
 ---
 
-<div class="registry-custom-page registry-detail" data-registry-detail>
+<div class="registry-custom-page registry-detail" data-registry-detail data-default-tab={defaultTab}>
   <nav class="registry-breadcrumb" aria-label="Breadcrumb">
     <a href={`${base}/registry/`}>Registry</a>
     <span aria-hidden="true">/</span>
-    <span>{type === "block" ? "Blocks" : type === "component" ? "Components" : type}</span>
+    <span>{categoryLabel}</span>
     <span aria-hidden="true">/</span>
     <strong>{title}</strong>
   </nav>
@@ -51,7 +72,7 @@ const hasCuratedPreview = index.name === "article-card";
   <header class="registry-detail__header">
     <div class="registry-detail__copy">
       <div class="registry-detail__labels">
-        <span class="registry-kind">{type}</span>
+        <span class="registry-kind">{presentationLabel}</span>
         {mantine?.requires && <span class="registry-version">Mantine {mantine.requires}</span>}
       </div>
       <h1>{title}</h1>
@@ -82,15 +103,15 @@ const hasCuratedPreview = index.name === "article-card";
   </div>
 
   <div class="registry-detail__columns">
-    <main class="registry-detail__main">
+    <div class="registry-detail__main">
       <div class="registry-tabs" role="tablist" aria-label={`${title} documentation`}>
         <button
           id="registry-tab-preview"
           type="button"
           role="tab"
-          aria-selected="true"
+          aria-selected={defaultTab === "preview" ? "true" : "false"}
           aria-controls="registry-panel-preview"
-          tabindex="0"
+          tabindex={defaultTab === "preview" ? "0" : "-1"}
           data-registry-tab="preview"
         >
           Preview
@@ -99,9 +120,9 @@ const hasCuratedPreview = index.name === "article-card";
           id="registry-tab-usage"
           type="button"
           role="tab"
-          aria-selected="false"
+          aria-selected={defaultTab === "usage" ? "true" : "false"}
           aria-controls="registry-panel-usage"
-          tabindex="-1"
+          tabindex={defaultTab === "usage" ? "0" : "-1"}
           data-registry-tab="usage"
         >
           Usage
@@ -147,21 +168,22 @@ const hasCuratedPreview = index.name === "article-card";
         role="tabpanel"
         aria-labelledby="registry-tab-preview"
         tabindex="0"
+        hidden={defaultTab !== "preview"}
         data-registry-panel="preview"
       >
         {
           hasCuratedPreview ? (
             <ArticleCardPlayground client:load />
           ) : (
-            <div class="registry-empty-state">
+            <div class="registry-empty-state registry-empty-state--compact">
               <span class="registry-empty-state__icon"><Icon name="puzzle" /></span>
               <p class="registry-eyebrow">Preview boundary</p>
-              <h2>{isVisualItem(index.type) ? "Live preview not published yet" : "Preview does not apply"}</h2>
+              <h2>{isVisualItem(index.type) ? "Curated preview not published" : "Preview does not apply"}</h2>
               <p>
                 {
                   isVisualItem(index.type)
-                    ? "This registry item does not publish a curated preview adapter. Manteen will not execute arbitrary registry source to manufacture one."
-                    : `A live component preview is not meaningful for a ${type} item. Its installable payload remains available in Source.`
+                    ? "The gallery image is a static example. This item does not publish a live preview adapter, and Manteen will not execute arbitrary registry source to manufacture one."
+                    : `A live component preview is not meaningful for a ${presentationLabel.toLowerCase()} item. Its installable payload remains available in Source.`
                 }
               </p>
             </div>
@@ -175,7 +197,7 @@ const hasCuratedPreview = index.name === "article-card";
         role="tabpanel"
         aria-labelledby="registry-tab-usage"
         tabindex="0"
-        hidden
+        hidden={defaultTab !== "usage"}
         data-registry-panel="usage"
       >
         <div class="registry-panel-heading">
@@ -405,7 +427,7 @@ const hasCuratedPreview = index.name === "article-card";
           )
         }
       </section>
-    </main>
+    </div>
 
     <aside class="registry-metadata" aria-label={`${title} metadata`}>
       <section>
@@ -532,7 +554,7 @@ const hasCuratedPreview = index.name === "article-card";
     }
 
     const requested = new URL(window.location.href).searchParams.get("tab");
-    activate(requested ?? "preview");
+    activate(requested ?? detail.dataset.defaultTab ?? "preview");
   }
 
   for (const browser of document.querySelectorAll<HTMLElement>("[data-source-browser]")) {

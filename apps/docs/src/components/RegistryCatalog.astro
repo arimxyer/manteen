@@ -9,30 +9,41 @@ import {
 } from "../lib/registry-presentation";
 import { RegistryCardPreview } from "./RegistryCardPreview";
 
+interface Props {
+  mode?: "full" | "embedded";
+}
+
+const { mode = "full" } = Astro.props;
 const { entries } = readRegistry();
 const orderedEntries = orderRegistryEntries(entries);
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const detailHref = (name: string) => `${base}/registry/${itemPath(name)}/`;
 ---
 
-<section class="registry-explorer" data-registry-catalog>
-  <nav class="registry-explorer__breadcrumb" aria-label="Breadcrumb">
-    <span>Registry</span>
-    <span aria-hidden="true">/</span>
-    <code>@house</code>
-  </nav>
+<section class:list={["registry-explorer", `registry-explorer--${mode}`]} data-registry-catalog>
+  {
+    mode === "full" ? (
+      <nav class="registry-explorer__breadcrumb" aria-label="Breadcrumb">
+        <span>Registry</span>
+        <span aria-hidden="true">/</span>
+        <code>@house</code>
+      </nav>
+    ) : (
+      <p class="registry-eyebrow">Live registry</p>
+    )
+  }
 
   <header class="registry-explorer__hero">
     <div>
-      <h2>Explore the registry</h2>
+      {mode === "full" ? <h1>Explore the registry</h1> : <h2>Explore the registry</h2>}
       <p>
-        Preview Mantine-native components, blocks, hooks, and themes. Copy one command to bring the
-        source into your project.
+        Browse static examples and authored item documentation. Curated live previews appear when a
+        registry publishes an adapter; one command brings the source into your project.
       </p>
     </div>
     <div class="registry-explorer__count">
-      <strong>{entries.length}</strong>
-      <span>published items</span>
+      <strong data-registry-visible-count>{entries.length}</strong>
+      <span data-registry-visible-label>published items</span>
     </div>
   </header>
 
@@ -61,7 +72,7 @@ const detailHref = (name: string) => `${base}/registry/${itemPath(name)}/`;
 
   <div class="registry-catalog-heading">
     <div>
-      <h3>Featured and newly added</h3>
+      {mode === "full" ? <h2>Featured and newly added</h2> : <h3>Featured and newly added</h3>}
       <span class="sr-only" aria-live="polite" data-registry-count>{entries.length} shown</span>
     </div>
     <label class="registry-sort">
@@ -94,6 +105,9 @@ const detailHref = (name: string) => `${base}/registry/${itemPath(name)}/`;
               aria-label={`View ${index.title ?? index.name}`}
             >
               <RegistryCardPreview name={index.name} />
+              <span class="registry-card__preview-label">
+                {type === "component" || type === "block" ? "Static example" : "Registry sample"}
+              </span>
             </a>
             <div class="registry-card__body">
               <header class="registry-card__header">
@@ -149,6 +163,8 @@ const detailHref = (name: string) => `${base}/registry/${itemPath(name)}/`;
     const grid = catalog.querySelector<HTMLElement>(".registry-grid");
     const sort = catalog.querySelector<HTMLSelectElement>("[data-registry-sort]");
     const count = catalog.querySelector<HTMLElement>("[data-registry-count]");
+    const visibleCount = catalog.querySelector<HTMLElement>("[data-registry-visible-count]");
+    const visibleLabel = catalog.querySelector<HTMLElement>("[data-registry-visible-label]");
     const empty = catalog.querySelector<HTMLElement>("[data-registry-empty]");
     let activeFilter = "all";
 
@@ -162,6 +178,8 @@ const detailHref = (name: string) => `${base}/registry/${itemPath(name)}/`;
         if (!card.hidden) visible += 1;
       }
       if (count) count.textContent = `${visible} shown`;
+      if (visibleCount) visibleCount.textContent = String(visible);
+      if (visibleLabel) visibleLabel.textContent = visible === 1 ? "published item" : "published items";
       if (empty) empty.hidden = visible !== 0;
     };
 

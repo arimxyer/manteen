@@ -16,6 +16,7 @@ export default defineConfig({
       },
       customCss: ["./src/styles/custom.css"],
       components: {
+        Head: "./src/components/SiteHead.astro",
         Header: "./src/components/SiteHeader.astro",
         Sidebar: "./src/components/SiteSidebar.astro",
       },

@@ -1,5 +1,3 @@
-import "@mantine/core/styles.layer.css";
-
 import { MantineProvider } from "@mantine/core";
 import {
   IconCopy,

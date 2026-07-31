@@ -1,0 +1,10 @@
+---
+import DefaultHead from "@astrojs/starlight/components/Head.astro";
+import mantineStylesHref from "@mantine/core/styles.layer.css?url";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const isArticleCard = Astro.url.pathname === `${base}/registry/article-card/`;
+---
+
+<DefaultHead />
+{isArticleCard && <link rel="stylesheet" href={mantineStylesHref} />}

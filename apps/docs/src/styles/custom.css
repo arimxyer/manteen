@@ -12,11 +12,31 @@
   --manteen-text-faint: #858d9d;
   --manteen-success: #65d6ad;
   --manteen-accent-soft: #c9d4ff;
+  --manteen-canvas: var(--sl-color-bg);
+  --manteen-surface: var(--manteen-panel);
+  --manteen-surface-raised: var(--manteen-panel-raised);
+  --manteen-interactive: var(--manteen-panel-active);
+  --manteen-radius-sm: 0.4rem;
+  --manteen-radius-md: 0.625rem;
+  --manteen-radius-lg: 0.75rem;
+  --manteen-radius-pill: 999px;
+  --manteen-space-1: 0.35rem;
+  --manteen-space-2: 0.55rem;
+  --manteen-space-3: 0.8rem;
+  --manteen-space-4: 1rem;
+  --manteen-space-5: 1.5rem;
+  --manteen-text-xs: 0.7rem;
+  --manteen-text-sm: 0.8rem;
+  --manteen-text-ui: 0.875rem;
+  --manteen-control-sm: 2.25rem;
+  --manteen-control-md: 2.75rem;
+  --manteen-focus-ring: 0 0 0 2px color-mix(in srgb, var(--sl-color-accent) 28%, transparent);
+  --sl-color-bg-sidebar: var(--manteen-panel);
 }
 
 :root[data-theme="light"] {
   --sl-color-accent-low: #edf2ff;
-  --sl-color-accent: #4c6ef5;
+  --sl-color-accent: #364fc7;
   --sl-color-accent-high: #172554;
   --manteen-panel: #f6f7fb;
   --manteen-panel-raised: #ffffff;
@@ -24,9 +44,94 @@
   --manteen-border: #d8dce8;
   --manteen-text: #171a22;
   --manteen-text-muted: #4f5868;
-  --manteen-text-faint: #737d8d;
+  --manteen-text-faint: #5f6875;
   --manteen-success: #087f5b;
   --manteen-accent-soft: #364fc7;
+}
+
+.home-overview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--manteen-space-5);
+  margin-block: 0 3.5rem;
+}
+
+.home-overview__header {
+  max-width: 46rem;
+}
+
+.home-overview__title {
+  margin: 0;
+  margin-top: var(--manteen-space-2);
+  color: var(--manteen-text);
+  font-size: clamp(1.75rem, 4vw, 2.35rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+}
+
+.home-overview__description {
+  margin: 0;
+  margin-top: var(--manteen-space-3);
+  color: var(--manteen-text-muted);
+  line-height: 1.65;
+}
+
+.home-overview__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--manteen-space-4);
+}
+
+.home-overview__card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--manteen-space-2);
+  padding: 1.25rem;
+  border: 1px solid var(--manteen-border);
+  border-radius: var(--manteen-radius-lg);
+  background: var(--manteen-panel);
+}
+
+.home-overview__meta {
+  color: var(--manteen-text-faint);
+  font-size: var(--manteen-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.home-overview__tool-title {
+  margin: 0;
+  color: var(--manteen-text);
+  font-size: 1.15rem;
+}
+
+.home-overview__tool-name,
+.home-overview__command {
+  background: transparent;
+  color: var(--manteen-accent-soft);
+}
+
+.home-overview__summary {
+  flex: 1;
+  margin: 0;
+  color: var(--manteen-text-muted);
+  font-size: var(--manteen-text-ui);
+  line-height: 1.6;
+}
+
+.home-overview__command {
+  display: block;
+  padding: 0.7rem 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--manteen-border);
+  border-radius: var(--manteen-radius-sm);
+  background: var(--manteen-panel-raised);
+  font-size: var(--manteen-text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sr-only {
@@ -66,6 +171,11 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   width: calc(100% - 0.25rem);
   max-width: 70.25rem;
   margin-inline-start: 0.25rem;
+}
+
+.registry-explorer--embedded {
+  padding-top: 3rem;
+  border-top: 1px solid var(--manteen-border);
 }
 
 .registry-custom-page :where(h1, h2, h3, p, ul, dl),
@@ -116,11 +226,11 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   max-width: 48rem;
 }
 
-.registry-explorer__hero h2 {
+.registry-explorer__hero :where(h1, h2) {
   margin-top: 0;
   color: var(--manteen-text);
   font-size: clamp(2rem, 4vw, 2.6rem);
-  font-weight: 450;
+  font-weight: 600;
   letter-spacing: -0.035em;
   line-height: 1.08;
 }
@@ -165,10 +275,10 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   flex: 1;
   align-items: center;
   gap: 0.7rem;
-  height: 3rem;
+  height: var(--manteen-control-md);
   padding: 0 0.95rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.65rem;
+  border-radius: var(--manteen-radius-md);
   background: var(--manteen-panel);
   color: var(--manteen-text-faint);
 }
@@ -200,12 +310,12 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 .registry-inline-action,
 .registry-card__command button {
   border: 1px solid transparent;
-  border-radius: 0.45rem;
+  border-radius: var(--manteen-radius-sm);
   background: transparent;
   color: var(--manteen-text-faint);
   cursor: pointer;
   font: inherit;
-  font-size: 0.78rem;
+  font-size: var(--manteen-text-sm);
   font-weight: 600;
 }
 
@@ -213,7 +323,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   height: 2.5rem;
   padding: 0 0.8rem;
   border-color: var(--manteen-border);
-  border-radius: 999px;
+  border-radius: var(--manteen-radius-pill);
   background: var(--manteen-panel);
 }
 
@@ -245,10 +355,10 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   gap: 0.2rem;
 }
 
-.registry-catalog-heading h3 {
+.registry-catalog-heading :where(h2, h3) {
   color: var(--manteen-text);
   font-size: 1.05rem;
-  font-weight: 450;
+  font-weight: 600;
 }
 
 .registry-sort {
@@ -261,7 +371,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   height: 2.25rem;
   padding: 0 2.15rem 0 0.75rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.45rem;
+  border-radius: var(--manteen-radius-sm);
   appearance: none;
   background: var(--manteen-panel);
   color: var(--manteen-text-muted);
@@ -292,7 +402,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.65rem;
+  border-radius: var(--manteen-radius-md);
   background: var(--manteen-panel);
 }
 
@@ -301,9 +411,26 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 }
 
 .registry-card__preview-link {
+  position: relative;
   display: block;
   padding: 0.8125rem 0.8125rem 0;
   text-decoration: none;
+}
+
+.registry-card__preview-label {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  padding: 0.22rem 0.45rem;
+  border: 1px solid #363b48;
+  border-radius: var(--manteen-radius-pill);
+  background: #111318;
+  color: #e8ebf5;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  text-transform: uppercase;
 }
 
 .registry-card__body {
@@ -341,7 +468,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   min-height: 1.45rem;
   padding: 0.15rem 0.5rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 999px;
+  border-radius: var(--manteen-radius-pill);
   background: var(--manteen-panel-raised);
   color: var(--manteen-text-muted);
   font-size: 0.62rem;
@@ -352,7 +479,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 
 .registry-card h3 {
   font-size: 1rem;
-  font-weight: 450;
+  font-weight: 600;
   line-height: 1.3;
 }
 
@@ -375,7 +502,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   min-height: 2.25rem;
   overflow: hidden;
   color: var(--manteen-text-muted);
-  font-size: 0.73rem;
+  font-size: var(--manteen-text-sm);
   line-height: 1.45;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -383,21 +510,6 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 
 .registry-grid > * {
   margin-top: 0;
-}
-
-.site-header site-search button[data-open-modal] {
-  width: 2rem;
-  height: 2rem;
-  justify-content: center;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  font-size: 1rem;
-}
-
-.site-header site-search button[data-open-modal] > span,
-.site-header site-search button[data-open-modal] > kbd {
-  display: none;
 }
 
 .registry-card__command {
@@ -409,7 +521,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   min-height: 2.625rem;
   padding: 0.45rem 0.5rem 0.45rem 0.65rem;
   border: 1px solid color-mix(in srgb, var(--manteen-border) 78%, transparent);
-  border-radius: 0.45rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-panel-raised);
 }
 
@@ -419,7 +531,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   padding: 0;
   background: transparent;
   color: var(--manteen-text-muted);
-  font-size: 0.62rem;
+  font-size: var(--manteen-text-xs);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -476,7 +588,8 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 .registry-detail__copy h1 {
   margin-top: 0.65rem;
   color: var(--manteen-text);
-  font-size: clamp(2.25rem, 5vw, 3.1rem);
+  font-size: clamp(2.25rem, 5vw, 3rem);
+  font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 1.04;
 }
@@ -508,10 +621,10 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   min-height: 2.5rem;
   padding: 0 0.8rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.5rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-panel);
   color: var(--manteen-text-muted);
-  font-size: 0.76rem;
+  font-size: var(--manteen-text-sm);
   font-weight: 600;
   text-decoration: none;
 }
@@ -529,7 +642,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   min-height: 3.9rem;
   padding: 0.7rem 1rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.65rem;
+  border-radius: var(--manteen-radius-md);
   background: var(--manteen-panel);
 }
 
@@ -564,12 +677,12 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   min-height: 2.35rem;
   padding: 0 0.8rem;
   border: 0;
-  border-radius: 0.45rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-accent-soft);
   color: #17204d;
   cursor: pointer;
   font: inherit;
-  font-size: 0.75rem;
+  font-size: var(--manteen-text-sm);
   font-weight: 700;
 }
 
@@ -592,7 +705,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   padding: 0.25rem;
   overflow-x: auto;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.55rem;
+  border-radius: var(--manteen-radius-md);
   background: var(--manteen-panel);
 }
 
@@ -623,7 +736,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   margin-top: 1rem;
   padding: 1.15rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.75rem;
+  border-radius: var(--manteen-radius-lg);
   background: var(--manteen-panel);
 }
 
@@ -638,12 +751,6 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   margin-top: 0;
 }
 
-@media (min-width: 72rem) {
-  .registry-tab-panel--curated {
-    margin-top: -3.5rem;
-  }
-}
-
 .registry-empty-state {
   display: flex;
   min-height: 25rem;
@@ -654,6 +761,11 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   text-align: center;
 }
 
+.registry-empty-state--compact {
+  min-height: 15rem;
+  padding-block: 2rem;
+}
+
 .registry-empty-state__icon {
   display: inline-flex;
   align-items: center;
@@ -662,7 +774,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   height: 3rem;
   margin-bottom: 1rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.7rem;
+  border-radius: var(--manteen-radius-md);
   background: var(--manteen-panel-raised);
   color: var(--manteen-accent-soft);
 }
@@ -716,7 +828,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 .registry-style-section {
   padding: 1rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.6rem;
+  border-radius: var(--manteen-radius-md);
   background: var(--manteen-panel-raised);
 }
 
@@ -822,10 +934,11 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 .registry-source-browser {
   display: grid;
   grid-template-columns: 12rem minmax(0, 1fr);
+  height: min(44rem, 72vh);
   min-height: 30rem;
   overflow: hidden;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.65rem;
+  border-radius: var(--manteen-radius-md);
   background: var(--manteen-panel-raised);
 }
 
@@ -835,6 +948,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   gap: 0.25rem;
   padding: 0.55rem;
   border-right: 1px solid var(--manteen-border);
+  overflow-y: auto;
 }
 
 .registry-source-browser__files button {
@@ -873,6 +987,10 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   overflow: auto;
 }
 
+.registry-source-browser__code [data-source-panel]:not([hidden]) {
+  min-width: 0;
+}
+
 .registry-source-browser__code .expressive-code,
 .registry-style-section .expressive-code,
 .registry-tab-panel > .expressive-code {
@@ -888,7 +1006,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 .registry-metadata > section {
   padding: 1rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.65rem;
+  border-radius: var(--manteen-radius-md);
   background: var(--manteen-panel);
 }
 
@@ -900,7 +1018,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 
 .registry-metadata p {
   color: var(--manteen-text-muted);
-  font-size: 0.74rem;
+  font-size: var(--manteen-text-sm);
   line-height: 1.55;
 }
 
@@ -918,14 +1036,14 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 
 .registry-metadata dt {
   color: var(--manteen-text-faint);
-  font-size: 0.72rem;
+  font-size: var(--manteen-text-sm);
 }
 
 .registry-metadata dd {
   margin: 0;
   color: var(--manteen-text-muted);
   font-family: var(--__sl-font-mono);
-  font-size: 0.68rem;
+  font-size: var(--manteen-text-xs);
   text-align: right;
 }
 
@@ -987,6 +1105,18 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 }
 
 @media (max-width: 40rem) {
+  .home-overview {
+    margin-bottom: 3rem;
+  }
+
+  .home-overview__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .registry-explorer--embedded {
+    padding-top: 2.5rem;
+  }
+
   body:has(.registry-custom-page) main > .content-panel:last-of-type {
     padding-inline: 1rem;
   }
@@ -1007,6 +1137,17 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
     align-self: flex-start;
   }
 
+  .registry-filters {
+    width: 100%;
+    flex-wrap: nowrap;
+    padding-bottom: 0.2rem;
+    overflow-x: auto;
+  }
+
+  .registry-filters button {
+    flex: none;
+  }
+
   .registry-explorer__count {
     align-items: flex-start;
   }
@@ -1025,6 +1166,8 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   }
 
   .registry-source-browser {
+    height: min(35rem, 68vh);
+    min-height: 24rem;
     grid-template-columns: 1fr;
   }
 
@@ -1042,5 +1185,28 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 
   .registry-selector-row {
     grid-template-columns: 1fr;
+  }
+
+  .manteen-table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+
+  .manteen-table-scroll table {
+    width: max-content;
+    min-width: 100%;
+    white-space: nowrap;
+  }
+
+  .manteen-table-scroll:focus-visible {
+    outline: 2px solid var(--sl-color-accent);
+    outline-offset: 2px;
+  }
+}
+
+@media (max-width: 49.999rem) {
+  .sidebar .mobile-preferences {
+    display: none;
   }
 }
