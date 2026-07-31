@@ -231,7 +231,7 @@ test(`packed consumer installs and runs with ${SELECTED_PM ?? "no selected packa
       packageManager: `${pm}@${PACKAGE_MANAGER_VERSIONS[pm]}`,
       // The kit does not exist on npm before W8's kit-first publish. Each
       // manager's ordinary resolution field keeps this pre-publish smoke
-      // hermetic while leaving the packed client's real ^0.1.0 edge intact.
+      // hermetic while leaving the packed client's real semver edge intact.
       ...localKitResolution(pm, kitTarball),
     });
     if (pm === "yarn") {

@@ -1,5 +1,16 @@
 # manteen
 
+## Unreleased
+
+## 0.2.0
+
+- Initialize and maintain one explicitly configured, Manteen-owned package stylesheet without
+  rewriting the consumer's host CSS or Tailwind/PostCSS ordering.
+- Record managed stylesheet bytes and per-item contributions in receipt v2 while reading v1
+  receipts compatibly and rewriting them only after a successful mutation.
+- Include managed styles in dry-run, drift, `--force`, preflight, rollback, `diff` and `update`
+  behavior.
+
 ## 0.1.1
 
 First trusted release.

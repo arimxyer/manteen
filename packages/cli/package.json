@@ -1,6 +1,6 @@
 {
   "name": "manteen",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Install Mantine components from a registry into your project. The consumer side of manteen-kit.",
   "type": "module",
   "license": "MIT",
@@ -49,7 +49,7 @@
     "commander": "^15",
     "diff": "^9",
     "get-tsconfig": "^4.14",
-    "manteen-kit": "^0.1.0",
+    "manteen-kit": "^0.2.0",
     "nypm": "^0.6.9",
     "semver": "^7.8.5",
     "ts-morph": "^28.0.0"

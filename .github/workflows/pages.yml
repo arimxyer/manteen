@@ -1,8 +1,10 @@
 name: Deploy registry
 
 on:
-  push:
-    branches: [main]
+  # Deliberately manual. A registry item can begin depending on a client
+  # contract that the current npm release does not understand; deploying on
+  # every main push would let the registry outrun that client. Publish the kit,
+  # then the client, verify both, and dispatch this workflow last.
   workflow_dispatch:
 
 permissions:

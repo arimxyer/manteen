@@ -153,6 +153,11 @@ After that, `0.1.1` became the first trusted release, tagged one package at a ti
 published and resolved before the client tag was pushed. The exact hosted and npm receipts are in
 [`w8-release-handoff.md`](w8-release-handoff.md).
 
+Future contract-bearing releases keep that fail-stop order: publish and verify `manteen-kit`, then
+publish and verify `manteen`, then manually dispatch the Pages registry deployment. Pages does not
+deploy on every `main` push because doing so could expose items that require an unpublished client
+contract.
+
 The tradeoff: that first version has no provenance attestation, because provenance requires
 the OIDC path. Storing an `NPM_TOKEN` just for it would reintroduce the long-lived credential
 the whole setup exists to avoid, for the sake of one version.

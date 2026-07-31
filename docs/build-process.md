@@ -71,7 +71,9 @@ Four checks encode rules that a reader could otherwise silently break:
   license, changelog and provenance metadata; no `workspace:` protocol can reach
   npm; and the release workflow stays on the pinned credential-free toolchain.
   The tag-specific form additionally binds one tag to one package version and
-  inspects the built `npm pack --dry-run` file surface before publication.
+  inspects the built `npm pack --dry-run` file surface before publication. It
+  also keeps Pages on an explicit dispatch so a registry contract cannot deploy
+  before the npm client that understands it.
 
 Prefer a guard over a convention whenever the rule is mechanically checkable.
 
