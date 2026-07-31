@@ -342,7 +342,8 @@ test(`packed consumer installs and runs with ${SELECTED_PM ?? "no selected packa
     );
 
     const receipt = JSON.parse(readFileSync(join(consumer, "manteen.lock.json"), "utf8"));
-    assert.equal(receipt.lockfileVersion, 1, added.transcript);
+    assert.equal(receipt.lockfileVersion, 2, added.transcript);
+    assert.equal(receipt.styles, null, added.transcript);
     assert.equal(receipt.items.length, 1, added.transcript);
     assert.equal(receipt.items[0].id, "@packed/portable-smoke", added.transcript);
     assert.equal(receipt.items[0].files.length, 1, added.transcript);
