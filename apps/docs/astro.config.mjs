@@ -1,3 +1,4 @@
+import react from "@astrojs/react";
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
 
@@ -5,6 +6,7 @@ export default defineConfig({
   site: "https://arimxyer.github.io",
   base: "/manteen",
   integrations: [
+    react(),
     starlight({
       title: "manteen",
       description: "Build, share, install, and maintain Mantine-native component registries.",

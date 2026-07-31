@@ -581,6 +581,23 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   background: var(--manteen-panel);
 }
 
+.registry-tab-panel--curated {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.registry-tab-panel--curated [data-article-card-playground] {
+  margin-top: 0;
+}
+
+@media (min-width: 72rem) {
+  .registry-tab-panel--curated {
+    margin-top: -3.5rem;
+  }
+}
+
 .registry-empty-state {
   display: flex;
   min-height: 25rem;

@@ -1,6 +1,8 @@
 ---
 import { Code, Icon } from "@astrojs/starlight/components";
 
+import { ArticleCardPlayground } from "./ArticleCardPlayground";
+
 import {
   acceptsProps,
   codeLanguage,
@@ -34,6 +36,7 @@ const packageStyles = packageStyleImports(item);
 const stylesApi = mantine?.stylesApi;
 const hasStylesApi = Boolean(stylesApi && Object.keys(stylesApi).length > 0);
 const themeFragment = mantine?.themeFragment;
+const hasCuratedPreview = index.name === "article-card";
 ---
 
 <div class="registry-custom-page registry-detail" data-registry-detail>
@@ -140,24 +143,30 @@ const themeFragment = mantine?.themeFragment;
 
       <section
         id="registry-panel-preview"
-        class="registry-tab-panel"
+        class:list={["registry-tab-panel", { "registry-tab-panel--curated": hasCuratedPreview }]}
         role="tabpanel"
         aria-labelledby="registry-tab-preview"
         tabindex="0"
         data-registry-panel="preview"
       >
-        <div class="registry-empty-state">
-          <span class="registry-empty-state__icon"><Icon name="puzzle" /></span>
-          <p class="registry-eyebrow">Preview boundary</p>
-          <h2>{isVisualItem(index.type) ? "Live preview not published yet" : "Preview does not apply"}</h2>
-          <p>
-            {
-              isVisualItem(index.type)
-                ? "This registry item does not publish a curated preview manifest. Manteen will not execute arbitrary registry source to manufacture one."
-                : `A live component preview is not meaningful for a ${type} item. Its installable payload remains available in Source.`
-            }
-          </p>
-        </div>
+        {
+          hasCuratedPreview ? (
+            <ArticleCardPlayground client:load />
+          ) : (
+            <div class="registry-empty-state">
+              <span class="registry-empty-state__icon"><Icon name="puzzle" /></span>
+              <p class="registry-eyebrow">Preview boundary</p>
+              <h2>{isVisualItem(index.type) ? "Live preview not published yet" : "Preview does not apply"}</h2>
+              <p>
+                {
+                  isVisualItem(index.type)
+                    ? "This registry item does not publish a curated preview adapter. Manteen will not execute arbitrary registry source to manufacture one."
+                    : `A live component preview is not meaningful for a ${type} item. Its installable payload remains available in Source.`
+                }
+              </p>
+            </div>
+          )
+        }
       </section>
 
       <section

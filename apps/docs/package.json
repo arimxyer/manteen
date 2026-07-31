@@ -11,5 +11,12 @@
   "devDependencies": {
     "@astrojs/starlight": "^0.41.5",
     "astro": "^7.1.6"
+  },
+  "dependencies": {
+    "@astrojs/react": "^6.0.2",
+    "@mantine/core": "^9.5.0",
+    "@tabler/icons-react": "^3.45.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   }
 }

@@ -1,0 +1,433 @@
+.scope {
+  color: var(--manteen-text);
+}
+
+.scope button,
+.scope input {
+  font: inherit;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.scope .toolbar > * {
+  margin-block-start: 0;
+}
+
+.scope .previewFrame > *,
+.scope .playground > *,
+.scope .playgroundHeader > *,
+.scope .playgroundActions > *,
+.scope .fields > *,
+.scope .eventLog > *,
+.scope .articleFooter > * {
+  margin-block-start: 0;
+}
+
+.viewportControl {
+  display: flex;
+  gap: 0.2rem;
+  min-width: 0;
+  height: 2.4rem;
+  align-items: center;
+  margin: 0;
+  padding: 0.2rem;
+  border: 1px solid var(--manteen-border);
+  border-radius: 0.5rem;
+  background: var(--manteen-panel);
+}
+
+.viewportControl button,
+.themeButton,
+.playgroundActions button,
+.actionsField button,
+.eventLog button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: var(--manteen-text-faint);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.viewportControl button {
+  min-height: 1.9rem;
+  padding: 0 0.55rem;
+}
+
+.viewportControl button:hover,
+.viewportControl .activeButton {
+  background: var(--manteen-panel-active);
+  color: var(--manteen-text);
+}
+
+.themeButton {
+  min-height: 2.4rem;
+  padding: 0 0.65rem;
+  border-color: var(--manteen-border);
+  background: var(--manteen-panel);
+  color: var(--manteen-text-muted);
+}
+
+.viewportControl button:focus-visible,
+.themeButton:focus-visible,
+.playgroundActions button:focus-visible,
+.actionsField button:focus-visible,
+.eventLog button:focus-visible,
+.fields input:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 2px;
+}
+
+.previewFrame {
+  overflow: hidden;
+  border: 1px solid var(--manteen-border);
+  border-radius: 0.75rem;
+  background: var(--manteen-panel-raised);
+}
+
+.frameHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 2.5rem;
+  padding: 0 0.85rem;
+  border-bottom: 1px solid var(--manteen-border);
+  background: var(--manteen-panel);
+}
+
+.frameHeader > span {
+  color: var(--manteen-text-faint);
+  font-family: var(--__sl-font-mono);
+  font-size: 0.66rem;
+}
+
+.liveStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.liveStatus > span {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--manteen-success);
+}
+
+.liveStatus strong {
+  color: var(--manteen-text);
+  font-size: 0.75rem;
+}
+
+.stage {
+  display: flex;
+  min-height: 25rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  overflow: auto;
+  background: #22252d;
+  transition: background 160ms ease;
+}
+
+.stage[data-preview-scheme="light"] {
+  background: #eef1f7;
+}
+
+.articleCard {
+  box-sizing: border-box;
+  width: min(32.5rem, 100%);
+  transition: width 180ms ease;
+}
+
+.stage[data-viewport="mobile"] .articleCard {
+  width: min(20rem, 100%);
+}
+
+.articleImage {
+  height: 12.5rem;
+  object-fit: cover;
+}
+
+.articleRating {
+  top: 1rem;
+  right: auto;
+  left: 1rem;
+  background-color: #4c5bd5;
+  background-image: none;
+  color: #f5f7ff;
+}
+
+.articleTitle {
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.articleFooter {
+  min-height: 2rem;
+}
+
+.articleAction {
+  border-radius: 999px;
+}
+
+.playground {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--manteen-border);
+  border-radius: 0.75rem;
+  background: var(--manteen-panel);
+}
+
+.playgroundHeader {
+  display: flex;
+  min-height: 2.4rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.playgroundHeader h2 {
+  color: var(--manteen-text);
+  font-size: 0.88rem;
+}
+
+.playgroundHeader p {
+  margin-top: 0.15rem;
+  color: var(--manteen-text-faint);
+  font-size: 0.68rem;
+}
+
+.playgroundActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.playgroundActions button {
+  min-height: 2rem;
+  padding: 0 0.65rem;
+  border-color: var(--manteen-border);
+  background: var(--manteen-panel-active);
+  color: var(--manteen-text-muted);
+}
+
+.playgroundActions button:last-child {
+  color: var(--manteen-text);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) 8rem 4.5rem 6.5rem;
+  align-items: end;
+  gap: 0.65rem;
+}
+
+.fields label,
+.actionsField {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.32rem;
+}
+
+.fields label > span,
+.actionsField > span,
+.eventLog strong {
+  color: var(--manteen-text-faint);
+  font-size: 0.59rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.fields input,
+.actionsField button {
+  width: 100%;
+  min-height: 2.25rem;
+  padding: 0 0.65rem;
+  border: 1px solid var(--manteen-border);
+  border-radius: 0.4rem;
+  background: var(--manteen-panel-raised);
+  color: var(--manteen-text-muted);
+  font-size: 0.72rem;
+}
+
+.actionsField button {
+  justify-content: space-between;
+}
+
+.switchTrack {
+  display: flex;
+  width: 2rem;
+  height: 1.15rem;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0.12rem;
+  border-radius: 999px;
+  background: #6c7cff;
+}
+
+.switchTrack > span {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 999px;
+  background: #f5f7ff;
+  transition: transform 160ms ease;
+}
+
+.actionsField button[aria-checked="false"] .switchTrack {
+  justify-content: flex-start;
+  background: var(--manteen-border);
+}
+
+.eventLog {
+  display: flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--manteen-border);
+  border-radius: 0.45rem;
+  background: var(--manteen-panel-raised);
+}
+
+.eventLog > div {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.eventLog code,
+.eventLog > div:last-child > span {
+  color: var(--manteen-text-muted);
+  font-size: 0.68rem;
+}
+
+.eventLog > div:last-child > span {
+  color: var(--manteen-text-faint);
+  font-family: var(--__sl-font-mono);
+}
+
+.eventDot,
+.eventDotIdle {
+  width: 0.44rem;
+  height: 0.44rem;
+  border-radius: 999px;
+  background: var(--manteen-success);
+}
+
+.eventDotIdle {
+  background: var(--manteen-border);
+}
+
+.eventLog button {
+  padding: 0;
+  color: var(--manteen-text-muted);
+}
+
+.eventLog button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.copyAnnouncement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 48rem) {
+  .fields {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .titleField {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 32rem) {
+  .toolbar,
+  .playgroundHeader,
+  .eventLog {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .toolbar {
+    justify-content: flex-start;
+  }
+
+  .viewportControl {
+    width: 100%;
+  }
+
+  .viewportControl button {
+    flex: 1;
+  }
+
+  .themeButton {
+    width: 100%;
+  }
+
+  .fields {
+    grid-template-columns: 1fr;
+  }
+
+  .titleField {
+    grid-column: auto;
+  }
+
+  .eventLog {
+    padding: 0.65rem;
+  }
+
+  .eventLog > div {
+    justify-content: space-between;
+  }
+
+  .frameHeader > span {
+    display: none;
+  }
+
+  .stage {
+    min-height: 22rem;
+    padding: 0.75rem;
+  }
+}
