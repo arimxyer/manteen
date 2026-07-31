@@ -80,6 +80,31 @@ a `paths` key in your application tsconfig, and the theme file to fold into. A V
 }
 ```
 
+Registries are named by the consuming project; the server does not need to be built with
+`manteen-kit` or know its assigned namespace. For example, the independently hosted,
+hand-authored interoperability registry can be added alongside `@house`:
+
+```jsonc
+{
+  "registries": {
+    "@interop": {
+      "url": "https://arimxyer.github.io/manteen-interop-registry/r/{name}.json",
+      "index": "https://arimxyer.github.io/manteen-interop-registry/r/registry.json"
+    }
+  }
+}
+```
+
+```bash
+manteen list @interop
+manteen add @interop/blocks/release-panel
+```
+
+Hand-authored items may use a bare `registryDependencies` name. Manteen resolves it against the
+declaring item's namespace and prints `bare-dep-assumed-local` so that compatibility assumption is
+visible. The same live registry has been production-built as both `@alpha` and `@vendor`; see the
+[second registry receipt](../../docs/second-registry-handoff.md).
+
 The remaining commands keep and inspect what was installed:
 
 ```bash

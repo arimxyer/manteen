@@ -6,7 +6,8 @@ vocabulary, compiled to an interchange format any registry client can read.
 What ships through here is the *composed* layer — the components you're expected to open up
 and edit. Mantine itself stays an ordinary npm dependency in every consuming app.
 
-Live at **<https://arimxyer.github.io/manteen/>**, rebuilt from the catalog on every push.
+Live at **<https://arimxyer.github.io/manteen/>**, built from the catalog and deployed only after
+its required client contract is public.
 
 | | |
 | --- | --- |
@@ -174,13 +175,22 @@ consumer:
   `Table` and `Skeleton` merged into the project theme, imports updated.
 - Consumer typechecks and production-builds clean afterward.
 
+The reverse direction is also public proof now: `manteen@0.2.0` consumed a
+[separate hand-authored live registry](https://github.com/arimxyer/manteen-interop-registry)
+which has no Manteen authoring catalog or compile step. Its nested block and parent-local bare
+dependency passed under two consumer-selected namespaces, including discovery, install,
+production build, update and diff. The exact receipts and limitations are in the
+[second registry handoff](docs/second-registry-handoff.md).
+
 ### Gotchas worth keeping
 
-**Bare `uses` names would resolve against the public registry, not this one.** A wire
+**Other clients may resolve bare `uses` names against their public registry.** In the stock shadcn
+CLI, a wire
 `registryDependencies: ["empty-state"]` fails with
 `The item at https://ui.shadcn.com/r/styles/default/empty-state.json was not found`. The
 build qualifies bare names with `namespace` from `manteen.registry.json`, so authors never
-hardcode `@house/`.
+hardcode `@house/`. Manteen's consumer instead assumes a bare dependency is parent-local and emits
+`bare-dep-assumed-local`; the second live registry exercises that compatibility path deliberately.
 
 **Unknown top-level fields are stripped by third-party builders; `meta` survives.** Confirmed
 by round-tripping both. `meta` also survives into the registry index, so a client can read
@@ -197,5 +207,6 @@ never surfaces this.
 
 ## Deploying
 
-`public/r/` is gitignored — build in CI and publish the directory to any static host. Any
-HTTPS endpoint serving these JSON files is a registry; there's no central publish step.
+`public/r/` is gitignored — build in CI and publish the directory to any static host after the
+client version required by its items is public. Any HTTPS endpoint serving these JSON files is a
+registry; there's no central publish step.

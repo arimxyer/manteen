@@ -52,8 +52,10 @@ eight adapted Mantine UI components/blocks. The initial six-item tranche and the
 extension stress cases compile, install and production-build in disposable consumers; their exact
 evidence and non-evidence are recorded in the [`Wc handoff`](wc-registry-content-handoff.md). The
 [`required-global-styles contract`](global-styles-handoff.md) is implemented, released and accepted
-through a fresh public npm-plus-HTTPS Vite consumer. Broader cross-framework visual acceptance and
-a second live registry remain. Every new item exercises the client harder than a fixture does.
+through a fresh public npm-plus-HTTPS Vite consumer. A
+[`second hand-authored live registry`](second-registry-handoff.md) also passes discovery, install,
+build and maintenance under two consumer-selected namespaces. Broader cross-framework visual
+acceptance remains. Every new item exercises the client harder than a fixture does.
 
 ## The program
 
@@ -94,9 +96,10 @@ W8 completed the manual bootstrap, trusted-publisher binding, ordered tagged rel
 independent npm provenance verification.
 
 W4 through W8 are complete. Wc's first eight adapted items are publicly dogfooded, including the
-released import-only global-styles lifecycle and its Carousel/Dropzone stress cases. Wc remains an
-independent, ongoing content stream rather than a release blocker; its next boundaries are a second
-live registry, broader framework-specific visual acceptance and further small curated tranches.
+released import-only global-styles lifecycle and its Carousel/Dropzone stress cases. The second
+hand-authored live registry closes the client-agnostic boundary for the declared interchange
+subset. Wc remains an independent, ongoing content stream rather than a release blocker; its next
+boundaries are broader framework-specific visual acceptance and further small curated tranches.
 
 ## On one large program workflow
 

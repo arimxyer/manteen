@@ -1,8 +1,8 @@
 # Wc registry-content handoff
 
 Status: **eight adapted items released and publicly dogfooded, including the Carousel/Dropzone
-extension stress cases.** Wc is an ongoing content stream, not a release blocker or a reason to
-reopen the completed W4-W8 client program.
+extension stress cases; second-live-registry interoperability is also accepted.** Wc is an ongoing
+content stream, not a release blocker or a reason to reopen the completed W4-W8 client program.
 
 ## Question and stopping condition
 
@@ -152,9 +152,22 @@ The exact commit, workflow, npm, hash and disposable-consumer receipts are in th
 visual or lifecycle behavior on macOS/Windows; the earlier hosted W7 matrix remains the general
 platform boundary.
 
+## Second live registry receipt — 2026-07-30 ET
+
+The client is no longer evidenced only against kit-compiled catalogs. A separate public repository
+hand-authors two interchange documents with nested names and a parent-local bare dependency, then
+deploys them through its own Pages workflow. Public `manteen@0.2.0` mounted the same live URLs as
+both `@alpha` and `@vendor`; `list`, `info`, `add`, production build, no-op `update` and clean
+`diff` passed in separate fresh consumers. The dependency inherited the selected namespace in each
+receipt.
+
+The exact authorship boundary, hosted receipts, hashes, warning behavior and non-evidence are in the
+[`second live registry handoff`](second-registry-handoff.md).
+
 ## Next boundary
 
-1. Exercise the toolchain against a second independently authored live registry.
-2. Repeat browser acceptance in the other supported framework shapes as those fixtures become
+1. Repeat browser acceptance in the other supported framework shapes as those fixtures become
    available; this Vite run is not cross-framework proof.
-3. Continue Wc in small attributed tranches; do not bulk-import the remaining upstream examples.
+2. Continue Wc in small attributed tranches; do not bulk-import the remaining upstream examples.
+3. Treat authenticated or independently operated registry proof as a separate milestone if real
+   product usage requires it.
