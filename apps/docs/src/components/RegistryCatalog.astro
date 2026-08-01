@@ -4,6 +4,7 @@ import { IconCopy } from "@tabler/icons-react";
 
 import { itemPath, readRegistry } from "../lib/registry";
 import {
+  hasCuratedLivePreview,
   orderRegistryEntries,
   registryPresentationKind,
 } from "../lib/registry-presentation";
@@ -42,8 +43,8 @@ const detailHref = (name: string) => `${base}/registry/${itemPath(name)}/`;
       </p>
     </div>
     <div class="registry-explorer__count">
-      <strong data-registry-visible-count>{entries.length}</strong>
-      <span data-registry-visible-label>published items</span>
+      <strong>{entries.length}</strong>
+      <span>published {entries.length === 1 ? "item" : "items"}</span>
     </div>
   </header>
 
@@ -73,7 +74,9 @@ const detailHref = (name: string) => `${base}/registry/${itemPath(name)}/`;
   <div class="registry-catalog-heading">
     <div>
       {mode === "full" ? <h2>Featured and newly added</h2> : <h3>Featured and newly added</h3>}
-      <span class="sr-only" aria-live="polite" data-registry-count>{entries.length} shown</span>
+      <span aria-live="polite" data-registry-count>
+        {entries.length} of {entries.length} shown
+      </span>
     </div>
     <label class="registry-sort">
       <span class="sr-only">Sort registry items</span>
@@ -89,6 +92,7 @@ const detailHref = (name: string) => `${base}/registry/${itemPath(name)}/`;
     {
       orderedEntries.map(({ index }, rank) => {
         const type = registryPresentationKind(index);
+        const isLive = hasCuratedLivePreview(index.name);
         const command = `npx manteen add @house/${index.name}`;
         return (
           <article
@@ -105,16 +109,24 @@ const detailHref = (name: string) => `${base}/registry/${itemPath(name)}/`;
               aria-label={`View ${index.title ?? index.name}`}
             >
               <RegistryCardPreview name={index.name} />
-              <span class="registry-card__preview-label">
-                {type === "component" || type === "block" ? "Static example" : "Registry sample"}
-              </span>
             </a>
             <div class="registry-card__body">
               <header class="registry-card__header">
                 <h3>
                   <a href={detailHref(index.name)}>{index.title ?? index.name}</a>
                 </h3>
-                <span class="registry-kind">{type}</span>
+                <div class="registry-card__badges">
+                  <span class="registry-kind">{type}</span>
+                  <span
+                    class:list={["registry-card__badge", { "registry-card__badge--live": isLive }]}
+                  >
+                    {isLive
+                      ? "Live preview"
+                      : type === "component" || type === "block"
+                        ? "Static example"
+                        : "Registry sample"}
+                  </span>
+                </div>
               </header>
               {index.description && <p>{index.description}</p>}
               <div class="registry-card__command">
@@ -163,9 +175,8 @@ const detailHref = (name: string) => `${base}/registry/${itemPath(name)}/`;
     const grid = catalog.querySelector<HTMLElement>(".registry-grid");
     const sort = catalog.querySelector<HTMLSelectElement>("[data-registry-sort]");
     const count = catalog.querySelector<HTMLElement>("[data-registry-count]");
-    const visibleCount = catalog.querySelector<HTMLElement>("[data-registry-visible-count]");
-    const visibleLabel = catalog.querySelector<HTMLElement>("[data-registry-visible-label]");
     const empty = catalog.querySelector<HTMLElement>("[data-registry-empty]");
+    const total = cards.length;
     let activeFilter = "all";
 
     const update = () => {
@@ -177,9 +188,10 @@ const detailHref = (name: string) => `${base}/registry/${itemPath(name)}/`;
         card.hidden = !(matchesFilter && matchesSearch);
         if (!card.hidden) visible += 1;
       }
-      if (count) count.textContent = `${visible} shown`;
-      if (visibleCount) visibleCount.textContent = String(visible);
-      if (visibleLabel) visibleLabel.textContent = visible === 1 ? "published item" : "published items";
+      // The header stat (.registry-explorer__count) stays pinned to the catalog total —
+      // it is a publication count, not a filter result. Only this in-context "N of M
+      // shown" caption reflects the active filter/search.
+      if (count) count.textContent = `${visible} of ${total} shown`;
       if (empty) empty.hidden = visible !== 0;
     };
 

@@ -18,6 +18,7 @@ export default defineConfig({
       components: {
         Head: "./src/components/SiteHead.astro",
         Header: "./src/components/SiteHeader.astro",
+        PageFrame: "./src/components/PageFrame.astro",
         Sidebar: "./src/components/SiteSidebar.astro",
       },
       social: [

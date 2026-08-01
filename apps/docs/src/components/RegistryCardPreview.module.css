@@ -25,9 +25,28 @@
   justify-content: center;
   padding: 0.75rem;
   overflow: hidden;
-  border-radius: 0.5rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-panel-active);
   color: var(--manteen-text);
+}
+
+/* Demo previews carry an isolated palette so miniatures stay legible at any
+   card surface, but that palette must still follow the page theme: without
+   this override every preview renders the dark leaf values even on a white
+   page (H5). */
+:root[data-theme="light"] .preview {
+  --manteen-demo-canvas: #eef1f7;
+  --manteen-demo-panel: #ffffff;
+  --manteen-demo-panel-active: #edf0f8;
+  --manteen-demo-border: #d8dce8;
+  --manteen-demo-text: #171a22;
+  --manteen-demo-text-muted: #4f5868;
+  --manteen-demo-text-faint: #5f6875;
+  --manteen-demo-success: #087f5b;
+  --manteen-demo-accent-text: #364fc7;
+  --manteen-demo-accent: #4c5bd5;
+  --manteen-demo-accent-soft: #364fc7;
+  --manteen-demo-accent-deep: #35449e;
 }
 
 .preview :where(article, div, form, header, p, ul, ol, dl, table) {
@@ -41,14 +60,14 @@
   width: 100%;
   min-height: 6.9rem;
   padding: 0.5rem;
-  border-radius: 0.45rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-demo-canvas);
 }
 
 .articleMini img {
   width: 6.75rem;
   height: 5.75rem;
-  border-radius: 0.35rem;
+  border-radius: var(--manteen-radius-sm);
   object-fit: cover;
 }
 
@@ -63,7 +82,7 @@
 
 .articleMini span {
   padding: 0.16rem 0.45rem;
-  border-radius: 999px;
+  border-radius: var(--manteen-radius-pill);
   background: var(--manteen-demo-accent-deep);
   color: #f5f7ff;
   font-family: var(--__sl-font-mono);
@@ -88,9 +107,9 @@
   display: flex;
   width: 14.5rem;
   flex-direction: column;
-  gap: 0.48rem;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
+  gap: 0.34rem;
+  padding: 0.55rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-demo-canvas);
 }
 
@@ -100,10 +119,10 @@
 
 .authMini input,
 .authMini button {
-  min-height: 1.5rem;
+  min-height: 1.3rem;
   padding: 0 0.5rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.25rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-panel-active);
   color: var(--manteen-text-muted);
   font: inherit;
@@ -131,7 +150,7 @@
   min-height: 6.75rem;
   align-items: flex-end;
   padding: 0.55rem;
-  border-radius: 0.45rem;
+  border-radius: var(--manteen-radius-sm);
   color: #fff;
   font-size: 0.6rem;
   font-weight: 600;
@@ -156,7 +175,7 @@
   justify-content: center;
   gap: 0.32rem;
   border: 1px solid var(--manteen-demo-accent-soft);
-  border-radius: 0.5rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-demo-canvas);
   color: var(--manteen-accent-soft);
 }
@@ -172,8 +191,8 @@
 
 .themeMini {
   display: grid;
-  grid-template-columns: repeat(4, 2.9rem);
-  gap: 0.65rem;
+  grid-template-columns: repeat(4, 3.2rem);
+  gap: 0.75rem;
 }
 
 .themeMini > div {
@@ -183,15 +202,15 @@
   text-align: center;
 }
 .themeMini dt {
-  width: 2.9rem;
-  height: 3.6rem;
+  width: 3.2rem;
+  height: 3.9rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.45rem;
+  border-radius: var(--manteen-radius-sm);
 }
 .themeMini dd {
   margin: 0;
   color: var(--manteen-text-muted);
-  font-size: 0.5rem;
+  font-size: 0.55rem;
 }
 .themeMini .primary {
   background: var(--manteen-demo-accent-soft);
@@ -203,16 +222,22 @@
   background: #65d6ad;
 }
 .themeMini .text {
+  border-color: var(--manteen-text-muted);
   background: #f5f7ff;
 }
 
 .tableMini {
   width: 100%;
+  /* .preview is a flex row; a <table> is a shrink-to-fit flex item by
+     default, so width:100% alone doesn't stretch it (unlike the block-level
+     .articleMini/.headerMini/.statsGridMini siblings) — this was the real
+     driver of the table minis' low fill ratio (M2), not just the th bug. */
+  flex: 1 1 auto;
   overflow: hidden;
   border: 1px solid var(--manteen-border);
   border-collapse: separate;
   border-spacing: 0;
-  border-radius: 0.45rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-demo-canvas);
   font-size: 0.52rem;
 }
@@ -228,8 +253,15 @@
   color: var(--manteen-text-faint);
   font-weight: 600;
 }
+/* th must stay a table-cell: giving the header itself `display: flex`
+   pulls it out of normal table layout, which is what was corrupting the
+   table's width (and the visible top-right notch, M3). The icon/label
+   pairing is flexed on an inner span instead. */
 .tableMini th:last-child {
-  display: flex;
+  text-align: right;
+}
+.tableMini th:last-child .sortHeader {
+  display: inline-flex;
   align-items: center;
   justify-content: flex-end;
   gap: 0.2rem;
@@ -252,33 +284,33 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.3rem;
+  gap: 0.4rem;
   color: var(--manteen-accent-soft);
 }
 
 .emptyMini strong {
   color: var(--manteen-text);
-  font-size: 0.7rem;
+  font-size: 0.78rem;
 }
 .emptyMini small,
 .progressMini small {
   color: var(--manteen-text-muted);
-  font-size: 0.52rem;
+  font-size: 0.58rem;
 }
 .emptyMini span {
   margin-top: 0.2rem;
-  padding: 0.28rem 0.55rem;
-  border-radius: 0.3rem;
+  padding: 0.32rem 0.7rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-demo-accent);
   color: #fff;
-  font-size: 0.52rem;
+  font-size: 0.58rem;
   font-weight: 700;
 }
 
 .headerMini {
   width: 100%;
-  padding: 0.8rem;
-  border-radius: 0.45rem;
+  padding: 0.6rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-demo-canvas);
 }
 .headerMini > small {
@@ -289,46 +321,47 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 0.65rem;
+  margin-top: 0.5rem;
 }
 .headerMini strong {
   font-size: 0.78rem;
 }
 .headerMini span {
-  padding: 0.3rem 0.5rem;
-  border-radius: 0.3rem;
+  padding: 0.24rem 0.5rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-demo-accent-deep);
+  color: #f5f7ff;
   font-size: 0.5rem;
 }
 .headerMini p {
-  margin-top: 0.35rem;
+  margin-top: 0.25rem;
   color: var(--manteen-text-muted);
   font-size: 0.55rem;
 }
 
 .statMini {
-  width: 13rem;
-  padding: 0.9rem;
+  width: 14.5rem;
+  padding: 1rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.55rem;
+  border-radius: var(--manteen-radius-md);
   background: var(--manteen-demo-canvas);
 }
 .statMini small {
   display: block;
   color: var(--manteen-text-faint);
-  font-size: 0.55rem;
+  font-size: 0.6rem;
 }
 .statMini strong {
   display: block;
   margin-top: 0.35rem;
   font-family: var(--__sl-font-mono);
-  font-size: 1.35rem;
+  font-size: 1.45rem;
 }
 .statMini span {
   display: block;
   margin-top: 0.25rem;
   color: var(--manteen-success);
-  font-size: 0.55rem;
+  font-size: 0.6rem;
 }
 
 .progressMini button {
@@ -336,20 +369,20 @@
   align-items: center;
   gap: 0.35rem;
   min-height: 2.15rem;
-  padding: 0 0.8rem;
+  padding: 0 1rem;
   border: 0;
-  border-radius: 0.4rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-demo-accent);
   color: #fff;
   font: inherit;
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   font-weight: 700;
 }
 .progressMini > span {
-  width: 10rem;
-  height: 0.35rem;
+  width: 12rem;
+  height: 0.4rem;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--manteen-radius-pill);
   background: var(--manteen-border);
 }
 .progressMini i {
@@ -363,18 +396,18 @@
   display: flex;
   width: 14rem;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.28rem;
   padding: 0;
   list-style: none;
 }
 .listMini li {
   display: flex;
-  min-height: 1.9rem;
+  min-height: 1.8rem;
   align-items: center;
   gap: 0.5rem;
   padding: 0 0.6rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.35rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-demo-canvas);
   color: var(--manteen-text-muted);
   font-size: 0.6rem;
@@ -395,7 +428,7 @@
   gap: 0.28rem;
   padding: 0.55rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.4rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-demo-canvas);
   color: var(--manteen-accent-soft);
 }
@@ -414,22 +447,22 @@
 .fileMini {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 1rem;
   color: var(--manteen-accent-soft);
 }
 .fileMini > div {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.3rem;
 }
 .fileMini strong {
   color: var(--manteen-text);
   font-family: var(--__sl-font-mono);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
 }
 .fileMini small {
   color: var(--manteen-text-muted);
-  font-size: 0.55rem;
+  font-size: 0.62rem;
 }
 
 .visuallyHidden {

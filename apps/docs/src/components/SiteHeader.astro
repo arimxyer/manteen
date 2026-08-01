@@ -1,10 +1,12 @@
 ---
 import LanguageSelect from "virtual:starlight/components/LanguageSelect";
+import MobileMenuToggle from "virtual:starlight/components/MobileMenuToggle";
 import Search from "virtual:starlight/components/Search";
 import SiteTitle from "virtual:starlight/components/SiteTitle";
 import SocialIcons from "virtual:starlight/components/SocialIcons";
 import ThemeSelect from "virtual:starlight/components/ThemeSelect";
 
+const { hasSidebar } = Astro.locals.starlightRoute;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const pathname = Astro.url.pathname;
 const routePath = pathname.startsWith(base) ? pathname.slice(base.length) : pathname;
@@ -43,13 +45,51 @@ const links = [
     </div>
     <ThemeSelect />
     <LanguageSelect />
+    <span class="site-header__menu">{hasSidebar && <MobileMenuToggle />}</span>
   </div>
 </div>
 
 <script>
+  // H16 — the overflow regions were labeled for assistive tech but carried no visual signal
+  // that content continued past the edge. `data-scroll-more-x` / `-y` drive the fade in
+  // custom.css and are cleared as soon as that end is reached, so the affordance only ever
+  // appears while there is genuinely more to see.
+  const SCROLL_EPSILON = 2;
+
+  const canScroll = (overflow: string) => overflow === "auto" || overflow === "scroll";
+
+  const refreshScrollEdges = (scroller: HTMLElement) => {
+    // `.manteen-table-scroll` only becomes a scroller below the grid breakpoint, and content can
+    // overhang a visible-overflow box too — fading an edge the reader cannot scroll would be a
+    // lie, so the axis has to be genuinely scrollable before the affordance is painted.
+    const style = getComputedStyle(scroller);
+    const moreX =
+      canScroll(style.overflowX) &&
+      scroller.scrollWidth - scroller.clientWidth - scroller.scrollLeft > SCROLL_EPSILON;
+    const moreY =
+      canScroll(style.overflowY) &&
+      scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop > SCROLL_EPSILON;
+    scroller.toggleAttribute("data-scroll-more-x", moreX);
+    scroller.toggleAttribute("data-scroll-more-y", moreY);
+  };
+
+  const trackScrollEdges = (scroller: HTMLElement) => {
+    if (!scroller.dataset.scrollEdges) {
+      scroller.dataset.scrollEdges = "on";
+      scroller.addEventListener("scroll", () => refreshScrollEdges(scroller), { passive: true });
+    }
+    refreshScrollEdges(scroller);
+  };
+
+  const refreshAllScrollEdges = () => {
+    const scrollers = document.querySelectorAll<HTMLElement>("[data-scroll-edges]");
+    for (const scroller of scrollers) refreshScrollEdges(scroller);
+  };
+
   const enhanceCodeRegions = () => {
     const regions = [...document.querySelectorAll<HTMLElement>("pre[data-language]")];
     for (const [index, region] of regions.entries()) {
+      trackScrollEdges(region);
       region.setAttribute("role", "region");
       region.tabIndex = 0;
       if (region.hasAttribute("aria-label") || region.hasAttribute("aria-labelledby")) continue;
@@ -71,6 +111,7 @@ const links = [
         frame.append(table);
       }
       const scrollable = frame.scrollWidth > frame.clientWidth;
+      trackScrollEdges(frame);
       if (scrollable) {
         const pageTitle = document.querySelector("h1")?.textContent?.trim() || "Documentation";
         frame.tabIndex = 0;
@@ -84,9 +125,19 @@ const links = [
     }
   };
 
+  // The bounded source viewer is built by RegistryItemDetail.astro, so it is picked up here
+  // rather than being given its own script.
+  const enhanceSourcePanes = () => {
+    const panes = document.querySelectorAll<HTMLElement>(
+      ".registry-source-browser__code, .registry-source-browser__files",
+    );
+    for (const pane of panes) trackScrollEdges(pane);
+  };
+
   const enhanceDocument = () => {
     enhanceCodeRegions();
     enhanceTables();
+    enhanceSourcePanes();
   };
 
   if (document.readyState === "loading") {
@@ -97,7 +148,37 @@ const links = [
     requestAnimationFrame(enhanceDocument);
   }
   document.addEventListener("astro:page-load", () => requestAnimationFrame(enhanceDocument));
-  window.addEventListener("resize", enhanceTables, { passive: true });
+  // Tab and file switches reveal panes that were `display: none` and therefore unmeasurable at
+  // enhancement time, so re-measure after the click lands.
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (!target.closest("[data-source-browser], .registry-tabs")) return;
+    requestAnimationFrame(refreshAllScrollEdges);
+  });
+
+  window.addEventListener(
+    "resize",
+    () => {
+      enhanceTables();
+      refreshAllScrollEdges();
+    },
+    { passive: true },
+  );
+
+  // H17 — the menu toggle now lives in the header, outside the sidebar <nav>, so the
+  // built-in escape-to-close listener (attached via `this.closest("nav")`) never binds.
+  // Restore it at the document level: escape closes the open drawer from anywhere the
+  // focus trap allows and returns focus to the toggle, matching upstream behavior.
+  document.addEventListener("keyup", (event) => {
+    if (event.code !== "Escape") return;
+    if (!document.body.hasAttribute("data-mobile-menu-expanded")) return;
+    const toggle = document.querySelector<HTMLElement & { setExpanded?: (expanded: boolean) => void }>(
+      "starlight-menu-button",
+    );
+    toggle?.setExpanded?.(false);
+    toggle?.querySelector("button")?.focus();
+  });
 </script>
 
 <style>
@@ -149,6 +230,13 @@ const links = [
       margin-inline-start: auto;
     }
 
+    /* Desktop never shows the menu toggle (its button carries Starlight's
+       `md:sl-hidden`); hide the wrapper too so the tools row gains no empty
+       flex item + gap at >=50rem. */
+    .site-header__menu {
+      display: none;
+    }
+
     .site-header__social::after {
       height: 1.5rem;
       border-inline-end: 1px solid var(--sl-color-gray-5);
@@ -165,9 +253,18 @@ const links = [
       font-size: 1rem;
     }
 
+    /* H2: these two children carry Starlight's `sl-hidden md:sl-block` / `md:sl-flex`
+       utility classes, which live in the `starlight.utils` layer — declared *after*
+       `starlight.core` (this block) in Starlight's own layer order. For a normal-weight
+       declaration, a later layer always wins over an earlier one regardless of selector
+       specificity, so an unqualified `display: none` here silently loses at >=50rem and
+       the "Search"/"Ctrl K" content overflows the 2rem button onto the GitHub icon.
+       `!important` sidesteps the layer order entirely: importance is resolved before
+       layer/specificity in the cascade, so this beats Starlight's non-important utility
+       classes unconditionally. */
     :global(.site-header site-search button[data-open-modal] > span),
     :global(.site-header site-search button[data-open-modal] > kbd) {
-      display: none;
+      display: none !important;
     }
 
     @media (min-width: 50rem) {
@@ -200,8 +297,8 @@ const links = [
         flex: 1;
         min-width: max-content;
         padding: 0.4rem 0.45rem;
-        border-radius: var(--manteen-radius-sm, 0.4rem);
-        font-size: 0.74rem;
+        border-radius: var(--manteen-radius-sm);
+        font-size: var(--manteen-text-xs);
         text-align: center;
         white-space: nowrap;
       }
@@ -218,6 +315,35 @@ const links = [
 
       .site-header__social::after {
         display: none;
+      }
+
+      /* H17: the menu toggle is now a real flex item in this row — the PageFrame.astro
+         override stopped rendering it as a fixed overlay inside the sidebar nav.
+         Restyle it from Starlight's filled floating circle to the same transparent
+         32px icon treatment as the search/GitHub/theme controls beside it. The
+         `.site-header__menu` wrapper renders (empty) on sidebar-less pages too, so
+         the row keeps one geometry everywhere and controls no longer slide between
+         `/` and doc pages. */
+      .site-header__menu {
+        display: flex;
+        width: 2rem;
+        height: 2rem;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .site-header__menu :global(starlight-menu-button button) {
+        position: static;
+        width: 2rem;
+        height: 2rem;
+        background-color: transparent;
+        box-shadow: none;
+        color: var(--sl-color-gray-1);
+      }
+
+      .site-header__menu :global(starlight-menu-button[aria-expanded="true"] button) {
+        background-color: var(--manteen-panel-active, var(--sl-color-gray-6));
+        box-shadow: none;
       }
     }
   }

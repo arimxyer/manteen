@@ -6,7 +6,8 @@ import {
   IconMoon,
   IconSun,
 } from "@tabler/icons-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { ArticleCard } from "../../../../registry/mantine-ui/article-card/article-card";
 import styles from "./ArticleCardPlayground.module.css";
@@ -51,6 +52,28 @@ export function ArticleCardPlayground() {
   const [props, setProps] = useState(DEFAULT_PROPS);
   const [eventMessage, setEventMessage] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
+  // H13 — the toolbar renders into the tab-bar row (RegistryItemDetail.astro's
+  // `.registry-tab-row__toolbar`) rather than into its own band above the preview. `undefined`
+  // is "not looked yet": rendering the toolbar in place first and moving it on the next frame
+  // would flash it in the position the audit is asking us to leave.
+  const [toolbarSlot, setToolbarSlot] = useState<HTMLElement | null | undefined>(undefined);
+
+  useEffect(() => {
+    setToolbarSlot(document.querySelector<HTMLElement>("[data-playground-toolbar-slot]"));
+  }, []);
+
+  // H5 — the stage used to open dark on a light page regardless of the reader's theme; the
+  // toggle already proved the light path renders correctly, so only the default was wrong.
+  // Synced in an effect rather than a lazy initializer because Starlight stamps `data-theme`
+  // before hydration: reading it during render would disagree with the SSR output.
+  useEffect(() => {
+    const root = document.documentElement;
+    const sync = () => setScheme(root.dataset.theme === "light" ? "light" : "dark");
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
 
   const jsx = useMemo(() => {
     const actionProps = props.actions
@@ -85,44 +108,62 @@ export function ArticleCardPlayground() {
     window.setTimeout(() => setCopyStatus("idle"), 1600);
   };
 
-  return (
-    <div ref={rootRef} className={styles.scope} data-article-card-playground>
-      <div className={styles.toolbar}>
-        <fieldset className={styles.viewportControl}>
-          <legend className={styles.visuallyHidden}>Preview viewport</legend>
-          <button
-            type="button"
-            className={viewport === "desktop" ? styles.activeButton : undefined}
-            aria-pressed={viewport === "desktop"}
-            onClick={() => setViewport("desktop")}
-          >
-            <IconDeviceDesktop aria-hidden="true" size={14} />
-            Desktop
-          </button>
-          <button
-            type="button"
-            className={viewport === "mobile" ? styles.activeButton : undefined}
-            aria-pressed={viewport === "mobile"}
-            onClick={() => setViewport("mobile")}
-          >
-            <IconDeviceMobile aria-hidden="true" size={14} />
-            Mobile
-          </button>
-        </fieldset>
+  const toolbar = (
+    <div className={styles.toolbar}>
+      {/* biome-ignore lint/a11y/useSemanticElements: H12 — a <fieldset> here spilled its two
+          buttons 12px below its own bottom border at 390px, because the sr-only <legend> still
+          reserves space in the fieldset box model. The audit's fix directs replacing it with a
+          div + aria-label, which is the exposed-group semantics without the broken geometry. */}
+      <div className={styles.viewportControl} role="group" aria-label="Preview viewport">
         <button
           type="button"
-          className={styles.themeButton}
-          aria-pressed={scheme === "light"}
-          onClick={() => setScheme((current) => (current === "dark" ? "light" : "dark"))}
+          className={viewport === "desktop" ? styles.activeButton : undefined}
+          aria-pressed={viewport === "desktop"}
+          onClick={() => setViewport("desktop")}
         >
-          {scheme === "dark" ? (
-            <IconMoon aria-hidden="true" size={14} />
-          ) : (
-            <IconSun aria-hidden="true" size={14} />
-          )}
-          {scheme === "dark" ? "Dark" : "Light"}
+          <IconDeviceDesktop aria-hidden="true" size={14} />
+          Desktop
+        </button>
+        <button
+          type="button"
+          className={viewport === "mobile" ? styles.activeButton : undefined}
+          aria-pressed={viewport === "mobile"}
+          onClick={() => setViewport("mobile")}
+        >
+          <IconDeviceMobile aria-hidden="true" size={14} />
+          Mobile
         </button>
       </div>
+      <button
+        type="button"
+        className={styles.themeButton}
+        aria-pressed={scheme === "light"}
+        onClick={() => setScheme((current) => (current === "dark" ? "light" : "dark"))}
+      >
+        {scheme === "dark" ? (
+          <IconMoon aria-hidden="true" size={14} />
+        ) : (
+          <IconSun aria-hidden="true" size={14} />
+        )}
+        {scheme === "dark" ? "Dark" : "Light"}
+      </button>
+    </div>
+  );
+
+  return (
+    <div ref={rootRef} className={styles.scope} data-article-card-playground>
+      {/* The portal target sits outside this subtree, so the toolbar takes `styles.scope` with
+          it — every control's sizing rule in the module is scope-prefixed, and losing them is
+          exactly the size mismatch H13 reports. `.scope` declares only variables and a colour,
+          so a second one is inert. */}
+      {toolbarSlot === undefined
+        ? null
+        : toolbarSlot
+          ? createPortal(
+              <div className={`${styles.scope} ${styles.toolbarHost}`}>{toolbar}</div>,
+              toolbarSlot,
+            )
+          : toolbar}
 
       <MantineProvider
         forceColorScheme={scheme}

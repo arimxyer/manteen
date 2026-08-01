@@ -6,19 +6,27 @@
   --manteen-panel: #1b1e26;
   --manteen-panel-raised: #22252d;
   --manteen-panel-active: #242833;
+  --manteen-panel-inset: #1b1e26;
   --manteen-border: #363b48;
   --manteen-text: #f5f7ff;
   --manteen-text-muted: #b8bfcc;
   --manteen-text-faint: #858d9d;
   --manteen-success: #65d6ad;
   --manteen-accent-soft: #c9d4ff;
-  --manteen-canvas: var(--sl-color-bg);
-  --manteen-surface: var(--manteen-panel);
-  --manteen-surface-raised: var(--manteen-panel-raised);
-  --manteen-interactive: var(--manteen-panel-active);
-  --manteen-radius-sm: 0.4rem;
+  /* H7 — the two surfaces Expressive Code's chrome is mapped onto (see the `.expressive-code`
+     block below). Code
+     frames appear on three different backgrounds (the page canvas, `--manteen-panel` inside a
+     tab panel, `--manteen-panel-raised` inside the source browser), so the code well is set one
+     step below all three: it reads as recessed wherever it lands, in both themes. */
+  --manteen-code-canvas: #16181f;
+  --manteen-code-chrome: #1e212a;
+  /* H9 — three radius steps, and only three. `--manteen-radius-lg` (0.75rem) was the fourth,
+     and it put `.home-overview__card` at 12px directly above `.registry-card` at 10px in the
+     same scroll for the same semantic role; its four usages now resolve to `md`. `sm` moves
+     0.4rem → 0.375rem so it lands on a whole 6px instead of the mushy 6.4px the sweep found.
+     Anything that needs a corner picks one of these; there is no fourth to reach for. */
+  --manteen-radius-sm: 0.375rem;
   --manteen-radius-md: 0.625rem;
-  --manteen-radius-lg: 0.75rem;
   --manteen-radius-pill: 999px;
   --manteen-space-1: 0.35rem;
   --manteen-space-2: 0.55rem;
@@ -28,10 +36,24 @@
   --manteen-text-xs: 0.7rem;
   --manteen-text-sm: 0.8rem;
   --manteen-text-ui: 0.875rem;
+  /* H9 — the uppercase micro-label role shipped as five sizes at weight 700 (9.12/9.28/9.92/
+     10.88/11.2px) with three letter-spacings. One role, one token: 11px clears the reading
+     floor the audit set (9.28px uppercase is below it) and is a size the product already
+     shipped, so nothing grows past a metric the layout has handled. */
+  --manteen-eyebrow-size: 0.6875rem;
+  --manteen-eyebrow-weight: 700;
+  --manteen-eyebrow-tracking: 0.08em;
   --manteen-control-sm: 2.25rem;
   --manteen-control-md: 2.75rem;
+  /* H19 — the one focus halo. Every focus treatment in the product paints this: the two
+     `:focus-within` search boxes as their whole feedback, the `:focus-visible` controls in the
+     2px gap their outline offset opens. It had zero usages when the audit ran. */
   --manteen-focus-ring: 0 0 0 2px color-mix(in srgb, var(--sl-color-accent) 28%, transparent);
   --sl-color-bg-sidebar: var(--manteen-panel);
+  /* H6 — the design's page canvas. Starlight resolves `--sl-color-bg` from
+     `--sl-color-black`, which is per-theme, so the light value below must be restated
+     explicitly: this block is unlayered and therefore outranks Starlight's light override. */
+  --sl-color-bg: #111318;
 }
 
 :root[data-theme="light"] {
@@ -41,12 +63,255 @@
   --manteen-panel: #f6f7fb;
   --manteen-panel-raised: #ffffff;
   --manteen-panel-active: #edf0f8;
+  --manteen-panel-inset: #edf0f8;
   --manteen-border: #d8dce8;
   --manteen-text: #171a22;
   --manteen-text-muted: #4f5868;
   --manteen-text-faint: #5f6875;
   --manteen-success: #087f5b;
-  --manteen-accent-soft: #364fc7;
+  /* H7, light half — same relationship: one step below canvas #eef1f7, panel #f6f7fb and
+     raised #ffffff, with the title strip a step above the code well. */
+  --manteen-code-canvas: #e9edf5;
+  --manteen-code-chrome: #f4f6fb;
+  /* H20 — light mode had collapsed this onto `--sl-color-accent` (#364fc7), erasing the
+     interactive-accent vs soft-accent distinction dark mode still carries. Indigo-7 is a
+     distinct step that still clears AA: 5.29:1 on `--manteen-panel`, 4.97:1 on
+     `--manteen-panel-active`, and 5.67:1 for white text on the filled variants. */
+  --manteen-accent-soft: #3b5bdb;
+  /* H6, light half. `.registry-card` now paints `--manteen-panel-raised` (#ffffff), which is
+     invisible on a pure-white page. Tinting the canvas restores a monotonic light scale —
+     canvas #eef1f7 < panel #f6f7fb (1.06:1) < raised #ffffff (1.13:1) — and lifts the card
+     from 1.00:1 to 1.13:1 without touching any panel token. */
+  --sl-color-bg: #eef1f7;
+}
+
+/* H1 — Starlight's `.sl-markdown-content * + * { margin-top: 1rem }` reaches the children of
+   every flex/grid container the registry renders. With `align-items: stretch` the first child
+   keeps full container height while siblings render 16px shorter and 16px lower: that single
+   rule was the tab strip's 48px-vs-32px first tab, the filter chips sitting 8px off the search
+   field, the staggered home Author/Consume cards and the Source-tab file rail.
+   This reset covers every flex/grid container we author, not only the four that were reported —
+   the leak recurs on the next one added. It is deliberately placed ahead of the component rules
+   so that its (0,1,0) specificity loses to any later `margin-top` those rules declare on
+   purpose, while still beating Starlight's rule, which is layered and therefore always ranks
+   below unlayered custom.css. */
+:is(
+  .home-overview,
+  .home-overview__grid,
+  .home-overview__card,
+  .registry-explorer__hero,
+  .registry-explorer__count,
+  .registry-explorer__breadcrumb,
+  .registry-breadcrumb,
+  .registry-discovery,
+  .registry-search,
+  .registry-filters,
+  .registry-catalog-heading,
+  .registry-sort,
+  .registry-grid,
+  .registry-card,
+  .registry-card__body,
+  .registry-card__header,
+  .registry-card__badges,
+  .registry-card__command,
+  .registry-detail,
+  .registry-detail__header,
+  .registry-detail__labels,
+  .registry-detail__actions,
+  .registry-detail__columns,
+  .registry-install,
+  .registry-tab-row,
+  .registry-tab-row__toolbar,
+  .registry-tabs,
+  .registry-note,
+  .registry-source-file-meta,
+  .registry-empty-state,
+  .registry-panel-heading,
+  .registry-style-section__heading,
+  .registry-selector-row,
+  .registry-code-list,
+  .registry-metadata,
+  .registry-metadata__list,
+  .registry-files,
+  .registry-source-browser,
+  .registry-source-browser__files,
+  .registry-action,
+  .registry-inline-action
+) > * {
+  margin-top: 0;
+}
+
+/* Same leak, one level deeper: flex containers that are themselves anonymous wrappers. */
+.registry-catalog-heading > div > *,
+.registry-install > div > *,
+.registry-metadata dl > *,
+.registry-metadata dl > div > *,
+.registry-selector-row > div > *,
+.registry-files li > *,
+.registry-files li > span > * {
+  margin-top: 0;
+}
+
+/* H1, continued — the two lists above name containers, so they cannot reach anything inside a
+   component whose classes are CSS-module hashes. The live playground is entirely such a subtree,
+   and the leak was still visibly alive in it: the viewport control's "Mobile" button sat 8px
+   below "Desktop" and broke its own group's bottom border at 390px (H12), and the Article Card's
+   bookmark/share actions staircased 8px below the heart because they are grandchildren of the
+   footer, not the direct children an earlier `> *` reset covered.
+
+   Naming a container is the wrong shape of fix for a subtree we do not name. This scopes by
+   ancestor instead, and does it at zero specificity: `:where()` and `*` both contribute nothing,
+   so the rule is (0,0,0). That is deliberate and is what makes a blanket descendant reset safe
+   here. Starlight's `.sl-markdown-content * + *` lives in `@layer starlight.content`, and every
+   unlayered declaration outranks every layered one no matter how weak — so (0,0,0) still beats
+   it. Meanwhile ANY authored rule wins over (0,0,0), so every intentional margin inside the
+   subtree survives untouched: `.playground`'s own `margin-top: 1rem`, `.playgroundHeader p`,
+   and the registry component's `.title` / `.footer` `--mantine-spacing-md`.
+
+   Both roots are stable, non-hashed hooks: the playground's own data attribute, and the tab-row
+   slot the toolbar portals into after hydration (H13), which sits outside the playground root. */
+/* biome-ignore lint/style/noDescendingSpecificity: the (0,0,0) is the mechanism, not an
+   oversight — this rule has to lose to every authored margin, including the (0,1,0) `:is()`
+   reset above it. Reordering to satisfy the rule would change nothing about the cascade
+   (specificity already decides between them) and would only put the explanation out of order. */
+:where([data-article-card-playground], .registry-tab-row__toolbar) * + * {
+  margin-top: 0;
+}
+
+/* H8 — Starlight ships inline `<code>` as a 0-radius raw-grey rectangle (rgb(237,238,243) light
+   / rgb(53,56,65) dark): nine hard-edged blocks on the Article Card Preview tab alone, against
+   six other radii on the same page. This puts it on the manteen chip — `--manteen-radius-sm`
+   plus the panel fill and border every other small surface already uses, so one rule covers
+   both themes instead of two hardcoded fills.
+
+   Specificity is deliberately (0,0,1): `:where()` zeroes the scope, so any component rule that
+   owns its own `<code>` treatment still outranks this, while unlayered custom.css outranks
+   Starlight's layered rule regardless of specificity. `font-size` is left undeclared on
+   purpose — Starlight's layered `:is(h1..h6) code { font-size: inherit }` then stays
+   uncontested, and the chip's em padding scales with whatever size it lands in. */
+:where(.sl-markdown-content) code:not(:where(pre *, .expressive-code *, .not-content *)) {
+  padding: 0.15em 0.4em;
+  /* Starlight's own -0.125rem, restated rather than inherited, so the 1px border added above
+     cannot grow the line box in dense prose. */
+  margin-block: -0.125rem;
+  border: 1px solid var(--manteen-border);
+  border-radius: var(--manteen-radius-sm);
+  background: var(--manteen-panel-active);
+  color: var(--manteen-text);
+}
+
+/* Code that already sits inside a filled row, a bordered well, or a control that owns its own
+   treatment stays plain mono: a chip inside a chip is the same defect one level down, and the
+   Pencil frames draw exactly these as plain mono on the panel. */
+:where(
+  .registry-explorer__breadcrumb,
+  .registry-detail__copy,
+  .registry-install,
+  .registry-card__command,
+  .home-overview__card,
+  .registry-code-list li,
+  .registry-metadata__list li,
+  .registry-files
+) code {
+  padding: 0;
+  margin-block: 0;
+  border: 0;
+  background: transparent;
+}
+
+/* H8, same cause — Starlight's asides were never brought into the panel language either: a
+   square-cornered periwinkle block (rgb(207,212,252)) with a 4px accent bar and no border, in
+   pages where every other surface is a 10px-radius bordered panel. The variant's own
+   `--sl-color-asides-border` is kept as the leading edge so note/tip/caution/danger stay
+   distinguishable, and the title keeps Starlight's per-variant accent colour. */
+.starlight-aside {
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--manteen-border);
+  border-inline-start: 3px solid var(--sl-color-asides-border);
+  border-radius: var(--manteen-radius-md);
+  background: var(--manteen-panel);
+  color: var(--sl-color-text);
+}
+
+.starlight-aside__content a {
+  color: var(--manteen-accent-soft);
+}
+
+/* H7 — Expressive Code shipped as visibly foreign chrome: a two-tone title bar (the active tab
+   painted `--sl-color-gray-6` while the bar behind it painted `--sl-color-black`, producing a
+   hard vertical seam ~60% across the strip), a stranded accent rule, a near-white
+   `rgb(219,228,255)` hairline that was the highest-contrast border anywhere in the dark UI, and
+   a 1px title radius against 6–12px neighbours. All of it came from Starlight's
+   `applyStarlightUiThemeColors` plus its `borderRadius: '0px'` default.
+
+   DEVIATION, and it is forced. The audit's fix (and the brief) name Starlight's `expressiveCode`
+   option in `astro.config.mjs` as the surface. On this dependency set — astro 7.1.6 /
+   @astrojs/starlight 0.41.5 / astro-expressive-code 0.44.1 — that option is broken: setting ANY
+   value under it (verified with a lone `styleOverrides.borderRadius`) makes the build emit one
+   `_astro/ec.<hash>.css` while most pages link a *different*, never-emitted hash. Measured on a
+   clean build: `/getting-started/` and `/registry/article-card/` both requested
+   `ec.w36nc.css`, which does not exist in `dist/`, while only `ec.c7kiw.css` was written — i.e.
+   every code block on those pages loses its stylesheet entirely (no frame, no background, the
+   copy button falling out of the figure). Two renderers are constructed and only one receives
+   the processed config; which pages land on which is not even stable between builds. Moving the
+   same object to `ec.config.mjs`, or declaring it in both places at once, reproduces it
+   identically.
+
+   So the mapping is expressed one level down instead, against the custom properties Expressive
+   Code emits for exactly these settings. It is the same single global surface — one block, every
+   frame on every page, both themes — and it is immune to which renderer produced the markup.
+   `custom.css` is unlayered, so this outranks EC's `.expressive-code[data-theme='…']` block in
+   the `starlight.components` layer regardless of specificity.
+
+   Followups for the maintainer, neither actionable here: the upstream stylesheet-hash bug (a
+   dependency bump or an issue upstream), and the line-number gutter `NhnE6` draws, which needs
+   `@expressive-code/plugin-line-numbers` — a dependency this pass may not add. */
+.expressive-code {
+  --ec-brdRad: var(--manteen-radius-md);
+  --ec-brdWd: 1px;
+  --ec-brdCol: var(--manteen-border);
+  --ec-codeBg: var(--manteen-code-canvas);
+  --ec-uiFontFml: var(--__sl-font-mono);
+  --ec-uiFontSize: 0.8rem;
+  --ec-uiPadBlk: 0.4rem;
+  --ec-uiPadInl: 0.9rem;
+  --ec-focusBrd: var(--sl-color-accent);
+  --ec-sbThumbCol: color-mix(in srgb, var(--manteen-text-faint) 55%, transparent);
+  --ec-sbThumbHoverCol: var(--manteen-text-faint);
+
+  /* One tone across the whole title strip — the tab and the bar behind it take the same fill,
+     so there is no seam left to see. */
+  --ec-frm-edTabBarBg: var(--manteen-code-chrome);
+  --ec-frm-edActTabBg: var(--manteen-code-chrome);
+  --ec-frm-trmTtbBg: var(--manteen-code-chrome);
+  --ec-frm-edActTabFg: var(--manteen-text);
+  --ec-frm-trmTtbFg: var(--manteen-text-muted);
+  --ec-frm-edActTabBrdCol: transparent;
+  /* The near-white hairline: the active tab's top indicator, resolving to
+     `--sl-color-accent-high` (#dbe4ff = the reported rgb(219,228,255)). */
+  --ec-frm-edActTabIndHt: 0px;
+  --ec-frm-edActTabIndTopCol: transparent;
+  --ec-frm-edActTabIndBtmCol: transparent;
+  --ec-frm-edTabBrdRad: var(--manteen-radius-sm);
+  --ec-frm-edTabBarBrdCol: var(--manteen-border);
+  --ec-frm-edTabBarBrdBtmCol: var(--manteen-border);
+  --ec-frm-trmTtbBrdBtmCol: var(--manteen-border);
+  --ec-frm-trmTtbDotsFg: var(--manteen-text-faint);
+  --ec-frm-trmTtbDotsOpa: 0.4;
+  --ec-frm-edBg: var(--manteen-code-canvas);
+  --ec-frm-trmBg: var(--manteen-code-canvas);
+  --ec-frm-frameBoxShdCssVal: none;
+  /* The copy control reads as one of the product's own icon buttons: panel fill, manteen
+     border, no opacity trickery. */
+  --ec-frm-inlBtnFg: var(--manteen-text-muted);
+  --ec-frm-inlBtnBrd: var(--manteen-border);
+  --ec-frm-inlBtnBrdOpa: 1;
+  --ec-frm-inlBtnBg: var(--manteen-panel-active);
+  --ec-frm-inlBtnBgIdleOpa: 1;
+  --ec-frm-inlBtnBgHoverOrFocusOpa: 1;
+  --ec-frm-inlBtnBgActOpa: 1;
+  --ec-frm-tooltipSuccessBg: var(--manteen-panel-active);
+  --ec-frm-tooltipSuccessFg: var(--manteen-text);
 }
 
 .home-overview {
@@ -70,11 +335,15 @@
   line-height: 1.12;
 }
 
+/* H15 — the two shells' body copy diverged in both colour (docs rgb(53,56,65) vs registry
+   rgb(79,88,104) in light) and leading (28px vs 25.6px, in both themes). Every shell-level
+   paragraph now takes Starlight's own body colour and line-height, which is by definition the
+   docs prose metric; small UI copy keeps `--manteen-text-muted`. */
 .home-overview__description {
   margin: 0;
   margin-top: var(--manteen-space-3);
-  color: var(--manteen-text-muted);
-  line-height: 1.65;
+  color: var(--sl-color-text);
+  line-height: var(--sl-line-height);
 }
 
 .home-overview__grid {
@@ -90,15 +359,15 @@
   gap: var(--manteen-space-2);
   padding: 1.25rem;
   border: 1px solid var(--manteen-border);
-  border-radius: var(--manteen-radius-lg);
+  border-radius: var(--manteen-radius-md);
   background: var(--manteen-panel);
 }
 
 .home-overview__meta {
   color: var(--manteen-text-faint);
-  font-size: var(--manteen-text-xs);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: var(--manteen-eyebrow-size);
+  font-weight: var(--manteen-eyebrow-weight);
+  letter-spacing: var(--manteen-eyebrow-tracking);
   text-transform: uppercase;
 }
 
@@ -183,11 +452,15 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   margin: 0;
 }
 
+/* H9 — one uppercase-eyebrow token, applied to every instance of the role: this label, the
+   home-overview card meta, both catalog pills, the gallery badge, the install-bar label, the
+   rail section headings and the playground field labels. It was five sizes and three
+   letter-spacings across those. */
 .registry-eyebrow {
   color: var(--manteen-text-faint);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: var(--manteen-eyebrow-size);
+  font-weight: var(--manteen-eyebrow-weight);
+  letter-spacing: var(--manteen-eyebrow-tracking);
   text-transform: uppercase;
 }
 
@@ -238,8 +511,8 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 .registry-explorer__hero p:last-child {
   max-width: 44rem;
   margin-top: 1.25rem;
-  color: var(--manteen-text-muted);
-  line-height: 1.6;
+  color: var(--sl-color-text);
+  line-height: var(--sl-line-height);
 }
 
 .registry-explorer__count {
@@ -259,7 +532,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 .registry-explorer__count span,
 .registry-catalog-heading span {
   color: var(--manteen-text-faint);
-  font-size: 0.72rem;
+  font-size: var(--manteen-text-xs);
 }
 
 .registry-discovery {
@@ -292,9 +565,12 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   font: inherit;
 }
 
+/* H19 — `.registry-rail__search:focus-within` (RegistrySidebar.astro) now paints exactly this,
+   so the two visually identical search boxes stop giving different focus feedback. The 24%
+   literal that used to live here was a third opacity, off the token it was meant to be. */
 .registry-search:focus-within {
   border-color: var(--sl-color-accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sl-color-accent) 24%, transparent);
+  box-shadow: var(--manteen-focus-ring);
 }
 
 .registry-filters {
@@ -346,7 +622,10 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 0.125rem;
+  /* H15 follow-on: the heading grew from 16.8px to a real section size, and at 0.125rem it then
+     sat on the filter chips' rounded bottoms. Filters → results is the page's largest semantic
+     break, so it takes the largest step in the scale. */
+  margin-top: var(--manteen-space-5);
 }
 
 .registry-catalog-heading > div {
@@ -355,10 +634,16 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   gap: 0.2rem;
 }
 
+/* H15 — "Featured and newly added" is a semantic H2 that computed to 16.8px while the docs
+   shell's H2s computed to 35px, which is the loudest "two different products" signal on the
+   site. Both shells now read off Starlight's own heading scale: `--sl-text-h3` is one step
+   below the docs H2 and carries the same 50em breakpoint, so it stays a section heading rather
+   than a page title beside the sort control. */
 .registry-catalog-heading :where(h2, h3) {
   color: var(--manteen-text);
-  font-size: 1.05rem;
+  font-size: var(--sl-text-h3);
   font-weight: 600;
+  line-height: var(--sl-line-height-headings);
 }
 
 .registry-sort {
@@ -377,7 +662,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   color: var(--manteen-text-muted);
   cursor: pointer;
   font: inherit;
-  font-size: 0.75rem;
+  font-size: var(--manteen-text-sm);
   font-weight: 600;
 }
 
@@ -403,7 +688,41 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   overflow: hidden;
   border: 1px solid var(--manteen-border);
   border-radius: var(--manteen-radius-md);
-  background: var(--manteen-panel);
+  /* H6 — the card is a raised panel, not the base surface. `--manteen-panel-raised` is the
+     design's exact #22252d, which against the corrected #111318 canvas restores the 1.21:1
+     separation the Pencil frame draws (shipped: 1.06:1). */
+  background: var(--manteen-panel-raised);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+/* M1 — the card is the gallery's primary navigation target and had no pointer affordance at
+   all. Matches the feel of the existing `.registry-action` / `.registry-tabs button` hovers. */
+.registry-card:hover {
+  border-color: color-mix(in srgb, var(--sl-color-accent) 45%, var(--manteen-border));
+  box-shadow: 0 0.5rem 1.25rem color-mix(in srgb, #000 22%, transparent);
+  transform: translateY(-2px);
+}
+
+.registry-card:hover h3 a {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.registry-card h3 a:hover {
+  color: var(--manteen-accent-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .registry-card {
+    transition: none;
+  }
+
+  .registry-card:hover {
+    transform: none;
+  }
 }
 
 .registry-card[hidden] {
@@ -417,20 +736,43 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   text-decoration: none;
 }
 
-.registry-card__preview-label {
-  position: absolute;
-  top: 1.25rem;
-  right: 1.25rem;
-  padding: 0.22rem 0.45rem;
-  border: 1px solid #363b48;
+/* H4 — the preview-overlay badge is gone. RegistryCatalog.astro now renders it as
+   `.registry-card__badge` inside `.registry-card__header`, next to the kind pill, so it can no
+   longer collide with the artwork (it intersected the mini in 11 of 14 cards). The three
+   hardcoded hexes the old rule carried are replaced by theme-aware tokens. */
+.registry-card__badges {
+  display: flex;
+  flex: none;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--manteen-space-1);
+}
+
+.registry-card__badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  min-height: 1.35rem;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--manteen-border);
   border-radius: var(--manteen-radius-pill);
-  background: #111318;
-  color: #e8ebf5;
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  background: var(--manteen-panel);
+  color: var(--manteen-text-faint);
+  font-size: var(--manteen-eyebrow-size);
+  font-weight: var(--manteen-eyebrow-weight);
+  letter-spacing: var(--manteen-eyebrow-tracking);
   line-height: 1.2;
   text-transform: uppercase;
+}
+
+.registry-card__badge--live {
+  border-color: var(--manteen-accent-soft);
+  background: var(--manteen-accent-soft);
+  color: #171a22;
+}
+
+:root[data-theme="light"] .registry-card__badge--live {
+  color: #fff;
 }
 
 .registry-card__body {
@@ -438,13 +780,15 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   min-height: 0;
   flex: 1;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--manteen-space-1);
   padding: 0.625rem 0.8125rem 0.8125rem;
 }
 
 .registry-card__header {
   display: flex;
-  align-items: center;
+  /* Two pills now sit beside the title (H4); flex-start keeps a wrapped title from fighting
+     the badge row. */
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
 }
@@ -471,9 +815,9 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   border-radius: var(--manteen-radius-pill);
   background: var(--manteen-panel-raised);
   color: var(--manteen-text-muted);
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  font-size: var(--manteen-eyebrow-size);
+  font-weight: var(--manteen-eyebrow-weight);
+  letter-spacing: var(--manteen-eyebrow-tracking);
   text-transform: uppercase;
 }
 
@@ -493,8 +837,6 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   flex: none;
   padding-inline: 0.45rem;
   background: var(--manteen-panel-active);
-  font-size: 0.57rem;
-  letter-spacing: 0.035em;
 }
 
 .registry-card p {
@@ -508,9 +850,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   -webkit-line-clamp: 2;
 }
 
-.registry-grid > * {
-  margin-top: 0;
-}
+/* (The former `.registry-grid > *` reset now lives in the shared H1 block near the top.) */
 
 .registry-card__command {
   display: flex;
@@ -522,7 +862,10 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   padding: 0.45rem 0.5rem 0.45rem 0.65rem;
   border: 1px solid color-mix(in srgb, var(--manteen-border) 78%, transparent);
   border-radius: var(--manteen-radius-sm);
-  background: var(--manteen-panel-raised);
+  /* H6 follow-on: the card itself is now `--manteen-panel-raised`, so the command row has to
+     recess instead of raise or it would paint card-on-card (1.00:1). The Pencil frame draws it
+     as an inset well. */
+  background: var(--manteen-panel-inset);
 }
 
 .registry-card__command code {
@@ -551,7 +894,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   margin-top: 2rem;
   padding: 2rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.75rem;
+  border-radius: var(--manteen-radius-md);
   color: var(--manteen-text-muted);
   text-align: center;
 }
@@ -582,7 +925,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 .registry-version {
   color: var(--manteen-success);
   font-family: var(--__sl-font-mono);
-  font-size: 0.72rem;
+  font-size: var(--manteen-text-xs);
 }
 
 .registry-detail__copy h1 {
@@ -599,13 +942,13 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   width: fit-content;
   margin-top: 0.55rem;
   color: var(--manteen-accent-soft);
-  font-size: 0.86rem;
+  font-size: var(--manteen-text-ui);
 }
 
 .registry-detail__copy > p {
   margin-top: 0.75rem;
-  color: var(--manteen-text-muted);
-  line-height: 1.6;
+  color: var(--sl-color-text);
+  line-height: var(--sl-line-height);
 }
 
 .registry-detail__actions {
@@ -655,16 +998,16 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 
 .registry-install > div span {
   color: var(--manteen-text-faint);
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: var(--manteen-eyebrow-size);
+  font-weight: var(--manteen-eyebrow-weight);
+  letter-spacing: var(--manteen-eyebrow-tracking);
   text-transform: uppercase;
 }
 
 .registry-install code {
   overflow: hidden;
   color: var(--manteen-accent-soft);
-  font-size: 0.82rem;
+  font-size: var(--manteen-text-sm);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -686,6 +1029,12 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   font-weight: 700;
 }
 
+/* The navy label only reads on dark mode's pale `--manteen-accent-soft`; on the light indigo
+   fill it is 2.7:1. Same convention as `.registry-filters button.is-active` above. */
+:root[data-theme="light"] .registry-install button {
+  color: #fff;
+}
+
 .registry-detail__columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 18.75rem;
@@ -695,6 +1044,36 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 
 .registry-detail__main {
   min-width: 0;
+}
+
+/* H13 — the playground's Desktop/Mobile/theme controls shipped as their own full-width row
+   below the tab bar: a 72px band whose left two-thirds was empty, pushing the preview 56px
+   further down. `h42HCk` puts them on the tab-bar row itself, right-aligned, sharing its
+   vertical centre. This is the host row; `ArticleCardPlayground` portals its toolbar into
+   `.registry-tab-row__toolbar` so the controls keep the React state that drives them.
+
+   The slot is only rendered on items that have a curated live preview, so every other detail
+   route still lays out as a bare tab strip. */
+.registry-tab-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 2.6rem;
+  flex-wrap: wrap;
+}
+
+.registry-tab-row__toolbar {
+  display: flex;
+  align-items: center;
+  margin-inline-start: auto;
+}
+
+/* The toolbar drives the Preview panel only. Once the panel it belongs to is hidden, the
+   controls would be an orphan acting on nothing — the tab script stamps `data-active-tab` on
+   the detail root so the row can drop them without touching the React tree. */
+[data-registry-detail]:not([data-active-tab="preview"]) .registry-tab-row__toolbar {
+  display: none;
 }
 
 .registry-tabs {
@@ -729,6 +1108,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 .registry-inline-action:focus-visible {
   outline: 2px solid var(--sl-color-accent);
   outline-offset: 2px;
+  box-shadow: var(--manteen-focus-ring);
 }
 
 .registry-tab-panel {
@@ -736,7 +1116,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   margin-top: 1rem;
   padding: 1.15rem;
   border: 1px solid var(--manteen-border);
-  border-radius: var(--manteen-radius-lg);
+  border-radius: var(--manteen-radius-md);
   background: var(--manteen-panel);
 }
 
@@ -788,8 +1168,8 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 .registry-empty-state > p:last-of-type {
   max-width: 35rem;
   margin-top: 0.65rem;
-  color: var(--manteen-text-muted);
-  line-height: 1.65;
+  color: var(--sl-color-text);
+  line-height: var(--sl-line-height);
 }
 
 .registry-inline-action,
@@ -860,8 +1240,38 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   background: transparent;
 }
 
-.registry-note--warning {
-  background: color-mix(in srgb, var(--manteen-panel-raised) 86%, #f59f00 14%);
+/* H14 — the "Declaration boundary" callout was the only warm colour in the product: flat
+   olive-brown in dark, pale peach in light, on a page where every other surface is cool
+   blue-grey. It reads as an error state for neutral explanatory copy. `BlqxN` draws the
+   equivalent block as a plain bordered panel with an ⓘ, which is what this is now. Warm hues
+   are reserved for actual warnings; there is no warm variant left to reach for by accident. */
+.registry-note--info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.registry-note__icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.05rem;
+  color: var(--manteen-accent-soft);
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.registry-note__body {
+  min-width: 0;
+}
+
+/* The global inline-code chip is a panel-active fill on a `--manteen-border` outline. Inside a
+   note the surrounding surface is already `--manteen-panel-raised`, and in dark those two sit
+   1.02:1 apart — the chip survives on its border alone. Recessing it one step restores the
+   chip/panel relationship the rest of the page has, on both themes. */
+.registry-note code {
+  background: var(--manteen-panel);
 }
 
 .registry-style-section__heading {
@@ -896,12 +1306,12 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 .registry-selector-row > div {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: var(--manteen-space-1);
 }
 
 .registry-selector-row span {
   padding: 0.22rem 0.45rem;
-  border-radius: 0.35rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-panel);
   color: var(--manteen-text-muted);
   font-family: var(--__sl-font-mono);
@@ -925,10 +1335,10 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 .registry-code-list li,
 .registry-metadata__list li {
   padding: 0.5rem 0.6rem;
-  border-radius: 0.4rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-panel);
   color: var(--manteen-accent-soft);
-  font-size: 0.72rem;
+  font-size: var(--manteen-text-xs);
 }
 
 .registry-source-browser {
@@ -959,7 +1369,7 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   min-height: 2.25rem;
   padding: 0 0.55rem;
   border: 0;
-  border-radius: 0.4rem;
+  border-radius: var(--manteen-radius-sm);
   background: transparent;
   color: var(--manteen-text-muted);
   cursor: pointer;
@@ -991,10 +1401,117 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   min-width: 0;
 }
 
+/* H18 — RegistryItemDetail.astro routes prose files (.txt/.md/LICENSE) around the code viewer;
+   this is their surface. Wrapping, not `white-space: pre`, so a legal document reads
+   start-to-finish instead of being cut mid-word on every line. */
+.registry-source-prose {
+  padding: 1.1rem 1.3rem;
+  overflow-wrap: break-word;
+  color: var(--manteen-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.registry-source-browser__code .registry-source-prose {
+  min-width: 0;
+}
+
 .registry-source-browser__code .expressive-code,
 .registry-style-section .expressive-code,
 .registry-tab-panel > .expressive-code {
   margin: 0;
+}
+
+/* H7 — `NhnE6` puts a meta strip above the code (`article-card.tsx · component · 3.1 kB` on the
+   left, the language on the right); live showed a bare repository path and nothing else. It is
+   authored here rather than inside the frame because Expressive Code has no seam for it. The
+   line-number gutter the same frame shows is the other half and is a followup: it needs
+   `@expressive-code/plugin-line-numbers`, which is not installed and which this pass may not
+   add. */
+.registry-source-file-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  /* Inline padding is the frame's own `uiPaddingInline` (0.9rem, set in astro.config.mjs) plus
+     its 1px border, so the strip's first glyph sits on the same vertical as the file title in
+     the frame directly below it rather than 13px to its left. */
+  padding: 0 calc(0.9rem + 1px) 0.5rem;
+  color: var(--manteen-text-faint);
+  font-family: var(--__sl-font-mono);
+  font-size: var(--manteen-text-xs);
+}
+
+.registry-source-file-meta__facts {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.4rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.registry-source-file-meta__facts strong {
+  color: var(--manteen-text-muted);
+  font-weight: 500;
+}
+
+.registry-source-file-meta__lang {
+  flex: none;
+  color: var(--manteen-text-faint);
+  font-size: 0.62rem;
+  letter-spacing: var(--manteen-eyebrow-tracking);
+  text-transform: uppercase;
+}
+
+/* H7, the last of the seam. With the tab and the bar behind it now painted the same fill, what
+   remained visible was the tab bar's 1px bottom rule: Expressive Code paints it as a gradient on
+   the bar, and the active file tab is drawn over it, so the rule started under the filename and
+   ran to the frame edge — a line that begins nowhere. Repainting the tab with the identical
+   gradient closes it into one hairline under the whole strip, which is what `NhnE6` draws. */
+.expressive-code .frame.has-title:not(.is-terminal) .header .title {
+  background: linear-gradient(to top, var(--manteen-border) 1px, var(--manteen-code-chrome) 1px);
+}
+
+/* H7 — the copy control shipped as a bare floating square over the code with a 3.2px radius.
+   Radius is the one frame token Expressive Code does not expose to `styleOverrides`, so it is
+   set here; everything else about the button is mapped in astro.config.mjs. */
+.expressive-code .copy button {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--manteen-radius-sm);
+}
+
+.expressive-code .copy button::after {
+  margin: 0.4rem;
+}
+
+/* Framed blocks have a title strip with free space on its trailing edge, so the button belongs
+   in it — a labeled position in the chrome rather than an overlay on the first line of code.
+   Centred against `--button-spacing`, which is exactly the strip's height. `frame-none` blocks
+   have no strip (their `--button-spacing` is 0.4rem) and keep the default overlay position. */
+.expressive-code figure.has-title .copy,
+.expressive-code figure.is-terminal .copy {
+  inset-block-start: calc((var(--button-spacing) - 2rem) / 2);
+}
+
+/* In the strip the button is a permanent control, not a hover reveal: Expressive Code hides it
+   at `opacity: 0` under `(hover: hover)` and the audit's reference frame draws it always
+   visible. Unlayered, so it outranks the plugin's own layered rule. */
+.expressive-code figure.has-title .copy button,
+.expressive-code figure.is-terminal .copy button,
+.expressive-code figure.has-title:hover .copy button:not(:hover),
+.expressive-code figure.is-terminal:hover .copy button:not(:hover) {
+  opacity: 0.85;
+}
+
+.expressive-code figure.has-title .copy button:hover,
+.expressive-code figure.is-terminal .copy button:hover,
+.expressive-code figure.has-title .copy button:focus-visible,
+.expressive-code figure.is-terminal .copy button:focus-visible {
+  opacity: 1;
 }
 
 .registry-metadata {
@@ -1069,12 +1586,64 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
 .registry-files code {
   overflow-wrap: anywhere;
   color: var(--manteen-text);
-  font-size: 0.68rem;
+  font-size: var(--manteen-text-xs);
 }
 
 .registry-files small {
   color: var(--manteen-text-faint);
   font-size: 0.62rem;
+}
+
+/* H16 — every bounded scroller on the site sliced its content at the edge with no signal that
+   anything continued: no fade, no shadow, no scrollbar, no hint. The a11y half (role=region,
+   tabindex, aria-label) already shipped; this is the visual half.
+
+   `data-scroll-more-x` / `-y` are set by the enhancement script in SiteHeader.astro and cleared
+   the moment the scroller reaches that end, so the fade is only ever painted while there is
+   genuinely more content — never as permanent decoration on a scroller that fits. */
+[data-scroll-more-x] {
+  mask-image: linear-gradient(to right, #000 calc(100% - 2.75rem), rgb(0 0 0 / 10%));
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2.75rem), rgb(0 0 0 / 10%));
+}
+
+[data-scroll-more-y] {
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 3.5rem), rgb(0 0 0 / 10%));
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 3.5rem), rgb(0 0 0 / 10%));
+}
+
+/* A fade alone is ambiguous; the persistent thin bar is the affordance that says "scrollable".
+   A scroller whose content fits shows no bar, so this too is self-limiting. */
+.manteen-table-scroll,
+.registry-source-browser__code,
+.registry-source-browser__files,
+.expressive-code pre {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--manteen-text-faint) 55%, transparent) transparent;
+}
+
+.manteen-table-scroll::-webkit-scrollbar,
+.registry-source-browser__code::-webkit-scrollbar,
+.registry-source-browser__files::-webkit-scrollbar,
+.expressive-code pre::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+.manteen-table-scroll::-webkit-scrollbar-thumb,
+.registry-source-browser__code::-webkit-scrollbar-thumb,
+.registry-source-browser__files::-webkit-scrollbar-thumb,
+.expressive-code pre::-webkit-scrollbar-thumb {
+  border-radius: var(--manteen-radius-pill);
+  background: color-mix(in srgb, var(--manteen-text-faint) 55%, transparent);
+}
+
+/* The table wrapper is only a scroller below the grid breakpoint (see the 40rem block), so it
+   gets its trailing gutter there. M22's sibling gap: the file rail is a scroller at that width
+   too and is covered by the shared rules above. */
+@media (max-width: 40rem) {
+  .manteen-table-scroll {
+    padding-inline-end: 0.25rem;
+  }
 }
 
 @media (max-width: 72rem) {
@@ -1202,11 +1771,37 @@ body:has(.registry-custom-page) main > .content-panel:last-of-type {
   .manteen-table-scroll:focus-visible {
     outline: 2px solid var(--sl-color-accent);
     outline-offset: 2px;
+    box-shadow: var(--manteen-focus-ring);
   }
 }
 
 @media (max-width: 49.999rem) {
   .sidebar .mobile-preferences {
     display: none;
+  }
+}
+
+/* H11 — at 390px Expressive Code's opaque 40x40 copy button painted over the last ~40px of
+   `npx manteen add @house/article-card`, the single most important line of text on the page.
+   The two halves of that fix are now unconditional and live in the H7 block above: the control
+   is 32px at every width, and on framed blocks it sits in the title strip instead of over the
+   code. What remains is width-specific — an unframed block has no strip to move the button to,
+   so it reserves the button's footprint as trailing padding instead. The padding goes on
+   `.ec-line .code`, which is content-box and therefore actually grows the pre's scrollWidth;
+   the `<pre>`'s own inline-end padding is dropped by overflowing content. */
+@media (max-width: 40rem) {
+  /* H11 residual — the two longest install commands (41 chars) cannot fit inside a
+     390px viewport at any legible mono size, so unframed command blocks and terminal
+     frames wrap instead of hiding their tail behind a horizontal scroll. Shell
+     commands survive wrapping; multi-file source panes keep scrolling (they are
+     framed with titles, excluded here) behind the H16 edge affordance. */
+  .expressive-code figure.is-terminal .ec-line .code,
+  .expressive-code figure:not(.has-title):not(.is-terminal) .ec-line .code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .expressive-code figure:not(.has-title):not(.is-terminal) .ec-line .code {
+    padding-inline-end: calc(var(--ec-codePadInl) + 2.25rem);
   }
 }

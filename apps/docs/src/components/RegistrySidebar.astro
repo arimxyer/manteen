@@ -126,9 +126,9 @@ const registryHref = `${base}/registry/`;
     .registry-rail__header strong,
     .registry-rail__groups h2 {
       color: var(--manteen-text-muted);
-      font-size: var(--manteen-text-xs);
-      font-weight: 700;
-      letter-spacing: 0.09em;
+      font-size: var(--manteen-eyebrow-size);
+      font-weight: var(--manteen-eyebrow-weight);
+      letter-spacing: var(--manteen-eyebrow-tracking);
       text-transform: uppercase;
     }
 
@@ -173,6 +173,7 @@ const registryHref = `${base}/registry/`;
 
     .registry-rail__search:focus-within {
       border-color: var(--sl-color-accent);
+      box-shadow: var(--manteen-focus-ring);
     }
 
     .registry-rail__all {
@@ -214,9 +215,8 @@ const registryHref = `${base}/registry/`;
     }
 
     .registry-rail__groups h2 {
-      margin: 0 0 0.35rem;
+      margin: 0 0 var(--manteen-space-1);
       color: var(--manteen-text-faint);
-      font-size: var(--manteen-text-xs);
     }
 
     .registry-rail__groups ul {

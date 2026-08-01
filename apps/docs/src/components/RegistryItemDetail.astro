@@ -14,7 +14,7 @@ import {
   styleFiles,
   type RegistryEntry,
 } from "../lib/registry";
-import { registryPresentationKind } from "../lib/registry-presentation";
+import { hasCuratedLivePreview, registryPresentationKind } from "../lib/registry-presentation";
 
 interface Props {
   entry: RegistryEntry;
@@ -37,7 +37,8 @@ const packageStyles = packageStyleImports(item);
 const stylesApi = mantine?.stylesApi;
 const hasStylesApi = Boolean(stylesApi && Object.keys(stylesApi).length > 0);
 const themeFragment = mantine?.themeFragment;
-const hasCuratedPreview = index.name === "article-card";
+// Single source of truth, shared with the gallery badge in RegistryCatalog.astro.
+const hasCuratedPreview = hasCuratedLivePreview(index.name);
 const defaultTab = hasCuratedPreview ? "preview" : "usage";
 const presentationKind = registryPresentationKind(index);
 const presentationLabel =
@@ -46,6 +47,16 @@ const presentationLabel =
     : presentationKind === "file"
       ? "File"
       : presentationKind.charAt(0).toUpperCase() + presentationKind.slice(1);
+const isProseFile = (file: (typeof files)[number]) => {
+  const path = file.target ?? file.path;
+  return /\.(?:txt|md)$/i.test(path) || /license/i.test(fileName(file));
+};
+// H7 — the meta strip `NhnE6` draws above each source file: name, payload kind, byte size.
+// TextEncoder rather than Buffer so this stays runtime-agnostic.
+const fileSize = (content: string | undefined) => {
+  const bytes = new TextEncoder().encode(content ?? "").length;
+  return bytes >= 1000 ? `${(bytes / 1000).toFixed(1)} kB` : `${bytes} B`;
+};
 const categoryLabel =
   presentationKind === "component"
     ? "Components"
@@ -60,7 +71,12 @@ const categoryLabel =
             : "Libraries";
 ---
 
-<div class="registry-custom-page registry-detail" data-registry-detail data-default-tab={defaultTab}>
+<div
+  class="registry-custom-page registry-detail"
+  data-registry-detail
+  data-default-tab={defaultTab}
+  data-active-tab={defaultTab}
+>
   <nav class="registry-breadcrumb" aria-label="Breadcrumb">
     <a href={`${base}/registry/`}>Registry</a>
     <span aria-hidden="true">/</span>
@@ -104,6 +120,7 @@ const categoryLabel =
 
   <div class="registry-detail__columns">
     <div class="registry-detail__main">
+      <div class="registry-tab-row">
       <div class="registry-tabs" role="tablist" aria-label={`${title} documentation`}>
         <button
           id="registry-tab-preview"
@@ -161,6 +178,19 @@ const categoryLabel =
           Source
         </button>
       </div>
+        {
+          /*
+            H13 — the live-preview toolbar belongs on this row, right-aligned, per `h42HCk`;
+            it shipped as its own 72px band below the tab strip. `ArticleCardPlayground`
+            portals its controls into this slot after hydration, so they keep the component
+            state that drives them. Only rendered for items that have a curated preview —
+            every other detail route keeps a bare tab strip.
+          */
+          hasCuratedPreview && (
+            <div class="registry-tab-row__toolbar" data-playground-toolbar-slot />
+          )
+        }
+      </div>
 
       <section
         id="registry-panel-preview"
@@ -208,19 +238,6 @@ const categoryLabel =
           <button type="button" data-copy-value={command} data-copy-label="Copy command">Copy command</button>
         </div>
         <Code code={command} lang="sh" meta='title="Terminal"' />
-        {
-          item.docs ? (
-            <div class="registry-note">
-              <h3>Author notes</h3>
-              <p>{item.docs}</p>
-            </div>
-          ) : (
-            <div class="registry-note registry-note--muted">
-              <h3>No authored usage notes</h3>
-              <p>The registry document does not include human-facing usage guidance for this item.</p>
-            </div>
-          )
-        }
         <div class="registry-note registry-note--muted">
           <h3>No structured usage example</h3>
           <p>
@@ -279,13 +296,17 @@ const categoryLabel =
 
         {
           hasStylesApi ? (
-            <div class="registry-note registry-note--warning">
-              <h3>Declaration boundary</h3>
-              <p>
-                These selectors are supplied by the registry author. Manteen reports the declaration
-                but does not verify that the component wires every selector to <code>classNames</code>,
-                <code>styles</code>, or a theme component entry.
-              </p>
+            /* H14 — informational, not a warning: a neutral bordered panel with an ⓘ, per `BlqxN`. */
+            <div class="registry-note registry-note--info">
+              <span class="registry-note__icon" aria-hidden="true"><Icon name="information" /></span>
+              <div class="registry-note__body">
+                <h3>Declaration boundary</h3>
+                <p>
+                  These selectors are supplied by the registry author. Manteen reports the declaration
+                  but does not verify that the component wires every selector to <code>classNames</code>,
+                  <code>styles</code>, or a theme component entry.
+                </p>
+              </div>
             </div>
           ) : (
             <div class="registry-note">
@@ -407,11 +428,29 @@ const categoryLabel =
                 {files.map((file, index) => (
                   <div hidden={index !== 0} data-source-panel={String(index)}>
                     {file.content?.trim() ? (
-                      <Code
-                        code={file.content}
-                        lang={codeLanguage(file.target ?? file.path)}
-                        meta={`title="${file.path}"`}
-                      />
+                      <div class="registry-source-file-meta">
+                        <span class="registry-source-file-meta__facts">
+                          <strong>{fileName(file)}</strong>
+                          <span aria-hidden="true">·</span>
+                          <span>{file.type.replace(/^registry:/, "")}</span>
+                          <span aria-hidden="true">·</span>
+                          <span>{fileSize(file.content)}</span>
+                        </span>
+                        <span class="registry-source-file-meta__lang">
+                          {isProseFile(file) ? "text" : codeLanguage(file.target ?? file.path)}
+                        </span>
+                      </div>
+                    ) : null}
+                    {file.content?.trim() ? (
+                      isProseFile(file) ? (
+                        <div class="registry-source-prose">{file.content}</div>
+                      ) : (
+                        <Code
+                          code={file.content}
+                          lang={codeLanguage(file.target ?? file.path)}
+                          meta={`title="${file.path}"`}
+                        />
+                      )
                     ) : (
                       <p class="registry-muted">This file has no content.</p>
                     )}
@@ -529,6 +568,9 @@ const categoryLabel =
         tab.tabIndex = selected ? 0 : -1;
       }
       for (const panel of panels) panel.hidden = panel.dataset.registryPanel !== target.dataset.registryTab;
+      // H13 — the tab row hosts the preview toolbar; it needs to know which panel is showing so
+      // controls for a hidden panel are not left on screen acting on nothing.
+      detail.dataset.activeTab = target.dataset.registryTab ?? "preview";
       const url = new URL(window.location.href);
       url.searchParams.set("tab", target.dataset.registryTab ?? "preview");
       history.replaceState(null, "", url);

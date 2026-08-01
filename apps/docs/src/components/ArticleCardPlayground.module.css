@@ -13,24 +13,11 @@
 
 .toolbar {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
   min-height: 2.5rem;
   margin-bottom: 1rem;
-}
-
-.scope .toolbar > * {
-  margin-block-start: 0;
-}
-
-.scope .previewFrame > *,
-.scope .playground > *,
-.scope .playgroundHeader > *,
-.scope .playgroundActions > *,
-.scope .fields > *,
-.scope .eventLog > *,
-.scope .articleFooter > * {
-  margin-block-start: 0;
 }
 
 .viewportControl {
@@ -75,12 +62,14 @@
   color: var(--manteen-text);
 }
 
-.themeButton {
-  min-height: 2.4rem;
+.scope .themeButton {
+  height: 2.4rem;
   padding: 0 0.65rem;
   border-color: var(--manteen-border);
   background: var(--manteen-panel);
   color: var(--manteen-text-muted);
+  font-size: var(--manteen-text-sm);
+  font-weight: 600;
 }
 
 .viewportControl button:focus-visible,
@@ -91,12 +80,13 @@
 .fields input:focus-visible {
   outline: 2px solid var(--sl-color-accent);
   outline-offset: 2px;
+  box-shadow: var(--manteen-focus-ring);
 }
 
 .previewFrame {
   overflow: hidden;
   border: 1px solid var(--manteen-border);
-  border-radius: var(--manteen-radius-lg);
+  border-radius: var(--manteen-radius-md);
   background: var(--manteen-panel-raised);
 }
 
@@ -126,7 +116,7 @@
 .liveStatus > span {
   width: 0.5rem;
   height: 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--manteen-radius-pill);
   background: var(--manteen-success);
 }
 
@@ -185,7 +175,7 @@
 }
 
 .articleAction {
-  border-radius: 999px;
+  border-radius: var(--manteen-radius-pill);
 }
 
 .playground {
@@ -196,7 +186,7 @@
   margin-top: 1rem;
   padding: 1rem;
   border: 1px solid var(--manteen-border);
-  border-radius: var(--manteen-radius-lg);
+  border-radius: var(--manteen-radius-md);
   background: var(--manteen-panel);
 }
 
@@ -216,7 +206,7 @@
 .playgroundHeader p {
   margin-top: 0.15rem;
   color: var(--manteen-text-faint);
-  font-size: 0.68rem;
+  font-size: var(--manteen-text-xs);
 }
 
 .playgroundActions {
@@ -255,9 +245,9 @@
 .actionsField > span,
 .eventLog strong {
   color: var(--manteen-text-faint);
-  font-size: 0.59rem;
-  font-weight: 700;
-  letter-spacing: 0.07em;
+  font-size: var(--manteen-eyebrow-size);
+  font-weight: var(--manteen-eyebrow-weight);
+  letter-spacing: var(--manteen-eyebrow-tracking);
   text-transform: uppercase;
 }
 
@@ -267,10 +257,10 @@
   min-height: 2.25rem;
   padding: 0 0.65rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.4rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-panel-raised);
   color: var(--manteen-text-muted);
-  font-size: 0.72rem;
+  font-size: var(--manteen-text-xs);
 }
 
 .actionsField button {
@@ -284,14 +274,14 @@
   align-items: center;
   justify-content: flex-end;
   padding: 0.12rem;
-  border-radius: 999px;
+  border-radius: var(--manteen-radius-pill);
   background: var(--manteen-demo-accent-soft);
 }
 
 .switchTrack > span {
   width: 0.85rem;
   height: 0.85rem;
-  border-radius: 999px;
+  border-radius: var(--manteen-radius-pill);
   background: #f5f7ff;
   transition: transform 160ms ease;
 }
@@ -309,7 +299,7 @@
   gap: 1rem;
   padding: 0 0.7rem;
   border: 1px solid var(--manteen-border);
-  border-radius: 0.45rem;
+  border-radius: var(--manteen-radius-sm);
   background: var(--manteen-panel-raised);
 }
 
@@ -321,8 +311,12 @@
 
 .eventLog code,
 .eventLog > div:last-child > span {
+  padding: 0;
+  margin-block: 0;
+  border: 0;
+  background: transparent;
   color: var(--manteen-text-muted);
-  font-size: 0.68rem;
+  font-size: var(--manteen-text-xs);
 }
 
 .eventLog > div:last-child > span {
@@ -334,7 +328,7 @@
 .eventDotIdle {
   width: 0.44rem;
   height: 0.44rem;
-  border-radius: 999px;
+  border-radius: var(--manteen-radius-pill);
   background: var(--manteen-success);
 }
 
@@ -343,7 +337,10 @@
 }
 
 .eventLog button {
-  padding: 0;
+  min-height: 1.9rem;
+  padding: 0 0.55rem;
+  border-color: var(--manteen-border);
+  background: var(--manteen-panel-active);
   color: var(--manteen-text-muted);
 }
 
@@ -435,3 +432,35 @@
     padding: 0.75rem;
   }
 }
+
+/* H13 — when the toolbar is portalled into the tab-bar row it shares that row's vertical
+   centre, so the standalone band's bottom margin has to go: left in place it would push the
+   controls ~8px above the tabs, which is the alignment the fix is about. The wrapper also
+   re-establishes `.scope` around the portalled subtree — see the comment at the portal. */
+.toolbarHost .toolbar {
+  min-height: 0;
+  margin-bottom: 0;
+}
+
+/* The ≤32rem block below turns the toolbar into a full-width column, which was right while it
+   was a band of its own. In the tab row that treatment stacks the two groups over three lines
+   and re-creates the "accidental 2+1 stack" H13 reports at 390px, so the hosted copy stays a
+   right-aligned row at every width. Specificity (0,2,0) beats the media block's (0,1,0)
+   regardless of source order — nothing here depends on where these rules sit in the file. */
+.toolbarHost .toolbar {
+  align-items: center;
+  flex-direction: row;
+  justify-content: flex-end;
+}
+
+.toolbarHost .viewportControl,
+.toolbarHost .themeButton {
+  width: auto;
+}
+
+/* The per-container `margin-block-start: 0` resets that used to sit here enumerated one level of
+   children each, so they missed `.viewportControl`'s buttons and the article card's actions —
+   both are grandchildren, not children, of a container that was listed. custom.css now zeroes
+   the whole subtree by ancestor at (0,0,0) specificity, which covers every depth and still loses
+   to every intentional margin in this file. Keeping a second, shallower mechanism here would
+   only make it ambiguous which one is doing the work. */

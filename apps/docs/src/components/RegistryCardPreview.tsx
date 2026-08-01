@@ -92,7 +92,16 @@ function DataTablePreview({ sortable = false }: { sortable?: boolean }) {
       <thead>
         <tr>
           <th>Name</th>
-          <th>{sortable && <IconArrowsSort size={10} stroke={1.8} />} Company</th>
+          <th>
+            {sortable ? (
+              <span className={styles.sortHeader}>
+                <IconArrowsSort size={10} stroke={1.8} />
+                Company
+              </span>
+            ) : (
+              "Company"
+            )}
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -116,7 +125,7 @@ function DataTablePreview({ sortable = false }: { sortable?: boolean }) {
 function EmptyStatePreview() {
   return (
     <div className={styles.emptyMini}>
-      <IconSparkles size={22} stroke={1.6} />
+      <IconSparkles size={26} stroke={1.6} />
       <strong>No projects yet</strong>
       <small>Create one to get started.</small>
       <span>New project</span>
@@ -151,7 +160,7 @@ function ProgressButtonPreview() {
   return (
     <div className={styles.progressMini}>
       <button type="button" tabIndex={-1}>
-        <IconCheck size={14} stroke={2} /> Published
+        <IconCheck size={16} stroke={2} /> Published
       </button>
       <span>
         <i />
@@ -191,7 +200,7 @@ function StatsGridPreview() {
 function FilePreview() {
   return (
     <div className={styles.fileMini}>
-      <IconFileDescription size={32} stroke={1.4} />
+      <IconFileDescription size={38} stroke={1.4} />
       <div>
         <strong>MANTINE-UI.txt</strong>
         <small>License and attribution file</small>
