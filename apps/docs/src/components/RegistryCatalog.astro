@@ -148,9 +148,29 @@ const detailHref = (name: string) => `${base}/registry/${itemPath(name)}/`;
     }
   </div>
 
-  <p class="registry-empty" hidden data-registry-empty>
-    No registry items match this search and filter.
-  </p>
+  {
+    /*
+      M12 — this was a transparent, unfilled box at a literal 0.75rem radius and a 2rem top
+      margin, so filtering to a kind with no items (Hooks, today) swapped the card grid for a
+      different surface language and the layout visibly jumped. It is now the product's own
+      empty-state family — the same icon + eyebrow + message block the detail tabs use — on the
+      card grid's surface tokens and its margin, so the box lands where the first row of cards
+      was. The control resets the search box and the kind filter together, which is exactly what
+      its label says it does.
+    */
+  }
+  <div
+    class="registry-empty registry-empty-state registry-empty-state--compact"
+    hidden
+    data-registry-empty
+  >
+    <span class="registry-empty-state__icon"><Icon name="magnifier" /></span>
+    <p class="registry-eyebrow">No matches</p>
+    <p>No registry items match this search and filter.</p>
+    <button type="button" class="registry-inline-action" data-registry-reset>
+      Show all items
+    </button>
+  </div>
 </section>
 
 <script>
@@ -195,6 +215,18 @@ const detailHref = (name: string) => `${base}/registry/${itemPath(name)}/`;
       if (empty) empty.hidden = visible !== 0;
     };
 
+    // M12 — one place that owns "which kind is active", so the chip row and the empty state's
+    // reset control cannot drift into two different notions of it.
+    const applyFilter = (kind: string) => {
+      activeFilter = kind;
+      for (const option of catalog.querySelectorAll<HTMLButtonElement>("[data-registry-filter]")) {
+        const selected = option.dataset.registryFilter === kind;
+        option.classList.toggle("is-active", selected);
+        option.setAttribute("aria-pressed", String(selected));
+      }
+      update();
+    };
+
     search?.addEventListener("input", update);
     sort?.addEventListener("change", () => {
       const sortedCards = [...cards].sort((left, right) => {
@@ -209,16 +241,15 @@ const detailHref = (name: string) => `${base}/registry/${itemPath(name)}/`;
       update();
     });
     for (const button of catalog.querySelectorAll<HTMLButtonElement>("[data-registry-filter]")) {
-      button.addEventListener("click", () => {
-        activeFilter = button.dataset.registryFilter ?? "all";
-        for (const option of catalog.querySelectorAll<HTMLButtonElement>("[data-registry-filter]")) {
-          const selected = option === button;
-          option.classList.toggle("is-active", selected);
-          option.setAttribute("aria-pressed", String(selected));
-        }
-        update();
-      });
+      button.addEventListener("click", () => applyFilter(button.dataset.registryFilter ?? "all"));
     }
+
+    const reset = catalog.querySelector<HTMLButtonElement>("[data-registry-reset]");
+    reset?.addEventListener("click", () => {
+      if (search) search.value = "";
+      applyFilter("all");
+      search?.focus();
+    });
   }
 
   for (const button of document.querySelectorAll<HTMLButtonElement>("[data-copy-value]")) {

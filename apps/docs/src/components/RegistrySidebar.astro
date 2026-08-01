@@ -253,5 +253,17 @@ const registryHref = `${base}/registry/`;
       color: var(--manteen-text-faint);
       font-size: var(--manteen-text-sm);
     }
+
+    /* M17 — the rail's asymmetric inline padding (15.2px leading, 4px trailing, plus the
+       sidebar pane's own 16px) reads as a rail hugging the desktop divider, but the mobile
+       drawer is full-bleed with no divider to hug: every row sat at x=31.2 and ended at x=371,
+       so the whole panel looked shoved 12px right. At the drawer breakpoint the rail hands its
+       gutters back to the pane, which is symmetric. */
+    @media (max-width: 49.999rem) {
+      .registry-rail {
+        width: 100%;
+        padding-inline: 0;
+      }
+    }
   }
 </style>

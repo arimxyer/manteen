@@ -26,4 +26,11 @@ import HomeOverview from '../../components/HomeOverview.astro';
 
 <RegistryCatalog mode="embedded" />
 
-Manteen is an independent project and is not affiliated with or endorsed by the Mantine team.
+{/* M21 — this trailing legal line rendered as a plain body paragraph 16px under the last catalog
+row, with no divider, fill, smaller metric or muted colour, so it read as an accidentally
+unstyled last line rather than a deliberate footnote. `.home-disclaimer` (custom.css) is its
+quiet treatment. */}
+
+{/* Text must stay inline in the tag: MDX turns an indented multi-line body into an empty
+    styled <p> followed by a second unstyled <p> holding the actual text. */}
+<p class="home-disclaimer">Manteen is an independent project and is not affiliated with or endorsed by the Mantine team.</p>

@@ -6,6 +6,7 @@ import { ArticleCardPlayground } from "./ArticleCardPlayground";
 import {
   acceptsProps,
   codeLanguage,
+  fileKindLabel,
   fileName,
   isVisualItem,
   itemPath,
@@ -51,6 +52,27 @@ const isProseFile = (file: (typeof files)[number]) => {
   const path = file.target ?? file.path;
   return /\.(?:txt|md)$/i.test(path) || /license/i.test(fileName(file));
 };
+// L5 — the requirement operator shipped glued to the number ("Mantine >=9"); the approved
+// header reads "Mantine ≥ 9". Applied everywhere `mantine.requires` renders so the header
+// eyebrow and the Requirements rail row never disagree on the same fact.
+const formatRequirement = (value: string | undefined) => value?.replace(/^>=\s*/, "≥ ");
+// L4 — a raw 40-char commit SHA in flowing prose produces a bad rag (the audit measured it
+// splitting mid-hash across two lines in a 300px rail card). Shortened to a git-style short
+// hash inside a non-breaking mono span, with the full hash recoverable via `title`, rather than
+// letting the browser break an identifier wherever it runs out of line.
+const SHA_PATTERN = /\b[0-9a-f]{40}\b/gi;
+const renderAuthorNotes = (text: string) => {
+  const parts: Array<string | { hash: string }> = [];
+  let lastIndex = 0;
+  for (const match of text.matchAll(SHA_PATTERN)) {
+    const start = match.index ?? 0;
+    if (start > lastIndex) parts.push(text.slice(lastIndex, start));
+    parts.push({ hash: match[0] });
+    lastIndex = start + match[0].length;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts;
+};
 // H7 — the meta strip `NhnE6` draws above each source file: name, payload kind, byte size.
 // TextEncoder rather than Buffer so this stays runtime-agnostic.
 const fileSize = (content: string | undefined) => {
@@ -89,7 +111,7 @@ const categoryLabel =
     <div class="registry-detail__copy">
       <div class="registry-detail__labels">
         <span class="registry-kind">{presentationLabel}</span>
-        {mantine?.requires && <span class="registry-version">Mantine {mantine.requires}</span>}
+        {mantine?.requires && <span class="registry-version">Mantine {formatRequirement(mantine.requires)}</span>}
       </div>
       <h1>{title}</h1>
       <code class="registry-detail__name">@house/{index.name}</code>
@@ -112,7 +134,7 @@ const categoryLabel =
       <span>Install with Manteen</span>
       <code>{command}</code>
     </div>
-    <button type="button" data-copy-value={command} data-copy-label="Copy command">
+    <button type="button" class="registry-copy-button" data-copy-value={command} data-copy-label="Copy command">
       <Icon name="document" />
       <span>Copy command</span>
     </button>
@@ -235,9 +257,20 @@ const categoryLabel =
             <p class="registry-eyebrow">Usage</p>
             <h2>Install the source</h2>
           </div>
-          <button type="button" data-copy-value={command} data-copy-label="Copy command">Copy command</button>
+          <button type="button" class="registry-copy-button" data-copy-value={command} data-copy-label="Copy command">Copy command</button>
         </div>
-        <Code code={command} lang="sh" meta='title="Terminal"' />
+        {
+          /*
+            M6 — this exact string already appears ~200px above in the install bar as plain
+            mono in a bordered panel. It shipped here as a faux-macOS "Terminal" frame (traffic
+            lights, centered title, square corners) found nowhere else on the page — a second,
+            contradictory container for one string. `.registry-command-block` reuses the install
+            bar's own treatment instead of Expressive Code's frame.
+          */
+        }
+        <div class="registry-command-block">
+          <code>{command}</code>
+        </div>
         <div class="registry-note registry-note--muted">
           <h3>No structured usage example</h3>
           <p>
@@ -256,10 +289,23 @@ const categoryLabel =
         hidden
         data-registry-panel="props"
       >
-        <div class="registry-empty-state">
+        {
+          /*
+            M8 — every sibling tab opens with an eyebrow + H2 panel header (Usage/Source/Styling);
+            Props opened straight into a vertically centered empty state with no structural
+            anchor, so a ~250px message floated in a 448px panel. `registry-empty-state--compact`
+            is the same compaction already used for the non-curated Preview tab's empty state.
+          */
+        }
+        <div class="registry-panel-heading">
+          <div>
+            <p class="registry-eyebrow">Props</p>
+            <h2>{acceptsProps(index.type) ? "Documented properties" : "Props do not apply"}</h2>
+          </div>
+        </div>
+        <div class="registry-empty-state registry-empty-state--compact">
           <span class="registry-empty-state__icon"><Icon name="setting" /></span>
-          <p class="registry-eyebrow">Props boundary</p>
-          <h2>{acceptsProps(index.type) ? "Structured props not published" : "Props do not apply"}</h2>
+          <h3>{acceptsProps(index.type) ? "Structured props not published" : "No prop surface"}</h3>
           <p>
             {
               acceptsProps(index.type)
@@ -323,9 +369,19 @@ const categoryLabel =
           stylesApi && Object.keys(stylesApi).length > 0 && (
             <div class="registry-style-section">
               <h3>Declared selectors</h3>
+              {
+                /*
+                  M10 — `component` rendered as a bare `<code>`, which picks up Starlight's global
+                  inline-code chip (em padding, `panel-active` fill, a border) while the selector
+                  `<span>`s beside it are a second, different pill (rem padding, `panel` fill, no
+                  border) — two chip languages sharing one row with mismatched height and vertical
+                  center. `registry-selector-row__owner` gives the owning component name the same
+                  pill shape as its selectors, distinguished only by an accent tint.
+                */
+              }
               {Object.entries(stylesApi).map(([component, selectors]) => (
                 <div class="registry-selector-row">
-                  <code>{component}</code>
+                  <code class="registry-selector-row__owner">{component}</code>
                   <div>{selectors.map((selector) => <span>{selector}</span>)}</div>
                 </div>
               ))}
@@ -343,13 +399,27 @@ const categoryLabel =
                 </div>
                 <span>{installedStyles.length} {installedStyles.length === 1 ? "file" : "files"}</span>
               </div>
+              {
+                /*
+                  M5 — Source bounds its code viewport to `min(44rem, 72vh)`; Styling rendered
+                  the same content type (a source file) uncapped, so the two tabs disagreed on
+                  page length by ~840px and tab-switching produced an unexplained jump.
+                  `registry-source-browser__code` is Source's own bounded-scroller class, reused
+                  here (not copied) so this pane also inherits its scrollbar styling and the
+                  shared scroll-edge fade/affordance script picks it up automatically — the
+                  `--standalone` modifier only supplies the height cap and border this pane needs
+                  outside the two-column source-browser grid.
+                */
+              }
               {installedStyles.map((file) =>
                 file.content?.trim() ? (
-                  <Code
-                    code={file.content}
-                    lang={codeLanguage(file.target ?? file.path)}
-                    meta={`title="${fileName(file)}"`}
-                  />
+                  <div class="registry-source-browser__code registry-source-browser__code--standalone">
+                    <Code
+                      code={file.content}
+                      lang={codeLanguage(file.target ?? file.path)}
+                      meta={`title="${fileName(file)}"`}
+                    />
+                  </div>
                 ) : (
                   <p class="registry-muted">{fileName(file)} is empty.</p>
                 ),
@@ -406,18 +476,51 @@ const categoryLabel =
             <p class="registry-eyebrow">Source</p>
             <h2>Installable files</h2>
           </div>
-          <span class="registry-file-count">{files.length} {files.length === 1 ? "file" : "files"}</span>
+          <div class="registry-panel-heading__actions">
+            <span class="registry-file-count">{files.length} {files.length === 1 ? "file" : "files"}</span>
+            {
+              /*
+                M4 — the bounded pane (630px viewport / 4097px content, measured) had a scroll-edge
+                fade and a styled scrollbar (both already wired below, shared with H16) but no way
+                to see the whole file without scrolling through it piecemeal. This is the missing
+                signposted escape hatch; the toggle script lives in this file's own <script>.
+              */
+            }
+            {
+              files.length > 0 && (
+                <button
+                  type="button"
+                  class="registry-inline-action"
+                  data-source-expand-toggle
+                  aria-expanded="false"
+                >
+                  Expand
+                </button>
+              )
+            }
+          </div>
         </div>
         {
           files.length > 0 ? (
             <div class="registry-source-browser" data-source-browser>
-              <div class="registry-source-browser__files" aria-label="Source files">
+              {
+                /*
+                  M22 — this rail scrolls horizontally (`scrollWidth 339 / clientWidth 317`,
+                  measured) and carries `aria-label`, but had no `tabindex`, so unlike the `<pre>`
+                  beside it (`role="region" tabindex="0"`) it could not be reached or scrolled by
+                  keyboard. The fade mask on this axis is already driven by the shared
+                  `data-scroll-more-x` mechanism in `SiteHeader.astro` (see custom.css's
+                  `[data-scroll-more-x]` rule) — it only needed to be keyboard-reachable too.
+                */
+              }
+              <div class="registry-source-browser__files" aria-label="Source files" tabindex="0">
                 {files.map((file, index) => (
                   <button
                     type="button"
                     class:list={{ "is-active": index === 0 }}
                     aria-pressed={index === 0 ? "true" : "false"}
                     data-source-file={String(index)}
+                    title={fileName(file)}
                   >
                     <Icon name="document" />
                     <span>{fileName(file)}</span>
@@ -432,7 +535,7 @@ const categoryLabel =
                         <span class="registry-source-file-meta__facts">
                           <strong>{fileName(file)}</strong>
                           <span aria-hidden="true">·</span>
-                          <span>{file.type.replace(/^registry:/, "")}</span>
+                          <span>{fileKindLabel(file)}</span>
                           <span aria-hidden="true">·</span>
                           <span>{fileSize(file.content)}</span>
                         </span>
@@ -471,8 +574,18 @@ const categoryLabel =
     <aside class="registry-metadata" aria-label={`${title} metadata`}>
       <section>
         <h2>Requirements</h2>
+        {
+          /*
+            M11 — three rows at a 47px pitch for 22.4px content (measured), no divider between
+            them, and `dt`/`dd` didn't share a text size or vertical center. `--manteen-text-sm`
+            on both plus a bordered row (in place of the loose flex gap) gives every row the same
+            metric and a deliberate rhythm instead of an accidental one. `formatRequirement` also
+            keeps this row's "Mantine" value agreeing with the header eyebrow — both used to read
+            the raw ">=9" token; both now read "≥ 9" (see L5).
+          */
+        }
         <dl>
-          <div><dt>Mantine</dt><dd>{mantine?.requires ?? "Not declared"}</dd></div>
+          <div><dt>Mantine</dt><dd>{formatRequirement(mantine?.requires) ?? "Not declared"}</dd></div>
           <div><dt>Provider</dt><dd>{mantine?.provider ?? "Not declared"}</dd></div>
           <div><dt>Global styles</dt><dd>{packageStyles.length || "None"}</dd></div>
         </dl>
@@ -492,6 +605,16 @@ const categoryLabel =
       </section>
 
       {
+        /*
+          M9 — the rail's three lists (Dependencies, Registry dependencies, Installed files) each
+          shipped a different typographic treatment for the same "list of file/package identity"
+          role: a mono chip, plain sans link text, and a mono chip plus an inherited-leading meta
+          label, in three different sizes. All three now share `.registry-metadata__list` and the
+          same `<li>` shape — a mono identifier plus an optional trailing meta label — so a link
+          is a wrapped chip rather than a differently-styled row.
+        */
+      }
+      {
         item.registryDependencies?.length && (
           <section>
             <h2>Registry dependencies</h2>
@@ -500,7 +623,11 @@ const categoryLabel =
                 const local = dependency.startsWith("@house/") ? dependency.slice(7) : null;
                 return (
                   <li>
-                    {local ? <a href={`${base}/registry/${itemPath(local)}/`}>{dependency}</a> : <code>{dependency}</code>}
+                    {local ? (
+                      <a href={`${base}/registry/${itemPath(local)}/`}><code>{dependency}</code></a>
+                    ) : (
+                      <code>{dependency}</code>
+                    )}
                   </li>
                 );
               })}
@@ -513,11 +640,11 @@ const categoryLabel =
         <h2>Installed files</h2>
         {
           files.length ? (
-            <ul class="registry-files">
+            <ul class="registry-metadata__list">
               {files.map((file) => (
                 <li>
-                  <Icon name="document" />
-                  <span><code>{fileName(file)}</code><small>{file.type.replace(/^registry:/, "")}</small></span>
+                  <code>{fileName(file)}</code>
+                  <span class="registry-metadata__list-meta">{fileKindLabel(file)}</span>
                 </li>
               ))}
             </ul>
@@ -528,10 +655,26 @@ const categoryLabel =
       </section>
 
       {
+        /*
+          L4 — a raw 40-char commit SHA in this prose (e.g. Article Card's
+          "…at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; …") split mid-hash across two lines in
+          this 300px card. `renderAuthorNotes` shortens any such token to a git-style short hash
+          in a `nowrap` mono span; the full hash is still recoverable via `title`.
+        */
+      }
+      {
         item.docs && (
           <section>
             <h2>Author notes</h2>
-            <p>{item.docs}</p>
+            <p>
+              {renderAuthorNotes(item.docs).map((part) =>
+                typeof part === "string" ? (
+                  part
+                ) : (
+                  <code class="registry-note-hash" title={part.hash}>{part.hash.slice(0, 10)}&hellip;</code>
+                ),
+              )}
+            </p>
           </section>
         )
       }
@@ -613,6 +756,35 @@ const categoryLabel =
         for (const panel of panels) panel.hidden = panel.dataset.sourcePanel !== selected;
       });
     }
+  }
+
+  // M4 — the bounded source pane already fades and scrollbars its two overflow axes (shared
+  // with H16 via `data-scroll-more-x`/`-y`, set by the enhancement script in SiteHeader.astro),
+  // but had no way to see the whole file without scrolling piecemeal. This wires the "Expand"
+  // control that removes the height cap. Only the vertical (`-y`) affordance is touched: the
+  // rail's horizontal scroll and any single long line in the code pane are unrelated to the
+  // height cap and stay exactly as they were.
+  for (const toggle of document.querySelectorAll<HTMLButtonElement>("[data-source-expand-toggle]")) {
+    const panel = toggle.closest<HTMLElement>("[data-registry-panel]");
+    const browser = panel?.querySelector<HTMLElement>("[data-source-browser]");
+    if (!browser) continue;
+    const codePane = browser.querySelector<HTMLElement>(".registry-source-browser__code");
+    toggle.addEventListener("click", () => {
+      const expanded = browser.classList.toggle("registry-source-browser--expanded");
+      toggle.setAttribute("aria-expanded", String(expanded));
+      toggle.textContent = expanded ? "Collapse" : "Expand";
+      if (!codePane) return;
+      if (expanded) {
+        // Nothing to fade once the cap is off — clear the stale flag rather than wait for a
+        // scroll event that may never come.
+        codePane.removeAttribute("data-scroll-more-y");
+      } else {
+        // Re-entering the bounded height can restore the overflow; a synthetic `scroll` event
+        // asks SiteHeader.astro's already-attached listener to recompute the flag rather than
+        // duplicating that measurement here.
+        codePane.dispatchEvent(new Event("scroll"));
+      }
+    });
   }
 
   for (const button of document.querySelectorAll<HTMLButtonElement>("[data-copy-value]")) {

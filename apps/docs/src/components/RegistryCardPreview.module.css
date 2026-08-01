@@ -23,7 +23,15 @@
   height: 8.875rem;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem;
+  /* M2: horizontal inset only. This is the "common inset" every mini scales
+     against — content width = frame width (336px desktop / 326px mobile)
+     minus 2rem, so a full-bleed mini (article/carousel/header/statsGrid/
+     table) lands at ~90% fill instead of ~93%, matching the other minis'
+     explicit widths below. Vertical padding stays 0.75rem: the fixed-height
+     minis (articleMini's 6.9rem min-height, tableMini's row stack) were
+     sized against the original 118px content height and a bigger vertical
+     cut would reintroduce M2's clipping. */
+  padding: 0.75rem 1rem;
   overflow: hidden;
   border-radius: var(--manteen-radius-sm);
   background: var(--manteen-panel-active);
@@ -105,7 +113,9 @@
 
 .authMini {
   display: flex;
-  width: 14.5rem;
+  /* M2: 17rem lands at ~81% fill of the 336/326px frame — inside the
+     65–90% target band, instead of the previous 14.5rem's ~69%. */
+  width: 17rem;
   flex-direction: column;
   gap: 0.34rem;
   padding: 0.55rem;
@@ -168,7 +178,9 @@
 
 .dropzoneMini {
   display: flex;
-  width: min(15.625rem, 100%);
+  /* M2: ~80% fill, up from ~74%, to sit in the same band as the other
+     inset (non-full-bleed) minis. */
+  width: min(16.75rem, 100%);
   min-height: 6.5rem;
   flex-direction: column;
   align-items: center;
@@ -191,7 +203,9 @@
 
 .themeMini {
   display: grid;
-  grid-template-columns: repeat(4, 3.2rem);
+  /* M2: 4 × 3.5rem swatches + 3 × 0.75rem gaps = 16.25rem, ~77% fill —
+     up from the previous 3.2rem swatches' ~65%. */
+  grid-template-columns: repeat(4, 3.5rem);
   gap: 0.75rem;
 }
 
@@ -202,7 +216,7 @@
   text-align: center;
 }
 .themeMini dt {
-  width: 3.2rem;
+  width: 3.5rem;
   height: 3.9rem;
   border: 1px solid var(--manteen-border);
   border-radius: var(--manteen-radius-sm);
@@ -227,12 +241,18 @@
 }
 
 .tableMini {
-  width: 100%;
   /* .preview is a flex row; a <table> is a shrink-to-fit flex item by
      default, so width:100% alone doesn't stretch it (unlike the block-level
      .articleMini/.headerMini/.statsGridMini siblings) — this was the real
-     driver of the table minis' low fill ratio (M2), not just the th bug. */
-  flex: 1 1 auto;
+     driver of the table minis' low fill ratio (M2), not just the th bug.
+     `flex: 1 1 auto` still measures the auto flex-basis from the table's own
+     (small) content, so growth only ever added space beyond that
+     max-content size instead of filling the row — Data Table/Sortable Table
+     stayed ~37–41% (M2 completion). A zero flex-basis makes 100% of the
+     content width "free space" to distribute, so the single item actually
+     fills it. */
+  flex: 1 1 0%;
+  min-width: 0;
   overflow: hidden;
   border: 1px solid var(--manteen-border);
   border-collapse: separate;
@@ -280,6 +300,11 @@
 .emptyMini,
 .progressMini {
   display: flex;
+  /* M2: neither mini had an explicit width, so each shrank to its own
+     content's natural size (Empty State ~30% fill, Progress Button ~48%) —
+     the two lowest ratios measured. 16.25rem lands both at ~77%, in the
+     same band as the other centered/inset minis. */
+  width: 16.25rem;
   min-height: 6.5rem;
   flex-direction: column;
   align-items: center;
@@ -340,7 +365,8 @@
 }
 
 .statMini {
-  width: 14.5rem;
+  /* M2: ~81% fill, up from ~62%, matching authMini's band. */
+  width: 17rem;
   padding: 1rem;
   border: 1px solid var(--manteen-border);
   border-radius: var(--manteen-radius-md);
@@ -394,7 +420,8 @@
 
 .listMini {
   display: flex;
-  width: 14rem;
+  /* M2: ~77% fill, up from ~67%. */
+  width: 16.25rem;
   flex-direction: column;
   gap: 0.28rem;
   padding: 0;
@@ -446,6 +473,9 @@
 
 .fileMini {
   display: flex;
+  /* M2: ~79% fill, up from ~46% — the icon+label row previously shrank to
+     its own content width like emptyMini/progressMini did. */
+  width: 16.5rem;
   align-items: center;
   gap: 1rem;
   color: var(--manteen-accent-soft);

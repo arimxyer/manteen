@@ -134,6 +134,42 @@ export function fileName(file: RegistryFile): string {
   return basename(file.target ?? file.path);
 }
 
+// L3 — the installed-files rail and the source meta strip both labeled their entries by stripping
+// the `registry:` prefix off the declared type, which produced "ui" and "file" side by side: two
+// vocabularies, and "file" carries no information at all. `h42HCk` labels the same three entries
+// "component", "style" and "license". Ordered by how specific the evidence is: a license is named
+// one, a declared type that says something specific is trusted, and the generic `registry:file`
+// falls through to what the extension actually is. "file" is only reached when nothing is known.
+export function fileKindLabel(file: RegistryFile): string {
+  const path = file.target ?? file.path;
+  if (/licen[cs]e/i.test(`${file.path} ${file.target ?? ""}`)) return "license";
+  const declared = {
+    "registry:ui": "component",
+    "registry:component": "component",
+    "registry:block": "block",
+    "registry:page": "page",
+    "registry:hook": "hook",
+    "registry:lib": "library",
+    "registry:theme": "theme",
+    "registry:style": "style",
+  }[file.type];
+  if (declared) return declared;
+  return (
+    {
+      ".css": "style",
+      ".scss": "style",
+      ".less": "style",
+      ".md": "document",
+      ".txt": "document",
+      ".json": "data",
+      ".ts": "source",
+      ".tsx": "source",
+      ".js": "source",
+      ".jsx": "source",
+    }[extname(path).toLowerCase()] ?? "file"
+  );
+}
+
 export function codeLanguage(path: string): string {
   const extension = extname(path).toLowerCase();
   return (

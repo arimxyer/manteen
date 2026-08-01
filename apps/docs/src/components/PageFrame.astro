@@ -72,6 +72,20 @@ const { hasSidebar } = Astro.locals.starlightRoute;
 			gap: 1rem;
 		}
 
+		/* M17 — the open drawer measured a 31px left gutter against 19px on the right. Half of
+		   that was the registry rail's own asymmetric padding (fixed in RegistrySidebar.astro);
+		   the other half is here. `scrollbar-gutter: stable` reserves the scrollbar's width on
+		   the inline-end side only, which on a desktop rail sitting against a divider is
+		   invisible and on a full-bleed drawer is a second unexplained offset. `both-edges`
+		   reserves it symmetrically, so every row keeps one gutter on both sides. Scoped to the
+		   drawer: at >=50rem the pane is a fixed-width column and the one-sided reservation is
+		   what keeps its content from shifting when the list becomes scrollable. */
+		@media (max-width: 49.999rem) {
+			.sidebar-pane {
+				scrollbar-gutter: stable both-edges;
+			}
+		}
+
 		@media (min-width: 50rem) {
 			.sidebar-content::after {
 				content: '';

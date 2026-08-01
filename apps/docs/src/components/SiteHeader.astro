@@ -125,19 +125,22 @@ const links = [
     }
   };
 
-  // The bounded source viewer is built by RegistryItemDetail.astro, so it is picked up here
-  // rather than being given its own script.
-  const enhanceSourcePanes = () => {
-    const panes = document.querySelectorAll<HTMLElement>(
-      ".registry-source-browser__code, .registry-source-browser__files",
+  // The bounded source viewer is built by RegistryItemDetail.astro and the gallery's kind-filter
+  // chip rail by RegistryCatalog.astro, so they are picked up here rather than each being given
+  // its own script. M15 added the chip rail: like the table wrapper it is only a scroller below
+  // the grid breakpoint, and `refreshScrollEdges` re-reads computed overflow every time, so no
+  // fade is ever painted on an axis the reader cannot actually scroll.
+  const enhanceScrollRails = () => {
+    const rails = document.querySelectorAll<HTMLElement>(
+      ".registry-source-browser__code, .registry-source-browser__files, .registry-filters",
     );
-    for (const pane of panes) trackScrollEdges(pane);
+    for (const rail of rails) trackScrollEdges(rail);
   };
 
   const enhanceDocument = () => {
     enhanceCodeRegions();
     enhanceTables();
-    enhanceSourcePanes();
+    enhanceScrollRails();
   };
 
   if (document.readyState === "loading") {
@@ -207,12 +210,15 @@ const links = [
       text-decoration: none;
     }
 
-    .site-header__nav a:hover,
-    .site-header__nav a[aria-current="page"] {
+    .site-header__nav a:hover {
       color: var(--sl-color-white);
     }
 
+    /* L7 — the active-link state was declared as two adjacent blocks (colour, then the
+       underline), so a later edit to "the" active-link rule would have touched only one of
+       them. One state, one rule. */
     .site-header__nav a[aria-current="page"] {
+      color: var(--sl-color-white);
       text-decoration: underline;
       text-decoration-color: var(--sl-color-accent);
       text-decoration-thickness: 2px;
@@ -285,21 +291,28 @@ const links = [
         padding-block: 0.45rem;
       }
 
+      /* M20 — the row split into three equal centred columns, so "Docs" began at x≈61 while the
+         logo, hero, eyebrow, headings and every card aligned to the x=16 gutter, and "Registry
+         authors" stopped ~9px short of the right one. Natural-width, left-packed items align the
+         first label to the same gutter as everything else; the negative inline margin lets each
+         link keep the padding its active pill needs without pushing that first glyph inward.
+         `flex: none` (not the previous `flex: 1`) is what keeps the columns off the stretch. */
       .site-header__nav {
         display: flex;
         order: 3;
         width: 100%;
-        gap: 0.25rem;
+        gap: 0.4rem;
+        margin-inline-start: -0.45rem;
         overflow-x: auto;
       }
 
       .site-header__nav a {
-        flex: 1;
+        flex: none;
         min-width: max-content;
         padding: 0.4rem 0.45rem;
         border-radius: var(--manteen-radius-sm);
         font-size: var(--manteen-text-xs);
-        text-align: center;
+        text-align: left;
         white-space: nowrap;
       }
 
