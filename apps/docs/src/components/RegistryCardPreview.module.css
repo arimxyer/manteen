@@ -157,7 +157,8 @@
 
 .carouselMini li {
   display: flex;
-  min-height: 6.75rem;
+  height: 6.75rem;
+  margin: 0;
   align-items: flex-end;
   padding: 0.55rem;
   border-radius: var(--manteen-radius-sm);
@@ -262,11 +263,15 @@
   font-size: 0.52rem;
 }
 
+.tableMini :where(thead, tbody, tr, th, td, svg, path) {
+  margin: 0;
+}
 .tableMini :where(th, td) {
   height: 1.55rem;
   padding: 0 0.6rem;
   border-bottom: 1px solid var(--manteen-border);
-  text-align: left;
+  text-align: center;
+  vertical-align: middle;
 }
 .tableMini th {
   background: var(--manteen-panel-raised);
@@ -278,12 +283,12 @@
    table's width (and the visible top-right notch, M3). The icon/label
    pairing is flexed on an inner span instead. */
 .tableMini th:last-child {
-  text-align: right;
+  text-align: center;
 }
 .tableMini th:last-child .sortHeader {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 0.2rem;
 }
 .tableMini td {
@@ -291,7 +296,7 @@
 }
 .tableMini td:last-child {
   color: var(--manteen-text-muted);
-  text-align: right;
+  text-align: center;
 }
 .tableMini tr:last-child td {
   border-bottom: 0;
@@ -438,6 +443,13 @@
   background: var(--manteen-demo-canvas);
   color: var(--manteen-text-muted);
   font-size: 0.6rem;
+}
+.listMini svg {
+  flex: 0 0 auto;
+  margin: 0;
+}
+.listMini svg path {
+  margin: 0;
 }
 
 .statsGridMini {
