@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node ../../scripts/build-site.mjs",
+    "build": "astro build && node ../../scripts/build-site.mjs && node ../../scripts/check-ec-css.mjs",
     "preview": "astro preview"
   },
   "devDependencies": {
     "@astrojs/starlight": "^0.41.5",
+    "@expressive-code/core": "0.44.1",
+    "@expressive-code/plugin-line-numbers": "0.44.1",
     "astro": "^7.1.6"
   },
   "dependencies": {
