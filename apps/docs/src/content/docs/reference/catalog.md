@@ -61,6 +61,11 @@ never infers either from source. Each prop entry requires `name` and `type` and 
 `usage`, like `themeFragment`, is deliberately never listed in `files`: documentation clients
 render it, and no client installs it into a consuming project.
 
+When a component forwards unrecognized props to an underlying element (extends `BoxProps`,
+`PaperProps`, and so on), document that as a final `...others` row in the table — type set to
+what is forwarded — rather than a prose aside. The table is the surface readers actually scan;
+inherited behavior hidden in a sentence elsewhere is inherited behavior nobody finds.
+
 ## Editor schema
 
 For editor validation, set `$schema` to the installed kit schema:

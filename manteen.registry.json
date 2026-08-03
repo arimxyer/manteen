@@ -290,11 +290,16 @@
             "name": "onShare",
             "type": "() => void",
             "description": "Renders the share action icon and handles its click."
+          },
+          {
+            "name": "...others",
+            "type": "BoxProps & ElementProps<\"div\", \"title\">",
+            "description": "All other props are forwarded to the root Card, after its own withBorder and radius=\"md\", so both can be overridden. Mantine Styles API props (classNames, styles, unstyled) are also accepted."
           }
         ]
       },
       "usage": "registry/mantine-ui/article-card/article-card.usage.tsx",
-      "docs": "Adapted from Mantine UI ArticleCard at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; demo data removed and replaced with typed props. Also accepts Mantine BoxProps, Styles API props and native div attributes."
+      "docs": "Adapted from Mantine UI ArticleCard at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; demo data removed and replaced with typed props."
     },
     {
       "name": "authentication-form",
