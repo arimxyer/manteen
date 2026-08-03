@@ -35,7 +35,12 @@ is not currently assigned to a wave; whether it belongs in v1 remains undecided.
 Node floor. Packed npm, pnpm, Yarn PnP and Bun consumers pass, including the native Windows
 `.cmd`/caret path. The macOS image lacks a usable supported `script(1)` invocation, so its pty cases
 skip with that named reason while Linux supplies the positive 3/3 pty probe. `jsconfig`-only
-projects refuse — the refusal has never been read by a human.
+projects refuse, as `jsconfig-typescript-unsupported`, on any planned item that ships `.ts`/`.tsx` —
+built to §6's letter after a review found the row unimplemented (`load.ts` died at the generic
+"tsconfig.json does not exist" error, and its own hint — pointing `tsconfig` at `jsconfig.json` —
+was a working bypass that let TypeScript write into a JS project at exit 0). The refusal now fires
+in `plan()`, the bypass routes into the same refusal rather than around it, and both are covered by
+unit tests.
 
 **Distribution.** `manteen-kit@0.2.0` and `manteen@0.2.0` are public on npm as `latest`. Both were
 published from the tagged GitHub Actions OIDC workflow and expose npm publish plus SLSA provenance

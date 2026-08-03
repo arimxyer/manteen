@@ -21,7 +21,7 @@
  */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
-import { resolve as resolvePath } from "node:path";
+import { extname, resolve as resolvePath } from "node:path";
 
 import { addDependencyCommand, detectPackageManager, type PackageManagerName } from "nypm";
 import { satisfies } from "semver";
@@ -60,6 +60,7 @@ import type {
   PlannedFile,
   PlanOptions,
   ReceiptState,
+  ResolvedFile,
   ResolvedItem,
   ResolvePorts,
 } from "./types";
@@ -90,6 +91,10 @@ async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptio
 
   const diagnostics: Diagnostic[] = [...graph.diagnostics];
   diagnostics.push(...checkCollisions(graph.files, root));
+  // §6. Config-level state (`config.jsconfigOnly`), but the refusal is
+  // conditioned on what the RESOLVED graph actually ships, so it lives here —
+  // needs no hash, no receipt, no gate that reads the network.
+  diagnostics.push(...checkJsconfigOnly(graph.files, config.jsconfigOnly, config.tsconfigPath));
 
   // ---- the Mantine-aware gates (D11, D13, styles-api) -----------------------
   // Push order is not observable: `aggregate` sorts on (severity, code, path,
@@ -413,6 +418,71 @@ function toPlanItem(
 function dispositionFor(planned: string, onDisk: string | null): Disposition {
   if (onDisk === null) return "create";
   return onDisk === planned ? "identical" : "overwrite";
+}
+
+// ---- jsconfig-only (§6) ------------------------------------------------------
+
+const TYPESCRIPT_EXTENSIONS = new Set([".ts", ".tsx"]);
+
+/**
+ * §6's refusal, at last given a body.
+ *
+ * `config.jsconfigOnly` is a property of the PROJECT, proven once at load (see
+ * `LoadedConfig.jsconfigOnly`) — but the refusal is conditioned on the REF
+ * actually shipping TypeScript, which is only known once the graph is
+ * resolved. Hence this runs here, not in `config/load.ts`.
+ *
+ * Checked against `sourcePath`, never `destination`: an item with an explicit
+ * `target` writes wherever `target` says, verbatim, regardless of extension —
+ * `aliases.ts`'s alias branch is the only one that re-appends the SOURCE
+ * extension onto a destination, so a `target`-placed file's destination can
+ * lack `.tsx` even though the wire document unmistakably ships it. `sourcePath`
+ * is the fact the policy is actually about: what the item ships, not where it
+ * lands. Only `.ts`/`.tsx` match, per §6's letter — not `.mts`/`.cts`, which it
+ * does not name.
+ *
+ * EXPORTED so a test can drive it directly, the way the other `gates/*` checks
+ * do: the `Diagnostic` it returns is the one `plan()` actually reports, so a
+ * test against it is a test against production behaviour, not a paraphrase.
+ *
+ * `tsconfigPath` is `config.tsconfigPath` — the file that actually backed
+ * `paths` — not a claim that no `tsconfig.json` exists anywhere. Those are
+ * different facts: a project can have BOTH a real `tsconfig.json` and a
+ * `jsconfig.json`, with `manteen.json`'s `tsconfig` field pointed at the
+ * latter (the bypass §6 closes). In that project a real tsconfig is sitting
+ * right there, and a message that said "no tsconfig.json" would be false, and
+ * "add one" would be the wrong next step for someone who already has one. What
+ * is true in every case `jsconfigOnly` can be true is narrower and is what the
+ * message says instead: THIS is the file backing your aliases, and it is a
+ * jsconfig.
+ */
+export function checkJsconfigOnly(
+  files: readonly ResolvedFile[],
+  jsconfigOnly: boolean,
+  tsconfigPath: string,
+): Diagnostic[] {
+  if (!jsconfigOnly) return [];
+
+  const offending = files.filter((file) => TYPESCRIPT_EXTENSIONS.has(extname(file.sourcePath)));
+  if (offending.length === 0) return [];
+
+  const items = [...new Set(offending.map((file) => file.itemId))].sort();
+  const paths = [...new Set(offending.map((file) => file.sourcePath))].sort();
+
+  const message = [
+    `${items.join(", ")} ship${items.length === 1 ? "s" : ""} TypeScript (${paths.join(", ")}), ` +
+      `but the config backing your aliases here is ${tsconfigPath}, a jsconfig.json.`,
+    "manteen writes registry files verbatim and never transpiles, so a `.ts`/`.tsx` file has no",
+    "real tsconfig to resolve its syntax against.",
+    "",
+    "Point `tsconfig` in manteen.json at a real tsconfig.json declaring the same `paths` (adding",
+    "one first if you don't have one) and re-run, or choose an item that ships JavaScript instead.",
+    "",
+    "Pointing `tsconfig` at a jsconfig.json — this one or any other — will not work: jsconfig.json",
+    "marks a JavaScript project and does not change what manteen writes.",
+  ].join("\n");
+
+  return [diag("jsconfig-typescript-unsupported", message, { items })];
 }
 
 // ---- destination-exists -----------------------------------------------------

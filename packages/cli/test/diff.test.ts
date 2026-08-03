@@ -291,6 +291,7 @@ function config(root: string): LoadedConfig {
     stylesDestination: null,
     tsconfigPath: join(root, "tsconfig.json"),
     tsconfig: { path: join(root, "tsconfig.json"), config: TSCONFIG } as LoadedConfig["tsconfig"],
+    jsconfigOnly: false,
     resolutions: new Map(),
     target: () => {
       throw new Error("config.target is unreachable: plan() is stubbed in this suite");

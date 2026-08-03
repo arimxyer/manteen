@@ -88,7 +88,17 @@ export type DiagnosticCode =
   // ---- Wc managed global styles -------------------------------------------
   | "global-styles-unconfigured"
   | "global-styles-uninitialized"
-  | "global-styles-drift";
+  | "global-styles-drift"
+  /**
+   * §6: content ships verbatim and manteen never transpiles, so a project with
+   * only `jsconfig.json` (no `tsconfig.json`) cannot receive an item that ships
+   * `.ts`/`.tsx` — there is no real tsconfig for the written syntax to resolve
+   * against. Conditioned on the ref, not the project alone, which is why it
+   * fires in `plan()` rather than at config load (`LoadedConfig.jsconfigOnly`
+   * is set at load; this code is emitted only once a planned item's files are
+   * known).
+   */
+  | "jsconfig-typescript-unsupported";
 
 export interface Diagnostic {
   code: DiagnosticCode;
