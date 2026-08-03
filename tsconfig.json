@@ -23,7 +23,17 @@
       // Usage examples (`usage` in the catalog) are written with the consumer's
       // manteen alias. Explicit per-module entries, not `@ui/*`: each item nests
       // in its own directory here but installs flat under the alias.
-      "@ui/article-card": ["./registry/mantine-ui/article-card/article-card"]
+      "@ui/article-card": ["./registry/mantine-ui/article-card/article-card"],
+      "@ui/authentication-form": ["./registry/mantine-ui/authentication-form/authentication-form"],
+      "@ui/button-progress": ["./registry/mantine-ui/button-progress/button-progress"],
+      "@ui/cards-carousel": ["./registry/mantine-ui/cards-carousel/cards-carousel"],
+      "@ui/dnd-list": ["./registry/mantine-ui/dnd-list/dnd-list"],
+      "@ui/dropzone-button": ["./registry/mantine-ui/dropzone-button/dropzone-button"],
+      "@ui/stats-grid": ["./registry/mantine-ui/stats-grid/stats-grid"],
+      "@ui/table-sort": ["./registry/mantine-ui/table-sort/table-sort"],
+      // The data-table block installs its component under the classic alias, but its
+      // source lives under blocks/ — the wildcard above only covers registry/ui/.
+      "@/components/ui/data-table": ["./registry/blocks/data-table/data-table"]
     }
   },
   "include": ["registry/**/*", "test/**/*", "packages/*/src/**/*", "packages/*/test/**/*"]
