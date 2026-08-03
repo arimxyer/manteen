@@ -3,6 +3,14 @@
  * ffbf61c559f374a7ea28fcf00355e84dcbe9a908. MIT licensed; see
  * LICENSES/MANTINE-UI.txt after installation.
  */
+/* Structural selector only: the Carousel itself owns all default styling for
+ * this element (see @mantine/carousel's own root class). This rule sets no
+ * real CSS (an unused custom property) so the Styles API selector still has
+ * a matching class in this module without introducing a visual default. */
+.root {
+  --cards-carousel-root: 1;
+}
+
 .card {
   display: flex;
   height: 440px;

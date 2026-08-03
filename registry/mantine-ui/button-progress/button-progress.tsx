@@ -4,13 +4,41 @@
  * LICENSES/MANTINE-UI.txt after installation.
  */
 
-import { Button, type ButtonProps, Progress, rgba, useMantineTheme } from "@mantine/core";
+import {
+  Button,
+  type ButtonProps,
+  type ButtonVariant,
+  type Factory,
+  factory,
+  Progress,
+  rgba,
+  type StylesApiProps,
+  useMantineTheme,
+  useProps,
+  useStyles,
+} from "@mantine/core";
 import { useInterval } from "@mantine/hooks";
 import { useState } from "react";
 
 import classes from "./button-progress.module.css";
 
-export interface ButtonProgressProps extends Omit<ButtonProps, "children" | "onClick"> {
+export type ButtonProgressStylesNames = "root" | "label";
+
+export interface ButtonProgressProps
+  extends Omit<
+      ButtonProps,
+      | "children"
+      | "onClick"
+      | "classNames"
+      | "styles"
+      | "vars"
+      | "unstyled"
+      | "attributes"
+      | "variant"
+    >,
+    StylesApiProps<ButtonProgressFactory> {
+  /** Key of Button's variant, e.g. `"filled"` @default 'filled' */
+  variant?: ButtonVariant;
   idleLabel?: string;
   progressLabel?: string;
   completeLabel?: string;
@@ -18,21 +46,51 @@ export interface ButtonProgressProps extends Omit<ButtonProps, "children" | "onC
   onComplete?: () => void;
 }
 
+export type ButtonProgressFactory = Factory<{
+  props: ButtonProgressProps;
+  ref: HTMLButtonElement;
+  stylesNames: ButtonProgressStylesNames;
+}>;
+
 const TICK_MS = 20;
 
-export function ButtonProgress({
-  idleLabel = "Upload files",
-  progressLabel = "Uploading files",
-  completeLabel = "Files uploaded",
-  durationMs = 2000,
-  onComplete,
-  className,
-  ...buttonProps
-}: ButtonProgressProps) {
+export const ButtonProgress = factory<ButtonProgressFactory>((_props) => {
+  const props = useProps("ButtonProgress", null, _props);
+  const {
+    classNames,
+    className,
+    style,
+    styles,
+    unstyled,
+    vars,
+    attributes,
+    ref,
+    idleLabel = "Upload files",
+    progressLabel = "Uploading files",
+    completeLabel = "Files uploaded",
+    durationMs = 2000,
+    onComplete,
+    color,
+    ...others
+  } = props;
+
   const theme = useMantineTheme();
   const [progress, setProgress] = useState(0);
   const [complete, setComplete] = useState(false);
   const step = (TICK_MS / Math.max(durationMs, TICK_MS)) * 100;
+
+  const getStyles = useStyles<ButtonProgressFactory>({
+    name: "ButtonProgress",
+    classes,
+    props,
+    className,
+    style,
+    classNames,
+    styles,
+    unstyled,
+    attributes,
+    vars,
+  });
 
   const interval = useInterval(() => {
     setProgress((current) => {
@@ -56,13 +114,15 @@ export function ButtonProgress({
 
   return (
     <Button
+      ref={ref}
       fullWidth
-      {...buttonProps}
-      className={[classes.button, className].filter(Boolean).join(" ")}
+      unstyled={unstyled}
+      {...getStyles("root")}
+      {...others}
       onClick={start}
-      color={complete ? "teal.9" : (buttonProps.color ?? `${theme.primaryColor}.9`)}
+      color={complete ? "teal.9" : (color ?? `${theme.primaryColor}.9`)}
     >
-      <span className={classes.label} aria-live="polite">
+      <span {...getStyles("label")} aria-live="polite">
         {progress > 0 ? progressLabel : complete ? completeLabel : idleLabel}
       </span>
       {progress > 0 && (
@@ -75,4 +135,13 @@ export function ButtonProgress({
       )}
     </Button>
   );
+});
+
+ButtonProgress.classes = classes;
+ButtonProgress.displayName = "ButtonProgress";
+
+export namespace ButtonProgress {
+  export type Props = ButtonProgressProps;
+  export type StylesNames = ButtonProgressStylesNames;
+  export type Factory = ButtonProgressFactory;
 }

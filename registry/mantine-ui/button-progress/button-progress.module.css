@@ -3,7 +3,7 @@
  * ffbf61c559f374a7ea28fcf00355e84dcbe9a908. MIT licensed; see
  * LICENSES/MANTINE-UI.txt after installation.
  */
-.button {
+.root {
   position: relative;
   transition: background-color 150ms ease;
 }

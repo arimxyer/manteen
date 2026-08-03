@@ -1,0 +1,36 @@
+/*
+ * PageHeader's Styles API selectors. None of them carry default visual
+ * styling of their own — every layout property (gap, spacing, alignment,
+ * wrap) is set via Mantine style props directly on each element, exactly as
+ * it was before this file existed. Each rule below only declares an unused
+ * custom property (no visual effect) so the selector has a real class in
+ * this stylesheet to anchor to; the classes exist purely as override
+ * targets for instance classNames/styles and theme .extend.
+ */
+.root {
+  --page-header-root: 1;
+}
+
+.header {
+  --page-header-header: 1;
+}
+
+.titleWrapper {
+  --page-header-title-wrapper: 1;
+}
+
+.title {
+  --page-header-title: 1;
+}
+
+.description {
+  --page-header-description: 1;
+}
+
+.actions {
+  --page-header-actions: 1;
+}
+
+.divider {
+  --page-header-divider: 1;
+}

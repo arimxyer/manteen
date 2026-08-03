@@ -1,0 +1,53 @@
+.root {
+  /*
+   * Structural anchor for the Styles API root selector. The visual
+   * defaults (withBorder, padding, radius) stay as component props on
+   * Paper, not CSS, so a caller's passthrough props can still override
+   * them exactly as they could pre-conversion.
+   */
+}
+
+.label {
+  /*
+   * Matches Text's own size="xs" resolution (both --text-fz and --text-lh
+   * derive from `size` in Text's varsResolver), so the default render is
+   * unchanged now that the value moved from a prop to this class.
+   */
+  font-size: var(--mantine-font-size-xs);
+  line-height: var(--mantine-line-height-xs);
+  color: var(--mantine-color-dimmed);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.value {
+  /*
+   * fz={28} and mt={4} previously resolved through Mantine's rem()
+   * converter (value/16 -> rem, scaled by --mantine-scale). Reproduced
+   * here verbatim so the default render doesn't drift under a themed
+   * `scale` override. lh={1.2} was a unitless number, passed through
+   * as-is by lineHeightResolver, so it needs no such conversion.
+   */
+  font-size: calc(1.75rem * var(--mantine-scale));
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: calc(0.25rem * var(--mantine-scale));
+}
+
+.icon {
+  /*
+   * Structural selector for the optional ThemeIcon slot. Its visual
+   * defaults (variant, size, radius) stay as component props so a
+   * caller's passthrough props can still override them.
+   */
+}
+
+.diff {
+  /*
+   * Structural selector for the trend row (arrow ThemeIcon + diff text +
+   * "vs last period" caption share this one selector, per the Styles API
+   * conversion guide's rule that conditional/repeated parts of the same
+   * kind get one name rather than one each). Colors stay dynamic props
+   * (positive/negative) rather than CSS since they depend on the diff sign.
+   */
+}

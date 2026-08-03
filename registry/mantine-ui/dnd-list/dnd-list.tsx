@@ -21,10 +21,17 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Text } from "@mantine/core";
+import {
+  type Factory,
+  factory,
+  type StylesApiProps,
+  Text,
+  useProps,
+  useStyles,
+} from "@mantine/core";
 import { useListState } from "@mantine/hooks";
 import cx from "clsx";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import classes from "./dnd-list.module.css";
 
@@ -35,37 +42,56 @@ export interface DndListItem {
   leading?: ReactNode;
 }
 
-export interface DndListProps {
+/**
+ * DndList renders no wrapper element of its own — `DndContext`/`SortableContext`
+ * are context providers, not DOM nodes, and the component's top-level output is
+ * the bare list of per-item `<div>`s. There is therefore no `root` selector:
+ * every selector here names a part of the repeated item row instead.
+ */
+export type DndListStylesNames = "item" | "itemSection" | "itemLabel" | "itemDescription";
+
+export interface DndListProps extends StylesApiProps<DndListFactory> {
   initialItems: DndListItem[];
   onChange?: (items: DndListItem[]) => void;
 }
 
+export type DndListFactory = Factory<{
+  props: DndListProps;
+  stylesNames: DndListStylesNames;
+}>;
+
 interface SortableItemProps {
   item: DndListItem;
+  getStyles: ReturnType<typeof useStyles<DndListFactory>>;
 }
 
-function SortableItem({ item }: SortableItemProps) {
+function SortableItem({ item, getStyles }: SortableItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
   });
-  const style: CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  const itemStyles = getStyles("item");
 
   return (
     <div
       ref={setNodeRef}
-      style={style}
-      className={cx(classes.item, { [classes.itemDragging]: isDragging })}
+      {...itemStyles}
+      className={cx(itemStyles.className, { [classes.itemDragging]: isDragging })}
+      // dnd-kit's transform/transition are mandatory for drag positioning and must
+      // always win; they're applied last so a consumer's `styles={{ item: {...} }}`
+      // can still set any other CSS property on this element.
+      style={{
+        ...itemStyles.style,
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
       {...attributes}
       {...listeners}
     >
-      {item.leading && <div className={classes.leading}>{item.leading}</div>}
+      {item.leading && <div {...getStyles("itemSection")}>{item.leading}</div>}
       <div>
-        <Text>{item.label}</Text>
+        <Text {...getStyles("itemLabel")}>{item.label}</Text>
         {item.description && (
-          <Text className={classes.description} size="sm">
+          <Text {...getStyles("itemDescription")} size="sm">
             {item.description}
           </Text>
         )}
@@ -74,7 +100,21 @@ function SortableItem({ item }: SortableItemProps) {
   );
 }
 
-export function DndList({ initialItems, onChange }: DndListProps) {
+export const DndList = factory<DndListFactory>((_props) => {
+  const props = useProps("DndList", null, _props);
+  const { classNames, styles, unstyled, vars, attributes, initialItems, onChange } = props;
+
+  const getStyles = useStyles<DndListFactory>({
+    name: "DndList",
+    classes,
+    props,
+    classNames,
+    styles,
+    unstyled,
+    attributes,
+    vars,
+  });
+
   const [items, handlers] = useListState(initialItems);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -97,9 +137,18 @@ export function DndList({ initialItems, onChange }: DndListProps) {
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
         {items.map((item) => (
-          <SortableItem key={item.id} item={item} />
+          <SortableItem key={item.id} item={item} getStyles={getStyles} />
         ))}
       </SortableContext>
     </DndContext>
   );
+});
+
+DndList.classes = classes;
+DndList.displayName = "DndList";
+
+export namespace DndList {
+  export type Props = DndListProps;
+  export type StylesNames = DndListStylesNames;
+  export type Factory = DndListFactory;
 }

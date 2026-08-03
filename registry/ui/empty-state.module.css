@@ -1,0 +1,19 @@
+.root {
+  --empty-state-root: 1;
+}
+
+.icon {
+  --empty-state-icon: 1;
+}
+
+.title {
+  --empty-state-title: 1;
+}
+
+.description {
+  --empty-state-description: 1;
+}
+
+.action {
+  --empty-state-action: 1;
+}
