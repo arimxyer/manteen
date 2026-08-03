@@ -24,6 +24,15 @@ export interface RegistryFile {
   content?: string;
 }
 
+/** One author-documented prop, carried verbatim under meta.mantine.props. */
+export interface RegistryPropDoc {
+  name: string;
+  type: string;
+  required?: boolean;
+  default?: string;
+  description?: string;
+}
+
 export interface RegistryItem extends RegistryIndexItem {
   dependencies?: string[];
   devDependencies?: string[];
@@ -36,6 +45,8 @@ export interface RegistryItem extends RegistryIndexItem {
       requires?: string;
       provider?: string;
       stylesApi?: Record<string, string[]>;
+      props?: Record<string, RegistryPropDoc[]>;
+      usage?: { path: string; content: string };
       themeFragment?: { path: string; content: string };
     };
   };

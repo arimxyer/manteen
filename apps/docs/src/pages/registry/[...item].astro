@@ -22,14 +22,12 @@ const { entries } = readRegistry();
 // Section ids must match the h2 ids RegistryItemDetail.astro renders — the TOC scrolls by slug.
 const headings = [
   { depth: 2, slug: "install", text: "Install" },
+  { depth: 2, slug: "dependencies", text: "Dependencies" },
   { depth: 2, slug: "preview", text: "Preview" },
   { depth: 2, slug: "usage", text: "Usage" },
   { depth: 2, slug: "props", text: "Props" },
   { depth: 2, slug: "styling", text: "Styling" },
   { depth: 2, slug: "source", text: "Source" },
-  { depth: 2, slug: "requirements", text: "Requirements" },
-  { depth: 2, slug: "dependencies", text: "Dependencies" },
-  { depth: 2, slug: "installed-files", text: "Installed files" },
   ...(entry.detail.docs ? [{ depth: 2, slug: "author-notes", text: "Author notes" }] : []),
 ];
 ---

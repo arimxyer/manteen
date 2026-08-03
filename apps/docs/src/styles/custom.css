@@ -93,7 +93,10 @@
   .registry-card__header,
   .registry-card__badges,
   .registry-item-meta,
-  .registry-item-links
+  .registry-item-links,
+  .registry-deps,
+  .registry-deps li,
+  .registry-source-file
 ) > * {
   margin-top: 0;
 }
@@ -174,7 +177,10 @@
   --ec-codeBg: var(--manteen-code-canvas);
   --ec-uiFontFml: var(--__sl-font-mono);
   --ec-uiFontSize: 0.8rem;
-  --ec-uiPadBlk: 0.4rem;
+  /* The title strip must clear the 2rem copy control it hosts: at the previous 0.4rem the
+     strip computed ~33px against the button's 32px, so the button pressed into the frame's
+     top border. 0.6rem gives the filename row real breathing room on every framed block. */
+  --ec-uiPadBlk: 0.6rem;
   --ec-uiPadInl: 0.9rem;
   --ec-focusBrd: var(--sl-color-accent);
   --ec-sbThumbCol: color-mix(in srgb, var(--manteen-text-faint) 55%, transparent);
@@ -553,16 +559,169 @@
   gap: var(--manteen-space-2);
 }
 
-.registry-item-meta code {
-  color: var(--manteen-accent-soft);
-  font-size: var(--manteen-text-ui);
+/* The item's two resource links ride the badge row as quiet icon buttons — same 2rem square
+   icon-control language as the header's search/GitHub controls. */
+.registry-item-meta__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.4rem;
+  margin-inline-start: auto;
 }
 
-.registry-item-links {
+.registry-item-meta__actions a {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--manteen-border);
+  border-radius: var(--manteen-radius-sm);
+  background: var(--manteen-panel);
+  color: var(--manteen-text-muted);
+}
+
+.registry-item-meta__actions a:hover {
+  background: var(--manteen-panel-active);
+  color: var(--manteen-text);
+}
+
+.registry-item-meta__actions a:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 2px;
+  box-shadow: var(--manteen-focus-ring);
+}
+
+/* Dependencies render as a chip row near the top of the detail page: a mono package name plus
+   a tiny npm/registry provenance label. Registry-local dependencies are links to their own
+   detail pages and read as wrapped chips, not differently-styled rows. */
+.registry-deps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--manteen-space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.registry-deps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--manteen-border);
+  border-radius: var(--manteen-radius-sm);
+  background: var(--manteen-panel);
+}
+
+.registry-deps code {
+  padding: 0;
+  margin-block: 0;
+  border: 0;
+  background: transparent;
+  color: var(--manteen-accent-soft);
+  font-size: var(--manteen-text-sm);
+}
+
+.registry-deps__source {
+  color: var(--manteen-text-faint);
+  font-size: 0.62rem;
+  font-weight: var(--manteen-eyebrow-weight);
+  letter-spacing: var(--manteen-eyebrow-tracking);
+  text-transform: uppercase;
+}
+
+/* Per-file source disclosures: a panel row that opens into the code frame. Native <details>,
+   so long files stay collapsed with no script and find-in-page still auto-expands matches. */
+.registry-source-file {
+  overflow: hidden;
+  border: 1px solid var(--manteen-border);
+  border-radius: var(--manteen-radius-md);
+  background: var(--manteen-panel);
+}
+
+.registry-source-file + .registry-source-file {
+  margin-top: 0.6rem;
+}
+
+.registry-source-file summary {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  column-gap: 1.5rem;
+  gap: 0.15rem 0.6rem;
+  padding: 0.65rem 0.9rem;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.registry-source-file summary::-webkit-details-marker {
+  display: none;
+}
+
+.registry-source-file summary::before {
+  flex: none;
+  color: var(--manteen-text-faint);
+  content: "▸";
+  transition: transform 0.15s ease;
+}
+
+.registry-source-file[open] summary::before {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .registry-source-file summary::before {
+    transition: none;
+  }
+}
+
+.registry-source-file summary:hover {
+  background: var(--manteen-panel-active);
+}
+
+.registry-source-file summary:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: -2px;
+  box-shadow: var(--manteen-focus-ring);
+}
+
+.registry-source-file summary code {
+  padding: 0;
+  margin-block: 0;
+  border: 0;
+  background: transparent;
+  color: var(--manteen-accent-soft);
+  font-size: var(--manteen-text-sm);
+}
+
+.registry-source-file summary span {
+  margin-inline-start: auto;
+  color: var(--manteen-text-faint);
+  font-family: var(--__sl-font-mono);
+  font-size: var(--manteen-text-xs);
+}
+
+.registry-source-file__body {
+  padding: 0 0.6rem 0.6rem;
+  border-top: 1px solid var(--manteen-border);
+}
+
+.registry-source-file__body > :first-child {
+  margin-top: 0.6rem;
+}
+
+.registry-source-file__body p {
+  color: var(--manteen-text-muted);
+  font-size: var(--manteen-text-sm);
+}
+
+/* The required-prop marker in the Props table; the "* required" legend under the table is the
+   same quiet mono metadata role as the file facts line below. */
+.registry-required {
+  margin-inline-start: 0.15rem;
+  color: var(--sl-color-red);
+  font-weight: 700;
 }
 
 /* Facts line above each source file's code frame: quiet mono metadata, not prose. */
@@ -570,10 +729,6 @@
   color: var(--manteen-text-faint);
   font-family: var(--__sl-font-mono);
   font-size: var(--manteen-text-xs);
-}
-
-.registry-file-facts + .expressive-code {
-  margin-top: 0.5rem;
 }
 
 /* L4 — a raw 40-char commit SHA in author-notes prose broke mid-hash across two lines.

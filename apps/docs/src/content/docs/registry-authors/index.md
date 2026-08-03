@@ -100,6 +100,11 @@ Only declare `stylesApi` when the component genuinely exposes the named parts th
 `classNames`/`styles` interface. Manteen carries and reports that author assertion but cannot infer
 or verify it generically; private CSS-module names are implementation details and do not qualify.
 
+`props` and `usage` fill the Props table and the Usage example on an item's documentation page.
+Both are author assertions carried verbatim — nothing is inferred from source — and the `usage`
+module is inlined at build time, never installed. See the
+[authoring catalog reference](../reference/catalog/#documentation-fields) for the field shapes.
+
 ## 3. Build and validate
 
 ```bash

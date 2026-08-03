@@ -136,14 +136,16 @@ const links = [
     requestAnimationFrame(enhanceDocument);
   }
   document.addEventListener("astro:page-load", () => requestAnimationFrame(enhanceDocument));
-  // Starlight tab switches (the Source file tabs) reveal panes that were `display: none` and
-  // therefore unmeasurable at enhancement time, so re-measure after the click lands.
-  document.addEventListener("click", (event) => {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    if (!target.closest("starlight-tabs")) return;
-    requestAnimationFrame(refreshAllScrollEdges);
-  });
+  // Opening a <details> (the Source file disclosures) reveals panes that were unmeasurable at
+  // enhancement time, so re-measure then. `toggle` does not bubble — capture instead.
+  document.addEventListener(
+    "toggle",
+    (event) => {
+      if (!(event.target instanceof HTMLElement) || event.target.tagName !== "DETAILS") return;
+      requestAnimationFrame(refreshAllScrollEdges);
+    },
+    true,
+  );
 
   window.addEventListener(
     "resize",

@@ -32,12 +32,34 @@ Each item requires `name`, `kind`, and `files`.
 | `files` | Source files and their component, hook, library, style, or file roles. |
 | `themeFragment` | A theme module merged into the consumer theme rather than copied. |
 | `stylesApi` | Author-declared public Mantine Styles API selectors keyed by component name. |
+| `props` | Author-documented prop surface keyed by exported component or hook name. |
+| `usage` | Path to a copy-ready example module, inlined into the item at build time. |
 
 ## Styles API declaration
 
 `stylesApi` asserts that the installed component genuinely exposes each named part through its
 public `classNames`/`styles` interface. Manteen carries and reports the declaration but cannot
 verify arbitrary third-party source; internal CSS-module class names do not qualify.
+
+## Documentation fields
+
+`props` and `usage` are author assertions for documentation clients, carried verbatim — the kit
+never infers either from source. Each prop entry requires `name` and `type` and may add
+`required`, `default`, and `description`:
+
+```json
+{
+  "props": {
+    "ArticleCard": [
+      { "name": "title", "type": "string", "required": true, "description": "Article title." }
+    ]
+  },
+  "usage": "registry/mantine-ui/article-card/article-card.usage.tsx"
+}
+```
+
+`usage`, like `themeFragment`, is deliberately never listed in `files`: documentation clients
+render it, and no client installs it into a consuming project.
 
 ## Editor schema
 

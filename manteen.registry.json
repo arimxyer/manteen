@@ -92,7 +92,67 @@
       "stylesApi": {
         "ArticleCard": ["root", "image", "rating", "title", "footer", "action"]
       },
-      "docs": "Adapted from Mantine UI ArticleCard at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; demo data removed and replaced with typed props."
+      "props": {
+        "ArticleCard": [
+          {
+            "name": "image",
+            "type": "string",
+            "required": true,
+            "description": "Cover image URL, rendered inside the linked card header."
+          },
+          {
+            "name": "title",
+            "type": "string",
+            "required": true,
+            "description": "Article title; also used as the image alt text and rendered as a link."
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "required": true,
+            "description": "Summary text, clamped to four lines."
+          },
+          {
+            "name": "authorName",
+            "type": "string",
+            "required": true,
+            "description": "Byline shown in the card footer."
+          },
+          {
+            "name": "authorAvatar",
+            "type": "string",
+            "description": "Avatar image URL for the byline; a placeholder avatar renders when omitted."
+          },
+          {
+            "name": "rating",
+            "type": "string",
+            "description": "Text for the gradient badge over the image; no badge renders when omitted."
+          },
+          {
+            "name": "href",
+            "type": "string",
+            "required": true,
+            "description": "Destination for the image and title links."
+          },
+          {
+            "name": "onLike",
+            "type": "() => void",
+            "description": "Renders the like action icon and handles its click."
+          },
+          {
+            "name": "onBookmark",
+            "type": "() => void",
+            "description": "Renders the bookmark action icon and handles its click."
+          },
+          {
+            "name": "onShare",
+            "type": "() => void",
+            "description": "Renders the share action icon and handles its click."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/article-card/article-card.usage.tsx",
+      "docs": "Adapted from Mantine UI ArticleCard at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; demo data removed and replaced with typed props. Also accepts Mantine BoxProps, Styles API props and native div attributes."
     },
     {
       "name": "authentication-form",

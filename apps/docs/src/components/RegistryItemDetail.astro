@@ -1,5 +1,5 @@
 ---
-import { Aside, Badge, Code, LinkButton, TabItem, Tabs } from "@astrojs/starlight/components";
+import { Aside, Badge, Code, Icon } from "@astrojs/starlight/components";
 
 import { ArticleCardPlayground } from "./ArticleCardPlayground";
 
@@ -12,7 +12,6 @@ import {
   itemPath,
   kindLabel,
   packageStyleImports,
-  styleFiles,
   type RegistryEntry,
 } from "../lib/registry";
 import {
@@ -36,11 +35,16 @@ const sourceHref = item.files?.[0]
   : "https://github.com/arimxyer/manteen";
 const mantine = item.meta?.mantine;
 const files = item.files ?? [];
-const installedStyles = styleFiles(item);
 const packageStyles = packageStyleImports(item);
 const stylesApi = mantine?.stylesApi;
 const hasStylesApi = Boolean(stylesApi && Object.keys(stylesApi).length > 0);
 const themeFragment = mantine?.themeFragment;
+// Author-published documentation (meta.mantine.props / .usage). Rendered verbatim when
+// present; the boundary asides below remain the honest fallback when they are not.
+const propDocs = mantine?.props;
+const propComponents = Object.entries(propDocs ?? {});
+const hasPropDocs = propComponents.some(([, docs]) => docs.length > 0);
+const usage = mantine?.usage;
 // Single source of truth, shared with the gallery badge in RegistryCatalog.astro.
 const hasCuratedPreview = hasCuratedLivePreview(index.name);
 const presentationKind = registryPresentationKind(index);
@@ -78,38 +82,81 @@ const fileSize = (content: string | undefined) => {
   const bytes = new TextEncoder().encode(content ?? "").length;
   return bytes >= 1000 ? `${(bytes / 1000).toFixed(1)} kB` : `${bytes} B`;
 };
-const dependencyRows = [
-  ...(item.dependencies ?? []).map((name) => ({ name, source: "npm", local: null as string | null })),
-  ...(item.registryDependencies ?? []).map((name) => ({
-    name,
-    source: "registry",
-    local: name.startsWith("@house/") ? name.slice(7) : null,
-  })),
-];
+const npmDependencies = item.dependencies ?? [];
+// Registry dependencies install alongside the item but are not npm packages — they read as a
+// quiet footnote under the chips rather than as peer chips.
+const registryDependencies = (item.registryDependencies ?? []).map((name) => ({
+  name,
+  local: name.startsWith("@house/") ? name.slice(7) : null,
+}));
 ---
 
-<p class="registry-item-meta">
+{
+  /*
+    The identity row carries the item's requirements — kind, Mantine range, provider — as
+    badges, in place of the Requirements table the rail used to draw. A fact that is not
+    declared simply has no badge; "Not declared" rows said the same thing in more space.
+  */
+}
+<div class="registry-item-meta">
   <Badge text={presentationLabel} size="small" {...registryKindBadge(presentationKind)} />
   {mantine?.requires && (
     <Badge text={`Mantine ${formatRequirement(mantine.requires)}`} variant="note" size="small" />
   )}
-  <code>@house/{index.name}</code>
-</p>
+  {mantine?.provider && (
+    <Badge text={mantine.provider} variant="default" class="registry-badge--neutral" size="small" />
+  )}
+  <span class="registry-item-meta__actions">
+    <a href={rawJsonHref} title="Registry JSON" aria-label="Registry JSON">
+      <Icon name="document" />
+    </a>
+    <a href={sourceHref} title="Source on GitHub" aria-label="Source on GitHub">
+      <Icon name="github" />
+    </a>
+  </span>
+</div>
 
 {index.description && <p>{index.description}</p>}
-
-<p class="registry-item-links">
-  <LinkButton href={rawJsonHref} variant="minimal" icon="document" iconPlacement="start">
-    Registry JSON
-  </LinkButton>
-  <LinkButton href={sourceHref} variant="minimal" icon="github" iconPlacement="start">
-    Source on GitHub
-  </LinkButton>
-</p>
 
 <h2 id="install">Install</h2>
 <p>One command copies the item's source into your project, where you own and edit it.</p>
 <Code code={command} lang="sh" />
+
+<h2 id="dependencies">Dependencies</h2>
+{
+  npmDependencies.length > 0 ? (
+    <ul class="registry-deps">
+      {npmDependencies.map((name) => (
+        <li>
+          <code>{name}</code>
+          <span class="registry-deps__source">npm</span>
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p>No npm dependencies declared.</p>
+  )
+}
+{
+  registryDependencies.length > 0 && (
+    <p class="registry-file-facts">
+      Installing this item also installs{" "}
+      {registryDependencies.map((dependency, position) => (
+        <>
+          {position > 0 && ", "}
+          {dependency.local ? (
+            <a href={`${base}/registry/${itemPath(dependency.local)}/`}>
+              <code>{dependency.name}</code>
+            </a>
+          ) : (
+            <code>{dependency.name}</code>
+          )}
+        </>
+      ))}{" "}
+      from the registry.
+    </p>
+  )
+}
 
 <h2 id="preview">Preview</h2>
 {
@@ -132,16 +179,67 @@ const dependencyRows = [
 }
 
 <h2 id="usage">Usage</h2>
-<Aside type="note" title="No structured usage example">
-  <p>
-    Manteen does not infer JSX, imports, callback behavior, or sample data from source files. A
-    copy-ready example will appear here only when the registry author publishes one.
-  </p>
-</Aside>
+{
+  usage?.content?.trim() ? (
+    <>
+      <p>
+        A copy-ready example published by the registry author. Imports use the aliases Manteen
+        configures at <code>init</code>.
+      </p>
+      <Code code={usage.content} lang={codeLanguage(usage.path)} meta={`title="${fileName({ path: usage.path, type: "" })}"`} wrap />
+    </>
+  ) : (
+    <Aside type="note" title="No structured usage example">
+      <p>
+        Manteen does not infer JSX, imports, callback behavior, or sample data from source files.
+        A copy-ready example will appear here only when the registry author publishes one.
+      </p>
+    </Aside>
+  )
+}
 
 <h2 id="props">Props</h2>
 {
-  acceptsProps(index.type) ? (
+  hasPropDocs ? (
+    <>
+      <p>Author-documented props, carried verbatim from the registry item.</p>
+      {propComponents.map(([component, docs]) => (
+        <>
+          {propComponents.length > 1 && <h3 id={`props-${component.toLowerCase()}`}>{component}</h3>}
+          <table>
+            <thead>
+              <tr>
+                <th>Prop</th>
+                <th>Type</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {docs.map((prop) => (
+                <tr>
+                  <td>
+                    <code>{prop.name}</code>
+                    {prop.required && (
+                      <span class="registry-required" title="Required">
+                        *
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    <code>{prop.type}</code>
+                  </td>
+                  <td>{prop.default ? <code>{prop.default}</code> : "—"}</td>
+                  <td>{prop.description ?? ""}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      ))}
+      <p class="registry-file-facts">* required</p>
+    </>
+  ) : acceptsProps(index.type) ? (
     <Aside type="note" title="Structured props not published">
       <p>
         This item document does not carry prop names, types, defaults, or descriptions. The source
@@ -154,87 +252,52 @@ const dependencyRows = [
   )
 }
 
+{
+  /*
+    Styling is the customization CONTRACT, kept deliberately compact: the selector chips are
+    what a consumer types into `classNames`, the package-style chips are what install composes
+    globally, and the theme fragment is content that exists nowhere else on the page. File
+    contents live under Source only; installed CSS being editable is already the product's
+    base promise ("source you own"), not a subsection.
+  */
+}
 <h2 id="styling">Styling</h2>
 {
   hasStylesApi ? (
-    <Aside type="note" title="Declaration boundary">
-      <p>
-        These selectors are supplied by the registry author. Manteen reports the declaration but
-        does not verify that the component wires every selector to <code>classNames</code>,{" "}
-        <code>styles</code>, or a theme component entry.
-      </p>
-    </Aside>
-  ) : (
-    <Aside type="note" title="No public Styles API is declared">
-      <p>
-        Installed CSS remains editable because the project owns the source. Internal class names
-        are implementation details, not a supported external customization contract.
-      </p>
-    </Aside>
-  )
-}
-
-{
-  stylesApi && Object.keys(stylesApi).length > 0 && (
     <>
-      <h3 id="declared-selectors">Declared selectors</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Component</th>
-            <th>Selectors</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Object.entries(stylesApi).map(([component, selectors]) => (
-            <tr>
-              <td>
-                <code>{component}</code>
-              </td>
-              <td>
-                {selectors.map((selector, position) => (
-                  <>
-                    {position > 0 && " "}
-                    <code>{selector}</code>
-                  </>
-                ))}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
-  )
-}
-
-{
-  installedStyles.length > 0 ? (
-    <>
-      <h3 id="installed-styles">Editable installed styles</h3>
-      <p>These files are copied into the consuming project with the component source.</p>
-      {installedStyles.map((file) =>
-        file.content?.trim() ? (
-          <Code
-            code={file.content}
-            lang={codeLanguage(file.target ?? file.path)}
-            meta={`title="${fileName(file)}"`}
-          />
-        ) : (
-          <p>{fileName(file)} is empty.</p>
-        ),
-      )}
+      {Object.entries(stylesApi ?? {}).map(([component, selectors]) => (
+          <>
+            <p>
+              <code>{component}</code> exposes these parts through the public{" "}
+              <code>classNames</code>/<code>styles</code> interface:
+            </p>
+            <ul class="registry-deps">
+              {selectors.map((selector) => (
+                <li>
+                  <code>{selector}</code>
+                </li>
+              ))}
+            </ul>
+          </>
+        ))}
+      <p class="registry-file-facts">
+        Author-declared; Manteen reports the declaration but does not verify each selector is
+        wired.
+      </p>
     </>
   ) : (
-    <p>This item does not ship a CSS, Sass, Less, or registry style file.</p>
+    <p>
+      No public Styles API is declared. Installed CSS remains editable because your project owns
+      the source; internal class names are implementation details, not a customization contract.
+    </p>
   )
 }
 
 {
   packageStyles.length > 0 && (
     <>
-      <h3 id="package-styles">Required package-level styles</h3>
-      <p>Manteen composes these imports into the managed global stylesheet during install.</p>
-      <ul>
+      <p>Package-level styles, composed into the managed global stylesheet during install:</p>
+      <ul class="registry-deps">
         {packageStyles.map((source) => (
           <li>
             <code>{source}</code>
@@ -247,15 +310,21 @@ const dependencyRows = [
 
 {
   themeFragment?.content?.trim() && (
-    <>
-      <h3 id="theme-fragment">Theme fragment</h3>
-      <p>Folded into the configured project theme; not written at this source path.</p>
-      <Code
-        code={themeFragment.content}
-        lang={codeLanguage(themeFragment.path)}
-        meta={`title="${themeFragment.path}"`}
-      />
-    </>
+    <details class="registry-source-file">
+      <summary>
+        <code>{themeFragment.path}</code>
+        <span>theme fragment · {fileSize(themeFragment.content)}</span>
+      </summary>
+      <div class="registry-source-file__body">
+        <p>Folded into the configured project theme; not written at this source path.</p>
+        <Code
+          code={themeFragment.content}
+          lang={codeLanguage(themeFragment.path)}
+          meta={`title="${themeFragment.path}"`}
+          wrap
+        />
+      </div>
+    </details>
   )
 }
 
@@ -268,128 +337,41 @@ const dependencyRows = [
           ? "One installable file ships with this item."
           : `${files.length} installable files ship with this item.`}
       </p>
-      {files.length > 1 ? (
-        <Tabs>
-          {files.map((file) => (
-            <TabItem label={fileName(file)}>
-              <p class="registry-file-facts">
-                {fileKindLabel(file)} · {fileSize(file.content)} ·{" "}
-                {isProseFile(file) ? "text" : codeLanguage(file.target ?? file.path)}
-              </p>
-              {file.content?.trim() ? (
-                <Code
-                  code={file.content}
-                  lang={isProseFile(file) ? "txt" : codeLanguage(file.target ?? file.path)}
-                  meta={`title="${file.path}"`}
-                />
-              ) : (
-                <p>This file has no content.</p>
-              )}
-            </TabItem>
-          ))}
-        </Tabs>
-      ) : (
-        files.map((file) => (
-          <>
-            <p class="registry-file-facts">
+      {
+        /*
+          One disclosure per file, first one open: source files can run long, so the rest stay
+          collapsed until asked for. Native <details> — no script, and the browser's
+          find-in-page can still auto-expand matches.
+        */
+      }
+      {files.map((file, position) => (
+        <details class="registry-source-file" open={position === 0}>
+          <summary>
+            <code>{fileName(file)}</code>
+            <span>
               {fileKindLabel(file)} · {fileSize(file.content)} ·{" "}
               {isProseFile(file) ? "text" : codeLanguage(file.target ?? file.path)}
-            </p>
+            </span>
+          </summary>
+          <div class="registry-source-file__body">
             {file.content?.trim() ? (
               <Code
                 code={file.content}
                 lang={isProseFile(file) ? "txt" : codeLanguage(file.target ?? file.path)}
                 meta={`title="${file.path}"`}
+                wrap
               />
             ) : (
               <p>This file has no content.</p>
             )}
-          </>
-        ))
-      )}
+          </div>
+        </details>
+      ))}
     </>
   ) : (
     <Aside type="caution" title="No installable files">
       <p>The registry document does not contain a file payload.</p>
     </Aside>
-  )
-}
-
-<h2 id="requirements">Requirements</h2>
-<table>
-  <tbody>
-    <tr>
-      <th scope="row">Mantine</th>
-      <td>{formatRequirement(mantine?.requires) ?? "Not declared"}</td>
-    </tr>
-    <tr>
-      <th scope="row">Provider</th>
-      <td>{mantine?.provider ?? "Not declared"}</td>
-    </tr>
-    <tr>
-      <th scope="row">Global styles</th>
-      <td>{packageStyles.length || "None"}</td>
-    </tr>
-  </tbody>
-</table>
-
-<h2 id="dependencies">Dependencies</h2>
-{
-  dependencyRows.length > 0 ? (
-    <table>
-      <thead>
-        <tr>
-          <th>Package</th>
-          <th>Source</th>
-        </tr>
-      </thead>
-      <tbody>
-        {dependencyRows.map((row) => (
-          <tr>
-            <td>
-              {row.local ? (
-                <a href={`${base}/registry/${itemPath(row.local)}/`}>
-                  <code>{row.name}</code>
-                </a>
-              ) : (
-                <code>{row.name}</code>
-              )}
-            </td>
-            <td>{row.source}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  ) : (
-    <p>No npm or registry dependencies declared.</p>
-  )
-}
-
-<h2 id="installed-files">Installed files</h2>
-{
-  files.length > 0 ? (
-    <table>
-      <thead>
-        <tr>
-          <th>File</th>
-          <th>Kind</th>
-          <th>Size</th>
-        </tr>
-      </thead>
-      <tbody>
-        {files.map((file) => (
-          <tr>
-            <td>
-              <code>{fileName(file)}</code>
-            </td>
-            <td>{fileKindLabel(file)}</td>
-            <td>{fileSize(file.content)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  ) : (
-    <p>No files.</p>
   )
 }
 
