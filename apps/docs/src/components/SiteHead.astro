@@ -2,7 +2,7 @@
 import DefaultHead from "@astrojs/starlight/components/Head.astro";
 import mantineStylesHref from "@mantine/core/styles.layer.css?url";
 
-// Core Mantine CSS loads only on pages whose item ships a playground adapter — the same
+// Core Mantine CSS loads on pages whose item ships a playground adapter — the same
 // file-existence registry the detail page gates on. Package-specific extras (carousel,
 // dropzone) are NOT linked here: each adapter imports its own, so they ride in that
 // playground's lazy chunk instead of taxing every playground page.
@@ -15,7 +15,20 @@ const playgroundItems = Object.keys(playgroundModules).flatMap((path) => {
 const hasPlayground = playgroundItems.some(
   (name) => Astro.url.pathname === `${base}/registry/${name}/`,
 );
+// SPIKE — the catalog card grid (registry index AND the home page's embedded catalog: see
+// RegistryCatalog.astro's `mode` prop) now renders three items' real playground adapters as
+// SSR-inert "live minis" (RegistryCardPreview.tsx), inside real MantineProvider instances. Both
+// pages need core CSS unconditionally now, not just detail pages — this is a deliberate,
+// page-weight-costing extension of the same gate, not a leak. Package-specific extras
+// (carousel) still ride the mini's own import chain rather than being linked here, same as the
+// detail-page convention above.
+const isCatalogPage =
+  Astro.url.pathname === `${base}/registry/` ||
+  Astro.url.pathname === `${base}/registry` ||
+  Astro.url.pathname === `${base}/` ||
+  Astro.url.pathname === base;
+const needsCoreStyles = hasPlayground || isCatalogPage;
 ---
 
 <DefaultHead />
-{hasPlayground && <link rel="stylesheet" href={mantineStylesHref} />}
+{needsCoreStyles && <link rel="stylesheet" href={mantineStylesHref} />}

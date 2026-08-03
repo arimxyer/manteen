@@ -7,7 +7,7 @@ import {
   registryKindBadge,
   registryPresentationKind,
 } from "../lib/registry-presentation";
-import { RegistryCardPreview } from "./RegistryCardPreview";
+import { LiveMiniStyles, RegistryCardPreview } from "./RegistryCardPreview";
 
 interface Props {
   mode?: "full" | "embedded";
@@ -59,9 +59,16 @@ const searchValue = (index: RegistryIndexItem) =>
                 data-registry-card
                 data-registry-search-value={searchValue(index)}
               >
-                <a class="registry-card__preview" href={detailHref(index.name)} tabindex="-1" aria-hidden="true">
+                {/* A plain div, not an anchor: the SSR-inert live minis (article-card,
+                    cards-carousel, data-table) render real interactive elements — anchors,
+                    buttons, sort headers — and nesting those inside an outer <a> would put
+                    an anchor inside an anchor, which the HTML parser re-parents and which
+                    breaks the stretched title-link hit target. The title link's own
+                    stretched ::after already makes the whole card the navigation target, so
+                    this element only needs to be a positioning/clipping box. */}
+                <div class="registry-card__preview" aria-hidden="true">
                   <RegistryCardPreview name={index.name} />
-                </a>
+                </div>
                 <div class="registry-card__body">
                   <div class="registry-card__header">
                     <h3 class="registry-card__title">
@@ -89,6 +96,14 @@ const searchValue = (index: RegistryIndexItem) =>
           Show all items
         </button>
       </p>
+      {/* Last child, not first: MantineProvider-with-no-children still emits real <style>
+          elements, and Starlight's markdown-content sibling-margin rule doesn't exclude
+          <style> the way it excludes inline elements — a <style> immediately before the
+          intro <p> gave that paragraph a margin-top it wouldn't otherwise have. Last-child
+          placement is DOM-order-safe (CSS applies by selector, not position) and these
+          particular <style> tags are the only thing after them, so nothing downstream can
+          pick up a stray margin either. */}
+      <LiveMiniStyles />
     </section>
   ) : (
     <section class="registry-embed">
@@ -102,9 +117,9 @@ const searchValue = (index: RegistryIndexItem) =>
       <div class="registry-grid">
         {orderRegistryEntries(entries).map(({ index }) => (
           <article class="registry-card">
-            <a class="registry-card__preview" href={detailHref(index.name)} tabindex="-1" aria-hidden="true">
+            <div class="registry-card__preview" aria-hidden="true">
               <RegistryCardPreview name={index.name} />
-            </a>
+            </div>
             <div class="registry-card__body">
               <div class="registry-card__header">
                 <h3 class="registry-card__title">
@@ -123,6 +138,7 @@ const searchValue = (index: RegistryIndexItem) =>
           </article>
         ))}
       </div>
+      <LiveMiniStyles />
     </section>
   )
 }

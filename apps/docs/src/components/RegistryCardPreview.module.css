@@ -57,149 +57,15 @@
   --manteen-demo-accent-deep: #35449e;
 }
 
-.preview :where(article, div, form, header, p, ul, ol, dl, table) {
+/* Direct-child reset only: the two remaining bespoke minis (themeMini, fileMini) are direct
+   children of .preview and want a plain margin reset. A descendant selector here would also
+   reach INTO the live minis' nested Mantine subtree — and since this CSS module is unlayered
+   while @mantine/core ships layered, an unlayered rule beats a layered one regardless of
+   specificity, so a descendant reset would silently collapse real component margins (Title/
+   Text stacks in page-header, empty-state, stat-card, etc.). Scoping to `>` keeps this reset
+   off `.liveMiniStage` and everything under it. */
+.preview > :where(article, div, form, header, p, ul, ol, dl, table) {
   margin: 0;
-}
-
-.articleMini {
-  display: grid;
-  grid-template-columns: 6.75rem minmax(0, 1fr);
-  gap: 0.65rem;
-  width: 100%;
-  min-height: 6.9rem;
-  padding: 0.5rem;
-  border-radius: var(--manteen-radius-sm);
-  background: var(--manteen-demo-canvas);
-}
-
-.articleMini img {
-  width: 6.75rem;
-  height: 5.75rem;
-  border-radius: var(--manteen-radius-sm);
-  object-fit: cover;
-}
-
-.articleMini > div {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 0.32rem;
-}
-
-.articleMini span {
-  padding: 0.16rem 0.45rem;
-  border-radius: var(--manteen-radius-pill);
-  background: var(--manteen-demo-accent-deep);
-  color: #f5f7ff;
-  font-family: var(--__sl-font-mono);
-  font-size: 0.55rem;
-  font-weight: 700;
-}
-
-.articleMini strong {
-  max-width: 100%;
-  overflow: hidden;
-  font-size: 0.68rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.articleMini small {
-  color: var(--manteen-text-faint);
-  font-size: 0.55rem;
-}
-
-.authMini {
-  display: flex;
-  /* M2: 17rem lands at ~81% fill of the 336/326px frame — inside the
-     65–90% target band, instead of the previous 14.5rem's ~69%. */
-  width: 17rem;
-  flex-direction: column;
-  gap: 0.34rem;
-  padding: 0.55rem;
-  border-radius: var(--manteen-radius-sm);
-  background: var(--manteen-demo-canvas);
-}
-
-.authMini strong {
-  font-size: 0.75rem;
-}
-
-.authMini input,
-.authMini button {
-  min-height: 1.3rem;
-  padding: 0 0.5rem;
-  border: 1px solid var(--manteen-border);
-  border-radius: var(--manteen-radius-sm);
-  background: var(--manteen-panel-active);
-  color: var(--manteen-text-muted);
-  font: inherit;
-  font-size: 0.52rem;
-}
-
-.authMini button {
-  border-color: var(--manteen-demo-accent);
-  background: var(--manteen-demo-accent);
-  color: #fff;
-  font-weight: 700;
-}
-
-.carouselMini {
-  display: grid;
-  width: 100%;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
-  padding: 0;
-  list-style: none;
-}
-
-.carouselMini li {
-  display: flex;
-  height: 6.75rem;
-  margin: 0;
-  align-items: flex-end;
-  padding: 0.55rem;
-  border-radius: var(--manteen-radius-sm);
-  color: #fff;
-  font-size: 0.6rem;
-  font-weight: 600;
-}
-
-.carouselMini li:nth-child(1) {
-  background: #5668a8;
-}
-.carouselMini li:nth-child(2) {
-  background: #875e8f;
-}
-.carouselMini li:nth-child(3) {
-  background: #985a4d;
-}
-
-.dropzoneMini {
-  display: flex;
-  /* M2: ~80% fill, up from ~74%, to sit in the same band as the other
-     inset (non-full-bleed) minis. */
-  width: min(16.75rem, 100%);
-  min-height: 6.5rem;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.32rem;
-  border: 1px solid var(--manteen-demo-accent-soft);
-  border-radius: var(--manteen-radius-sm);
-  background: var(--manteen-demo-canvas);
-  color: var(--manteen-accent-soft);
-}
-
-.dropzoneMini strong {
-  color: var(--manteen-text);
-  font-size: 0.65rem;
-}
-.dropzoneMini small {
-  color: var(--manteen-text-faint);
-  font-size: 0.52rem;
 }
 
 .themeMini {
@@ -241,248 +107,6 @@
   background: #f5f7ff;
 }
 
-.tableMini {
-  /* .preview is a flex row; a <table> is a shrink-to-fit flex item by
-     default, so width:100% alone doesn't stretch it (unlike the block-level
-     .articleMini/.headerMini/.statsGridMini siblings) — this was the real
-     driver of the table minis' low fill ratio (M2), not just the th bug.
-     `flex: 1 1 auto` still measures the auto flex-basis from the table's own
-     (small) content, so growth only ever added space beyond that
-     max-content size instead of filling the row — Data Table/Sortable Table
-     stayed ~37–41% (M2 completion). A zero flex-basis makes 100% of the
-     content width "free space" to distribute, so the single item actually
-     fills it. */
-  flex: 1 1 0%;
-  min-width: 0;
-  overflow: hidden;
-  border: 1px solid var(--manteen-border);
-  border-collapse: separate;
-  border-spacing: 0;
-  border-radius: var(--manteen-radius-sm);
-  background: var(--manteen-demo-canvas);
-  font-size: 0.52rem;
-}
-
-.tableMini :where(thead, tbody, tr, th, td, svg, path) {
-  margin: 0;
-}
-.tableMini :where(th, td) {
-  height: 1.55rem;
-  padding: 0 0.6rem;
-  border-bottom: 1px solid var(--manteen-border);
-  text-align: center;
-  vertical-align: middle;
-}
-.tableMini th {
-  background: var(--manteen-panel-raised);
-  color: var(--manteen-text-faint);
-  font-weight: 600;
-}
-/* th must stay a table-cell: giving the header itself `display: flex`
-   pulls it out of normal table layout, which is what was corrupting the
-   table's width (and the visible top-right notch, M3). The icon/label
-   pairing is flexed on an inner span instead. */
-.tableMini th:last-child {
-  text-align: center;
-}
-.tableMini th:last-child .sortHeader {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.2rem;
-}
-.tableMini td {
-  color: var(--manteen-text);
-}
-.tableMini td:last-child {
-  color: var(--manteen-text-muted);
-  text-align: center;
-}
-.tableMini tr:last-child td {
-  border-bottom: 0;
-}
-
-.emptyMini,
-.progressMini {
-  display: flex;
-  /* M2: neither mini had an explicit width, so each shrank to its own
-     content's natural size (Empty State ~30% fill, Progress Button ~48%) —
-     the two lowest ratios measured. 16.25rem lands both at ~77%, in the
-     same band as the other centered/inset minis. */
-  width: 16.25rem;
-  min-height: 6.5rem;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  color: var(--manteen-accent-soft);
-}
-
-.emptyMini strong {
-  color: var(--manteen-text);
-  font-size: 0.78rem;
-}
-.emptyMini small,
-.progressMini small {
-  color: var(--manteen-text-muted);
-  font-size: 0.58rem;
-}
-.emptyMini span {
-  margin-top: 0.2rem;
-  padding: 0.32rem 0.7rem;
-  border-radius: var(--manteen-radius-sm);
-  background: var(--manteen-demo-accent);
-  color: #fff;
-  font-size: 0.58rem;
-  font-weight: 700;
-}
-
-.headerMini {
-  width: 100%;
-  padding: 0.6rem;
-  border-radius: var(--manteen-radius-sm);
-  background: var(--manteen-demo-canvas);
-}
-.headerMini > small {
-  color: var(--manteen-text-faint);
-  font-size: 0.5rem;
-}
-.headerMini > div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 0.5rem;
-}
-.headerMini strong {
-  font-size: 0.78rem;
-}
-.headerMini span {
-  padding: 0.24rem 0.5rem;
-  border-radius: var(--manteen-radius-sm);
-  background: var(--manteen-demo-accent-deep);
-  color: #f5f7ff;
-  font-size: 0.5rem;
-}
-.headerMini p {
-  margin-top: 0.25rem;
-  color: var(--manteen-text-muted);
-  font-size: 0.55rem;
-}
-
-.statMini {
-  /* M2: ~81% fill, up from ~62%, matching authMini's band. */
-  width: 17rem;
-  padding: 1rem;
-  border: 1px solid var(--manteen-border);
-  border-radius: var(--manteen-radius-md);
-  background: var(--manteen-demo-canvas);
-}
-.statMini small {
-  display: block;
-  color: var(--manteen-text-faint);
-  font-size: 0.6rem;
-}
-.statMini strong {
-  display: block;
-  margin-top: 0.35rem;
-  font-family: var(--__sl-font-mono);
-  font-size: 1.45rem;
-}
-.statMini span {
-  display: block;
-  margin-top: 0.25rem;
-  color: var(--manteen-success);
-  font-size: 0.6rem;
-}
-
-.progressMini button {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  min-height: 2.15rem;
-  padding: 0 1rem;
-  border: 0;
-  border-radius: var(--manteen-radius-sm);
-  background: var(--manteen-demo-accent);
-  color: #fff;
-  font: inherit;
-  font-size: 0.72rem;
-  font-weight: 700;
-}
-.progressMini > span {
-  width: 12rem;
-  height: 0.4rem;
-  overflow: hidden;
-  border-radius: var(--manteen-radius-pill);
-  background: var(--manteen-border);
-}
-.progressMini i {
-  display: block;
-  width: 86%;
-  height: 100%;
-  background: var(--manteen-success);
-}
-
-.listMini {
-  display: flex;
-  /* M2: ~77% fill, up from ~67%. */
-  width: 16.25rem;
-  flex-direction: column;
-  gap: 0.28rem;
-  padding: 0;
-  list-style: none;
-}
-.listMini li {
-  display: flex;
-  min-height: 1.8rem;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0 0.6rem;
-  border: 1px solid var(--manteen-border);
-  border-radius: var(--manteen-radius-sm);
-  background: var(--manteen-demo-canvas);
-  color: var(--manteen-text-muted);
-  font-size: 0.6rem;
-}
-.listMini svg {
-  flex: 0 0 auto;
-  margin: 0;
-}
-.listMini svg path {
-  margin: 0;
-}
-
-.statsGridMini {
-  display: grid;
-  width: 100%;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.4rem;
-}
-.statsGridMini article {
-  display: flex;
-  min-width: 0;
-  min-height: 5.6rem;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.28rem;
-  padding: 0.55rem;
-  border: 1px solid var(--manteen-border);
-  border-radius: var(--manteen-radius-sm);
-  background: var(--manteen-demo-canvas);
-  color: var(--manteen-accent-soft);
-}
-.statsGridMini small {
-  color: var(--manteen-text-faint);
-  font-size: 0.48rem;
-}
-.statsGridMini strong {
-  overflow: hidden;
-  color: var(--manteen-text);
-  font-family: var(--__sl-font-mono);
-  font-size: 0.72rem;
-  text-overflow: ellipsis;
-}
-
 .fileMini {
   display: flex;
   /* M2: ~79% fill, up from ~46% — the icon+label row previously shrank to
@@ -517,4 +141,77 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/*
+  SSR-inert live minis — every registry item with a playground adapter (see the
+  `adapterModules` glob in RegistryCardPreview.tsx). See the `LiveMini` component there for why
+  both schemes render at once. `.liveMiniStage` fills the `.preview` content box (already fixed
+  at 8.875rem tall); each scheme's subtree is absolutely positioned over the whole stage and
+  CSS visibility picks the one matching Starlight's `data-theme`, exactly mirroring the
+  `:root[data-theme="light"] .preview` override above — one mechanism, one place it's declared.
+*/
+.liveMiniStage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.liveMiniScheme {
+  position: absolute;
+  inset: 0;
+  /* `inset: 0` alone was measured to NOT reliably resolve to the containing block's height for
+     this element in Chromium (verified: 118px expected vs 102px actual on one scheme's wrapper,
+     ~16px short, while the other scheme's wrapper on the very same page measured correctly) —
+     an absolutely positioned flex container whose only child is itself transformed appears to
+     be the trigger. Whatever the exact mechanism, an explicit height removes the ambiguity:
+     forcing `height: 100%` alongside `inset: 0` was verified (devtools) to close the gap
+     exactly, and is a safe no-op on engines where inset alone already worked. Without this, a
+     mini could be vertically mis-centered by that shortfall and clip content that fits — this
+     is what made dropzone-button's button look clipped only in one color scheme.
+  */
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.liveMiniSchemeLight {
+  display: none;
+}
+
+:root[data-theme="light"] .liveMiniSchemeDark {
+  display: none;
+}
+
+:root[data-theme="light"] .liveMiniSchemeLight {
+  display: flex;
+}
+
+/*
+  Per-item width/scale is no longer a fixed set of CSS classes here — with 12 adapters instead
+  of 3, `deriveFit()` in RegistryCardPreview.tsx computes it (uniform formula + a short
+  overrides map) and applies it as an inline style on the box wrapping `adapter.render(...)`.
+  `transform-origin: center` matters there for the same reason it did here: `.liveMiniScheme`'s
+  flex centering only positions the UNSCALED layout box, so origin has to be center too or the
+  scaled content drifts toward one corner. Horizontal (and, for taller items, vertical) overflow
+  is a deliberate center-crop via this element's `overflow: hidden` above, not a bug.
+*/
+
+/*
+  stats-grid only: forces its SimpleGrid back to one column. Mantine's `cols={{ base, xs, md }}`
+  resolves against the real browser viewport width via `@media` — not against this box's
+  declared (pre-scale) width — so at the catalog page's actual desktop viewport it always lays
+  out every column, which `transform: scale()` then only shrinks visually, leaving each column
+  a sliver too narrow for its text. `:global()` reaches Mantine's own static class
+  (`mantine-SimpleGrid-root`, emitted because `withStaticClasses` defaults true — a documented
+  targeting hook, not an implementation detail); this rule carries no `@media` of its own, so no
+  viewport size can re-break it. This CSS module is unlayered and Mantine's own rule is layered,
+  so this wins without needing `!important` (see the `.preview >` reset comment above for the
+  same unlayered-beats-layered fact applied elsewhere in this file).
+*/
+.statsGridLiveMini :global(.mantine-SimpleGrid-root) {
+  grid-template-columns: 1fr;
 }
