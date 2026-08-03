@@ -1,0 +1,27 @@
+/*
+ * Adapted from Mantine UI's UserButton at
+ * ffbf61c559f374a7ea28fcf00355e84dcbe9a908. MIT licensed; see
+ * LICENSES/MANTINE-UI.txt after installation.
+ *
+ * Upstream's `@mixin hover` (postcss-preset-mantine) is expanded here to
+ * plain `@media (hover: …)` rules so the module compiles without requiring
+ * every consumer's PostCSS pipeline to include that preset.
+ */
+.user {
+  display: block;
+  width: 100%;
+  padding: var(--mantine-spacing-md);
+  color: light-dark(var(--mantine-color-black), var(--mantine-color-dark-0));
+}
+
+@media (hover: hover) {
+  .user:hover {
+    background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8));
+  }
+}
+
+@media (hover: none) {
+  .user:active {
+    background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8));
+  }
+}

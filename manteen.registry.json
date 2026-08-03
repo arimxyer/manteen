@@ -794,6 +794,165 @@
       },
       "usage": "registry/mantine-ui/dropzone-button/dropzone-button.usage.tsx",
       "docs": "Adapted from Mantine UI DropzoneButton at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; drop/reject callbacks, constraints and user-facing text are configurable."
+    },
+    {
+      "name": "header-mega-menu",
+      "kind": "block",
+      "title": "Header Mega Menu",
+      "description": "Responsive site header with a hover-card feature mega-menu that collapses into a mobile drawer.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/core@^9", "@mantine/hooks@^9", "@tabler/icons-react@^3"],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/header-mega-menu/header-mega-menu.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/header-mega-menu/header-mega-menu.module.css",
+          "as": "style",
+          "target": "@ui/header-mega-menu.module.css"
+        }
+      ],
+      "props": {
+        "HeaderMegaMenu": [
+          {
+            "name": "logo",
+            "type": "ReactNode",
+            "required": false,
+            "description": "Rendered at the start of the header bar; nothing renders when omitted."
+          },
+          {
+            "name": "links",
+            "type": "readonly HeaderMegaMenuLink[]",
+            "required": true,
+            "description": "Ordered nav links rendered in the header bar and the mobile drawer. At most one entry should set `features`: only the first entry that does renders as the mega-menu (a hover-card dropdown on desktop, a collapsible section on mobile); `features` on any later entry is ignored."
+          },
+          {
+            "name": "featuresViewAllHref",
+            "type": "string",
+            "required": false,
+            "description": "Href for the mega-menu's \"View all\" link; the link is omitted when unset."
+          },
+          {
+            "name": "featuresFooterHeading",
+            "type": "string",
+            "required": false,
+            "default": "\"Get started\"",
+            "description": "Heading shown in the mega-menu's footer callout."
+          },
+          {
+            "name": "featuresFooterDescription",
+            "type": "string",
+            "required": false,
+            "default": "\"Everything you need to explore what's possible and start building.\"",
+            "description": "Body copy shown in the mega-menu's footer callout."
+          },
+          {
+            "name": "featuresFooterActionLabel",
+            "type": "string",
+            "required": false,
+            "default": "\"Get started\"",
+            "description": "Label for the mega-menu footer's action button; clicking it calls `onSignUp`."
+          },
+          {
+            "name": "loginLabel",
+            "type": "string",
+            "required": false,
+            "default": "\"Log in\"",
+            "description": "Label for the log in button, shown in the header and the mobile drawer."
+          },
+          {
+            "name": "signUpLabel",
+            "type": "string",
+            "required": false,
+            "default": "\"Sign up\"",
+            "description": "Label for the sign up button, shown in the header and the mobile drawer."
+          },
+          {
+            "name": "onLogin",
+            "type": "() => void",
+            "required": false,
+            "description": "Called when a log in button (header or drawer) is clicked."
+          },
+          {
+            "name": "onSignUp",
+            "type": "() => void",
+            "required": false,
+            "description": "Called when a sign up button (header or drawer) or the mega-menu footer's action button is clicked."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/header-mega-menu/header-mega-menu.usage.tsx",
+      "docs": "Adapted from Mantine UI HeaderMegaMenu at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; feature-grid mock data and the two CTA labels became typed props, the fixed nav links became a consumer-supplied array, and the upstream @mantinex/mantine-logo import (not part of this workspace) became a logo ReactNode prop. Kept as an opinionated block with internal CSS classes rather than a public Styles API, consistent with this catalog's other page-section blocks (authentication-form, stats-grid, table-sort)."
+    },
+    {
+      "name": "navbar-nested",
+      "kind": "block",
+      "title": "Nested Navbar",
+      "description": "Collapsible sidebar navigation with nested link groups and a user footer.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/navbar-nested/navbar-nested.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/navbar-nested/navbar-nested.module.css",
+          "as": "style",
+          "target": "@ui/navbar-nested.module.css"
+        },
+        {
+          "path": "registry/mantine-ui/navbar-nested/navbar-nested-links-group.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/navbar-nested/navbar-nested-links-group.module.css",
+          "as": "style",
+          "target": "@ui/navbar-nested-links-group.module.css"
+        },
+        {
+          "path": "registry/mantine-ui/navbar-nested/navbar-nested-user-button.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/navbar-nested/navbar-nested-user-button.module.css",
+          "as": "style",
+          "target": "@ui/navbar-nested-user-button.module.css"
+        },
+        {
+          "path": "registry/mantine-ui/navbar-nested/navbar-nested-logo.tsx",
+          "as": "component"
+        }
+      ],
+      "props": {
+        "NavbarNested": [
+          {
+            "name": "links",
+            "type": "NavbarNestedLinkItem[]",
+            "required": true,
+            "description": "Ordered top-level nav entries; each entry sets either `link` to render a leaf that navigates directly, or `links` to render a group whose secondary links collapse beneath it (and may set `initiallyOpened`)."
+          },
+          {
+            "name": "user",
+            "type": "UserButtonProps",
+            "required": true,
+            "description": "Name, email and optional avatar rendered in the footer user row."
+          },
+          {
+            "name": "versionLabel",
+            "type": "string",
+            "required": false,
+            "description": "Text for the version badge next to the logo; no badge renders when omitted."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/navbar-nested/navbar-nested.usage.tsx",
+      "docs": "Adapted from Mantine UI NavbarNested at ffbf61c559f374a7ea28fcf00355e84dcbe9a908, merged with its NavbarLinksGroup and UserButton siblings; the mock nav tree, avatar and version badge became typed props, dead leaf-link buttons became real anchors, and the sidebar now fills a height-constrained parent (see the usage example) instead of a fixed 800px demo height."
     }
   ]
 }

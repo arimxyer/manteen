@@ -29,6 +29,8 @@
       "@ui/cards-carousel": ["./registry/mantine-ui/cards-carousel/cards-carousel"],
       "@ui/dnd-list": ["./registry/mantine-ui/dnd-list/dnd-list"],
       "@ui/dropzone-button": ["./registry/mantine-ui/dropzone-button/dropzone-button"],
+      "@ui/header-mega-menu": ["./registry/mantine-ui/header-mega-menu/header-mega-menu"],
+      "@ui/navbar-nested": ["./registry/mantine-ui/navbar-nested/navbar-nested"],
       "@ui/stats-grid": ["./registry/mantine-ui/stats-grid/stats-grid"],
       "@ui/table-sort": ["./registry/mantine-ui/table-sort/table-sort"],
       // The data-table block installs its component under the classic alias, but its

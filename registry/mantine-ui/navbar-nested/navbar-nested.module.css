@@ -1,0 +1,46 @@
+/*
+ * Adapted from Mantine UI's NavbarNested at
+ * ffbf61c559f374a7ea28fcf00355e84dcbe9a908. MIT licensed; see
+ * LICENSES/MANTINE-UI.txt after installation.
+ */
+.navbar {
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  /* Upstream's 800px is a fixed demo height. A sidebar fills its container
+   * instead, so mount it inside a height-constrained parent (a 100vh/100dvh
+   * wrapper, or an AppShell.Navbar) — see navbar-nested.usage.tsx. Against
+   * an unconstrained (auto-height) parent this resolves to auto and the
+   * navbar sizes to its content instead of collapsing. */
+  height: 100%;
+  width: 300px;
+  padding: var(--mantine-spacing-md);
+  padding-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
+
+.header {
+  padding: var(--mantine-spacing-md);
+  padding-top: 0;
+  margin-left: calc(var(--mantine-spacing-md) * -1);
+  margin-right: calc(var(--mantine-spacing-md) * -1);
+  color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+  border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
+
+.links {
+  flex: 1;
+  margin-left: calc(var(--mantine-spacing-md) * -1);
+  margin-right: calc(var(--mantine-spacing-md) * -1);
+}
+
+.linksInner {
+  padding-top: var(--mantine-spacing-xl);
+  padding-bottom: var(--mantine-spacing-xl);
+}
+
+.footer {
+  margin-left: calc(var(--mantine-spacing-md) * -1);
+  margin-right: calc(var(--mantine-spacing-md) * -1);
+  border-top: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
