@@ -15,7 +15,11 @@ import {
   styleFiles,
   type RegistryEntry,
 } from "../lib/registry";
-import { hasCuratedLivePreview, registryPresentationKind } from "../lib/registry-presentation";
+import {
+  hasCuratedLivePreview,
+  registryKindBadge,
+  registryPresentationKind,
+} from "../lib/registry-presentation";
 
 interface Props {
   entry: RegistryEntry;
@@ -85,8 +89,7 @@ const dependencyRows = [
 ---
 
 <p class="registry-item-meta">
-  <Badge text={presentationLabel} size="small" />
-  {hasCuratedPreview && <Badge text="Live preview" variant="success" size="small" />}
+  <Badge text={presentationLabel} size="small" {...registryKindBadge(presentationKind)} />
   {mantine?.requires && (
     <Badge text={`Mantine ${formatRequirement(mantine.requires)}`} variant="note" size="small" />
   )}

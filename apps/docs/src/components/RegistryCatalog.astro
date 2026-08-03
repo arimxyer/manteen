@@ -3,8 +3,8 @@ import { Badge, Icon } from "@astrojs/starlight/components";
 
 import { itemPath, readRegistry, registryGroups, type RegistryIndexItem } from "../lib/registry";
 import {
-  hasCuratedLivePreview,
   orderRegistryEntries,
+  registryKindBadge,
   registryPresentationKind,
 } from "../lib/registry-presentation";
 import { RegistryCardPreview } from "./RegistryCardPreview";
@@ -63,15 +63,18 @@ const searchValue = (index: RegistryIndexItem) =>
                   <RegistryCardPreview name={index.name} />
                 </a>
                 <div class="registry-card__body">
-                  <h3 class="registry-card__title">
-                    <a href={detailHref(index.name)}>{index.title ?? index.name}</a>
-                  </h3>
-                  <p class="registry-card__badges">
-                    <Badge text={registryPresentationKind(index)} size="small" />
-                    {hasCuratedLivePreview(index.name) && (
-                      <Badge text="Live preview" variant="success" size="small" />
-                    )}
-                  </p>
+                  <div class="registry-card__header">
+                    <h3 class="registry-card__title">
+                      <a href={detailHref(index.name)}>{index.title ?? index.name}</a>
+                    </h3>
+                    <p class="registry-card__badges">
+                      <Badge
+                        text={registryPresentationKind(index)}
+                        size="small"
+                        {...registryKindBadge(registryPresentationKind(index))}
+                      />
+                    </p>
+                  </div>
                   {index.description && <p class="registry-card__description">{index.description}</p>}
                 </div>
               </article>
@@ -103,15 +106,18 @@ const searchValue = (index: RegistryIndexItem) =>
               <RegistryCardPreview name={index.name} />
             </a>
             <div class="registry-card__body">
-              <h3 class="registry-card__title">
-                <a href={detailHref(index.name)}>{index.title ?? index.name}</a>
-              </h3>
-              <p class="registry-card__badges">
-                <Badge text={registryPresentationKind(index)} size="small" />
-                {hasCuratedLivePreview(index.name) && (
-                  <Badge text="Live preview" variant="success" size="small" />
-                )}
-              </p>
+              <div class="registry-card__header">
+                <h3 class="registry-card__title">
+                  <a href={detailHref(index.name)}>{index.title ?? index.name}</a>
+                </h3>
+                <p class="registry-card__badges">
+                  <Badge
+                    text={registryPresentationKind(index)}
+                    size="small"
+                    {...registryKindBadge(registryPresentationKind(index))}
+                  />
+                </p>
+              </div>
               {index.description && <p class="registry-card__description">{index.description}</p>}
             </div>
           </article>

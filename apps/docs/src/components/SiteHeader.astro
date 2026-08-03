@@ -13,17 +13,15 @@ const routePath = pathname.startsWith(base) ? pathname.slice(base.length) : path
 const links = [
   {
     label: "Docs",
-    href: `${base}/getting-started/`,
-    active: ["/getting-started/", "/concepts/", "/reference/"].some((prefix) =>
-      routePath.startsWith(prefix),
+    // Registry authors is a branch of the same doc set (one shared sidebar), so it lights this
+    // tab rather than carrying its own — a second tab into the same tree implied a separate
+    // area that does not exist. Re-add a tab only if authors get their own document set.
+    active: ["/getting-started/", "/concepts/", "/reference/", "/registry-authors/"].some(
+      (prefix) => routePath.startsWith(prefix),
     ),
+    href: `${base}/getting-started/`,
   },
   { label: "Registry", href: `${base}/registry/`, active: routePath.startsWith("/registry/") },
-  {
-    label: "Registry authors",
-    href: `${base}/registry-authors/`,
-    active: routePath.startsWith("/registry-authors/"),
-  },
 ];
 ---
 
@@ -192,7 +190,7 @@ const links = [
 
     .site-header__nav a {
       color: var(--sl-color-gray-2);
-      font-size: var(--sl-text-sm);
+      font-size: var(--sl-text-base);
       font-weight: 600;
       text-decoration: none;
     }
@@ -298,7 +296,7 @@ const links = [
         min-width: max-content;
         padding: 0.4rem 0.45rem;
         border-radius: var(--manteen-radius-sm);
-        font-size: var(--manteen-text-xs);
+        font-size: var(--manteen-text-sm);
         text-align: left;
         white-space: nowrap;
       }

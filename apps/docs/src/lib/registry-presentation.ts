@@ -37,6 +37,26 @@ export function hasCuratedLivePreview(name: string): boolean {
   return curatedLivePreviewNames.has(name);
 }
 
+// One color per kind, shared by the catalog cards and the detail page's identity row so the
+// same kind never wears two colors. Starlight's built-in Badge variants cover the semantic
+// kinds; `library`/`file` take a neutral grey via a class (there is no built-in grey variant).
+type BadgeVariant = "default" | "note" | "tip" | "caution" | "success" | "danger";
+
+export function registryKindBadge(kind: string): { variant: BadgeVariant; class?: string } {
+  switch (kind) {
+    case "component":
+      return { variant: "default" };
+    case "block":
+      return { variant: "tip" };
+    case "hook":
+      return { variant: "note" };
+    case "theme":
+      return { variant: "caution" };
+    default:
+      return { variant: "default", class: "registry-badge--neutral" };
+  }
+}
+
 export function registryPresentationKind(index: RegistryIndexItem): string {
   if (index.name === "theme") return "theme";
   return (
