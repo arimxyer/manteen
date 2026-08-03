@@ -2,22 +2,14 @@
 import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 
 import RegistryCatalog from "../../components/RegistryCatalog.astro";
-import { itemPath, readRegistry, registryGroups } from "../../lib/registry";
+import { readRegistry, registryGroups, registrySidebar } from "../../lib/registry";
 
 const { entries } = readRegistry();
-const sidebar = [
-  {
-    label: "Registry",
-    items: [{ label: `All items (${entries.length})`, link: "/registry/" }],
-  },
-  ...registryGroups(entries).map((group) => ({
-    label: group.label,
-    items: group.items.map(({ index }) => ({
-      label: index.title ?? index.name,
-      link: `/registry/${itemPath(index.name)}/`,
-    })),
-  })),
-];
+const headings = registryGroups(entries).map((group) => ({
+  depth: 2,
+  slug: group.key,
+  text: group.label,
+}));
 ---
 
 <StarlightPage
@@ -28,12 +20,10 @@ const sidebar = [
     lastUpdated: false,
     next: false,
     prev: false,
-    tableOfContents: false,
   }}
-  sidebar={sidebar}
+  sidebar={registrySidebar(entries)}
   hasSidebar={true}
+  headings={headings}
 >
-  <div class="registry-custom-page registry-gallery-page">
-    <RegistryCatalog mode="full" />
-  </div>
+  <RegistryCatalog mode="full" />
 </StarlightPage>

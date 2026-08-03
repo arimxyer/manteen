@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
 import { basename, extname, resolve, sep } from "node:path";
 
+// registry-presentation only imports types from this module, so the cycle is erased at runtime.
+import { orderRegistryEntries } from "./registry-presentation";
+
 export interface RegistryIndexItem {
   name: string;
   type: string;
@@ -105,6 +108,25 @@ export function registryGroups(entries: RegistryEntry[]): RegistryGroup[] {
   const other = entries.filter((entry) => !known.has(entry.index.type));
   if (other.length > 0) groups.push({ key: "other", label: "Other", items: other });
   return groups;
+}
+
+// Both registry routes hand StarlightPage the same sidebar; one builder keeps the two
+// from drifting, and the curated order keeps it agreeing with the catalog grid.
+// Starlight prepends the configured base to internal links itself.
+export function registrySidebar(entries: RegistryEntry[]) {
+  return [
+    {
+      label: "Registry",
+      items: [{ label: `All items (${entries.length})`, link: "/registry/" }],
+    },
+    ...registryGroups(entries).map((group) => ({
+      label: group.label,
+      items: orderRegistryEntries(group.items).map(({ index }) => ({
+        label: index.title ?? index.name,
+        link: `/registry/${itemPath(index.name)}/`,
+      })),
+    })),
+  ];
 }
 
 export function kindLabel(type: string): string {

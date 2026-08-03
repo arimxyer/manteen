@@ -1,8 +1,7 @@
 ---
-import { Icon } from "@astrojs/starlight/components";
-import { IconCopy } from "@tabler/icons-react";
+import { Badge, Icon } from "@astrojs/starlight/components";
 
-import { itemPath, readRegistry } from "../lib/registry";
+import { itemPath, readRegistry, registryGroups, type RegistryIndexItem } from "../lib/registry";
 import {
   hasCuratedLivePreview,
   orderRegistryEntries,
@@ -16,258 +15,140 @@ interface Props {
 
 const { mode = "full" } = Astro.props;
 const { entries } = readRegistry();
-const orderedEntries = orderRegistryEntries(entries);
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const detailHref = (name: string) => `${base}/registry/${itemPath(name)}/`;
+const groups = registryGroups(entries).map((group) => ({
+  ...group,
+  items: orderRegistryEntries(group.items),
+}));
+const searchValue = (index: RegistryIndexItem) =>
+  `${index.name} ${index.title ?? ""} ${index.description ?? ""} ${registryPresentationKind(index)}`.toLowerCase();
 ---
 
-<section class:list={["registry-explorer", `registry-explorer--${mode}`]} data-registry-catalog>
-  {
-    mode === "full" ? (
-      <nav class="registry-explorer__breadcrumb" aria-label="Breadcrumb">
-        <span>Registry</span>
-        <span aria-hidden="true">/</span>
-        <code>@house</code>
-      </nav>
-    ) : (
-      <p class="registry-eyebrow">Live registry</p>
-    )
-  }
-
-  <header class="registry-explorer__hero">
-    <div>
-      {mode === "full" ? <h1>Explore the registry</h1> : <h2>Explore the registry</h2>}
+{
+  /*
+    The card body is ordinary Starlight vocabulary: an h3/h4 title link, `<Badge>` pills and a
+    plain paragraph. The stretched `::after` on the title link (see custom.css) makes the whole
+    card the navigation target without nesting anchors.
+  */
+}
+{
+  mode === "full" ? (
+    <section data-registry-catalog>
       <p>
-        Browse static examples and authored item documentation. Curated live previews appear when a
-        registry publishes an adapter; one command brings the source into your project.
+        Browse static examples and authored item documentation. Curated live previews appear when
+        a registry publishes an adapter; one command brings the source into your project.
       </p>
-    </div>
-    <div class="registry-explorer__count">
-      <strong>{entries.length}</strong>
-      <span>published {entries.length === 1 ? "item" : "items"}</span>
-    </div>
-  </header>
 
-  <div class="registry-discovery">
-    <label class="registry-search">
-      <Icon name="magnifier" />
-      <span class="sr-only">Search registry items</span>
-      <input
-        type="search"
-        placeholder="Search components, blocks, hooks, and themes..."
-        data-registry-search
-      />
-    </label>
-    <div class="registry-filters" role="group" aria-label="Filter registry items">
-      <button type="button" class="is-active" aria-pressed="true" data-registry-filter="all">
-        All
-      </button>
-      <button type="button" aria-pressed="false" data-registry-filter="component">
-        Components
-      </button>
-      <button type="button" aria-pressed="false" data-registry-filter="block">Blocks</button>
-      <button type="button" aria-pressed="false" data-registry-filter="hook">Hooks</button>
-      <button type="button" aria-pressed="false" data-registry-filter="theme">Themes</button>
-    </div>
-  </div>
+      <div class="registry-search">
+        <label>
+          <Icon name="magnifier" />
+          <span class="sr-only">Filter registry items</span>
+          <input type="search" placeholder="Filter components, blocks, hooks, and themes…" data-registry-search />
+        </label>
+        <span aria-live="polite" data-registry-count>{entries.length} of {entries.length} shown</span>
+      </div>
 
-  <div class="registry-catalog-heading">
-    <div>
-      {mode === "full" ? <h2>Featured and newly added</h2> : <h3>Featured and newly added</h3>}
-      <span aria-live="polite" data-registry-count>
-        {entries.length} of {entries.length} shown
-      </span>
-    </div>
-    <label class="registry-sort">
-      <span class="sr-only">Sort registry items</span>
-      <select data-registry-sort>
-        <option value="recommended">Recommended</option>
-        <option value="name">Name A–Z</option>
-      </select>
-      <Icon name="down-caret" />
-    </label>
-  </div>
+      {groups.map((group) => (
+        <section data-registry-group>
+          <h2 id={group.key}>{group.label}</h2>
+          <div class="registry-grid">
+            {group.items.map(({ index }) => (
+              <article
+                class="registry-card"
+                data-registry-card
+                data-registry-search-value={searchValue(index)}
+              >
+                <a class="registry-card__preview" href={detailHref(index.name)} tabindex="-1" aria-hidden="true">
+                  <RegistryCardPreview name={index.name} />
+                </a>
+                <div class="registry-card__body">
+                  <h3 class="registry-card__title">
+                    <a href={detailHref(index.name)}>{index.title ?? index.name}</a>
+                  </h3>
+                  <p class="registry-card__badges">
+                    <Badge text={registryPresentationKind(index)} size="small" />
+                    {hasCuratedLivePreview(index.name) && (
+                      <Badge text="Live preview" variant="success" size="small" />
+                    )}
+                  </p>
+                  {index.description && <p class="registry-card__description">{index.description}</p>}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ))}
 
-  <div class="registry-grid">
-    {
-      orderedEntries.map(({ index }, rank) => {
-        const type = registryPresentationKind(index);
-        const isLive = hasCuratedLivePreview(index.name);
-        const command = `npx manteen add @house/${index.name}`;
-        return (
-          <article
-            class="registry-card"
-            data-registry-card
-            data-registry-kind={type}
-            data-registry-rank={rank}
-            data-registry-title={(index.title ?? index.name).toLowerCase()}
-            data-registry-search={`${index.name} ${index.title ?? ""} ${index.description ?? ""} ${type}`.toLowerCase()}
-          >
-            <a
-              class="registry-card__preview-link"
-              href={detailHref(index.name)}
-              aria-label={`View ${index.title ?? index.name}`}
-            >
+      <p hidden data-registry-empty>
+        No registry items match this search.{" "}
+        <button type="button" class="registry-reset" data-registry-reset>
+          Show all items
+        </button>
+      </p>
+    </section>
+  ) : (
+    <section class="registry-embed">
+      <p class="registry-eyebrow">Live registry</p>
+      <h2>Explore the registry</h2>
+      <p>
+        Browse static examples and authored item documentation from the live Manteen registry
+        — {entries.length} published {entries.length === 1 ? "item" : "items"}, installable with
+        one command.
+      </p>
+      <div class="registry-grid">
+        {orderRegistryEntries(entries).map(({ index }) => (
+          <article class="registry-card">
+            <a class="registry-card__preview" href={detailHref(index.name)} tabindex="-1" aria-hidden="true">
               <RegistryCardPreview name={index.name} />
             </a>
             <div class="registry-card__body">
-              <header class="registry-card__header">
-                <h3>
-                  <a href={detailHref(index.name)}>{index.title ?? index.name}</a>
-                </h3>
-                <div class="registry-card__badges">
-                  <span class="registry-kind">{type}</span>
-                  <span
-                    class:list={["registry-card__badge", { "registry-card__badge--live": isLive }]}
-                  >
-                    {isLive
-                      ? "Live preview"
-                      : type === "component" || type === "block"
-                        ? "Static example"
-                        : "Registry sample"}
-                  </span>
-                </div>
-              </header>
-              {index.description && <p>{index.description}</p>}
-              <div class="registry-card__command">
-                <code>{command}</code>
-                <button
-                  type="button"
-                  aria-label={`Copy install command for ${index.title ?? index.name}`}
-                  data-copy-value={command}
-                  data-copy-label={`Copy install command for ${index.title ?? index.name}`}
-                >
-                  <IconCopy size={15} stroke={1.6} />
-                  <span class="sr-only" data-copy-status>Copy</span>
-                </button>
-              </div>
+              <h3 class="registry-card__title">
+                <a href={detailHref(index.name)}>{index.title ?? index.name}</a>
+              </h3>
+              <p class="registry-card__badges">
+                <Badge text={registryPresentationKind(index)} size="small" />
+                {hasCuratedLivePreview(index.name) && (
+                  <Badge text="Live preview" variant="success" size="small" />
+                )}
+              </p>
+              {index.description && <p class="registry-card__description">{index.description}</p>}
             </div>
           </article>
-        );
-      })
-    }
-  </div>
-
-  {
-    /*
-      M12 — this was a transparent, unfilled box at a literal 0.75rem radius and a 2rem top
-      margin, so filtering to a kind with no items (Hooks, today) swapped the card grid for a
-      different surface language and the layout visibly jumped. It is now the product's own
-      empty-state family — the same icon + eyebrow + message block the detail tabs use — on the
-      card grid's surface tokens and its margin, so the box lands where the first row of cards
-      was. The control resets the search box and the kind filter together, which is exactly what
-      its label says it does.
-    */
-  }
-  <div
-    class="registry-empty registry-empty-state registry-empty-state--compact"
-    hidden
-    data-registry-empty
-  >
-    <span class="registry-empty-state__icon"><Icon name="magnifier" /></span>
-    <p class="registry-eyebrow">No matches</p>
-    <p>No registry items match this search and filter.</p>
-    <button type="button" class="registry-inline-action" data-registry-reset>
-      Show all items
-    </button>
-  </div>
-</section>
+        ))}
+      </div>
+    </section>
+  )
+}
 
 <script>
-  const writeClipboard = async (value: string) => {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(value);
-      return;
-    }
-    const textarea = document.createElement("textarea");
-    textarea.value = value;
-    textarea.style.position = "fixed";
-    textarea.style.opacity = "0";
-    document.body.append(textarea);
-    textarea.select();
-    document.execCommand("copy");
-    textarea.remove();
-  };
-
   for (const catalog of document.querySelectorAll<HTMLElement>("[data-registry-catalog]")) {
     const search = catalog.querySelector<HTMLInputElement>("[data-registry-search]");
     const cards = [...catalog.querySelectorAll<HTMLElement>("[data-registry-card]")];
-    const grid = catalog.querySelector<HTMLElement>(".registry-grid");
-    const sort = catalog.querySelector<HTMLSelectElement>("[data-registry-sort]");
+    const groups = [...catalog.querySelectorAll<HTMLElement>("[data-registry-group]")];
     const count = catalog.querySelector<HTMLElement>("[data-registry-count]");
     const empty = catalog.querySelector<HTMLElement>("[data-registry-empty]");
     const total = cards.length;
-    let activeFilter = "all";
 
     const update = () => {
       const query = search?.value.trim().toLowerCase() ?? "";
       let visible = 0;
       for (const card of cards) {
-        const matchesFilter = activeFilter === "all" || card.dataset.registryKind === activeFilter;
-        const matchesSearch = !query || card.dataset.registrySearch?.includes(query);
-        card.hidden = !(matchesFilter && matchesSearch);
+        card.hidden = Boolean(query) && !card.dataset.registrySearchValue?.includes(query);
         if (!card.hidden) visible += 1;
       }
-      // The header stat (.registry-explorer__count) stays pinned to the catalog total —
-      // it is a publication count, not a filter result. Only this in-context "N of M
-      // shown" caption reflects the active filter/search.
+      for (const group of groups) {
+        group.hidden = !group.querySelector("[data-registry-card]:not([hidden])");
+      }
       if (count) count.textContent = `${visible} of ${total} shown`;
       if (empty) empty.hidden = visible !== 0;
     };
 
-    // M12 — one place that owns "which kind is active", so the chip row and the empty state's
-    // reset control cannot drift into two different notions of it.
-    const applyFilter = (kind: string) => {
-      activeFilter = kind;
-      for (const option of catalog.querySelectorAll<HTMLButtonElement>("[data-registry-filter]")) {
-        const selected = option.dataset.registryFilter === kind;
-        option.classList.toggle("is-active", selected);
-        option.setAttribute("aria-pressed", String(selected));
-      }
-      update();
-    };
-
     search?.addEventListener("input", update);
-    sort?.addEventListener("change", () => {
-      const sortedCards = [...cards].sort((left, right) => {
-        if (sort.value === "name") {
-          return (left.dataset.registryTitle ?? "").localeCompare(
-            right.dataset.registryTitle ?? "",
-          );
-        }
-        return Number(left.dataset.registryRank) - Number(right.dataset.registryRank);
-      });
-      for (const card of sortedCards) grid?.append(card);
-      update();
-    });
-    for (const button of catalog.querySelectorAll<HTMLButtonElement>("[data-registry-filter]")) {
-      button.addEventListener("click", () => applyFilter(button.dataset.registryFilter ?? "all"));
-    }
-
-    const reset = catalog.querySelector<HTMLButtonElement>("[data-registry-reset]");
-    reset?.addEventListener("click", () => {
+    catalog.querySelector<HTMLButtonElement>("[data-registry-reset]")?.addEventListener("click", () => {
       if (search) search.value = "";
-      applyFilter("all");
+      update();
       search?.focus();
-    });
-  }
-
-  for (const button of document.querySelectorAll<HTMLButtonElement>("[data-copy-value]")) {
-    button.addEventListener("click", async () => {
-      const idle = button.dataset.copyLabel ?? "Copy install command";
-      const status = button.querySelector<HTMLElement>("[data-copy-status]");
-      try {
-        await writeClipboard(button.dataset.copyValue ?? "");
-        button.setAttribute("aria-label", "Copied install command");
-        if (status) status.textContent = "Copied";
-      } catch {
-        button.setAttribute("aria-label", "Copy failed");
-        if (status) status.textContent = "Copy failed";
-      }
-      window.setTimeout(() => {
-        button.setAttribute("aria-label", idle);
-        if (status) status.textContent = "Copy";
-      }, 1600);
     });
   }
 </script>

@@ -125,22 +125,9 @@ const links = [
     }
   };
 
-  // The bounded source viewer is built by RegistryItemDetail.astro and the gallery's kind-filter
-  // chip rail by RegistryCatalog.astro, so they are picked up here rather than each being given
-  // its own script. M15 added the chip rail: like the table wrapper it is only a scroller below
-  // the grid breakpoint, and `refreshScrollEdges` re-reads computed overflow every time, so no
-  // fade is ever painted on an axis the reader cannot actually scroll.
-  const enhanceScrollRails = () => {
-    const rails = document.querySelectorAll<HTMLElement>(
-      ".registry-source-browser__code, .registry-source-browser__files, .registry-filters",
-    );
-    for (const rail of rails) trackScrollEdges(rail);
-  };
-
   const enhanceDocument = () => {
     enhanceCodeRegions();
     enhanceTables();
-    enhanceScrollRails();
   };
 
   if (document.readyState === "loading") {
@@ -151,12 +138,12 @@ const links = [
     requestAnimationFrame(enhanceDocument);
   }
   document.addEventListener("astro:page-load", () => requestAnimationFrame(enhanceDocument));
-  // Tab and file switches reveal panes that were `display: none` and therefore unmeasurable at
-  // enhancement time, so re-measure after the click lands.
+  // Starlight tab switches (the Source file tabs) reveal panes that were `display: none` and
+  // therefore unmeasurable at enhancement time, so re-measure after the click lands.
   document.addEventListener("click", (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
-    if (!target.closest("[data-source-browser], .registry-tabs")) return;
+    if (!target.closest("starlight-tabs")) return;
     requestAnimationFrame(refreshAllScrollEdges);
   });
 

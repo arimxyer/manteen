@@ -1,5 +1,5 @@
 ---
-import { Code, Icon } from "@astrojs/starlight/components";
+import { Aside, Badge, Code, LinkButton, TabItem, Tabs } from "@astrojs/starlight/components";
 
 import { ArticleCardPlayground } from "./ArticleCardPlayground";
 
@@ -25,7 +25,6 @@ const { entry } = Astro.props;
 const { index, detail: item } = entry;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const type = kindLabel(index.type);
-const title = index.title ?? index.name;
 const command = `npx manteen add @house/${index.name}`;
 const rawJsonHref = `${base}/r/${itemPath(index.name)}.json`;
 const sourceHref = item.files?.[0]
@@ -40,7 +39,6 @@ const hasStylesApi = Boolean(stylesApi && Object.keys(stylesApi).length > 0);
 const themeFragment = mantine?.themeFragment;
 // Single source of truth, shared with the gallery badge in RegistryCatalog.astro.
 const hasCuratedPreview = hasCuratedLivePreview(index.name);
-const defaultTab = hasCuratedPreview ? "preview" : "usage";
 const presentationKind = registryPresentationKind(index);
 const presentationLabel =
   presentationKind === "theme"
@@ -53,13 +51,11 @@ const isProseFile = (file: (typeof files)[number]) => {
   return /\.(?:txt|md)$/i.test(path) || /license/i.test(fileName(file));
 };
 // L5 — the requirement operator shipped glued to the number ("Mantine >=9"); the approved
-// header reads "Mantine ≥ 9". Applied everywhere `mantine.requires` renders so the header
-// eyebrow and the Requirements rail row never disagree on the same fact.
+// header reads "Mantine ≥ 9". Applied everywhere `mantine.requires` renders so the badge
+// and the Requirements table never disagree on the same fact.
 const formatRequirement = (value: string | undefined) => value?.replace(/^>=\s*/, "≥ ");
-// L4 — a raw 40-char commit SHA in flowing prose produces a bad rag (the audit measured it
-// splitting mid-hash across two lines in a 300px rail card). Shortened to a git-style short
-// hash inside a non-breaking mono span, with the full hash recoverable via `title`, rather than
-// letting the browser break an identifier wherever it runs out of line.
+// L4 — a raw 40-char commit SHA in flowing prose produces a bad rag. Shortened to a git-style
+// short hash inside a non-breaking mono span, with the full hash recoverable via `title`.
 const SHA_PATTERN = /\b[0-9a-f]{40}\b/gi;
 const renderAuthorNotes = (text: string) => {
   const parts: Array<string | { hash: string }> = [];
@@ -73,736 +69,352 @@ const renderAuthorNotes = (text: string) => {
   if (lastIndex < text.length) parts.push(text.slice(lastIndex));
   return parts;
 };
-// H7 — the meta strip `NhnE6` draws above each source file: name, payload kind, byte size.
 // TextEncoder rather than Buffer so this stays runtime-agnostic.
 const fileSize = (content: string | undefined) => {
   const bytes = new TextEncoder().encode(content ?? "").length;
   return bytes >= 1000 ? `${(bytes / 1000).toFixed(1)} kB` : `${bytes} B`;
 };
-const categoryLabel =
-  presentationKind === "component"
-    ? "Components"
-    : presentationKind === "block"
-      ? "Blocks"
-      : presentationKind === "hook"
-        ? "Hooks"
-        : presentationKind === "theme"
-          ? "Themes"
-          : presentationKind === "file"
-            ? "Files"
-            : "Libraries";
+const dependencyRows = [
+  ...(item.dependencies ?? []).map((name) => ({ name, source: "npm", local: null as string | null })),
+  ...(item.registryDependencies ?? []).map((name) => ({
+    name,
+    source: "registry",
+    local: name.startsWith("@house/") ? name.slice(7) : null,
+  })),
+];
 ---
 
-<div
-  class="registry-custom-page registry-detail"
-  data-registry-detail
-  data-default-tab={defaultTab}
-  data-active-tab={defaultTab}
->
-  <nav class="registry-breadcrumb" aria-label="Breadcrumb">
-    <a href={`${base}/registry/`}>Registry</a>
-    <span aria-hidden="true">/</span>
-    <span>{categoryLabel}</span>
-    <span aria-hidden="true">/</span>
-    <strong>{title}</strong>
-  </nav>
+<p class="registry-item-meta">
+  <Badge text={presentationLabel} size="small" />
+  {hasCuratedPreview && <Badge text="Live preview" variant="success" size="small" />}
+  {mantine?.requires && (
+    <Badge text={`Mantine ${formatRequirement(mantine.requires)}`} variant="note" size="small" />
+  )}
+  <code>@house/{index.name}</code>
+</p>
 
-  <header class="registry-detail__header">
-    <div class="registry-detail__copy">
-      <div class="registry-detail__labels">
-        <span class="registry-kind">{presentationLabel}</span>
-        {mantine?.requires && <span class="registry-version">Mantine {formatRequirement(mantine.requires)}</span>}
-      </div>
-      <h1>{title}</h1>
-      <code class="registry-detail__name">@house/{index.name}</code>
-      {index.description && <p>{index.description}</p>}
-    </div>
-    <div class="registry-detail__actions">
-      <a class="registry-action" href={rawJsonHref}>
-        <Icon name="document" />
-        Registry JSON
-      </a>
-      <a class="registry-action" href={sourceHref}>
-        <Icon name="github" />
-        Source
-      </a>
-    </div>
-  </header>
+{index.description && <p>{index.description}</p>}
 
-  <div class="registry-install">
-    <div>
-      <span>Install with Manteen</span>
-      <code>{command}</code>
-    </div>
-    <button type="button" class="registry-copy-button" data-copy-value={command} data-copy-label="Copy command">
-      <Icon name="document" />
-      <span>Copy command</span>
-    </button>
-  </div>
+<p class="registry-item-links">
+  <LinkButton href={rawJsonHref} variant="minimal" icon="document" iconPlacement="start">
+    Registry JSON
+  </LinkButton>
+  <LinkButton href={sourceHref} variant="minimal" icon="github" iconPlacement="start">
+    Source on GitHub
+  </LinkButton>
+</p>
 
-  <div class="registry-detail__columns">
-    <div class="registry-detail__main">
-      <div class="registry-tab-row">
-      <div class="registry-tabs" role="tablist" aria-label={`${title} documentation`}>
-        <button
-          id="registry-tab-preview"
-          type="button"
-          role="tab"
-          aria-selected={defaultTab === "preview" ? "true" : "false"}
-          aria-controls="registry-panel-preview"
-          tabindex={defaultTab === "preview" ? "0" : "-1"}
-          data-registry-tab="preview"
-        >
-          Preview
-        </button>
-        <button
-          id="registry-tab-usage"
-          type="button"
-          role="tab"
-          aria-selected={defaultTab === "usage" ? "true" : "false"}
-          aria-controls="registry-panel-usage"
-          tabindex={defaultTab === "usage" ? "0" : "-1"}
-          data-registry-tab="usage"
-        >
-          Usage
-        </button>
-        <button
-          id="registry-tab-props"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          aria-controls="registry-panel-props"
-          tabindex="-1"
-          data-registry-tab="props"
-        >
-          Props
-        </button>
-        <button
-          id="registry-tab-styling"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          aria-controls="registry-panel-styling"
-          tabindex="-1"
-          data-registry-tab="styling"
-        >
-          Styling
-        </button>
-        <button
-          id="registry-tab-source"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          aria-controls="registry-panel-source"
-          tabindex="-1"
-          data-registry-tab="source"
-        >
-          Source
-        </button>
-      </div>
+<h2 id="install">Install</h2>
+<p>One command copies the item's source into your project, where you own and edit it.</p>
+<Code code={command} lang="sh" />
+
+<h2 id="preview">Preview</h2>
+{
+  hasCuratedPreview ? (
+    <ArticleCardPlayground client:load />
+  ) : (
+    <Aside
+      type="note"
+      title={isVisualItem(index.type) ? "Curated preview not published" : "Preview does not apply"}
+    >
+      <p>
         {
-          /*
-            H13 — the live-preview toolbar belongs on this row, right-aligned, per `h42HCk`;
-            it shipped as its own 72px band below the tab strip. `ArticleCardPlayground`
-            portals its controls into this slot after hydration, so they keep the component
-            state that drives them. Only rendered for items that have a curated preview —
-            every other detail route keeps a bare tab strip.
-          */
-          hasCuratedPreview && (
-            <div class="registry-tab-row__toolbar" data-playground-toolbar-slot />
-          )
+          isVisualItem(index.type)
+            ? "The gallery image is a static example. This item does not publish a live preview adapter, and Manteen will not execute arbitrary registry source to manufacture one."
+            : `A live component preview is not meaningful for a ${presentationLabel.toLowerCase()} item. Its installable payload is listed under Source.`
         }
-      </div>
+      </p>
+    </Aside>
+  )
+}
 
-      <section
-        id="registry-panel-preview"
-        class:list={["registry-tab-panel", { "registry-tab-panel--curated": hasCuratedPreview }]}
-        role="tabpanel"
-        aria-labelledby="registry-tab-preview"
-        tabindex="0"
-        hidden={defaultTab !== "preview"}
-        data-registry-panel="preview"
-      >
-        {
-          hasCuratedPreview ? (
-            <ArticleCardPlayground client:load />
-          ) : (
-            <div class="registry-empty-state registry-empty-state--compact">
-              <span class="registry-empty-state__icon"><Icon name="puzzle" /></span>
-              <p class="registry-eyebrow">Preview boundary</p>
-              <h2>{isVisualItem(index.type) ? "Curated preview not published" : "Preview does not apply"}</h2>
-              <p>
-                {
-                  isVisualItem(index.type)
-                    ? "The gallery image is a static example. This item does not publish a live preview adapter, and Manteen will not execute arbitrary registry source to manufacture one."
-                    : `A live component preview is not meaningful for a ${presentationLabel.toLowerCase()} item. Its installable payload remains available in Source.`
-                }
-              </p>
-            </div>
-          )
-        }
-      </section>
+<h2 id="usage">Usage</h2>
+<Aside type="note" title="No structured usage example">
+  <p>
+    Manteen does not infer JSX, imports, callback behavior, or sample data from source files. A
+    copy-ready example will appear here only when the registry author publishes one.
+  </p>
+</Aside>
 
-      <section
-        id="registry-panel-usage"
-        class="registry-tab-panel"
-        role="tabpanel"
-        aria-labelledby="registry-tab-usage"
-        tabindex="0"
-        hidden={defaultTab !== "usage"}
-        data-registry-panel="usage"
-      >
-        <div class="registry-panel-heading">
-          <div>
-            <p class="registry-eyebrow">Usage</p>
-            <h2>Install the source</h2>
-          </div>
-          <button type="button" class="registry-copy-button" data-copy-value={command} data-copy-label="Copy command">Copy command</button>
-        </div>
-        {
-          /*
-            M6 — this exact string already appears ~200px above in the install bar as plain
-            mono in a bordered panel. It shipped here as a faux-macOS "Terminal" frame (traffic
-            lights, centered title, square corners) found nowhere else on the page — a second,
-            contradictory container for one string. `.registry-command-block` reuses the install
-            bar's own treatment instead of Expressive Code's frame.
-          */
-        }
-        <div class="registry-command-block">
-          <code>{command}</code>
-        </div>
-        <div class="registry-note registry-note--muted">
-          <h3>No structured usage example</h3>
-          <p>
-            Manteen does not infer JSX, imports, callback behavior, or sample data from source files.
-            A copy-ready example will appear here only when the registry author publishes one.
-          </p>
-        </div>
-      </section>
+<h2 id="props">Props</h2>
+{
+  acceptsProps(index.type) ? (
+    <Aside type="note" title="Structured props not published">
+      <p>
+        This item document does not carry prop names, types, defaults, or descriptions. The source
+        is available, but this page does not present source inference as authored API
+        documentation. You can <a href="#source">inspect the typed source</a> instead.
+      </p>
+    </Aside>
+  ) : (
+    <p>This {type} item does not expose a component or hook prop surface.</p>
+  )
+}
 
-      <section
-        id="registry-panel-props"
-        class="registry-tab-panel"
-        role="tabpanel"
-        aria-labelledby="registry-tab-props"
-        tabindex="0"
-        hidden
-        data-registry-panel="props"
-      >
-        {
-          /*
-            M8 — every sibling tab opens with an eyebrow + H2 panel header (Usage/Source/Styling);
-            Props opened straight into a vertically centered empty state with no structural
-            anchor, so a ~250px message floated in a 448px panel. `registry-empty-state--compact`
-            is the same compaction already used for the non-curated Preview tab's empty state.
-          */
-        }
-        <div class="registry-panel-heading">
-          <div>
-            <p class="registry-eyebrow">Props</p>
-            <h2>{acceptsProps(index.type) ? "Documented properties" : "Props do not apply"}</h2>
-          </div>
-        </div>
-        <div class="registry-empty-state registry-empty-state--compact">
-          <span class="registry-empty-state__icon"><Icon name="setting" /></span>
-          <h3>{acceptsProps(index.type) ? "Structured props not published" : "No prop surface"}</h3>
-          <p>
-            {
-              acceptsProps(index.type)
-                ? "This item document does not carry prop names, types, defaults, or descriptions. The source is available, but this page does not present source inference as authored API documentation."
-                : `This ${type} item does not expose a component or hook prop surface.`
-            }
-          </p>
-          {acceptsProps(index.type) && (
-            <button type="button" class="registry-inline-action" data-activate-tab="source">
-              Inspect the typed source
-            </button>
-          )}
-        </div>
-      </section>
+<h2 id="styling">Styling</h2>
+{
+  hasStylesApi ? (
+    <Aside type="note" title="Declaration boundary">
+      <p>
+        These selectors are supplied by the registry author. Manteen reports the declaration but
+        does not verify that the component wires every selector to <code>classNames</code>,{" "}
+        <code>styles</code>, or a theme component entry.
+      </p>
+    </Aside>
+  ) : (
+    <Aside type="note" title="No public Styles API is declared">
+      <p>
+        Installed CSS remains editable because the project owns the source. Internal class names
+        are implementation details, not a supported external customization contract.
+      </p>
+    </Aside>
+  )
+}
 
-      <section
-        id="registry-panel-styling"
-        class="registry-tab-panel"
-        role="tabpanel"
-        aria-labelledby="registry-tab-styling"
-        tabindex="0"
-        hidden
-        data-registry-panel="styling"
-      >
-        <div class="registry-panel-heading">
-          <div>
-            <p class="registry-eyebrow">Styling</p>
-            <h2>{hasStylesApi ? "Author-declared Styles API" : "Installed styling surface"}</h2>
-          </div>
-          <span class:list={["registry-contract-status", { "is-declared": hasStylesApi }]}>
-            {hasStylesApi ? "Declared" : "No public API"}
-          </span>
-        </div>
-
-        {
-          hasStylesApi ? (
-            /* H14 — informational, not a warning: a neutral bordered panel with an ⓘ, per `BlqxN`. */
-            <div class="registry-note registry-note--info">
-              <span class="registry-note__icon" aria-hidden="true"><Icon name="information" /></span>
-              <div class="registry-note__body">
-                <h3>Declaration boundary</h3>
-                <p>
-                  These selectors are supplied by the registry author. Manteen reports the declaration
-                  but does not verify that the component wires every selector to <code>classNames</code>,
-                  <code>styles</code>, or a theme component entry.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div class="registry-note">
-              <h3>No public Styles API is declared</h3>
-              <p>
-                Installed CSS remains editable because the project owns the source. Internal class
-                names are implementation details, not a supported external customization contract.
-              </p>
-            </div>
-          )
-        }
-
-        {
-          stylesApi && Object.keys(stylesApi).length > 0 && (
-            <div class="registry-style-section">
-              <h3>Declared selectors</h3>
-              {
-                /*
-                  M10 — `component` rendered as a bare `<code>`, which picks up Starlight's global
-                  inline-code chip (em padding, `panel-active` fill, a border) while the selector
-                  `<span>`s beside it are a second, different pill (rem padding, `panel` fill, no
-                  border) — two chip languages sharing one row with mismatched height and vertical
-                  center. `registry-selector-row__owner` gives the owning component name the same
-                  pill shape as its selectors, distinguished only by an accent tint.
-                */
-              }
-              {Object.entries(stylesApi).map(([component, selectors]) => (
-                <div class="registry-selector-row">
-                  <code class="registry-selector-row__owner">{component}</code>
-                  <div>{selectors.map((selector) => <span>{selector}</span>)}</div>
-                </div>
-              ))}
-            </div>
-          )
-        }
-
-        {
-          installedStyles.length > 0 ? (
-            <div class="registry-style-section">
-              <div class="registry-style-section__heading">
-                <div>
-                  <h3>Editable installed styles</h3>
-                  <p>These files are copied into the consuming project with the component source.</p>
-                </div>
-                <span>{installedStyles.length} {installedStyles.length === 1 ? "file" : "files"}</span>
-              </div>
-              {
-                /*
-                  M5 — Source bounds its code viewport to `min(44rem, 72vh)`; Styling rendered
-                  the same content type (a source file) uncapped, so the two tabs disagreed on
-                  page length by ~840px and tab-switching produced an unexplained jump.
-                  `registry-source-browser__code` is Source's own bounded-scroller class, reused
-                  here (not copied) so this pane also inherits its scrollbar styling and the
-                  shared scroll-edge fade/affordance script picks it up automatically — the
-                  `--standalone` modifier only supplies the height cap and border this pane needs
-                  outside the two-column source-browser grid.
-                */
-              }
-              {installedStyles.map((file) =>
-                file.content?.trim() ? (
-                  <div class="registry-source-browser__code registry-source-browser__code--standalone">
-                    <Code
-                      code={file.content}
-                      lang={codeLanguage(file.target ?? file.path)}
-                      meta={`title="${fileName(file)}"`}
-                    />
-                  </div>
-                ) : (
-                  <p class="registry-muted">{fileName(file)} is empty.</p>
-                ),
-              )}
-            </div>
-          ) : (
-            <div class="registry-note registry-note--muted">
-              <h3>No installed stylesheet</h3>
-              <p>This item does not ship a CSS, Sass, Less, or registry style file.</p>
-            </div>
-          )
-        }
-
-        {
-          packageStyles.length > 0 && (
-            <div class="registry-style-section">
-              <h3>Required package-level styles</h3>
-              <p class="registry-muted">
-                Manteen composes these imports into the managed global stylesheet during install.
-              </p>
-              <ul class="registry-code-list">
-                {packageStyles.map((source) => <li><code>{source}</code></li>)}
-              </ul>
-            </div>
-          )
-        }
-
-        {
-          themeFragment?.content?.trim() && (
-            <div class="registry-style-section">
-              <h3>Theme fragment</h3>
-              <p class="registry-muted">Folded into the configured project theme; not written at this source path.</p>
-              <Code
-                code={themeFragment.content}
-                lang={codeLanguage(themeFragment.path)}
-                meta={`title="${themeFragment.path}"`}
-              />
-            </div>
-          )
-        }
-      </section>
-
-      <section
-        id="registry-panel-source"
-        class="registry-tab-panel"
-        role="tabpanel"
-        aria-labelledby="registry-tab-source"
-        tabindex="0"
-        hidden
-        data-registry-panel="source"
-      >
-        <div class="registry-panel-heading">
-          <div>
-            <p class="registry-eyebrow">Source</p>
-            <h2>Installable files</h2>
-          </div>
-          <div class="registry-panel-heading__actions">
-            <span class="registry-file-count">{files.length} {files.length === 1 ? "file" : "files"}</span>
-            {
-              /*
-                M4 — the bounded pane (630px viewport / 4097px content, measured) had a scroll-edge
-                fade and a styled scrollbar (both already wired below, shared with H16) but no way
-                to see the whole file without scrolling through it piecemeal. This is the missing
-                signposted escape hatch; the toggle script lives in this file's own <script>.
-              */
-            }
-            {
-              files.length > 0 && (
-                <button
-                  type="button"
-                  class="registry-inline-action"
-                  data-source-expand-toggle
-                  aria-expanded="false"
-                >
-                  Expand
-                </button>
-              )
-            }
-          </div>
-        </div>
-        {
-          files.length > 0 ? (
-            <div class="registry-source-browser" data-source-browser>
-              {
-                /*
-                  M22 — this rail scrolls horizontally (`scrollWidth 339 / clientWidth 317`,
-                  measured) and carries `aria-label`, but had no `tabindex`, so unlike the `<pre>`
-                  beside it (`role="region" tabindex="0"`) it could not be reached or scrolled by
-                  keyboard. The fade mask on this axis is already driven by the shared
-                  `data-scroll-more-x` mechanism in `SiteHeader.astro` (see custom.css's
-                  `[data-scroll-more-x]` rule) — it only needed to be keyboard-reachable too.
-                */
-              }
-              <div class="registry-source-browser__files" aria-label="Source files" tabindex="0">
-                {files.map((file, index) => (
-                  <button
-                    type="button"
-                    class:list={{ "is-active": index === 0 }}
-                    aria-pressed={index === 0 ? "true" : "false"}
-                    data-source-file={String(index)}
-                    title={fileName(file)}
-                  >
-                    <Icon name="document" />
-                    <span>{fileName(file)}</span>
-                  </button>
+{
+  stylesApi && Object.keys(stylesApi).length > 0 && (
+    <>
+      <h3 id="declared-selectors">Declared selectors</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Selectors</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.entries(stylesApi).map(([component, selectors]) => (
+            <tr>
+              <td>
+                <code>{component}</code>
+              </td>
+              <td>
+                {selectors.map((selector, position) => (
+                  <>
+                    {position > 0 && " "}
+                    <code>{selector}</code>
+                  </>
                 ))}
-              </div>
-              <div class="registry-source-browser__code">
-                {files.map((file, index) => (
-                  <div hidden={index !== 0} data-source-panel={String(index)}>
-                    {file.content?.trim() ? (
-                      <div class="registry-source-file-meta">
-                        <span class="registry-source-file-meta__facts">
-                          <strong>{fileName(file)}</strong>
-                          <span aria-hidden="true">·</span>
-                          <span>{fileKindLabel(file)}</span>
-                          <span aria-hidden="true">·</span>
-                          <span>{fileSize(file.content)}</span>
-                        </span>
-                        <span class="registry-source-file-meta__lang">
-                          {isProseFile(file) ? "text" : codeLanguage(file.target ?? file.path)}
-                        </span>
-                      </div>
-                    ) : null}
-                    {file.content?.trim() ? (
-                      isProseFile(file) ? (
-                        <div class="registry-source-prose">{file.content}</div>
-                      ) : (
-                        <Code
-                          code={file.content}
-                          lang={codeLanguage(file.target ?? file.path)}
-                          meta={`title="${file.path}"`}
-                        />
-                      )
-                    ) : (
-                      <p class="registry-muted">This file has no content.</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div class="registry-empty-state">
-              <h2>No installable files</h2>
-              <p>The registry document does not contain a file payload.</p>
-            </div>
-          )
-        }
-      </section>
-    </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  )
+}
 
-    <aside class="registry-metadata" aria-label={`${title} metadata`}>
-      <section>
-        <h2>Requirements</h2>
-        {
-          /*
-            M11 — three rows at a 47px pitch for 22.4px content (measured), no divider between
-            them, and `dt`/`dd` didn't share a text size or vertical center. `--manteen-text-sm`
-            on both plus a bordered row (in place of the loose flex gap) gives every row the same
-            metric and a deliberate rhythm instead of an accidental one. `formatRequirement` also
-            keeps this row's "Mantine" value agreeing with the header eyebrow — both used to read
-            the raw ">=9" token; both now read "≥ 9" (see L5).
-          */
-        }
-        <dl>
-          <div><dt>Mantine</dt><dd>{formatRequirement(mantine?.requires) ?? "Not declared"}</dd></div>
-          <div><dt>Provider</dt><dd>{mantine?.provider ?? "Not declared"}</dd></div>
-          <div><dt>Global styles</dt><dd>{packageStyles.length || "None"}</dd></div>
-        </dl>
-      </section>
+{
+  installedStyles.length > 0 ? (
+    <>
+      <h3 id="installed-styles">Editable installed styles</h3>
+      <p>These files are copied into the consuming project with the component source.</p>
+      {installedStyles.map((file) =>
+        file.content?.trim() ? (
+          <Code
+            code={file.content}
+            lang={codeLanguage(file.target ?? file.path)}
+            meta={`title="${fileName(file)}"`}
+          />
+        ) : (
+          <p>{fileName(file)} is empty.</p>
+        ),
+      )}
+    </>
+  ) : (
+    <p>This item does not ship a CSS, Sass, Less, or registry style file.</p>
+  )
+}
 
-      <section>
-        <h2>Dependencies</h2>
-        {
-          item.dependencies?.length ? (
-            <ul class="registry-metadata__list">
-              {item.dependencies.map((dependency) => <li><code>{dependency}</code></li>)}
-            </ul>
-          ) : (
-            <p class="registry-muted">No npm dependencies declared.</p>
-          )
-        }
-      </section>
+{
+  packageStyles.length > 0 && (
+    <>
+      <h3 id="package-styles">Required package-level styles</h3>
+      <p>Manteen composes these imports into the managed global stylesheet during install.</p>
+      <ul>
+        {packageStyles.map((source) => (
+          <li>
+            <code>{source}</code>
+          </li>
+        ))}
+      </ul>
+    </>
+  )
+}
 
-      {
-        /*
-          M9 — the rail's three lists (Dependencies, Registry dependencies, Installed files) each
-          shipped a different typographic treatment for the same "list of file/package identity"
-          role: a mono chip, plain sans link text, and a mono chip plus an inherited-leading meta
-          label, in three different sizes. All three now share `.registry-metadata__list` and the
-          same `<li>` shape — a mono identifier plus an optional trailing meta label — so a link
-          is a wrapped chip rather than a differently-styled row.
-        */
-      }
-      {
-        item.registryDependencies?.length && (
-          <section>
-            <h2>Registry dependencies</h2>
-            <ul class="registry-metadata__list">
-              {item.registryDependencies.map((dependency) => {
-                const local = dependency.startsWith("@house/") ? dependency.slice(7) : null;
-                return (
-                  <li>
-                    {local ? (
-                      <a href={`${base}/registry/${itemPath(local)}/`}><code>{dependency}</code></a>
-                    ) : (
-                      <code>{dependency}</code>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        )
-      }
+{
+  themeFragment?.content?.trim() && (
+    <>
+      <h3 id="theme-fragment">Theme fragment</h3>
+      <p>Folded into the configured project theme; not written at this source path.</p>
+      <Code
+        code={themeFragment.content}
+        lang={codeLanguage(themeFragment.path)}
+        meta={`title="${themeFragment.path}"`}
+      />
+    </>
+  )
+}
 
-      <section>
-        <h2>Installed files</h2>
-        {
-          files.length ? (
-            <ul class="registry-metadata__list">
-              {files.map((file) => (
-                <li>
-                  <code>{fileName(file)}</code>
-                  <span class="registry-metadata__list-meta">{fileKindLabel(file)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p class="registry-muted">No files.</p>
-          )
-        }
-      </section>
-
-      {
-        /*
-          L4 — a raw 40-char commit SHA in this prose (e.g. Article Card's
-          "…at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; …") split mid-hash across two lines in
-          this 300px card. `renderAuthorNotes` shortens any such token to a git-style short hash
-          in a `nowrap` mono span; the full hash is still recoverable via `title`.
-        */
-      }
-      {
-        item.docs && (
-          <section>
-            <h2>Author notes</h2>
-            <p>
-              {renderAuthorNotes(item.docs).map((part) =>
-                typeof part === "string" ? (
-                  part
-                ) : (
-                  <code class="registry-note-hash" title={part.hash}>{part.hash.slice(0, 10)}&hellip;</code>
-                ),
+<h2 id="source">Source</h2>
+{
+  files.length > 0 ? (
+    <>
+      <p>
+        {files.length === 1
+          ? "One installable file ships with this item."
+          : `${files.length} installable files ship with this item.`}
+      </p>
+      {files.length > 1 ? (
+        <Tabs>
+          {files.map((file) => (
+            <TabItem label={fileName(file)}>
+              <p class="registry-file-facts">
+                {fileKindLabel(file)} · {fileSize(file.content)} ·{" "}
+                {isProseFile(file) ? "text" : codeLanguage(file.target ?? file.path)}
+              </p>
+              {file.content?.trim() ? (
+                <Code
+                  code={file.content}
+                  lang={isProseFile(file) ? "txt" : codeLanguage(file.target ?? file.path)}
+                  meta={`title="${file.path}"`}
+                />
+              ) : (
+                <p>This file has no content.</p>
               )}
+            </TabItem>
+          ))}
+        </Tabs>
+      ) : (
+        files.map((file) => (
+          <>
+            <p class="registry-file-facts">
+              {fileKindLabel(file)} · {fileSize(file.content)} ·{" "}
+              {isProseFile(file) ? "text" : codeLanguage(file.target ?? file.path)}
             </p>
-          </section>
-        )
-      }
-    </aside>
-  </div>
-</div>
+            {file.content?.trim() ? (
+              <Code
+                code={file.content}
+                lang={isProseFile(file) ? "txt" : codeLanguage(file.target ?? file.path)}
+                meta={`title="${file.path}"`}
+              />
+            ) : (
+              <p>This file has no content.</p>
+            )}
+          </>
+        ))
+      )}
+    </>
+  ) : (
+    <Aside type="caution" title="No installable files">
+      <p>The registry document does not contain a file payload.</p>
+    </Aside>
+  )
+}
+
+<h2 id="requirements">Requirements</h2>
+<table>
+  <tbody>
+    <tr>
+      <th scope="row">Mantine</th>
+      <td>{formatRequirement(mantine?.requires) ?? "Not declared"}</td>
+    </tr>
+    <tr>
+      <th scope="row">Provider</th>
+      <td>{mantine?.provider ?? "Not declared"}</td>
+    </tr>
+    <tr>
+      <th scope="row">Global styles</th>
+      <td>{packageStyles.length || "None"}</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="dependencies">Dependencies</h2>
+{
+  dependencyRows.length > 0 ? (
+    <table>
+      <thead>
+        <tr>
+          <th>Package</th>
+          <th>Source</th>
+        </tr>
+      </thead>
+      <tbody>
+        {dependencyRows.map((row) => (
+          <tr>
+            <td>
+              {row.local ? (
+                <a href={`${base}/registry/${itemPath(row.local)}/`}>
+                  <code>{row.name}</code>
+                </a>
+              ) : (
+                <code>{row.name}</code>
+              )}
+            </td>
+            <td>{row.source}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  ) : (
+    <p>No npm or registry dependencies declared.</p>
+  )
+}
+
+<h2 id="installed-files">Installed files</h2>
+{
+  files.length > 0 ? (
+    <table>
+      <thead>
+        <tr>
+          <th>File</th>
+          <th>Kind</th>
+          <th>Size</th>
+        </tr>
+      </thead>
+      <tbody>
+        {files.map((file) => (
+          <tr>
+            <td>
+              <code>{fileName(file)}</code>
+            </td>
+            <td>{fileKindLabel(file)}</td>
+            <td>{fileSize(file.content)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  ) : (
+    <p>No files.</p>
+  )
+}
+
+{
+  item.docs && (
+    <>
+      <h2 id="author-notes">Author notes</h2>
+      <p>
+        {renderAuthorNotes(item.docs).map((part) =>
+          typeof part === "string" ? (
+            part
+          ) : (
+            <code class="registry-note-hash" title={part.hash}>
+              {part.hash.slice(0, 10)}&hellip;
+            </code>
+          ),
+        )}
+      </p>
+    </>
+  )
+}
 
 <script>
-  const copyText = async (value: string) => {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(value);
-      return;
-    }
-    const textarea = document.createElement("textarea");
-    textarea.value = value;
-    textarea.style.position = "fixed";
-    textarea.style.opacity = "0";
-    document.body.append(textarea);
-    textarea.select();
-    document.execCommand("copy");
-    textarea.remove();
-  };
-
-  for (const detail of document.querySelectorAll<HTMLElement>("[data-registry-detail]")) {
-    const tabs = [...detail.querySelectorAll<HTMLButtonElement>("[data-registry-tab]")];
-    const panels = [...detail.querySelectorAll<HTMLElement>("[data-registry-panel]")];
-
-    const activate = (name: string, focus = false) => {
-      const target = tabs.find((tab) => tab.dataset.registryTab === name) ?? tabs[0];
-      if (!target) return;
-      for (const tab of tabs) {
-        const selected = tab === target;
-        tab.setAttribute("aria-selected", String(selected));
-        tab.tabIndex = selected ? 0 : -1;
-      }
-      for (const panel of panels) panel.hidden = panel.dataset.registryPanel !== target.dataset.registryTab;
-      // H13 — the tab row hosts the preview toolbar; it needs to know which panel is showing so
-      // controls for a hidden panel are not left on screen acting on nothing.
-      detail.dataset.activeTab = target.dataset.registryTab ?? "preview";
-      const url = new URL(window.location.href);
-      url.searchParams.set("tab", target.dataset.registryTab ?? "preview");
-      history.replaceState(null, "", url);
-      if (focus) target.focus();
-    };
-
-    for (const [index, tab] of tabs.entries()) {
-      tab.addEventListener("click", () => activate(tab.dataset.registryTab ?? "preview"));
-      tab.addEventListener("keydown", (event) => {
-        let next = index;
-        if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
-        else if (event.key === "ArrowLeft") next = (index - 1 + tabs.length) % tabs.length;
-        else if (event.key === "Home") next = 0;
-        else if (event.key === "End") next = tabs.length - 1;
-        else return;
-        event.preventDefault();
-        activate(tabs[next]?.dataset.registryTab ?? "preview", true);
-      });
-    }
-
-    for (const button of detail.querySelectorAll<HTMLButtonElement>("[data-activate-tab]")) {
-      button.addEventListener("click", () => activate(button.dataset.activateTab ?? "preview", true));
-    }
-
-    const requested = new URL(window.location.href).searchParams.get("tab");
-    activate(requested ?? detail.dataset.defaultTab ?? "preview");
-  }
-
-  for (const browser of document.querySelectorAll<HTMLElement>("[data-source-browser]")) {
-    const files = [...browser.querySelectorAll<HTMLButtonElement>("[data-source-file]")];
-    const panels = [...browser.querySelectorAll<HTMLElement>("[data-source-panel]")];
-    for (const button of files) {
-      button.addEventListener("click", () => {
-        const selected = button.dataset.sourceFile;
-        for (const file of files) {
-          const active = file === button;
-          file.classList.toggle("is-active", active);
-          file.setAttribute("aria-pressed", String(active));
-        }
-        for (const panel of panels) panel.hidden = panel.dataset.sourcePanel !== selected;
-      });
-    }
-  }
-
-  // M4 — the bounded source pane already fades and scrollbars its two overflow axes (shared
-  // with H16 via `data-scroll-more-x`/`-y`, set by the enhancement script in SiteHeader.astro),
-  // but had no way to see the whole file without scrolling piecemeal. This wires the "Expand"
-  // control that removes the height cap. Only the vertical (`-y`) affordance is touched: the
-  // rail's horizontal scroll and any single long line in the code pane are unrelated to the
-  // height cap and stay exactly as they were.
-  for (const toggle of document.querySelectorAll<HTMLButtonElement>("[data-source-expand-toggle]")) {
-    const panel = toggle.closest<HTMLElement>("[data-registry-panel]");
-    const browser = panel?.querySelector<HTMLElement>("[data-source-browser]");
-    if (!browser) continue;
-    const codePane = browser.querySelector<HTMLElement>(".registry-source-browser__code");
-    toggle.addEventListener("click", () => {
-      const expanded = browser.classList.toggle("registry-source-browser--expanded");
-      toggle.setAttribute("aria-expanded", String(expanded));
-      toggle.textContent = expanded ? "Collapse" : "Expand";
-      if (!codePane) return;
-      if (expanded) {
-        // Nothing to fade once the cap is off — clear the stale flag rather than wait for a
-        // scroll event that may never come.
-        codePane.removeAttribute("data-scroll-more-y");
-      } else {
-        // Re-entering the bounded height can restore the overflow; a synthetic `scroll` event
-        // asks SiteHeader.astro's already-attached listener to recompute the flag rather than
-        // duplicating that measurement here.
-        codePane.dispatchEvent(new Event("scroll"));
-      }
-    });
-  }
-
-  for (const button of document.querySelectorAll<HTMLButtonElement>("[data-copy-value]")) {
-    button.addEventListener("click", async () => {
-      const label = button.querySelector("span");
-      const idle = button.dataset.copyLabel ?? label?.textContent ?? button.textContent ?? "Copy";
-      try {
-        await copyText(button.dataset.copyValue ?? "");
-        if (label) label.textContent = "Copied";
-        else button.textContent = "Copied";
-      } catch {
-        if (label) label.textContent = "Copy failed";
-        else button.textContent = "Copy failed";
-      }
-      window.setTimeout(() => {
-        if (label) label.textContent = idle;
-        else button.textContent = idle;
-      }, 1600);
-    });
+  // The previous design addressed its tab panels via `?tab=preview|usage|props|styling|source`.
+  // Those panels are now plain sections with the same names as ids, so old deep links keep
+  // landing on the right content.
+  const requested = new URL(window.location.href).searchParams.get("tab");
+  if (requested) {
+    document.getElementById(requested)?.scrollIntoView();
   }
 </script>
