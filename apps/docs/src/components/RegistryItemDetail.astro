@@ -1,7 +1,7 @@
 ---
 import { Aside, Badge, Code, Icon } from "@astrojs/starlight/components";
 
-import { ArticleCardPlayground } from "./ArticleCardPlayground";
+import PlaygroundHost from "./PlaygroundHost";
 
 import {
   acceptsProps,
@@ -14,11 +14,7 @@ import {
   packageStyleImports,
   type RegistryEntry,
 } from "../lib/registry";
-import {
-  hasCuratedLivePreview,
-  registryKindBadge,
-  registryPresentationKind,
-} from "../lib/registry-presentation";
+import { registryKindBadge, registryPresentationKind } from "../lib/registry-presentation";
 
 interface Props {
   entry: RegistryEntry;
@@ -45,8 +41,11 @@ const propDocs = mantine?.props;
 const propComponents = Object.entries(propDocs ?? {});
 const hasPropDocs = propComponents.some(([, docs]) => docs.length > 0);
 const usage = mantine?.usage;
-// Single source of truth, shared with the gallery badge in RegistryCatalog.astro.
-const hasCuratedPreview = hasCuratedLivePreview(index.name);
+// An adapter file's existence IS the preview registration (see playgrounds/contract.ts):
+// the same glob feeds SiteHead's stylesheet gate and PlaygroundHost's client-side loader,
+// so a new `<name>.playground.tsx` lights up everything with no list to keep in sync.
+const playgroundModules = import.meta.glob("./playgrounds/*.playground.tsx");
+const hasCuratedPreview = `./playgrounds/${index.name}.playground.tsx` in playgroundModules;
 const presentationKind = registryPresentationKind(index);
 const presentationLabel =
   presentationKind === "theme"
@@ -161,7 +160,7 @@ const registryDependencies = (item.registryDependencies ?? []).map((name) => ({
 <h2 id="preview">Preview</h2>
 {
   hasCuratedPreview ? (
-    <ArticleCardPlayground client:load />
+    <PlaygroundHost client:only="react" item={index.name} />
   ) : (
     <Aside
       type="note"

@@ -111,7 +111,7 @@
    oversight — this rule has to lose to every authored margin, including the (0,1,0) `:is()`
    reset above it. Reordering to satisfy the rule would change nothing about the cascade
    (specificity already decides between them) and would only put the explanation out of order. */
-:where([data-article-card-playground]) * + * {
+:where([data-playground]) * + * {
   margin-top: 0;
 }
 

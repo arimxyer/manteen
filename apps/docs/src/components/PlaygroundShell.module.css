@@ -7,7 +7,8 @@
 }
 
 .scope button,
-.scope input {
+.scope input,
+.scope select {
   font: inherit;
 }
 
@@ -36,8 +37,7 @@
 .viewportControl button,
 .themeButton,
 .playgroundActions button,
-.actionsField button,
-.eventLog button {
+.switchField button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -75,9 +75,9 @@
 .viewportControl button:focus-visible,
 .themeButton:focus-visible,
 .playgroundActions button:focus-visible,
-.actionsField button:focus-visible,
-.eventLog button:focus-visible,
-.fields input:focus-visible {
+.switchField button:focus-visible,
+.fields input:focus-visible,
+.fields select:focus-visible {
   outline: 2px solid var(--sl-color-accent);
   outline-offset: 2px;
   box-shadow: var(--manteen-focus-ring);
@@ -126,8 +126,9 @@
 }
 
 .stage {
+  position: relative;
   display: flex;
-  min-height: 25rem;
+  min-height: var(--playground-stage-min-height, 25rem);
   align-items: center;
   justify-content: center;
   padding: 0.75rem;
@@ -140,42 +141,17 @@
   background: var(--manteen-demo-canvas-light);
 }
 
-.articleCard {
+/* The stage never sizes the demo component directly — adapters render into this slot, and
+   the viewport toggle only changes the slot's width. Widths are adapter-tunable through the
+   two custom properties (see PlaygroundStageOptions in playgrounds/contract.ts). */
+.demoSlot {
   box-sizing: border-box;
-  width: min(32.5rem, 100%);
+  width: var(--playground-desktop-width, min(32.5rem, 100%));
   transition: width 180ms ease;
 }
 
-.stage[data-viewport="mobile"] .articleCard {
-  width: min(20rem, 100%);
-}
-
-.articleImage {
-  height: 12.5rem;
-  object-fit: cover;
-}
-
-.articleRating {
-  top: 1rem;
-  right: auto;
-  left: 1rem;
-  background-color: var(--manteen-demo-accent);
-  background-image: none;
-  color: #f5f7ff;
-}
-
-.articleTitle {
-  font-size: 1.35rem;
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-.articleFooter {
-  min-height: 2rem;
-}
-
-.articleAction {
-  border-radius: var(--manteen-radius-pill);
+.stage[data-viewport="mobile"] .demoSlot {
+  width: var(--playground-mobile-width, min(20rem, 100%));
 }
 
 .playground {
@@ -226,24 +202,41 @@
   color: var(--manteen-text);
 }
 
+/* Controls come from adapter data, so the row cannot assume a column per specific field the
+   way the article-card original did. Instead each control declares its shape and the row
+   wraps: text fields grow from 9rem, `compact` fields stay short-value sized, `wide` fields
+   take the full row, and switches are fixed chips. Equal-width tracks were tried first and
+   read as overspaced — a 4-character rating field the width of an author field. */
 .fields {
-  display: grid;
-  grid-template-columns: minmax(12rem, 1fr) 8rem 4.5rem 6.5rem;
-  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
   gap: 0.65rem;
 }
 
 .fields label,
-.actionsField {
+.switchField {
   display: flex;
+  flex: 1 1 9rem;
   min-width: 0;
   flex-direction: column;
   gap: 0.32rem;
 }
 
+.fields .switchField {
+  flex: 0 0 auto;
+}
+
+.fields .wideField {
+  flex: 2 1 14rem;
+}
+
+.fields .compactField {
+  flex: 0 1 5.5rem;
+}
+
 .fields label > span,
-.actionsField > span,
-.eventLog strong {
+.switchField > span {
   color: var(--manteen-text-faint);
   font-size: var(--manteen-eyebrow-size);
   font-weight: var(--manteen-eyebrow-weight);
@@ -252,7 +245,8 @@
 }
 
 .fields input,
-.actionsField button {
+.fields select,
+.switchField button {
   width: 100%;
   min-height: 2.25rem;
   padding: 0 0.65rem;
@@ -263,8 +257,16 @@
   font-size: var(--manteen-text-xs);
 }
 
-.actionsField button {
+.switchField button {
   justify-content: space-between;
+}
+
+/* The switch is a chip, not a bar: wide enough for its label + track and no wider, with a
+   floor so it still reads as a field beside the inputs. */
+.fields .switchField button {
+  width: auto;
+  min-width: 6.5rem;
+  gap: 0.55rem;
 }
 
 .switchTrack {
@@ -286,67 +288,73 @@
   transition: transform 160ms ease;
 }
 
-.actionsField button[aria-checked="false"] .switchTrack {
+.switchField button[aria-checked="false"] .switchTrack {
   justify-content: flex-start;
   background: var(--manteen-border);
 }
 
-.eventLog {
+/* Callback feedback appears where the interaction happened — a transient chip floating over
+   the stage bottom, gone 2.6s later — instead of a permanent bar under the controls. Shell
+   chrome colors on purpose: the chip belongs to the frame, not the demo, so it stays legible
+   on both stage canvases. */
+.eventToast {
+  position: absolute;
+  inset-block-end: 0.7rem;
+  inset-inline: 0;
   display: flex;
-  min-height: 2.5rem;
+  width: max-content;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0 0.7rem;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  margin-inline: auto;
   border: 1px solid var(--manteen-border);
-  border-radius: var(--manteen-radius-sm);
-  background: var(--manteen-panel-raised);
+  border-radius: var(--manteen-radius-pill);
+  background: var(--manteen-panel);
+  animation: playground-toast-in 160ms ease;
 }
 
-.eventLog > div {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-}
-
-.eventLog code,
-.eventLog > div:last-child > span {
+.eventToast code {
   padding: 0;
   margin-block: 0;
   border: 0;
   background: transparent;
-  color: var(--manteen-text-muted);
+  color: var(--manteen-text);
   font-size: var(--manteen-text-xs);
 }
 
-.eventLog > div:last-child > span {
-  color: var(--manteen-text-faint);
-  font-family: var(--__sl-font-mono);
-}
-
-.eventDot,
-.eventDotIdle {
+.eventDot {
   width: 0.44rem;
   height: 0.44rem;
+  flex: none;
   border-radius: var(--manteen-radius-pill);
   background: var(--manteen-success);
 }
 
-.eventDotIdle {
-  background: var(--manteen-border);
+@keyframes playground-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.3rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.eventLog button {
-  min-height: 1.9rem;
-  padding: 0 0.55rem;
-  border-color: var(--manteen-border);
-  background: var(--manteen-panel-active);
-  color: var(--manteen-text-muted);
+@media (prefers-reduced-motion: reduce) {
+  .eventToast {
+    animation: none;
+  }
 }
 
-.eventLog button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
+/* The pre-hydration placeholder PlaygroundHost renders: `client:only` islands paint nothing
+   during SSR, so without a reserved box the whole page below Preview would jump on load. */
+.placeholder {
+  min-height: 30rem;
+  border: 1px dashed var(--manteen-border);
+  border-radius: var(--manteen-radius-md);
+  background: var(--manteen-panel);
 }
 
 .copyAnnouncement {
@@ -361,32 +369,9 @@
   border: 0;
 }
 
-.visuallyHidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-@media (max-width: 48rem) {
-  .fields {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-
-  .titleField {
-    grid-column: 1 / -1;
-  }
-}
-
 @media (max-width: 32rem) {
   .toolbar,
-  .playgroundHeader,
-  .eventLog {
+  .playgroundHeader {
     align-items: stretch;
     flex-direction: column;
   }
@@ -407,20 +392,9 @@
     width: 100%;
   }
 
-  .fields {
-    grid-template-columns: 1fr;
-  }
-
-  .titleField {
-    grid-column: auto;
-  }
-
-  .eventLog {
-    padding: 0.65rem;
-  }
-
-  .eventLog > div {
-    justify-content: space-between;
+  .fields label,
+  .fields .compactField {
+    flex-basis: 100%;
   }
 
   .frameHeader > span {
@@ -428,39 +402,7 @@
   }
 
   .stage {
-    min-height: 22rem;
+    min-height: var(--playground-stage-min-height-mobile, 22rem);
     padding: 0.75rem;
   }
 }
-
-/* H13 — when the toolbar is portalled into the tab-bar row it shares that row's vertical
-   centre, so the standalone band's bottom margin has to go: left in place it would push the
-   controls ~8px above the tabs, which is the alignment the fix is about. The wrapper also
-   re-establishes `.scope` around the portalled subtree — see the comment at the portal. */
-.toolbarHost .toolbar {
-  min-height: 0;
-  margin-bottom: 0;
-}
-
-/* The ≤32rem block below turns the toolbar into a full-width column, which was right while it
-   was a band of its own. In the tab row that treatment stacks the two groups over three lines
-   and re-creates the "accidental 2+1 stack" H13 reports at 390px, so the hosted copy stays a
-   right-aligned row at every width. Specificity (0,2,0) beats the media block's (0,1,0)
-   regardless of source order — nothing here depends on where these rules sit in the file. */
-.toolbarHost .toolbar {
-  align-items: center;
-  flex-direction: row;
-  justify-content: flex-end;
-}
-
-.toolbarHost .viewportControl,
-.toolbarHost .themeButton {
-  width: auto;
-}
-
-/* The per-container `margin-block-start: 0` resets that used to sit here enumerated one level of
-   children each, so they missed `.viewportControl`'s buttons and the article card's actions —
-   both are grandchildren, not children, of a container that was listed. custom.css now zeroes
-   the whole subtree by ancestor at (0,0,0) specificity, which covers every depth and still loses
-   to every intentional margin in this file. Keeping a second, shallower mechanism here would
-   only make it ambiguous which one is doing the work. */

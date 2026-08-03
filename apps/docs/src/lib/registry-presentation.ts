@@ -27,16 +27,6 @@ export function orderRegistryEntries(entries: RegistryEntry[]): RegistryEntry[] 
   });
 }
 
-// The single source of truth for which registry items ship a curated live playground
-// adapter, rather than a static gallery mini. Keep this list in sync with the detail
-// page's own curated-preview check (RegistryItemDetail.astro) — that file hardcodes
-// `index.name === "article-card"` today and should import this helper instead.
-const curatedLivePreviewNames = new Set<string>(["article-card"]);
-
-export function hasCuratedLivePreview(name: string): boolean {
-  return curatedLivePreviewNames.has(name);
-}
-
 // One color per kind, shared by the catalog cards and the detail page's identity row so the
 // same kind never wears two colors. Starlight's built-in Badge variants cover the semantic
 // kinds; `library`/`file` take a neutral grey via a class (there is no built-in grey variant).
