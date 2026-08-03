@@ -19,10 +19,13 @@ not add your item to any list anywhere.
    `wide: true` for long free text (titles), `compact: true` for short values (ratings,
    counts) — a four-character field must not stretch to author-field width. Aim for the
    controls to share rows tightly, not each squat on its own line.
-3. **`render(props, recordEvent)`** returns the live component. Wire `recordEvent` into the
-   component's callbacks (`onDrop`, `onRowClick`, …) — the shell surfaces each call as a
-   transient toast over the stage (plus a screen-reader announcement). Demo data is defined
-   as module constants — realistic, small, no lorem ipsum.
+3. **`render(props, recordEvent, context)`** returns the live component. Wire `recordEvent`
+   into the component's callbacks (`onDrop`, `onRowClick`, …) — the shell surfaces each call
+   as a transient toast over the stage (plus a screen-reader announcement). Demo data is
+   defined as module constants — realistic, small, no lorem ipsum. `context.viewport` is the
+   shell's simulated viewport: components whose responsive behavior watches real viewport
+   media queries never see the toggle (it only narrows the slot), so such adapters must
+   branch on it explicitly (see cards-carousel's slide overrides).
 4. **`renderJsx(props)`** returns paste-ready consumer JSX for the CURRENT control values:
    consumer alias imports assumed, real prop values inlined, `() => {}` for callbacks, and
    **never a docs-site asset URL** (swap in a canonical remote URL, like the exemplar).

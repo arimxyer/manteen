@@ -231,7 +231,7 @@ export function Playground({ adapter }: { adapter: PlaygroundAdapter }) {
             style={stageStyle}
           >
             <div className={styles.demoSlot} style={slotStyle}>
-              {adapter.render(props, recordEvent)}
+              {adapter.render(props, recordEvent, { viewport, scheme })}
             </div>
             {/* Event feedback lives ON the stage, next to the interaction that caused it —
                 a transient toast, not a permanent bar (Ari's call, 2026-08-03). The visual

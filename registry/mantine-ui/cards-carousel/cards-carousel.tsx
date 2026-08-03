@@ -4,7 +4,7 @@
  * LICENSES/MANTINE-UI.txt after installation.
  */
 
-import { Carousel } from "@mantine/carousel";
+import { Carousel, type CarouselProps } from "@mantine/carousel";
 import { Button, Paper, Text, Title, useMantineTheme } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 
@@ -22,6 +22,10 @@ export interface CardsCarouselProps {
   items: readonly CardsCarouselItem[];
   actionLabel?: string;
   onSelect?: (item: CardsCarouselItem) => void;
+  /** Overrides the responsive default slide width (100% below `sm`, 50% above). */
+  slideSize?: CarouselProps["slideSize"];
+  /** Overrides how many slides advance per navigation (default 1 below `sm`, 2 above). */
+  slidesToScroll?: number;
 }
 
 interface CardProps {
@@ -64,15 +68,21 @@ function CarouselItemCard({ item, actionLabel, onSelect }: CardProps) {
   );
 }
 
-export function CardsCarousel({ items, actionLabel = "View", onSelect }: CardsCarouselProps) {
+export function CardsCarousel({
+  items,
+  actionLabel = "View",
+  onSelect,
+  slideSize,
+  slidesToScroll,
+}: CardsCarouselProps) {
   const theme = useMantineTheme();
   const mobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
 
   return (
     <Carousel
-      slideSize={{ base: "100%", sm: "50%" }}
+      slideSize={slideSize ?? { base: "100%", sm: "50%" }}
       slideGap={2}
-      emblaOptions={{ align: "start", slidesToScroll: mobile ? 1 : 2 }}
+      emblaOptions={{ align: "start", slidesToScroll: slidesToScroll ?? (mobile ? 1 : 2) }}
       nextControlProps={{ "aria-label": "Next slide" }}
       previousControlProps={{ "aria-label": "Previous slide" }}
     >

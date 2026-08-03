@@ -602,6 +602,18 @@
             "type": "(item: CardsCarouselItem) => void",
             "required": false,
             "description": "Called when a card's action button is clicked and the item has no href, rendering the button and handling its click."
+          },
+          {
+            "name": "slideSize",
+            "type": "CarouselProps[\"slideSize\"]",
+            "required": false,
+            "description": "Overrides the responsive default slide width (100% below the sm breakpoint, 50% above)."
+          },
+          {
+            "name": "slidesToScroll",
+            "type": "number",
+            "required": false,
+            "description": "Overrides how many slides advance per navigation (defaults to 1 below the sm breakpoint, 2 above)."
           }
         ]
       },

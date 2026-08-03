@@ -4,7 +4,6 @@ import {
   CardsCarousel,
   type CardsCarouselItem,
 } from "../../../../../registry/mantine-ui/cards-carousel/cards-carousel";
-import styles from "./cards-carousel.playground.module.css";
 import type { PlaygroundAdapter } from "./contract";
 
 const IMAGE_FORESTS =
@@ -28,7 +27,7 @@ const adapter: PlaygroundAdapter = {
     { kind: "text", prop: "actionLabel", label: "Action label", compact: true },
     { kind: "switch", prop: "onSelectEnabled", label: "onSelect" },
   ],
-  render: (props, recordEvent) => {
+  render: (props, recordEvent, context) => {
     // Deliberately NO href on any demo item: href-items render permanent link buttons the
     // onSelect toggle cannot remove, so mixing the two made the toggle strip only one of
     // three buttons. All-callback items keep the buttons uniform and the toggle honest;
@@ -54,16 +53,21 @@ const adapter: PlaygroundAdapter = {
       },
     ];
 
+    // The component's own responsive defaults watch the real viewport, which the shell's
+    // mobile toggle cannot change (it only narrows the slot) — so the simulated mobile view
+    // passes explicit one-card-per-view sizing through the component's public overrides.
+    const mobile = context.viewport === "mobile";
+
     return (
-      <div className={styles.fit}>
-        <CardsCarousel
-          items={items}
-          actionLabel={String(props.actionLabel) || "View"}
-          onSelect={
-            props.onSelectEnabled ? (item) => recordEvent(`onSelect: ${item.title}`) : undefined
-          }
-        />
-      </div>
+      <CardsCarousel
+        items={items}
+        actionLabel={String(props.actionLabel) || "View"}
+        slideSize={mobile ? "100%" : undefined}
+        slidesToScroll={mobile ? 1 : undefined}
+        onSelect={
+          props.onSelectEnabled ? (item) => recordEvent(`onSelect: ${item.title}`) : undefined
+        }
+      />
     );
   },
   renderJsx: (props) => {

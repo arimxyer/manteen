@@ -54,6 +54,18 @@ export interface PlaygroundStageOptions {
   mobileWidth?: string;
 }
 
+export interface PlaygroundRenderContext {
+  /**
+   * The shell's simulated viewport. The stage only narrows the slot — a component whose
+   * responsive behavior watches real viewport media queries will NOT see this toggle, so
+   * adapters for such components should branch on it explicitly (cards-carousel passes
+   * slide sizing overrides, for example).
+   */
+  viewport: "desktop" | "mobile";
+  /** The stage color scheme currently forced on the scoped MantineProvider. */
+  scheme: "dark" | "light";
+}
+
 export interface PlaygroundAdapter {
   /** Registry item name; must equal the file's `<item-name>` prefix. */
   item: string;
@@ -64,9 +76,13 @@ export interface PlaygroundAdapter {
   /**
    * Renders the live component for the current control values. `recordEvent` feeds the
    * shell's aria-live event log — wire it into the component's callbacks so interactions
-   * are visible ("onLike fired").
+   * are visible ("onLike fired"). `context` is optional to consume.
    */
-  render: (props: PlaygroundProps, recordEvent: (name: string) => void) => ReactNode;
+  render: (
+    props: PlaygroundProps,
+    recordEvent: (name: string) => void,
+    context: PlaygroundRenderContext,
+  ) => ReactNode;
   /**
    * The string `Copy JSX` puts on the clipboard for the current control values. Must be
    * paste-ready consumer code: real import alias values, no docs-site asset URLs.
