@@ -220,8 +220,12 @@ export function Playground({ adapter }: { adapter: PlaygroundAdapter }) {
                 : "Isolated frame · mobile width"}
             </span>
           </header>
+          {/* `not-content` is Starlight's escape hatch: every `.sl-markdown-content` rule
+              excludes `.not-content *`. Without it the demo is styled as PROSE — content
+              tables get shrink-to-fit display (a left-hugging half-width DataTable), demo
+              anchors get doc-link colors (two "View" buttons in different tints). */}
           <div
-            className={styles.stage}
+            className={`${styles.stage} not-content`}
             data-viewport={viewport}
             data-preview-scheme={scheme}
             style={stageStyle}

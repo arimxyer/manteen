@@ -1,0 +1,9 @@
+/* The component's responsive slideSize watches the VIEWPORT breakpoint, which the playground's
+   mobile toggle cannot change — the toggle only narrows the slot, leaving 50% desktop slides
+   half-visible in a 20rem box. Force one card per view in the simulated mobile slot; embla
+   re-measures on the container resize the toggle causes, so snapping follows. Unlayered module
+   CSS outranks Mantine's layered slide rule regardless of specificity. */
+:global([data-viewport="mobile"]) .fit :global(.mantine-Carousel-slide) {
+  max-width: 100%;
+  flex: 0 0 100%;
+}

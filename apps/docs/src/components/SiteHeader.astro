@@ -99,7 +99,13 @@ const links = [
   };
 
   const enhanceTables = () => {
-    const tables = [...document.querySelectorAll<HTMLTableElement>(".sl-markdown-content table")];
+    // Playground demo tables are live component internals, not content — wrapping them in the
+    // scroll frame would reparent React-managed DOM mid-hydration and restyle the demo.
+    const tables = [
+      ...document.querySelectorAll<HTMLTableElement>(
+        ".sl-markdown-content table:not(:where([data-playground] *))",
+      ),
+    ];
     for (const [index, table] of tables.entries()) {
       let frame = table.closest<HTMLElement>(".manteen-table-scroll");
       if (!frame) {
