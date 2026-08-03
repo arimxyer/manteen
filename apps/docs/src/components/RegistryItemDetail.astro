@@ -317,12 +317,7 @@ const registryDependencies = (item.registryDependencies ?? []).map((name) => ({
       </summary>
       <div class="registry-source-file__body">
         <p>Folded into the configured project theme; not written at this source path.</p>
-        <Code
-          code={themeFragment.content}
-          lang={codeLanguage(themeFragment.path)}
-          meta={`title="${themeFragment.path}"`}
-          wrap
-        />
+        <Code code={themeFragment.content} lang={codeLanguage(themeFragment.path)} wrap />
       </div>
     </details>
   )
@@ -347,7 +342,7 @@ const registryDependencies = (item.registryDependencies ?? []).map((name) => ({
       {files.map((file, position) => (
         <details class="registry-source-file" open={position === 0}>
           <summary>
-            <code>{fileName(file)}</code>
+            <code>{file.path}</code>
             <span>
               {fileKindLabel(file)} · {fileSize(file.content)} ·{" "}
               {isProseFile(file) ? "text" : codeLanguage(file.target ?? file.path)}
@@ -358,7 +353,6 @@ const registryDependencies = (item.registryDependencies ?? []).map((name) => ({
               <Code
                 code={file.content}
                 lang={isProseFile(file) ? "txt" : codeLanguage(file.target ?? file.path)}
-                meta={`title="${file.path}"`}
                 wrap
               />
             ) : (

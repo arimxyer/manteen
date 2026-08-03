@@ -96,7 +96,8 @@
   .registry-item-links,
   .registry-deps,
   .registry-deps li,
-  .registry-source-file
+  .registry-source-file,
+  .registry-source-file__body
 ) > * {
   margin-top: 0;
 }
@@ -177,21 +178,23 @@
   --ec-codeBg: var(--manteen-code-canvas);
   --ec-uiFontFml: var(--__sl-font-mono);
   --ec-uiFontSize: 0.8rem;
-  /* The title strip must clear the 2rem copy control it hosts: at the previous 0.4rem the
-     strip computed ~33px against the button's 32px, so the button pressed into the frame's
-     top border. 0.6rem gives the filename row real breathing room on every framed block. */
-  --ec-uiPadBlk: 0.6rem;
+  /* The title strip must clear the 2rem copy control it hosts: at 0.4rem the strip computed
+     ~33px against the button's 32px, so the button pressed into the frame's top border.
+     0.65rem also matches the source-disclosure summary's block padding exactly. */
+  --ec-uiPadBlk: 0.65rem;
   --ec-uiPadInl: 0.9rem;
   --ec-focusBrd: var(--sl-color-accent);
   --ec-sbThumbCol: color-mix(in srgb, var(--manteen-text-faint) 55%, transparent);
   --ec-sbThumbHoverCol: var(--manteen-text-faint);
 
   /* One tone across the whole title strip — the tab and the bar behind it take the same fill,
-     so there is no seam left to see. */
-  --ec-frm-edTabBarBg: var(--manteen-code-chrome);
-  --ec-frm-edActTabBg: var(--manteen-code-chrome);
-  --ec-frm-trmTtbBg: var(--manteen-code-chrome);
-  --ec-frm-edActTabFg: var(--manteen-text);
+     so there is no seam left to see. The fill and filename color are the same tokens the
+     source-disclosure summary uses (--manteen-panel + --manteen-accent-soft), so a framed
+     code block's header and a disclosure's header are one visual treatment, not two. */
+  --ec-frm-edTabBarBg: var(--manteen-panel);
+  --ec-frm-edActTabBg: var(--manteen-panel);
+  --ec-frm-trmTtbBg: var(--manteen-panel);
+  --ec-frm-edActTabFg: var(--manteen-accent-soft);
   --ec-frm-trmTtbFg: var(--manteen-text-muted);
   --ec-frm-edActTabBrdCol: transparent;
   /* The near-white hairline: the active tab's top indicator, resolving to
@@ -650,6 +653,9 @@
   align-items: center;
   gap: 0.15rem 0.6rem;
   padding: 0.65rem 0.9rem;
+  /* Starlight gives every content summary a 1rem margin-bottom, which here read as a dead
+     band between the path row and the divider. The row's own padding is the spacing. */
+  margin: 0;
   cursor: pointer;
   list-style: none;
   user-select: none;
@@ -703,17 +709,22 @@
 }
 
 .registry-source-file__body {
-  padding: 0 0.6rem 0.6rem;
+  padding: 0;
   border-top: 1px solid var(--manteen-border);
 }
 
-.registry-source-file__body > :first-child {
-  margin-top: 0.6rem;
-}
-
 .registry-source-file__body p {
+  padding: 0.65rem 0.9rem;
   color: var(--manteen-text-muted);
   font-size: var(--manteen-text-sm);
+}
+
+/* The disclosure already provides the frame — the summary is the header, the panel edge the
+   border — so the code block inside renders bare: no second border, radius, or title strip
+   repeating the filename. One file, one frame. */
+.registry-source-file__body .expressive-code {
+  --ec-brdWd: 0px;
+  --ec-brdRad: 0px;
 }
 
 /* The required-prop marker in the Props table; the "* required" legend under the table is the
@@ -843,9 +854,11 @@
 
 /* H7 — with the tab and the bar behind it painted the same fill, what remained visible was the
    tab bar's 1px bottom rule starting under the filename. Repainting the tab with the identical
-   gradient closes it into one hairline under the whole strip. */
+   gradient closes it into one hairline under the whole strip. The fill MUST stay in lockstep
+   with `--ec-frm-edTabBarBg` above: when the two diverged (panel vs code-chrome), the tab
+   reappeared as a subtly off-color box around the filename. */
 .expressive-code .frame.has-title:not(.is-terminal) .header .title {
-  background: linear-gradient(to top, var(--manteen-border) 1px, var(--manteen-code-chrome) 1px);
+  background: linear-gradient(to top, var(--manteen-border) 1px, var(--manteen-panel) 1px);
 }
 
 /* Framed blocks have a title strip with free space on its trailing edge, so the button belongs
