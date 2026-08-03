@@ -17,13 +17,12 @@ import type { PlaygroundAdapter } from "./contract";
 // HeaderMegaMenu's desktop nav / burger split is driven by Mantine's `visibleFrom` /
 // `hiddenFrom`, which watch the real browser viewport via `matchMedia` — not any prop, and
 // not container width — so the shell's mobile toggle (which only narrows the stage slot)
-// never reaches it. The Drawer is also `withinPortal` by default, rendering into
-// `document.body` rather than under any wrapper this render tree controls, so a scoped
-// CSS-module override (a class on an ancestor div) cannot reach it either: the override has
-// to be a document-global rule, conditionally mounted, which is what this `<style>` tag is
-// for. It forces Mantine's own stable `mantine-visible-from-sm` / `mantine-hidden-from-sm`
-// classes (see MantineClasses.tsx) to behave as if the viewport were narrow, matching their
-// own `!important`, only while the simulated viewport is "mobile".
+// never reaches it. This conditionally mounted `<style>` tag forces Mantine's own stable
+// `mantine-visible-from-sm` / `mantine-hidden-from-sm` classes (see MantineClasses.tsx) to
+// behave as if the viewport were narrow, matching their own `!important`, only while the
+// simulated viewport is "mobile". A document-global rule remains the simplest stable
+// mechanism even though the shell now redirects portals (Drawer included) into the stage's
+// portal host, so an ancestor-scoped override could technically reach them these days.
 const FORCE_MOBILE_CSS = `
   .mantine-visible-from-sm { display: none !important; }
   .mantine-hidden-from-sm { display: block !important; }

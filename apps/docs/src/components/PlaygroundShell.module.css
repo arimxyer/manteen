@@ -125,6 +125,19 @@
   font-size: 0.75rem;
 }
 
+/* `contain: layout` gives the stage two properties at once, both required to keep portaled
+   overlays inside the frame instead of escaping to the real page (see Playground.tsx's
+   theme.components.Portal.defaultProps.target): it establishes a new stacking context (so an
+   overlay's z-index, however large, can never paint above anything outside the stage — this is
+   what actually caps HeaderMegaMenu's Drawer, which hardcodes zIndex={1000000}), and it makes
+   the stage's own padding box the CONTAINING BLOCK for `position: fixed` descendants (Mantine's
+   Modal/Drawer use fixed inset:0, which otherwise resolves against the viewport regardless of
+   where in the DOM they live). It does NOT add size containment (that needs `contain: size` or
+   `strict`/`content`, not requested here), so the stage still auto-grows to its content's
+   height exactly as before. `transform`/`perspective` were the other candidates for the
+   containing-block part; `contain: layout` was picked because, unlike a null transform, it
+   engages no GPU-compositing layer promotion and has no font-smoothing side effect on the demo
+   content painted beneath it. */
 .stage {
   position: relative;
   display: flex;
@@ -133,8 +146,30 @@
   justify-content: center;
   padding: 0.75rem;
   overflow: auto;
+  contain: layout;
   background: var(--manteen-demo-canvas-dark);
   transition: background 160ms ease;
+}
+
+/* The shared portal target (see Playground.tsx) — fills the stage so absolutely/fixed
+   positioned overlay content lands where it visually belongs, but must stay click-through
+   itself: it is present (and full-size) even while completely empty, which — without
+   `pointer-events: none` — would sit on top of the demo in paint order (any positioned box
+   does, regardless of visible content) and silently swallow every click meant for the demo
+   underneath. Mantine's own overlay markup already assigns the pointer-events each part
+   actually needs (e.g. ModalBase's `.content` sets `all`, its `.inner` wrapper deliberately
+   stays `none` so clicks fall through to the backdrop) — those are more specific class
+   selectors and must keep winning. The `:where()` reset below targets only what Mantine leaves
+   unset (a bare Popover/HoverCard dropdown, the Modal/Drawer overlay backdrop) by carrying zero
+   specificity itself, so it can never outrank a real Mantine rule, tie or no tie. */
+.portalHost {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+:where(.portalHost) > * {
+  pointer-events: auto;
 }
 
 .stage[data-preview-scheme="light"] {

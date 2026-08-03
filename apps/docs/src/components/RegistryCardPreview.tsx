@@ -78,6 +78,29 @@ const MINI_FIT_OVERRIDES: Partial<Record<string, Partial<MiniFit>>> = {
   "article-card": { naturalWidthRem: 20, scale: 0.44 },
   "cards-carousel": { naturalWidthRem: 30, scale: 0.34 },
   "data-table": { naturalWidthRem: 22, scale: 0.42 },
+  // HeaderMegaMenu's top-level `Group justify="space-between"` (logo / nav links / login+signup)
+  // uses Mantine's default `wrap="wrap"`, and every direct child of a `display: flex` parent is
+  // itself a flex item with the initial `flex: 0 1 auto` — so without `flexShrink: 0` below, the
+  // box this policy gives it (any naturalWidthRem) gets shrunk back down toward its min-content
+  // size regardless of the declared width, because nothing here sets `overflow` on the box to
+  // trigger the flexbox spec's automatic-minimum-size-to-0 exception. That min-content is small
+  // (just the widest unbreakable label), so the header's own internal Group wrapped the nav onto
+  // a second line ("Learn"/"Academy" below "Home"/"Features") well before the box ever reached
+  // its intended width — which the card's fixed-height frame then clipped mid-glyph. Verified by
+  // probing computed width live: an inline `width: 46rem` on the box still measured `clientWidth:
+  // 248` until `flexShrink: 0` was added, after which `clientWidth` matched the declared width
+  // exactly. `naturalWidthRem: 42` is the smallest width (screenshot-verified in 1rem steps) at
+  // which the login/signup buttons also stay on the header's row instead of wrapping under it —
+  // below 41rem they drop to a second row that the frame's fixed height then crops. Holding
+  // `DEFAULT_SCALE` fixed at that width would make the rendered mini nearly 2x TARGET_EFFECTIVE_
+  // WIDTH_REM (uncropped, unlike every sibling mini), so scale is re-derived here the same way
+  // cards-carousel's override already does: small enough that the header's nav — the widest,
+  // most text-dense row of any live mini — still reads as individual words, not a smear.
+  "header-mega-menu": {
+    naturalWidthRem: 42,
+    scale: 0.26,
+    boxClassName: styles.headerMegaMenuLiveMini,
+  },
   // A 4-5 row vertical list is taller than the frame at any legible scale (measured: its
   // natural height at the default scale is over 2x the frame's content height). Center-crop
   // left an arbitrary middle slice visible (items 2-3, with item 1's leading number missing) —

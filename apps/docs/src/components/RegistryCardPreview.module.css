@@ -215,3 +215,16 @@
 .statsGridLiveMini :global(.mantine-SimpleGrid-root) {
   grid-template-columns: 1fr;
 }
+
+/*
+  header-mega-menu only: `.liveMiniScheme` is `display: flex`, which makes this box a flex item
+  with the browser default `flex: 0 1 auto` — so the inline `width` RegistryCardPreview.tsx sets
+  on it is only a *starting* size, not a floor, and the box shrinks back toward its min-content
+  width (small, since the header's own nav Group can itself wrap) well before ever reaching the
+  frame edge. `flex-shrink: 0` pins the box at its declared natural width so the header lays out
+  its nav row (and login/signup buttons) at full, unshrunk size before `transform: scale()` ever
+  touches it — see MINI_FIT_OVERRIDES's "header-mega-menu" comment for how this was diagnosed.
+*/
+.headerMegaMenuLiveMini {
+  flex-shrink: 0;
+}

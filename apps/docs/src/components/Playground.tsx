@@ -40,6 +40,20 @@ export function Playground({ adapter }: { adapter: PlaygroundAdapter }) {
   const idBase = useId();
   const [viewport, setViewport] = useState<Viewport>("desktop");
   const [scheme, setScheme] = useState<PreviewScheme>("dark");
+  // H-overlay-containment — Mantine portals (HoverCard/Menu/Popover/Tooltip dropdowns,
+  // Modal/Drawer) default to `document.body`, which escapes this styled-div "isolated frame"
+  // entirely: a mega-menu dropdown paints over the shell's own controls, and a mobile Drawer
+  // covers the real Starlight header/sidebar. `theme.components.Portal.defaultProps.target`
+  // (read via `useProps` by every OptionalPortal call that doesn't pass its own `portalProps`)
+  // redirects ALL of them into this node instead, generically — no adapter needs to know.
+  // A ref alone isn't enough: the theme object is only re-read on render, and nothing forces a
+  // render between mount and the first hover/click, so the target node is captured in state via
+  // a callback ref, guaranteeing a render (and a populated theme.target) before any overlay can
+  // open. DOM placement alone doesn't fix Drawer/Modal though — they use `position: fixed`,
+  // which escapes ANY portal target and paints at viewport size unless an ANCESTOR establishes
+  // a containing block for fixed descendants; see `.stage`'s `contain: layout` in the CSS
+  // module, which is what actually clips them to the stage box.
+  const [portalTarget, setPortalTarget] = useState<HTMLDivElement | null>(null);
   const [props, setProps] = useState(adapter.defaultProps);
   const [eventMessage, setEventMessage] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
@@ -206,6 +220,20 @@ export function Playground({ adapter }: { adapter: PlaygroundAdapter }) {
           fontFamily: "var(--__sl-font)",
           headings: { fontFamily: "var(--__sl-font)" },
           primaryColor: "indigo",
+          components: {
+            Portal: {
+              defaultProps: { target: portalTarget ?? undefined },
+            },
+            // Modal/Drawer lock the REAL document's scroll by default (react-remove-scroll,
+            // `lockScroll: true`) — correct for a real full-page overlay, wrong here: this is a
+            // contained demo element, and the surrounding docs page must stay scrollable while
+            // it's open. `Drawer`/`Modal` (not just their `*Root`) need the override: each has
+            // its own hardcoded `lockScroll: true` default and forwards it as an *explicit*
+            // prop to its `*Root`, where an explicit prop wins over that root's own theme
+            // default — setting only `DrawerRoot`/`ModalRoot` would silently no-op.
+            Drawer: { defaultProps: { lockScroll: false } },
+            Modal: { defaultProps: { lockScroll: false } },
+          },
         }}
       >
         <section className={styles.previewFrame} aria-labelledby={previewTitleId}>
@@ -243,6 +271,11 @@ export function Playground({ adapter }: { adapter: PlaygroundAdapter }) {
                 <code>{eventMessage}</code>
               </div>
             )}
+            {/* Portal target for every overlay this demo opens (see theme.components.Portal
+                above) — empty and inert until something portals into it, so it must never
+                intercept pointer events itself (see .portalHost in the CSS module) or it would
+                shadow the demo content underneath it whenever nothing is open. */}
+            <div ref={setPortalTarget} className={styles.portalHost} />
           </div>
         </section>
       </MantineProvider>
