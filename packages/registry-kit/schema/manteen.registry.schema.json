@@ -89,6 +89,29 @@
             "items": { "type": "string" }
           }
         },
+        "props": {
+          "type": "object",
+          "description": "Author-documented prop surface, keyed by exported component or hook name. Carried verbatim; the kit never infers props from source.",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "type"],
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string", "minLength": 1 },
+                "type": { "type": "string", "minLength": 1 },
+                "required": { "type": "boolean" },
+                "default": { "type": "string" },
+                "description": { "type": "string" }
+              }
+            }
+          }
+        },
+        "usage": {
+          "type": "string",
+          "description": "Path to a copy-ready usage example module. Inlined into the compiled item like themeFragment; never listed in files, so no client installs it."
+        },
         "docs": { "type": "string" }
       }
     }

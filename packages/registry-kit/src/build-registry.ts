@@ -29,6 +29,15 @@ const PKG_ROOT = resolve(import.meta.dirname, "..");
 export type Kind = "component" | "block" | "hook" | "lib" | "theme" | "file";
 export type FileRole = "component" | "hook" | "lib" | "style" | "file";
 
+/** One author-documented prop. Carried verbatim — the kit never infers props from source. */
+export interface PropDoc {
+  name: string;
+  type: string;
+  required?: boolean;
+  default?: string;
+  description?: string;
+}
+
 export interface MantineItem {
   name: string;
   kind: Kind;
@@ -45,6 +54,10 @@ export interface MantineItem {
   files: { path: string; as: FileRole; target?: string }[];
   themeFragment?: string;
   stylesApi?: Record<string, string[]>;
+  /** Author-documented prop surface, keyed by exported component or hook name. */
+  props?: Record<string, PropDoc[]>;
+  /** Path to a copy-ready usage example. Inlined like themeFragment, never installed. */
+  usage?: string;
   docs?: string;
 }
 
@@ -116,6 +129,12 @@ export function toWireItem(item: MantineItem, namespace: string, root: string): 
   if (item.mantine) meta.requires = item.mantine;
   if (item.provider) meta.provider = "MantineProvider";
   if (item.stylesApi) meta.stylesApi = item.stylesApi;
+  if (item.props) meta.props = item.props;
+  if (item.usage) {
+    // Same shape and reasoning as themeFragment below: inlined so a documentation
+    // client can render it, and kept out of `files` so no client installs it.
+    meta.usage = { path: item.usage, content: read(item.usage) };
+  }
   if (item.themeFragment) {
     // Inlined rather than listed in `files`: a client that understands it merges
     // it into the project theme, and one that does not must not drop a stray

@@ -86,7 +86,22 @@ the kit carries the declaration without trying to infer or verify the component 
 { "stylesApi": { "DataGrid": ["root", "header", "row"] } }
 ```
 
-`mantine`, `provider`, `themeFragment` and `stylesApi` have no direct wire-format equivalent, so
+`props` and `usage` are the same kind of author assertion, for documentation clients. `props`
+documents the prop surface (keyed by exported component or hook name, each entry `name`/`type`
+plus optional `required`/`default`/`description`); `usage` names a copy-ready example module
+that is inlined at build time. The kit carries both verbatim — it never infers documentation
+from source — and `usage`, like `themeFragment`, is deliberately not listed in `files`, so no
+client installs it:
+
+```json
+{
+  "props": { "DataGrid": [{ "name": "rows", "type": "DataGridRow[]", "required": true }] },
+  "usage": "src/data-grid.usage.tsx"
+}
+```
+
+`mantine`, `provider`, `themeFragment`, `stylesApi`, `props` and `usage` have no direct
+wire-format equivalent, so
 they compile into the installable item JSON under the open `meta.mantine` object. The registry index
 contains only the discovery-safe `requires` and `provider` summary; `stylesApi` and the inlined theme
 fragment remain item-detail metadata. Clients that understand these fields act on them; clients that
