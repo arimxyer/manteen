@@ -47,8 +47,8 @@ receipts are in the [`0.2 release handoff`](v0.2-release-handoff.md).
 `SECURITY.md` and contributor ceremony remain deliberately deferred until the repository has
 outside contributors.
 
-**Content.** The catalog now has 14 items: the original five, a shared upstream-license item and
-eight adapted Mantine UI components/blocks. The initial six-item tranche and the Carousel/Dropzone
+**Content.** The catalog now has 16 items: the original five, a shared upstream-license item and
+ten adapted Mantine UI components/blocks. The initial six-item tranche and the Carousel/Dropzone
 extension stress cases compile, install and production-build in disposable consumers; their exact
 evidence and non-evidence are recorded in the [`Wc handoff`](wc-registry-content-handoff.md). The
 [`required-global-styles contract`](global-styles-handoff.md) is implemented, released and accepted

@@ -4,13 +4,14 @@ A Mantine-native component registry toolchain. Two packages:
 
 - **`packages/registry-kit`** (`manteen-kit`) — authoring. You write a catalog in Mantine's
   vocabulary; it compiles to the shadcn-compatible interchange format other clients already read.
-  Finished, not yet published.
+  Published on npm as `manteen-kit@0.2.0`.
 - **`packages/cli`** (`manteen`) — consuming. Installs registry items into a project, and keeps
-  them: `init`, `add`, `list`, `info`, `diff`, `update`. W6 `init` is implemented and locally
-  verified; W7 portability/runtime hardening is next.
+  them: `init`, `add`, `list`, `info`, `diff`, `update`. Published on npm as `manteen@0.2.0` with
+  provenance; W4–W8 (apply surface through release) are all complete — see `docs/roadmap.md`.
 
 The repo root is also a live registry (`manteen.registry.json` → `public/r/`), which is what the
-e2e tier installs from.
+e2e tier installs from. `apps/docs` is the deployed Starlight documentation site — a registry
+browser and authoring/sharing guide over that same `/r` contract.
 
 ## Read these before changing anything substantial
 
