@@ -2,6 +2,34 @@
  * Adapted from Mantine UI's AutocompleteLoading at
  * ffbf61c559f374a7ea28fcf00355e84dcbe9a908. MIT licensed; see
  * LICENSES/MANTINE-UI.txt after installation.
+ *
+ * Controlled/uncontrolled contract (settled across floating-label-input,
+ * password-strength, autocomplete-loading — the tranche's three form
+ * controls): whether the public `value`/`onChange` pair is event-based or
+ * value-based is decided by the props surface, not by preference.
+ *   - Drop-in wrappers — `Props extends Omit<XProps, ...>` with X's own ref
+ *     type, rendering nothing but `<X {...} />` — keep X's exact contract,
+ *     because a consumer swapping `<X>` for the wrapper shouldn't have to
+ *     rewrite their handler. TextInput/PasswordInput/Textarea are
+ *     event-based (`ChangeEventHandler<HTMLInputElement>`);
+ *     Autocomplete/Select and the rest of the combobox family are
+ *     value-based (`(value: string) => void`).
+ *   - Composite components that own their own props surface (their own
+ *     BoxProps/ElementProps, their own ref) aren't a drop-in for any single
+ *     base, so they expose the simple value-based contract instead.
+ * Both controlled and uncontrolled work everywhere. Event-based drop-ins
+ * hand-roll `useState` + `isControlled = value !== undefined`, because
+ * `useUncontrolled`'s onChange payload type is tied to the tracked value
+ * type and can't emit a raw DOM event. Everything else uses
+ * `@mantine/hooks`' `useUncontrolled`.
+ *
+ * This component is a drop-in for Autocomplete (it renders nothing but
+ * `<Autocomplete {...} />`, and its props extend
+ * `Omit<AutocompleteProps, ...>`): value-based onChange, matching
+ * Autocomplete's own. Controlled/uncontrolled state is hand-rolled here
+ * rather than routed through `useUncontrolled`, so this item's `npm` list
+ * doesn't gain a `@mantine/hooks` dependency the registry entry doesn't
+ * already declare.
  */
 
 import { Autocomplete, type AutocompleteProps, Loader } from "@mantine/core";
@@ -26,7 +54,20 @@ function defaultShouldQuery(query: string): boolean {
 
 export interface AutocompleteLoadingProps
   extends Omit<AutocompleteProps, "data" | "value" | "defaultValue" | "onChange" | "rightSection"> {
-  /** Initial input value. @default '' */
+  /**
+   * Controlled value. When provided, this component is fully controlled and
+   * `onChange` is the only way its displayed value changes. Composes with
+   * the async `loadOptions` flow: an external write to `value` cancels any
+   * pending debounce/request for whatever was last typed rather than
+   * letting a stale response land against the new value (see the
+   * cancel-only effect below). Ordinary controlled-input semantics apply:
+   * if the consumer doesn't write the typed value back through `onChange`,
+   * the displayed text snaps back to `value` even though the query for
+   * what was typed still ran to completion — that's expected, not a bug in
+   * this component.
+   */
+  value?: string;
+  /** Initial value for uncontrolled usage. Ignored once `value` is provided. @default '' */
   defaultValue?: string;
   /** Called on every keystroke with the raw input value, not debounced. */
   onChange?: (value: string) => void;
@@ -57,6 +98,7 @@ function passthroughFilter<T>({ options }: { options: T }): T {
 }
 
 export function AutocompleteLoading({
+  value,
   defaultValue = "",
   onChange,
   debounceMs = 1000,
@@ -67,7 +109,10 @@ export function AutocompleteLoading({
   placeholder = "Your email",
   ...others
 }: AutocompleteLoadingProps) {
-  const [value, setValue] = useState(defaultValue);
+  const isControlled = value !== undefined;
+  const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
+  const currentValue = isControlled ? value : uncontrolledValue;
+
   const [loading, setLoading] = useState(false);
   const [options, setOptions] = useState<string[]>([]);
 
@@ -75,12 +120,45 @@ export function AutocompleteLoading({
   // Bumped on every query attempt (including skipped ones) so a response from
   // an earlier, slower request can never overwrite a later one.
   const requestIdRef = useRef(0);
+  // The value the *handler* last saw, kept separate from `currentValue` so
+  // the cancel-only effect below can tell "the parent just wrote a new
+  // controlled value out-of-band" apart from "the handler already dealt
+  // with this value" (which would otherwise re-fire on every render).
+  const lastHandledValueRef = useRef(currentValue);
 
   useEffect(() => () => window.clearTimeout(timeoutRef.current), []);
 
+  // Query initiation happens ONLY in handleChange, below — this effect
+  // never starts a query, it only cancels one. That single-initiation-point
+  // invariant is what keeps requestIdRef a reliable "latest wins" guard; if
+  // both this effect and handleChange could bump it to *start* a request,
+  // controlled usage could race two in-flight queries against each other.
+  //
+  // Why this effect exists at all: in controlled mode the input's value can
+  // change without handleChange ever running (a parent clears it after a
+  // selection, a reset button, etc). Without this, a debounce armed for the
+  // old text would still fire ~debounceMs later and populate options for
+  // text that's no longer in the field.
+  useEffect(() => {
+    if (!isControlled) return;
+    if (value === lastHandledValueRef.current) return;
+
+    window.clearTimeout(timeoutRef.current);
+    requestIdRef.current += 1; // invalidate any in-flight response
+    setLoading(false);
+    setOptions([]);
+    lastHandledValueRef.current = value;
+    // Deliberately NOT depending on `lastHandledValueRef` (a ref, stable
+    // identity, reading it here doesn't need a dep) or on the cancellation
+    // side-effects themselves — this effect's only job is "did the
+    // controlled `value` change out from under the handler," so it depends
+    // on exactly `isControlled` and `value`.
+  }, [isControlled, value]);
+
   const handleChange = (nextValue: string) => {
     window.clearTimeout(timeoutRef.current);
-    setValue(nextValue);
+    if (!isControlled) setUncontrolledValue(nextValue);
+    lastHandledValueRef.current = nextValue;
     setOptions([]);
     onChange?.(nextValue);
 
@@ -110,7 +188,7 @@ export function AutocompleteLoading({
 
   return (
     <Autocomplete
-      value={value}
+      value={currentValue}
       data={options}
       onChange={handleChange}
       filter={filter}

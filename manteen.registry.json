@@ -959,6 +959,502 @@
       },
       "usage": "registry/mantine-ui/navbar-nested/navbar-nested.usage.tsx",
       "docs": "Adapted from Mantine UI NavbarNested at ffbf61c559f374a7ea28fcf00355e84dcbe9a908, merged with its NavbarLinksGroup and UserButton siblings; the mock nav tree, avatar and version badge became typed props, dead leaf-link buttons became real anchors, and the sidebar now fills a height-constrained parent (see the usage example) instead of a fixed 800px demo height."
+    },
+    {
+      "name": "floating-label-input",
+      "kind": "component",
+      "title": "Floating Label Input",
+      "description": "A TextInput whose label floats above the field on focus or fill, with an absorbed invalid/error state.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/floating-label-input/floating-label-input.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/floating-label-input/floating-label-input.module.css",
+          "as": "style",
+          "target": "@ui/floating-label-input.module.css"
+        }
+      ],
+      "stylesApi": {
+        "FloatingLabelInput": ["root", "label", "required", "input", "error"]
+      },
+      "props": {
+        "FloatingLabelInput": [
+          {
+            "name": "label",
+            "type": "string",
+            "required": false,
+            "default": "\"Floating label\"",
+            "description": "TextInput label text, rendered floating above the field on focus or fill."
+          },
+          {
+            "name": "placeholder",
+            "type": "string",
+            "required": false,
+            "default": "\"OMG, it also has a placeholder\"",
+            "description": "TextInput placeholder shown while the field is empty and unfocused."
+          },
+          {
+            "name": "required",
+            "type": "boolean",
+            "required": false,
+            "default": "true",
+            "description": "Renders the asterisk, which fades in only while the label is floating."
+          },
+          {
+            "name": "autoComplete",
+            "type": "string",
+            "required": false,
+            "default": "\"nope\"",
+            "description": "Browser-autofill-suppression default carried over from upstream."
+          },
+          {
+            "name": "value",
+            "type": "string",
+            "required": false,
+            "description": "Controlled value. When provided, this component is fully controlled and onChange is the only way its displayed value changes."
+          },
+          {
+            "name": "defaultValue",
+            "type": "string",
+            "required": false,
+            "description": "Initial value for uncontrolled usage. Ignored once value is provided."
+          },
+          {
+            "name": "onChange",
+            "type": "ChangeEventHandler<HTMLInputElement>",
+            "required": false,
+            "description": "Fires on every keystroke regardless of controlled/uncontrolled mode; matches TextInput's own onChange signature."
+          },
+          {
+            "name": "error",
+            "type": "ReactNode",
+            "required": false,
+            "description": "Inherited from TextInputProps. Renders the red invalid border/background and the error message, and composes with the floating label."
+          },
+          {
+            "name": "errorIcon",
+            "type": "ReactNode | null",
+            "required": false,
+            "default": "<IconAlertTriangle />",
+            "description": "Shown in the right section only while error is set; pass null to keep the invalid styling without an icon."
+          },
+          {
+            "name": "...others",
+            "type": "Omit<TextInputProps, \"value\" | \"defaultValue\" | \"onChange\" | \"classNames\" | \"styles\" | \"unstyled\" | \"vars\" | \"attributes\" | \"variant\">",
+            "description": "All other TextInputProps are forwarded to the underlying TextInput (size, radius, disabled, leftSection, wrapperProps, description, id, name, etc). variant is intentionally not exposed — the CSS module assumes Mantine's default input chrome. Mantine Styles API props (classNames, styles, unstyled) are also accepted."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/floating-label-input/floating-label-input.usage.tsx",
+      "docs": "Adapted from Mantine UI FloatingLabelInput and InputValidation at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; absorbed InputValidation's error state into one component, label/placeholder/required/autoComplete became props, and a missing aria-hidden on the decorative error icon was fixed."
+    },
+    {
+      "name": "password-strength",
+      "kind": "component",
+      "title": "Password Strength",
+      "description": "PasswordInput with a four-segment strength meter and a live, overridable requirements checklist.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/core@^9", "@mantine/hooks@^9", "@tabler/icons-react@^3"],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/password-strength/password-strength.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/password-strength/password-strength.module.css",
+          "as": "style",
+          "target": "@ui/password-strength.module.css"
+        }
+      ],
+      "stylesApi": {
+        "PasswordStrength": ["root", "input", "meter", "bar", "requirement", "requirementLabel"]
+      },
+      "props": {
+        "PasswordStrength": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": false,
+            "description": "Controlled value. Omit to let the component manage its own state."
+          },
+          {
+            "name": "defaultValue",
+            "type": "string",
+            "required": false,
+            "default": "\"\"",
+            "description": "Initial value when uncontrolled."
+          },
+          {
+            "name": "onChange",
+            "type": "(value: string) => void",
+            "required": false,
+            "description": "Called with the next value on every keystroke, controlled or uncontrolled alike."
+          },
+          {
+            "name": "label",
+            "type": "ReactNode",
+            "required": false,
+            "default": "\"Password\"",
+            "description": "PasswordInput label."
+          },
+          {
+            "name": "placeholder",
+            "type": "string",
+            "required": false,
+            "default": "\"Your password\"",
+            "description": "PasswordInput placeholder."
+          },
+          {
+            "name": "required",
+            "type": "boolean",
+            "required": false,
+            "default": "true",
+            "description": "PasswordInput required flag."
+          },
+          {
+            "name": "minLength",
+            "type": "number",
+            "required": false,
+            "default": "6",
+            "description": "Minimum character count the length requirement checks for; replaces upstream's hardcoded > 5."
+          },
+          {
+            "name": "requirements",
+            "type": "readonly PasswordStrengthRequirement[]",
+            "required": false,
+            "default": "defaultPasswordStrengthRequirements",
+            "description": "{ re: RegExp; label: string } pairs checked against the value. The exported default mirrors upstream's list; consumers can extend rather than fork it."
+          },
+          {
+            "name": "...others",
+            "type": "BoxProps & ElementProps<\"div\", \"onChange\">",
+            "description": "Forwarded to the root wrapper; native onChange is excluded so the custom string-valued onChange can't collide with it. Mantine Styles API props (classNames, styles, unstyled) are also accepted."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/password-strength/password-strength.usage.tsx",
+      "docs": "Adapted from Mantine UI PasswordStrength at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; requirements/minLength/label/placeholder became props, controlled and uncontrolled usage is now supported via useUncontrolled, and per-segment aria-labels plus live-region summaries were added for accessibility."
+    },
+    {
+      "name": "autocomplete-loading",
+      "kind": "component",
+      "title": "Autocomplete Loading",
+      "description": "Debounced async Autocomplete with a loading indicator and race-safe request handling.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/core@^9"],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/autocomplete-loading/autocomplete-loading.tsx",
+          "as": "component"
+        }
+      ],
+      "props": {
+        "AutocompleteLoading": [
+          {
+            "name": "value",
+            "type": "string",
+            "required": false,
+            "description": "Controlled value. When provided, this component is fully controlled and onChange is the only way its displayed value changes; composes with the async loadOptions flow so an external write cancels any pending request for the previous text."
+          },
+          {
+            "name": "defaultValue",
+            "type": "string",
+            "required": false,
+            "default": "\"\"",
+            "description": "Initial value for uncontrolled usage. Ignored once value is provided."
+          },
+          {
+            "name": "onChange",
+            "type": "(value: string) => void",
+            "required": false,
+            "description": "Called on every keystroke with the raw input value, not debounced."
+          },
+          {
+            "name": "debounceMs",
+            "type": "number",
+            "required": false,
+            "default": "1000",
+            "description": "Delay, in milliseconds, after typing stops before loadOptions runs."
+          },
+          {
+            "name": "loadOptions",
+            "type": "(query: string) => Promise<string[]>",
+            "required": false,
+            "description": "Fetches suggestions for the current query. Defaults to a demo implementation that suggests the query at common email domains; replace with a real request in production."
+          },
+          {
+            "name": "shouldQuery",
+            "type": "(query: string) => boolean",
+            "required": false,
+            "default": "(query) => query.trim().length > 0",
+            "description": "Decides whether loadOptions should run for a given query; returning false clears any pending request and turns the loader off."
+          },
+          {
+            "name": "filter",
+            "type": "OptionsFilter<string>",
+            "required": false,
+            "default": "({ options }) => options",
+            "description": "Forwarded to Autocomplete's own client-side filter. Defaults to a pass-through since loadOptions results are already server-filtered."
+          },
+          {
+            "name": "label",
+            "type": "ReactNode",
+            "required": false,
+            "default": "\"Async Autocomplete data\"",
+            "description": "Autocomplete label."
+          },
+          {
+            "name": "placeholder",
+            "type": "string",
+            "required": false,
+            "default": "\"Your email\"",
+            "description": "Autocomplete placeholder."
+          },
+          {
+            "name": "...others",
+            "type": "Omit<AutocompleteProps, \"data\" | \"value\" | \"defaultValue\" | \"onChange\" | \"rightSection\">",
+            "description": "Every other Autocomplete prop is forwarded, including classNames/styles/unstyled/vars (Autocomplete's own Styles API), size, disabled, error, comboboxProps, limit, maxDropdownHeight, renderOption, clearable, etc."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/autocomplete-loading/autocomplete-loading.usage.tsx",
+      "docs": "Adapted from Mantine UI AutocompleteLoading at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; the fake setTimeout fetch became a loadOptions prop, the pending timeout is now cleared on unmount, requests are race-safe via a monotonic request id, and a pass-through filter was added so a real search's results aren't silently re-filtered client-side."
+    },
+    {
+      "name": "hero-image-right",
+      "kind": "block",
+      "title": "Hero Image Right",
+      "description": "Full-bleed marketing hero with a gradient-highlighted headline, body copy, primary/optional-secondary CTAs, and an opt-in background photo revealed by a diagonal gradient on the right.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/core@^9"],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/hero-image-right/hero-image-right.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/hero-image-right/hero-image-right.module.css",
+          "as": "style",
+          "target": "@ui/hero-image-right.module.css"
+        }
+      ],
+      "props": {
+        "HeroImageRight": [
+          {
+            "name": "titleBefore",
+            "type": "string",
+            "required": false,
+            "default": "\"A\"",
+            "description": "Text rendered before the highlighted phrase in the headline."
+          },
+          {
+            "name": "highlightedText",
+            "type": "string",
+            "required": false,
+            "default": "\"fully featured\"",
+            "description": "The gradient-highlighted phrase in the headline."
+          },
+          {
+            "name": "titleAfter",
+            "type": "string",
+            "required": false,
+            "default": "\"React components library\"",
+            "description": "Text rendered after the highlighted phrase in the headline."
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "required": false,
+            "description": "Supporting body copy below the headline."
+          },
+          {
+            "name": "primaryButtonLabel",
+            "type": "string",
+            "required": false,
+            "default": "\"Get started\"",
+            "description": "Label for the always-rendered primary CTA."
+          },
+          {
+            "name": "primaryButtonHref",
+            "type": "string",
+            "required": false,
+            "description": "Renders the primary CTA as an anchor instead of a button when set."
+          },
+          {
+            "name": "onPrimaryButtonClick",
+            "type": "() => void",
+            "required": false,
+            "description": "Click handler for the primary CTA when no href is set."
+          },
+          {
+            "name": "secondaryButtonLabel",
+            "type": "string",
+            "required": false,
+            "description": "Label for an optional secondary CTA; the button renders only when this is supplied."
+          },
+          {
+            "name": "secondaryButtonHref",
+            "type": "string",
+            "required": false,
+            "description": "Renders the secondary CTA as an anchor instead of a button when set."
+          },
+          {
+            "name": "onSecondaryButtonClick",
+            "type": "() => void",
+            "required": false,
+            "description": "Click handler for the secondary CTA when no href is set."
+          },
+          {
+            "name": "backgroundImageUrl",
+            "type": "string",
+            "required": false,
+            "description": "URL of a photo shown behind the gradient overlay on the right side of the hero; with no value the hero renders as a plain gradient/navy panel with no third-party host dependency."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/hero-image-right/hero-image-right.usage.tsx",
+      "docs": "Adapted from Mantine UI HeroImageRight at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; the hardcoded Unsplash photo became an opt-in backgroundImageUrl prop (unset by default), the headline split into three props around the gradient highlight, and an optional secondary CTA was added alongside upstream's single button."
+    },
+    {
+      "name": "footer-links",
+      "kind": "block",
+      "title": "Footer Links",
+      "description": "Multi-column site footer with a brand block, titled link groups, copyright line and social icons — all consumer-supplied.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/core@^9"],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/footer-links/footer-links.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/footer-links/footer-links.module.css",
+          "as": "style",
+          "target": "@ui/footer-links.module.css"
+        }
+      ],
+      "props": {
+        "FooterLinks": [
+          {
+            "name": "logo",
+            "type": "ReactNode",
+            "required": false,
+            "description": "Rendered at the start of the brand block; nothing renders when omitted."
+          },
+          {
+            "name": "tagline",
+            "type": "string",
+            "required": false,
+            "description": "Short description under the logo; omitted when unset."
+          },
+          {
+            "name": "groups",
+            "type": "readonly FooterLinksGroup[]",
+            "required": true,
+            "description": "Titled link columns, each { title: string; links: readonly FooterLinksLink[] }; this is the component's whole point."
+          },
+          {
+            "name": "copyright",
+            "type": "string",
+            "required": false,
+            "description": "Copyright/legal line in the bottom bar; omitted when unset."
+          },
+          {
+            "name": "socialLinks",
+            "type": "readonly FooterLinksSocialLink[]",
+            "required": false,
+            "description": "{ href, icon, label } per entry; label becomes the icon link's aria-label. The entire bottom-bar social row is omitted when unset or empty."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/footer-links/footer-links.usage.tsx",
+      "docs": "Adapted from Mantine UI FooterLinks at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; the three hardcoded link groups became the groups prop, the upstream MantineLogo import became an optional logo slot, the tagline/copyright strings became optional props with no fake placeholder default, and the fixed social icons became a consumer-supplied socialLinks array."
+    },
+    {
+      "name": "faq-simple",
+      "kind": "block",
+      "title": "FAQ Simple",
+      "description": "Centered FAQ section with a separated accordion of consumer-supplied question/answer pairs.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/core@^9"],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/faq-simple/faq-simple.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/faq-simple/faq-simple.module.css",
+          "as": "style",
+          "target": "@ui/faq-simple.module.css"
+        }
+      ],
+      "props": {
+        "FaqSimple": [
+          {
+            "name": "title",
+            "type": "ReactNode",
+            "required": false,
+            "default": "\"Frequently Asked Questions\"",
+            "description": "Section heading text."
+          },
+          {
+            "name": "titleOrder",
+            "type": "TitleOrder",
+            "required": false,
+            "default": "2",
+            "description": "Heading level for title. Upstream leaves Title at Mantine's own default of 1; this port defaults to 2 so dropping the section into a page that already has an h1 doesn't produce two."
+          },
+          {
+            "name": "items",
+            "type": "FaqSimpleItem[]",
+            "required": true,
+            "description": "The question/answer list; FaqSimpleItem is { question: string; answer: ReactNode; value?: string }, value is the Accordion item id and defaults to faq-${index} when omitted."
+          },
+          {
+            "name": "variant",
+            "type": "AccordionProps[\"variant\"]",
+            "required": false,
+            "default": "\"separated\"",
+            "description": "Accordion visual variant; upstream's hardcoded value."
+          },
+          {
+            "name": "chevronPosition",
+            "type": "AccordionProps[\"chevronPosition\"]",
+            "required": false,
+            "description": "Which side the expand chevron renders on; upstream never set this explicitly."
+          },
+          {
+            "name": "controlOrder",
+            "type": "AccordionProps[\"order\"]",
+            "required": false,
+            "description": "Heading level (2-6) each Accordion.Control renders inside; defaults to one level below titleOrder. Upstream never set Accordion's order, leaving controls as bare buttons outside the page heading outline — this fixes that."
+          },
+          {
+            "name": "defaultValue",
+            "type": "string",
+            "required": false,
+            "description": "Value of the item open on mount; nothing is open by default, matching upstream."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/faq-simple/faq-simple.usage.tsx",
+      "docs": "Adapted from Mantine UI FaqSimple at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; the hardcoded title and Q&A list became props, variant became configurable, and two heading-hierarchy bugs were fixed — Title's implicit h1 (now titleOrder, default 2) and Accordion controls rendering as bare buttons with no place in the page's heading outline (now controlOrder)."
     }
   ]
 }

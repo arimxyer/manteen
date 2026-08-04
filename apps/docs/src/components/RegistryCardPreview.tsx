@@ -130,6 +130,61 @@ const MINI_FIT_OVERRIDES: Partial<Record<string, Partial<MiniFit>>> = {
   // no `@media`, so no viewport size can re-break it — and the extra height that costs is
   // covered by a smaller scale plus top-anchoring, same reasoning as dnd-list above.
   "stats-grid": { scale: 0.34, boxClassName: styles.statsGridLiveMini, align: "start" },
+  // All three of Wc tranche 4's full-bleed blocks hit the SAME flex-shrink defect documented on
+  // header-mega-menu above, independently rediscovered here: `.liveMiniScheme` is `display:
+  // flex`, so a `naturalWidthRem` well past the item's own min-content width silently collapses
+  // without `flex-shrink: 0`. Confirmed live via `getBoundingClientRect()` — faq-simple's
+  // declared `width: 40rem` (640px) measured 104px rendered before the fix, which read as a
+  // broken component (Title wrapping to three single-word lines) until traced back to the
+  // frame. `.fixedWidthLiveMini` (CSS module) is the shared fix; unlike
+  // `.headerMegaMenuLiveMini` none of these three also need a mobile-class override.
+  //
+  // "hero-image-right": full-bleed hero, `.title` has its own `max-width: 500px` regardless of
+  // container width, so widening `naturalWidthRem` past ~34rem doesn't shorten the headline's
+  // 4-line wrap — screenshot-verified in 0.01-scale steps that 0.33 is the largest scale that
+  // clears all 4 lines without clipping the last line's descenders. The description and both
+  // CTA buttons are cropped out below the frame entirely — there wasn't room for them at any
+  // scale that keeps the headline legible, so this does NOT reach the porter's previewHints
+  // recommendation of "headline + primary CTA"; it's headline only. Noted as a hint that turned
+  // out to be unachievable at this frame size, not silently shipped as a match.
+  "hero-image-right": {
+    naturalWidthRem: 34,
+    scale: 0.33,
+    align: "start",
+    boxClassName: styles.fixedWidthLiveMini,
+  },
+  // "footer-links": needs ALL THREE link columns in a single unwrapped row (`.groups` wraps
+  // below its content width) to avoid an arbitrary crop mid-column — measured 46rem clears that
+  // wrap point with margin. `.liveMiniStage`'s real content box measured 248px at this
+  // viewport via `getBoundingClientRect()` — NOT the ~326px the header-mega-menu comment above
+  // cites, which was evidently measured at a different viewport; re-measure locally rather than
+  // trust that figure. 0.34 (matching stats-grid's own accepted floor) puts the effective width
+  // at 250px, ~2px over that budget — screenshot-verified as an imperceptible edge crop, not a
+  // content loss. Even so, this is the one item where the fit is a real compromise, not a clean
+  // one: 0.34 on the link/group-title text (14px `--mantine-font-size-sm`) measures ~4.76px
+  // effective (`getComputedStyle`), versus ~6.16px for article-card's 14px body copy at its
+  // 0.44 scale — noticeably smaller than this catalog's established legible norm, because four
+  // columns (brand + 3 groups) is inherently denser than what fits well in a 248×118px frame.
+  // Showing only 1-2 groups would allow a legible-sized scale but stop reading as the
+  // "multi-column footer" the item's own description promises; kept all three and accepted the
+  // smaller type as the more honest tradeoff. Flagged in the phase report, not silently shipped.
+  "footer-links": {
+    naturalWidthRem: 46,
+    scale: 0.34,
+    align: "start",
+    boxClassName: styles.fixedWidthLiveMini,
+  },
+  // "faq-simple": 40rem clears Container's own `size="sm"` (45rem) content column enough for
+  // the Title to sit on one line instead of wrapping (order=2 renders at 35px here, bigger than
+  // a typical h2 assumption — verified via `getComputedStyle`, not guessed), which frees enough
+  // vertical room at 0.42 scale to show the title plus the first (open, per the adapter's
+  // `openFirst` default) accordion item's question and answer uncropped.
+  "faq-simple": {
+    naturalWidthRem: 40,
+    scale: 0.42,
+    align: "start",
+    boxClassName: styles.fixedWidthLiveMini,
+  },
 };
 
 function deriveFit(adapter: PlaygroundAdapter): MiniFit {

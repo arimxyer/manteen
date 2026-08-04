@@ -2,6 +2,30 @@
  * Adapted from Mantine UI's FloatingLabelInput and InputValidation at
  * ffbf61c559f374a7ea28fcf00355e84dcbe9a908. MIT licensed; see
  * LICENSES/MANTINE-UI.txt after installation.
+ *
+ * Controlled/uncontrolled contract (settled across floating-label-input,
+ * password-strength, autocomplete-loading — the tranche's three form
+ * controls): whether the public `value`/`onChange` pair is event-based or
+ * value-based is decided by the props surface, not by preference.
+ *   - Drop-in wrappers — `Props extends Omit<XProps, ...>` with X's own ref
+ *     type, rendering nothing but `<X {...} />` — keep X's exact contract,
+ *     because a consumer swapping `<X>` for the wrapper shouldn't have to
+ *     rewrite their handler. TextInput/PasswordInput/Textarea are
+ *     event-based (`ChangeEventHandler<HTMLInputElement>`);
+ *     Autocomplete/Select and the rest of the combobox family are
+ *     value-based (`(value: string) => void`).
+ *   - Composite components that own their own props surface (their own
+ *     BoxProps/ElementProps, their own ref) aren't a drop-in for any single
+ *     base, so they expose the simple value-based contract instead.
+ * Both controlled and uncontrolled work everywhere. Event-based drop-ins
+ * hand-roll `useState` + `isControlled = value !== undefined`, because
+ * `useUncontrolled`'s onChange payload type is tied to the tracked value
+ * type and can't emit a raw DOM event. Everything else uses
+ * `@mantine/hooks`' `useUncontrolled`.
+ *
+ * This component is a drop-in for TextInput (its props extend
+ * `Omit<TextInputProps, ...>` and its ref is `HTMLInputElement`):
+ * event-based onChange, hand-rolled controlled/uncontrolled state.
  */
 
 import {

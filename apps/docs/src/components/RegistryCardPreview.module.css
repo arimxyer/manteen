@@ -280,3 +280,20 @@
   width: auto;
   height: 100%;
 }
+
+/*
+  Wc tranche 4: the same flex-shrink defect documented on `.headerMegaMenuLiveMini` above hits
+  any override whose `naturalWidthRem` sits well above the item's own min-content width —
+  `.liveMiniScheme` is `display: flex`, so the inline `width` RegistryCardPreview.tsx sets on
+  the box is only a *starting* size without `flex-shrink: 0`, and the box shrinks back toward
+  min-content before `transform: scale()` ever runs. Confirmed live via
+  `getBoundingClientRect()` on faq-simple's box: declared `width: 40rem` (640px) measured
+  104px rendered — an 84% shrink, which is what was reading as a component defect (Title
+  wrapping to three single-word lines) until this was traced back to the frame, not the item.
+  hero-image-right and footer-links hit the identical mechanism once their overrides moved
+  `naturalWidthRem` past each item's own natural wrap point. One shared class covers all three
+  since none of them additionally need header-mega-menu's mobile-class fix below.
+*/
+.fixedWidthLiveMini {
+  flex-shrink: 0;
+}
