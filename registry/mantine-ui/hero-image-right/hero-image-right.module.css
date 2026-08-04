@@ -1,0 +1,90 @@
+/*
+ * Adapted from Mantine UI's HeroImageRight at
+ * ffbf61c559f374a7ea28fcf00355e84dcbe9a908. MIT licensed; see
+ * LICENSES/MANTINE-UI.txt after installation.
+ *
+ * Upstream used postcss-preset-mantine's `$mantine-breakpoint-md`; this
+ * registry ships plain CSS modules with no PostCSS preset, so the literal
+ * `62em` default `md` breakpoint value is inlined instead (see
+ * header-mega-menu.module.css for the same convention at the `sm`
+ * breakpoint). Upstream's `.image` class is dropped: it was never
+ * referenced from HeroImageRight.tsx (the "image on the right" effect
+ * comes entirely from the `.root` background photo revealed by the
+ * diagonal gradient below, not from a separate DOM node), so it was dead
+ * CSS. The background photo itself is applied inline by the component
+ * (see `backgroundImageUrl`) rather than as a hardcoded `url(...)` here,
+ * so this rule renders a clean gradient panel with no photo by default.
+ */
+.root {
+  background-color: #11284b;
+  background-size: cover;
+  background-position: center;
+  background-image: linear-gradient(250deg, rgba(130, 201, 30, 0) 0%, #062343 70%);
+  padding-top: calc(var(--mantine-spacing-xl) * 3);
+  padding-bottom: calc(var(--mantine-spacing-xl) * 3);
+}
+
+.inner {
+  display: flex;
+  justify-content: space-between;
+}
+
+@media (max-width: 62em) {
+  .inner {
+    flex-direction: column;
+  }
+}
+
+.content {
+  padding-top: calc(var(--mantine-spacing-xl) * 2);
+  padding-bottom: calc(var(--mantine-spacing-xl) * 2);
+  margin-right: calc(var(--mantine-spacing-xl) * 3);
+}
+
+@media (max-width: 62em) {
+  .content {
+    margin-right: 0;
+  }
+}
+
+.title {
+  color: var(--mantine-color-white);
+  font-family: var(--mantine-font-family-headings);
+  font-weight: 500;
+  line-height: 1.05;
+  max-width: 500px;
+  font-size: 48px;
+}
+
+@media (max-width: 62em) {
+  .title {
+    max-width: 100%;
+    font-size: 34px;
+    line-height: 1.15;
+  }
+}
+
+.description {
+  color: var(--mantine-color-white);
+  opacity: 0.75;
+  max-width: 500px;
+}
+
+@media (max-width: 62em) {
+  .description {
+    max-width: 100%;
+  }
+}
+
+.control {
+  padding-left: 50px;
+  padding-right: 50px;
+  font-family: var(--mantine-font-family);
+  font-size: 22px;
+}
+
+@media (max-width: 62em) {
+  .control {
+    width: 100%;
+  }
+}
