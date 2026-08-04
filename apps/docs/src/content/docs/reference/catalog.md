@@ -5,6 +5,8 @@ sidebar:
   order: 2
 ---
 
+## Catalog root
+
 The catalog root requires `name`, `namespace`, and `items`. Unknown fields are rejected instead of
 being silently discarded.
 
@@ -14,6 +16,8 @@ being silently discarded.
 | `namespace` | Lowercase public namespace such as `@acme`; qualifies bare `uses` during compilation. |
 | `homepage` | Optional project or documentation URL included in the index. |
 | `items` | Components, blocks, hooks, libraries, themes, or files to compile. |
+
+## Item fields
 
 Each item requires `name`, `kind`, and `files`.
 
@@ -27,7 +31,42 @@ Each item requires `name`, `kind`, and `files`.
 | `css` | Exact runtime package stylesheet imports, backed by the same item's `npm` entries. |
 | `files` | Source files and their component, hook, library, style, or file roles. |
 | `themeFragment` | A theme module merged into the consumer theme rather than copied. |
-| `stylesApi` | Documented Mantine Styles API selectors keyed by component name. |
+| `stylesApi` | Author-declared public Mantine Styles API selectors keyed by component name. |
+| `props` | Author-documented prop surface keyed by exported component or hook name. |
+| `usage` | Path to a copy-ready example module, inlined into the item at build time. |
+
+## Styles API declaration
+
+`stylesApi` asserts that the installed component genuinely exposes each named part through its
+public `classNames`/`styles` interface. Manteen carries and reports the declaration but cannot
+verify arbitrary third-party source; internal CSS-module class names do not qualify.
+
+## Documentation fields
+
+`props` and `usage` are author assertions for documentation clients, carried verbatim — the kit
+never infers either from source. Each prop entry requires `name` and `type` and may add
+`required`, `default`, and `description`:
+
+```json
+{
+  "props": {
+    "ArticleCard": [
+      { "name": "title", "type": "string", "required": true, "description": "Article title." }
+    ]
+  },
+  "usage": "registry/mantine-ui/article-card/article-card.usage.tsx"
+}
+```
+
+`usage`, like `themeFragment`, is deliberately never listed in `files`: documentation clients
+render it, and no client installs it into a consuming project.
+
+When a component forwards unrecognized props to an underlying element (extends `BoxProps`,
+`PaperProps`, and so on), document that as a final `...others` row in the table — type set to
+what is forwarded — rather than a prose aside. The table is the surface readers actually scan;
+inherited behavior hidden in a sentence elsewhere is inherited behavior nobody finds.
+
+## Editor schema
 
 For editor validation, set `$schema` to the installed kit schema:
 

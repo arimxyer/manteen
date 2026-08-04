@@ -1,0 +1,29 @@
+---
+import { Code } from "@astrojs/starlight/components";
+---
+
+<section class="home-overview" aria-labelledby="home-overview-title">
+  <header class="home-overview__header">
+    <p class="registry-eyebrow">One source-owned workflow</p>
+    <h2 class="home-overview__title" id="home-overview-title">Author once. Install and maintain safely.</h2>
+    <p class="home-overview__description">
+      Manteen keeps Mantine as an ordinary npm dependency while registries carry the composed source
+      your project is expected to own and edit.
+    </p>
+  </header>
+
+  <div class="home-overview__grid">
+    <article class="home-overview__card">
+      <span class="home-overview__meta">Author</span>
+      <h3 class="home-overview__tool-title"><code class="home-overview__tool-name">manteen-kit</code></h3>
+      <p class="home-overview__summary">Compile a Mantine-shaped catalog into portable, shadcn-compatible registry JSON.</p>
+      <Code code="npx manteen-kit build" lang="bash" frame="none" showLineNumbers={false} class="home-overview__command" />
+    </article>
+    <article class="home-overview__card">
+      <span class="home-overview__meta">Consume</span>
+      <h3 class="home-overview__tool-title"><code class="home-overview__tool-name">manteen</code></h3>
+      <p class="home-overview__summary">Initialize projects, then install, track, diff, and update registry source with visible safety checks.</p>
+      <Code code="npx manteen add @house/article-card" lang="bash" frame="none" showLineNumbers={false} class="home-overview__command" />
+    </article>
+  </div>
+</section>

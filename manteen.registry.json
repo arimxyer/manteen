@@ -12,7 +12,8 @@
       "mantine": ">=9",
       "provider": true,
       "npm": ["@mantine/core@^9", "@mantine/hooks@^9"],
-      "files": [{ "path": "registry/lib/theme.ts", "as": "lib" }]
+      "files": [{ "path": "registry/lib/theme.ts", "as": "lib" }],
+      "usage": "registry/lib/theme.usage.tsx"
     },
     {
       "name": "empty-state",
@@ -21,7 +22,52 @@
       "description": "Centered empty/zero-data placeholder with an optional icon and call to action.",
       "mantine": ">=9",
       "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
-      "files": [{ "path": "registry/ui/empty-state.tsx", "as": "component" }]
+      "files": [
+        { "path": "registry/ui/empty-state.tsx", "as": "component" },
+        {
+          "path": "registry/ui/empty-state.module.css",
+          "as": "style",
+          "target": "@ui/empty-state.module.css"
+        }
+      ],
+      "stylesApi": {
+        "EmptyState": ["root", "icon", "title", "description", "action"]
+      },
+      "props": {
+        "EmptyState": [
+          {
+            "name": "title",
+            "type": "string",
+            "default": "\"Nothing here yet\"",
+            "description": "Heading text shown below the icon.",
+            "required": false
+          },
+          {
+            "name": "description",
+            "type": "ReactNode",
+            "description": "Supporting text rendered under the title; nothing renders when omitted.",
+            "required": false
+          },
+          {
+            "name": "icon",
+            "type": "ReactNode",
+            "description": "Custom icon rendered inside the theme icon circle; defaults to an inbox icon.",
+            "required": false
+          },
+          {
+            "name": "action",
+            "type": "{ label: string; onClick: () => void }",
+            "description": "Renders a button below the description that calls onClick when clicked; no button renders when omitted.",
+            "required": false
+          },
+          {
+            "name": "...others",
+            "type": "BoxProps & ElementProps<\"div\", \"title\">",
+            "description": "All other props are forwarded to the root <Center>, after its own py=\"xl\", so both can be overridden. Mantine Styles API props (classNames, styles, unstyled) are also accepted."
+          }
+        ]
+      },
+      "usage": "registry/ui/empty-state.usage.tsx"
     },
     {
       "name": "page-header",
@@ -30,7 +76,60 @@
       "description": "Page title, description and right-aligned action slot with an optional divider.",
       "mantine": ">=9",
       "npm": ["@mantine/core@^9"],
-      "files": [{ "path": "registry/ui/page-header.tsx", "as": "component" }]
+      "files": [
+        { "path": "registry/ui/page-header.tsx", "as": "component" },
+        {
+          "path": "registry/ui/page-header.module.css",
+          "as": "style",
+          "target": "@ui/page-header.module.css"
+        }
+      ],
+      "stylesApi": {
+        "PageHeader": [
+          "root",
+          "header",
+          "titleWrapper",
+          "title",
+          "description",
+          "actions",
+          "divider"
+        ]
+      },
+      "props": {
+        "PageHeader": [
+          {
+            "name": "title",
+            "type": "string",
+            "required": true,
+            "description": "Renders as the header's order-2 title text."
+          },
+          {
+            "name": "description",
+            "type": "ReactNode",
+            "required": false,
+            "description": "Renders dimmed helper text beneath the title when provided."
+          },
+          {
+            "name": "actions",
+            "type": "ReactNode",
+            "required": false,
+            "description": "Renders action controls in a trailing group aligned opposite the title."
+          },
+          {
+            "name": "withDivider",
+            "type": "boolean",
+            "required": false,
+            "default": "true",
+            "description": "Controls whether a divider is rendered beneath the header content."
+          },
+          {
+            "name": "...others",
+            "type": "BoxProps & ElementProps<\"div\", \"title\">",
+            "description": "All other props are forwarded to the root <Stack>, so passthrough props can override its hardcoded gap/mb. Mantine Styles API props (classNames, styles, unstyled) are also accepted."
+          }
+        ]
+      },
+      "usage": "registry/ui/page-header.usage.tsx"
     },
     {
       "name": "stat-card",
@@ -39,10 +138,51 @@
       "description": "Metric tile with label, value, optional icon and a trend row.",
       "mantine": ">=9",
       "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
-      "files": [{ "path": "registry/ui/stat-card.tsx", "as": "component" }],
+      "files": [
+        { "path": "registry/ui/stat-card.tsx", "as": "component" },
+        {
+          "path": "registry/ui/stat-card.module.css",
+          "as": "style",
+          "target": "@ui/stat-card.module.css"
+        }
+      ],
       "stylesApi": {
-        "StatCard": ["root", "label", "value", "trend"]
-      }
+        "StatCard": ["root", "label", "value", "icon", "diff"]
+      },
+      "props": {
+        "StatCard": [
+          {
+            "name": "label",
+            "type": "string",
+            "required": true,
+            "description": "Renders the uppercase, muted caption identifying what the stat measures."
+          },
+          {
+            "name": "value",
+            "type": "ReactNode",
+            "required": true,
+            "description": "Renders the large, bold headline figure for the stat."
+          },
+          {
+            "name": "diff",
+            "type": "number",
+            "required": false,
+            "description": "Percentage change vs. the previous period; renders a colored trend row with an up/down arrow, and is hidden entirely when omitted."
+          },
+          {
+            "name": "icon",
+            "type": "ReactNode",
+            "required": false,
+            "description": "Renders inside a light-variant ThemeIcon at the top-right of the card; the icon slot is omitted entirely when not provided."
+          },
+          {
+            "name": "...others",
+            "type": "BoxProps & ElementProps<\"div\">",
+            "description": "All other props are forwarded to the root Paper, after its own withBorder/p=\"md\"/radius=\"md\", so both can be overridden. Mantine Styles API props (classNames, styles, unstyled) are also accepted."
+          }
+        ]
+      },
+      "usage": "registry/ui/stat-card.usage.tsx"
     },
     {
       "name": "data-table",
@@ -56,7 +196,59 @@
         { "path": "registry/blocks/data-table/data-table.tsx", "as": "component" },
         { "path": "registry/blocks/data-table/use-data-table.ts", "as": "hook" }
       ],
-      "themeFragment": "registry/lib/data-table.theme.ts"
+      "themeFragment": "registry/lib/data-table.theme.ts",
+      "props": {
+        "DataTable": [
+          {
+            "name": "data",
+            "type": "T[]",
+            "required": true,
+            "description": "Rows to render. Sorting a column header does not mutate this array — internally the table sorts a copy of it and re-renders with the copy."
+          },
+          {
+            "name": "columns",
+            "type": "DataTableColumn<T>[]",
+            "required": true,
+            "description": "Column definitions controlling header text, width, sortability and per-cell rendering."
+          },
+          {
+            "name": "loading",
+            "type": "boolean",
+            "default": "false",
+            "description": "Shows skeleton placeholder rows instead of the table body while true."
+          },
+          {
+            "name": "loadingRows",
+            "type": "number",
+            "default": "5",
+            "description": "Number of skeleton rows rendered while loading."
+          },
+          {
+            "name": "emptyTitle",
+            "type": "string",
+            "default": "\"No results\"",
+            "description": "Title shown by the empty state when there are no rows to display."
+          },
+          {
+            "name": "emptyDescription",
+            "type": "ReactNode",
+            "default": "\"Try adjusting your filters.\"",
+            "description": "Description shown by the empty state when there are no rows to display."
+          },
+          {
+            "name": "onRowClick",
+            "type": "(row: T) => void",
+            "description": "Makes rows clickable, enabling hover highlighting and a pointer cursor, and fires with the clicked row."
+          },
+          {
+            "name": "getRowKey",
+            "type": "(row: T, index: number) => string | number",
+            "default": "(_row, index) => index",
+            "description": "Derives the React key for each row; defaults to the row's index."
+          }
+        ]
+      },
+      "usage": "registry/blocks/data-table/data-table.usage.tsx"
     },
     {
       "name": "mantine-ui-license",
@@ -92,6 +284,74 @@
           "target": "@ui/article-card.module.css"
         }
       ],
+      "stylesApi": {
+        "ArticleCard": ["root", "image", "rating", "title", "footer", "action"]
+      },
+      "props": {
+        "ArticleCard": [
+          {
+            "name": "image",
+            "type": "string",
+            "required": true,
+            "description": "Cover image URL, rendered inside the linked card header."
+          },
+          {
+            "name": "title",
+            "type": "string",
+            "required": true,
+            "description": "Article title; also used as the image alt text and rendered as a link."
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "required": true,
+            "description": "Summary text, clamped to four lines."
+          },
+          {
+            "name": "authorName",
+            "type": "string",
+            "required": true,
+            "description": "Byline shown in the card footer."
+          },
+          {
+            "name": "authorAvatar",
+            "type": "string",
+            "description": "Avatar image URL for the byline; a placeholder avatar renders when omitted."
+          },
+          {
+            "name": "rating",
+            "type": "string",
+            "description": "Text for the gradient badge over the image; no badge renders when omitted."
+          },
+          {
+            "name": "href",
+            "type": "string",
+            "required": true,
+            "description": "Destination for the image and title links."
+          },
+          {
+            "name": "onLike",
+            "type": "() => void",
+            "description": "Renders the like action icon and handles its click."
+          },
+          {
+            "name": "onBookmark",
+            "type": "() => void",
+            "description": "Renders the bookmark action icon and handles its click."
+          },
+          {
+            "name": "onShare",
+            "type": "() => void",
+            "description": "Renders the share action icon and handles its click."
+          },
+          {
+            "name": "...others",
+            "type": "BoxProps & ElementProps<\"div\", \"title\">",
+            "description": "All other props are forwarded to the root Card, after its own withBorder and radius=\"md\", so both can be overridden. Mantine Styles API props (classNames, styles, unstyled) are also accepted."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/article-card/article-card.usage.tsx",
       "docs": "Adapted from Mantine UI ArticleCard at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; demo data removed and replaced with typed props."
     },
     {
@@ -122,6 +382,43 @@
           "as": "component"
         }
       ],
+      "props": {
+        "AuthenticationForm": [
+          {
+            "name": "initialMode",
+            "type": "\"login\" | \"register\"",
+            "default": "\"login\"",
+            "description": "Sets which mode the form starts in; the internal toggle then switches between login and register."
+          },
+          {
+            "name": "heading",
+            "type": "string",
+            "default": "\"Welcome\"",
+            "description": "Heading text rendered as \"{heading}, {mode} with\" above the form, e.g. \"Welcome, login with\"."
+          },
+          {
+            "name": "onSubmit",
+            "type": "(values: AuthenticationValues, mode: AuthenticationMode) => void",
+            "description": "Called with the validated form values and current mode when the form is submitted."
+          },
+          {
+            "name": "onGoogle",
+            "type": "() => void",
+            "description": "Renders the Google social button and handles its click; the social row and divider are hidden entirely when neither social handler is set."
+          },
+          {
+            "name": "onGithub",
+            "type": "() => void",
+            "description": "Renders the GitHub social button and handles its click; the social row and divider are hidden entirely when neither social handler is set."
+          },
+          {
+            "name": "...others",
+            "type": "PaperProps",
+            "description": "All other props are forwarded to the underlying Paper. AuthenticationFormProps extends PaperProps, and the spread is applied after the component's own radius=\"md\", p=\"lg\", withBorder defaults, so any of those three can be overridden by the caller."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/authentication-form/authentication-form.usage.tsx",
       "docs": "Adapted from Mantine UI AuthenticationForm at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; submission and social actions are exposed as callbacks."
     },
     {
@@ -144,6 +441,53 @@
           "target": "@ui/button-progress.module.css"
         }
       ],
+      "stylesApi": {
+        "ButtonProgress": ["root", "label"]
+      },
+      "props": {
+        "ButtonProgress": [
+          {
+            "name": "idleLabel",
+            "type": "string",
+            "required": false,
+            "default": "\"Upload files\"",
+            "description": "Sets the label shown before the action has started."
+          },
+          {
+            "name": "progressLabel",
+            "type": "string",
+            "required": false,
+            "default": "\"Uploading files\"",
+            "description": "Sets the label shown while progress is animating toward completion."
+          },
+          {
+            "name": "completeLabel",
+            "type": "string",
+            "required": false,
+            "default": "\"Files uploaded\"",
+            "description": "Sets the label shown once the progress run has finished."
+          },
+          {
+            "name": "durationMs",
+            "type": "number",
+            "required": false,
+            "default": "2000",
+            "description": "Controls how long the simulated progress run takes to reach completion."
+          },
+          {
+            "name": "onComplete",
+            "type": "() => void",
+            "required": false,
+            "description": "Fires once the progress bar reaches 100% and the button switches to its complete state."
+          },
+          {
+            "name": "...others",
+            "type": "Omit<ButtonProps, \"children\" | \"onClick\" | \"classNames\" | \"styles\" | \"vars\" | \"unstyled\" | \"attributes\" | \"variant\">",
+            "description": "All other props are forwarded to the root <Button>, after its own fullWidth, so both can be overridden; onClick and color are controlled by the component's internal progress/complete state and always win. Mantine Styles API props (classNames, styles, unstyled) are also accepted."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/button-progress/button-progress.usage.tsx",
       "docs": "Adapted from Mantine UI ButtonProgress at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; labels, duration and completion are configurable."
     },
     {
@@ -173,6 +517,26 @@
           "target": "@ui/dnd-list.module.css"
         }
       ],
+      "stylesApi": {
+        "DndList": ["item", "itemSection", "itemLabel", "itemDescription"]
+      },
+      "props": {
+        "DndList": [
+          {
+            "name": "initialItems",
+            "type": "DndListItem[]",
+            "required": true,
+            "description": "Seeds the internal list state that the sortable items render from and reorder within."
+          },
+          {
+            "name": "onChange",
+            "type": "(items: DndListItem[]) => void",
+            "required": false,
+            "description": "Called with the full reordered item array whenever a drag ends on a different position."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/dnd-list/dnd-list.usage.tsx",
       "docs": "Adapted from Mantine UI DndList at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; hardcoded periodic-table data was replaced with a reusable item contract."
     },
     {
@@ -195,6 +559,17 @@
           "target": "@ui/stats-grid.module.css"
         }
       ],
+      "props": {
+        "StatsGrid": [
+          {
+            "name": "items",
+            "type": "StatsGridItem[]",
+            "required": true,
+            "description": "Renders one stat card per item, laying them out in a responsive grid that scales up to four columns on desktop based on the item count."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/stats-grid/stats-grid.usage.tsx",
       "docs": "Adapted from Mantine UI StatsGrid at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; metrics and icons are supplied by the consumer."
     },
     {
@@ -217,6 +592,37 @@
           "target": "@ui/table-sort.module.css"
         }
       ],
+      "props": {
+        "TableSort": [
+          {
+            "name": "data",
+            "type": "TableSortRow[]",
+            "required": true,
+            "description": "Rows to display, searched and sorted in place before rendering."
+          },
+          {
+            "name": "searchPlaceholder",
+            "type": "string",
+            "required": false,
+            "default": "\"Search by any field\"",
+            "description": "Placeholder text for the search input above the table."
+          },
+          {
+            "name": "emptyMessage",
+            "type": "ReactNode",
+            "required": false,
+            "default": "\"Nothing found\"",
+            "description": "Message rendered in a full-width row when the filtered data is empty."
+          },
+          {
+            "name": "onRowClick",
+            "type": "(row: TableSortRow) => void",
+            "required": false,
+            "description": "Called with the row data when a table row is clicked; rows become clickable only when this is provided."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/table-sort/table-sort.usage.tsx",
       "docs": "Adapted from Mantine UI TableSort at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; accepts consumer data and derives filtered rows without duplicating prop state."
     },
     {
@@ -240,6 +646,50 @@
           "target": "@ui/cards-carousel.module.css"
         }
       ],
+      "stylesApi": {
+        "CardsCarousel": ["root", "card", "title", "category"]
+      },
+      "props": {
+        "CardsCarousel": [
+          {
+            "name": "items",
+            "type": "readonly CardsCarouselItem[]",
+            "required": true,
+            "description": "Provides the ordered set of cards rendered as carousel slides."
+          },
+          {
+            "name": "actionLabel",
+            "type": "string",
+            "required": false,
+            "default": "\"View\"",
+            "description": "Sets the label shown on each card's action button."
+          },
+          {
+            "name": "onSelect",
+            "type": "(item: CardsCarouselItem) => void",
+            "required": false,
+            "description": "Called when a card's action button is clicked and the item has no href, rendering the button and handling its click."
+          },
+          {
+            "name": "slideSize",
+            "type": "CarouselProps[\"slideSize\"]",
+            "required": false,
+            "description": "Overrides the responsive default slide width (100% below the sm breakpoint, 50% above)."
+          },
+          {
+            "name": "slidesToScroll",
+            "type": "number",
+            "required": false,
+            "description": "Overrides how many slides advance per navigation (defaults to 1 below the sm breakpoint, 2 above)."
+          },
+          {
+            "name": "...others",
+            "type": "BoxProps & ElementProps<\"div\", \"onSelect\">",
+            "description": "All other props are forwarded to the root <Carousel>, after its own slideGap, emblaOptions, and control props, so both can be overridden. Mantine Styles API props (classNames, styles, unstyled) are also accepted."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/cards-carousel/cards-carousel.usage.tsx",
       "docs": "Adapted from Mantine UI CardsCarousel at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; hardcoded travel data became typed items with links or selection callbacks."
     },
     {
@@ -263,7 +713,246 @@
           "target": "@ui/dropzone-button.module.css"
         }
       ],
+      "props": {
+        "DropzoneButton": [
+          {
+            "name": "onDrop",
+            "type": "(files: File[]) => void",
+            "required": true,
+            "description": "Called with the accepted files when a valid drop or file-picker selection completes."
+          },
+          {
+            "name": "onReject",
+            "type": "(rejections: FileRejection[]) => void",
+            "required": false,
+            "description": "Called with the rejected files when a drop fails validation (type or size)."
+          },
+          {
+            "name": "accept",
+            "type": "string[]",
+            "required": false,
+            "default": "[MIME_TYPES.pdf]",
+            "description": "Restricts accepted uploads to the given MIME types."
+          },
+          {
+            "name": "maxSize",
+            "type": "number",
+            "required": false,
+            "default": "30 * 1024 ** 2",
+            "description": "Sets the maximum accepted file size in bytes."
+          },
+          {
+            "name": "multiple",
+            "type": "boolean",
+            "required": false,
+            "default": "true",
+            "description": "Allows selecting or dropping more than one file at a time."
+          },
+          {
+            "name": "disabled",
+            "type": "boolean",
+            "required": false,
+            "default": "false",
+            "description": "Disables both the dropzone and the trigger button."
+          },
+          {
+            "name": "idleLabel",
+            "type": "string",
+            "required": false,
+            "default": "\"Upload files\"",
+            "description": "Sets the heading text shown while the dropzone is idle, and doubles as its accessible label."
+          },
+          {
+            "name": "acceptLabel",
+            "type": "string",
+            "required": false,
+            "default": "\"Drop files here\"",
+            "description": "Sets the heading text shown while a dragged file is being validated as acceptable."
+          },
+          {
+            "name": "rejectLabel",
+            "type": "string",
+            "required": false,
+            "default": "\"These files cannot be accepted\"",
+            "description": "Sets the heading text shown while a dragged file would be rejected."
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "required": false,
+            "default": "\"Drag and drop files here, or use the file picker.\"",
+            "description": "Renders supporting text below the heading describing how to use the dropzone."
+          },
+          {
+            "name": "buttonLabel",
+            "type": "string",
+            "required": false,
+            "default": "\"Select files\"",
+            "description": "Sets the label of the button that opens the native file picker."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/dropzone-button/dropzone-button.usage.tsx",
       "docs": "Adapted from Mantine UI DropzoneButton at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; drop/reject callbacks, constraints and user-facing text are configurable."
+    },
+    {
+      "name": "header-mega-menu",
+      "kind": "block",
+      "title": "Header Mega Menu",
+      "description": "Responsive site header with a hover-card feature mega-menu that collapses into a mobile drawer.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/core@^9", "@mantine/hooks@^9", "@tabler/icons-react@^3"],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/header-mega-menu/header-mega-menu.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/header-mega-menu/header-mega-menu.module.css",
+          "as": "style",
+          "target": "@ui/header-mega-menu.module.css"
+        }
+      ],
+      "props": {
+        "HeaderMegaMenu": [
+          {
+            "name": "logo",
+            "type": "ReactNode",
+            "required": false,
+            "description": "Rendered at the start of the header bar; nothing renders when omitted."
+          },
+          {
+            "name": "links",
+            "type": "readonly HeaderMegaMenuLink[]",
+            "required": true,
+            "description": "Ordered nav links rendered in the header bar and the mobile drawer. At most one entry should set `features`: only the first entry that does renders as the mega-menu (a hover-card dropdown on desktop, a collapsible section on mobile); `features` on any later entry is ignored."
+          },
+          {
+            "name": "featuresViewAllHref",
+            "type": "string",
+            "required": false,
+            "description": "Href for the mega-menu's \"View all\" link; the link is omitted when unset."
+          },
+          {
+            "name": "featuresFooterHeading",
+            "type": "string",
+            "required": false,
+            "default": "\"Get started\"",
+            "description": "Heading shown in the mega-menu's footer callout."
+          },
+          {
+            "name": "featuresFooterDescription",
+            "type": "string",
+            "required": false,
+            "default": "\"Everything you need to explore what's possible and start building.\"",
+            "description": "Body copy shown in the mega-menu's footer callout."
+          },
+          {
+            "name": "featuresFooterActionLabel",
+            "type": "string",
+            "required": false,
+            "default": "\"Get started\"",
+            "description": "Label for the mega-menu footer's action button; clicking it calls `onSignUp`."
+          },
+          {
+            "name": "loginLabel",
+            "type": "string",
+            "required": false,
+            "default": "\"Log in\"",
+            "description": "Label for the log in button, shown in the header and the mobile drawer."
+          },
+          {
+            "name": "signUpLabel",
+            "type": "string",
+            "required": false,
+            "default": "\"Sign up\"",
+            "description": "Label for the sign up button, shown in the header and the mobile drawer."
+          },
+          {
+            "name": "onLogin",
+            "type": "() => void",
+            "required": false,
+            "description": "Called when a log in button (header or drawer) is clicked."
+          },
+          {
+            "name": "onSignUp",
+            "type": "() => void",
+            "required": false,
+            "description": "Called when a sign up button (header or drawer) or the mega-menu footer's action button is clicked."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/header-mega-menu/header-mega-menu.usage.tsx",
+      "docs": "Adapted from Mantine UI HeaderMegaMenu at ffbf61c559f374a7ea28fcf00355e84dcbe9a908; feature-grid mock data and the two CTA labels became typed props, the fixed nav links became a consumer-supplied array, and the upstream @mantinex/mantine-logo import (not part of this workspace) became a logo ReactNode prop. Kept as an opinionated block with internal CSS classes rather than a public Styles API, consistent with this catalog's other page-section blocks (authentication-form, stats-grid, table-sort)."
+    },
+    {
+      "name": "navbar-nested",
+      "kind": "block",
+      "title": "Nested Navbar",
+      "description": "Collapsible sidebar navigation with nested link groups and a user footer.",
+      "mantine": ">=9",
+      "provider": true,
+      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "uses": ["mantine-ui-license"],
+      "files": [
+        {
+          "path": "registry/mantine-ui/navbar-nested/navbar-nested.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/navbar-nested/navbar-nested.module.css",
+          "as": "style",
+          "target": "@ui/navbar-nested.module.css"
+        },
+        {
+          "path": "registry/mantine-ui/navbar-nested/navbar-nested-links-group.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/navbar-nested/navbar-nested-links-group.module.css",
+          "as": "style",
+          "target": "@ui/navbar-nested-links-group.module.css"
+        },
+        {
+          "path": "registry/mantine-ui/navbar-nested/navbar-nested-user-button.tsx",
+          "as": "component"
+        },
+        {
+          "path": "registry/mantine-ui/navbar-nested/navbar-nested-user-button.module.css",
+          "as": "style",
+          "target": "@ui/navbar-nested-user-button.module.css"
+        },
+        {
+          "path": "registry/mantine-ui/navbar-nested/navbar-nested-logo.tsx",
+          "as": "component"
+        }
+      ],
+      "props": {
+        "NavbarNested": [
+          {
+            "name": "links",
+            "type": "NavbarNestedLinkItem[]",
+            "required": true,
+            "description": "Ordered top-level nav entries; each entry sets either `link` to render a leaf that navigates directly, or `links` to render a group whose secondary links collapse beneath it (and may set `initiallyOpened`)."
+          },
+          {
+            "name": "user",
+            "type": "UserButtonProps",
+            "required": true,
+            "description": "Name, email and optional avatar rendered in the footer user row."
+          },
+          {
+            "name": "versionLabel",
+            "type": "string",
+            "required": false,
+            "description": "Text for the version badge next to the logo; no badge renders when omitted."
+          }
+        ]
+      },
+      "usage": "registry/mantine-ui/navbar-nested/navbar-nested.usage.tsx",
+      "docs": "Adapted from Mantine UI NavbarNested at ffbf61c559f374a7ea28fcf00355e84dcbe9a908, merged with its NavbarLinksGroup and UserButton siblings; the mock nav tree, avatar and version badge became typed props, dead leaf-link buttons became real anchors, and the sidebar now fills a height-constrained parent (see the usage example) instead of a fixed 800px demo height."
     }
   ]
 }

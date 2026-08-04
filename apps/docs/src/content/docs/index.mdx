@@ -20,17 +20,17 @@ hero:
 ---
 
 import RegistryCatalog from '../../components/RegistryCatalog.astro';
+import HomeOverview from '../../components/HomeOverview.astro';
 
-Manteen has two public tools:
+<HomeOverview />
 
-- **`manteen-kit`** compiles a Mantine-shaped authoring catalog into portable registry JSON.
-- **`manteen`** initializes applications and safely installs, tracks, diffs, and updates that source.
+<RegistryCatalog mode="embedded" />
 
-Mantine remains an ordinary npm dependency. Registries hold the composed layer your project is
-expected to own and edit.
+{/* M21 — this trailing legal line rendered as a plain body paragraph 16px under the last catalog
+row, with no divider, fill, smaller metric or muted colour, so it read as an accidentally
+unstyled last line rather than a deliberate footnote. `.home-disclaimer` (custom.css) is its
+quiet treatment. */}
 
-## Live registry
-
-<RegistryCatalog />
-
-Manteen is an independent project and is not affiliated with or endorsed by the Mantine team.
+{/* Text must stay inline in the tag: MDX turns an indented multi-line body into an empty
+    styled <p> followed by a second unstyled <p> holding the actual text. */}
+<p class="home-disclaimer">Manteen is an independent project and is not affiliated with or endorsed by the Mantine team.</p>

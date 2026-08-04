@@ -116,9 +116,20 @@ export interface LoadedConfig {
   themeDestination: string | null;
   /** ABSOLUTE resolved `config.styles`, or null for a pre-global-styles project. */
   stylesDestination: string | null;
-  /** ABSOLUTE, existence proven. */
+  /** ABSOLUTE, existence proven. May be a `jsconfig.json` — see `jsconfigOnly`. */
   tsconfigPath: string;
   tsconfig: TsConfigResult;
+  /**
+   * True when `tsconfigPath` is a `jsconfig.json`, whether manteen found it
+   * itself (no `tsconfig.json` next to `manteen.json`, but a `jsconfig.json`
+   * is) or the user's `tsconfig` field points at one directly. Its `paths`
+   * back aliases exactly like a real tsconfig's do — that part of loading does
+   * not care which language the project is in — but `plan()` refuses any item
+   * that ships `.ts`/`.tsx` while this is true (§6): manteen writes files
+   * verbatim and never transpiles, so a TypeScript file has nothing to resolve
+   * its syntax against without a real tsconfig.
+   */
+  jsconfigOnly: boolean;
   /** Bare item name -> winning canonical id (D9). */
   resolutions: ReadonlyMap<string, CanonicalId>;
   /**

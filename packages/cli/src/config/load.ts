@@ -18,9 +18,14 @@
  *
  * `components.json` is `existsSync`-probed and never read. manteen does not wrap
  * shadcn and its aliases are not shadcn's.
+ *
+ * A third thing it deliberately tolerates: a project with only `jsconfig.json`
+ * loads successfully, `paths` and all — `LoadedConfig.jsconfigOnly` records it.
+ * §6 puts the actual refusal for a `.ts`/`.tsx` item in `plan()`, conditioned on
+ * what the ref ships, which this module cannot know yet.
  */
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { basename, resolve } from "node:path";
 
 import { createPathsMatcher, parseTsconfig, type TsConfigResult } from "get-tsconfig";
 
@@ -182,21 +187,52 @@ export function loadConfig(cwd: string = process.cwd()): ConfigLoadResult {
   const semanticErrors = checkSemantics(raw);
   if (semanticErrors.length > 0) return fail(semanticErrors);
 
-  // No `basename()`: `"tsconfig": "tsconfig.app.json"` names a FILE, and a
-  // project with several tsconfigs is exactly the case where guessing which one
-  // holds the `paths` produces a wrong answer quietly.
-  const tsconfigPath = resolve(root, raw.tsconfig ?? "tsconfig.json");
+  // No `basename()` for the REQUESTED path: `"tsconfig": "tsconfig.app.json"`
+  // names a FILE, and a project with several tsconfigs is exactly the case
+  // where guessing which one holds the `paths` produces a wrong answer
+  // quietly. `basename()` on the RESOLVED path is a different question — see
+  // `jsconfigOnly` below — and is fine to ask.
+  const requestedTsconfigPath = resolve(root, raw.tsconfig ?? "tsconfig.json");
+
+  let tsconfigPath = requestedTsconfigPath;
+  // Set here for the explicit-override case (§6's bypass: `"tsconfig":
+  // "jsconfig.json"`, or any path whose basename is one). The default-lookup
+  // fallback below is the only other place this can flip true, and it flips
+  // the PATH along with it so the two can never disagree about which file is
+  // actually backing `paths`.
+  // Case-folded: `JsConfig.json` resolves on the case-insensitive filesystems
+  // macOS and Windows default to, so an exact-case test would refuse there and
+  // install on Linux — a platform-dependent verdict for the same layout.
+  let jsconfigOnly = basename(requestedTsconfigPath).toLowerCase() === "jsconfig.json";
+
   if (!existsSync(tsconfigPath)) {
-    return fail([
-      {
-        pointer: pointer("tsconfig"),
-        message: `${tsconfigPath} does not exist`,
-        hint:
-          raw.tsconfig === undefined
-            ? "manteen looks for ./tsconfig.json next to manteen.json. Set `tsconfig` if yours is elsewhere or named differently."
-            : "`tsconfig` names the file, not its directory, and is resolved against manteen.json.",
-      },
-    ]);
+    // Default lookup only (`raw.tsconfig === undefined`): manteen looked for
+    // `tsconfig.json` next to `manteen.json`, found nothing, and a project with
+    // only `jsconfig.json` is common enough that failing here — before `plan()`
+    // ever sees what a ref would ship — would make every JS project refuse
+    // regardless of whether the requested item ships TypeScript at all. §6
+    // puts that refusal in `plan()`, conditioned on the item, so loading has to
+    // get this far first.
+    //
+    // An EXPLICIT `tsconfig` naming a missing file is left alone: that is a
+    // typo or a stale path, not evidence of a JS project, and gets the same
+    // "does not exist" error it always has.
+    const jsconfigFallback = resolve(root, "jsconfig.json");
+    if (raw.tsconfig === undefined && existsSync(jsconfigFallback)) {
+      tsconfigPath = jsconfigFallback;
+      jsconfigOnly = true;
+    } else {
+      return fail([
+        {
+          pointer: pointer("tsconfig"),
+          message: `${tsconfigPath} does not exist`,
+          hint:
+            raw.tsconfig === undefined
+              ? "manteen looks for ./tsconfig.json next to manteen.json. Set `tsconfig` if yours is elsewhere or named differently."
+              : "`tsconfig` names the file, not its directory, and is resolved against manteen.json.",
+        },
+      ]);
+    }
   }
 
   let tsconfig: TsConfigResult;
@@ -282,6 +318,7 @@ export function loadConfig(cwd: string = process.cwd()): ConfigLoadResult {
     stylesDestination: raw.styles === undefined ? null : resolve(root, raw.styles),
     tsconfigPath,
     tsconfig,
+    jsconfigOnly,
     resolutions: new Map(Object.entries(raw.resolutions ?? {})),
     target,
   };

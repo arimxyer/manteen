@@ -54,8 +54,10 @@ is why the output is installable by any client that speaks it — including the 
 `shadcn` CLI — without that constraining how anything here is written.
 
 Concepts the wire format has no field for (version gate, provider requirement, theme
-fragment, Styles API selectors) ride along under `meta.mantine`, an open object. Clients
-that understand it act on it. Clients that don't ignore it and still install the files
+fragment, and author-declared Styles API selectors) ride along under `meta.mantine`, an open
+object. A `stylesApi` declaration is an author assertion that the component genuinely exposes those
+named parts through a public `classNames`/`styles` interface; private CSS-module names do not count.
+Clients that understand the metadata act on it. Clients that do not still install the files
 correctly. Verified in both directions — see [Interop](#interop).
 
 ## What belongs here
@@ -128,14 +130,17 @@ so they typecheck here and land correctly there.
   "css": ["@mantine/carousel/styles.css"], // exact package imports only
   "uses": ["empty-state"],      // bare name — namespaced at build time
   "files": [{ "path": "...", "as": "component" }],
-  "themeFragment": "registry/lib/data-table.theme.ts",
-  "stylesApi": { "DataTable": ["root", "header", "row"] }
+  "themeFragment": "registry/lib/data-table.theme.ts"
 }
 ```
 
 `themeFragment` is inlined into `meta.mantine` rather than listed in `files`, deliberately:
 a client that understands it merges it into the project theme, and one that doesn't must
 not drop a stray theme file into the project.
+
+When a component really accepts selector-keyed `classNames`/`styles`, its author can additionally
+declare, for example, `"stylesApi": { "DataTable": ["root", "header", "row"] }`. Manteen carries
+and reports that assertion; it does not infer a public interface from internal CSS classes.
 
 ## Theme composition
 
@@ -195,8 +200,9 @@ hardcode `@house/`. Manteen's consumer instead assumes a bare dependency is pare
 `bare-dep-assumed-local`; the second live registry exercises that compatibility path deliberately.
 
 **Unknown top-level fields are stripped by third-party builders; `meta` survives.** Confirmed
-by round-tripping both. `meta` also survives into the registry index, so a client can read
-`meta.mantine` during `list` without fetching every item.
+by round-tripping both. The registry index carries a deliberately smaller `meta.mantine` discovery
+summary (`requires` and `provider`); item-only details such as `stylesApi` and an inlined theme
+fragment require fetching the item document.
 
 **Items dedupe by destination path, so same-named items across registries collide.** Hit
 for real: the fixture `@base/empty-state` overwrote `@house/empty-state` and broke every

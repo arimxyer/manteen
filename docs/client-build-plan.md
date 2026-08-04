@@ -242,11 +242,14 @@ ok = diagnostics.every(d =>
 | `css-unsupported`, `css-dependency-missing` | error | no | plan | 1 |
 | `global-styles-unconfigured`, `global-styles-uninitialized` | error | no | plan | 1 |
 | `global-styles-drift` | error | yes | plan | 1 |
+| `jsconfig-typescript-unsupported` (jsconfig-only project, item ships `.ts`/`.tsx`) | error | **no** | plan | 1 |
 | `mantine-version-unknown`, `mantine-malformed-metadata`, `mantine-non-core-unsatisfied` | warn | — | plan | 0 |
 | `provider-missing`, `dependency-range-narrowed`, `bare-dep-assumed-local`, `dependency-cycle`, `resolution-applied`, `name-mismatch`, `meta-degraded`, `theme-conflict`, `receipt-stale` | warn | — | plan | 0 |
 | `styles-api`, `receipt-drift` | info | — | plan | 0 |
 | config error (missing/malformed/unresolvable alias) | — | — | load | 2 |
 | user cancel at a prompt | — | — | CLI | 130 |
+
+The Exit column is per-code, not per-run: when rows co-fire, the higher exit wins — a jsconfig-only project that also lacks a package manager exits 2 on `no-package-manager`, so `jsconfig-typescript-unsupported`'s 1 is the code's own exit, not the only one observable.
 
 Exit convention extends the kit's (`src/cli/index.ts` exits 2 on unknown command): **0** applied, **1** refused or failed, **2** usage/config, **130** cancelled.
 
@@ -557,7 +560,7 @@ Nothing here was dropped silently; each row names the dimension that scoped it a
 | **Install receipt / `mantine.lock.json`** | apply, gates | See open question 2. | Medium: new persisted format, migration branch, and the overwrite prompt gains registry attribution. |
 | **`mantine list` / `search` / `info`** | resolver, gates | Needs the per-registry `index` URL to be populated and fetched; `add` never needs it. The field ships in v1 (D21) so the schema doesn't change. | Low: one fetch + a table renderer. `stylesApi` display already exists as a gate output. |
 | **Yarn PnP version resolution** | gates | The gate degrades to `undeterminable` with an explicit "Yarn PnP detected" message, so the user knows it's off rather than assuming it passed. | Medium: a PnP-aware resolver, or shelling out to `yarn info`. |
-| **TS→JS transpilation for jsconfig-only projects** | config | Content ships verbatim; transpiling is a property change to the interchange format, not a feature. `plan()` refuses with a clear message when the project has only `jsconfig.json` and the item ships `.ts`/`.tsx`. | High: a transform step that invalidates "we never rewrite content", which several other decisions rest on. |
+| **TS→JS transpilation for jsconfig-only projects** | config | Content ships verbatim; transpiling is a property change to the interchange format, not a feature. **Shipped, not deferred:** `plan()` refuses with `jsconfig-typescript-unsupported` (§1) when the project has only `jsconfig.json` and the item ships `.ts`/`.tsx` — including when `tsconfig` in `manteen.json` is pointed at a `jsconfig.json`, which does not count as a real tsconfig. What stays deferred is the transform itself: manteen still never rewrites `.ts`/`.tsx` into `.js`/`.jsx`, so the remedy is a real `tsconfig.json`, not this row. | High: a transform step that invalidates "we never rewrite content", which several other decisions rest on. |
 | **`--prefer incoming` / `--strict-theme` on `mantine add`** | apply, testing | `prefer: "base"` is the only non-destructive setting for an installer; exposing the flip invites data loss the default-Yes confirm no longer covers. `--strict-theme` (promote conflicts to a refusal) is the kit's semantics, wrong for an installer where a conflict means "we kept your value". | Trivial: both are one flag threaded to `mergeThemeSource`/`ok`. Kit semantics are already tested in `merge-theme.test.ts`. |
 | **Astro / Gatsby / Redwood / plain-React codemods** | init | See open question 6. | Medium each; Astro is high because there is no single provider mount point. |
 | **`stylesApi` ↔ theme `classNames` cross-check** | gates | `@mantine/core` exports no selector metadata, so the comparison is against unverified registry declarations — a registry that under-declares produces warnings about the user's correct code. | Low mechanically, but only worth it if selector declarations prove reliable in practice. |

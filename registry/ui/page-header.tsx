@@ -1,28 +1,106 @@
-import { Divider, Group, Stack, Text, Title } from "@mantine/core";
+import {
+  type BoxProps,
+  Divider,
+  type ElementProps,
+  type Factory,
+  factory,
+  Group,
+  Stack,
+  type StylesApiProps,
+  Text,
+  Title,
+  useProps,
+  useStyles,
+} from "@mantine/core";
 import type { ReactNode } from "react";
 
-export interface PageHeaderProps {
+import classes from "./page-header.module.css";
+
+export type PageHeaderStylesNames =
+  | "root"
+  | "header"
+  | "titleWrapper"
+  | "title"
+  | "description"
+  | "actions"
+  | "divider";
+
+export interface PageHeaderProps
+  extends BoxProps,
+    StylesApiProps<PageHeaderFactory>,
+    ElementProps<"div", "title"> {
   title: string;
   description?: ReactNode;
   actions?: ReactNode;
   withDivider?: boolean;
 }
 
-export function PageHeader({ title, description, actions, withDivider = true }: PageHeaderProps) {
+export type PageHeaderFactory = Factory<{
+  props: PageHeaderProps;
+  ref: HTMLDivElement;
+  stylesNames: PageHeaderStylesNames;
+}>;
+
+export const PageHeader = factory<PageHeaderFactory>((_props) => {
+  const props = useProps("PageHeader", null, _props);
+  const {
+    classNames,
+    className,
+    style,
+    styles,
+    unstyled,
+    vars,
+    attributes,
+    ref,
+    title,
+    description,
+    actions,
+    withDivider = true,
+    ...others
+  } = props;
+
+  const getStyles = useStyles<PageHeaderFactory>({
+    name: "PageHeader",
+    classes,
+    props,
+    className,
+    style,
+    classNames,
+    styles,
+    unstyled,
+    attributes,
+    vars,
+  });
+
   return (
-    <Stack gap="sm" mb="lg">
-      <Group justify="space-between" align="flex-start" wrap="nowrap">
-        <Stack gap={4}>
-          <Title order={2}>{title}</Title>
+    <Stack ref={ref} gap="sm" mb="lg" unstyled={unstyled} {...getStyles("root")} {...others}>
+      <Group justify="space-between" align="flex-start" wrap="nowrap" {...getStyles("header")}>
+        <Stack gap={4} {...getStyles("titleWrapper")}>
+          <Title order={2} {...getStyles("title")}>
+            {title}
+          </Title>
           {description && (
-            <Text c="dimmed" size="sm">
+            <Text c="dimmed" size="sm" {...getStyles("description")}>
               {description}
             </Text>
           )}
         </Stack>
-        {actions && <Group gap="xs">{actions}</Group>}
+        {actions && (
+          <Group gap="xs" {...getStyles("actions")}>
+            {actions}
+          </Group>
+        )}
       </Group>
-      {withDivider && <Divider />}
+      {withDivider && <Divider {...getStyles("divider")} />}
     </Stack>
   );
+});
+
+PageHeader.classes = classes;
+PageHeader.displayName = "PageHeader";
+
+export namespace PageHeader {
+  export type Props = PageHeaderProps;
+  export type StylesNames = PageHeaderStylesNames;
+  export type Factory = PageHeaderFactory;
 }

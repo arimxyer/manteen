@@ -752,15 +752,15 @@ test("criterion: the same project at 9.5.0 exits 0 and prints a unified theme di
   assert.doesNotMatch(result.stdout, /^-\s+(Button|Card|Paper|Modal):/m, result.all);
 });
 
-test("criterion: @house/stat-card --dry-run prints its Styles API selectors", () => {
+test("criterion: @house/article-card --dry-run prints its proven Styles API selectors", () => {
   const project = makeProject({ registries: { "@house": HOUSE_URL } });
   const before = manifest(project);
 
-  const result = run(project, ["add", "@house/stat-card", "--dry-run"]);
+  const result = run(project, ["add", "@house/article-card", "--dry-run"]);
 
   assert.equal(result.status, 0, result.all);
   assert.ok(
-    result.all.includes("StatCard: root, label, value, trend"),
+    result.all.includes("ArticleCard: root, image, rating, title, footer, action"),
     `the criterion's literal line must appear:\n${result.all}`,
   );
   // "and contributes nothing to `refused`" — info severity, exit 0, nothing

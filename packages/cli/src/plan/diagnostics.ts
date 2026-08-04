@@ -76,6 +76,13 @@ export const DIAGNOSTIC_CODES: Record<DiagnosticCode, DiagnosticSpec> = {
   "global-styles-unconfigured": { severity: "error", forceable: false, exit: 1 },
   /** Unknown pre-existing bytes cannot be silently adopted as Manteen-owned. */
   "global-styles-uninitialized": { severity: "error", forceable: false, exit: 1 },
+  /** §6: a `.ts`/`.tsx` item planned into a project whose only config is
+   *  `jsconfig.json`. Non-forceable on purpose — the honest escape hatch is
+   *  adding a real `tsconfig.json` with the same `paths` and re-running,
+   *  which is a config edit `--force` cannot stand in for; there is no
+   *  meaning of "force past" a file that would ship with nothing to resolve
+   *  its syntax against. */
+  "jsconfig-typescript-unsupported": { severity: "error", forceable: false, exit: 1 },
 
   // ---- blocking, forceable --------------------------------------------------
   /** Ranges provably disjoint (`semver.intersects` false, D10). */

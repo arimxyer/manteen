@@ -1,11 +1,13 @@
 /**
  * `meta.mantine.stylesApi` — the one gate whose entire job is to SAY something.
  *
- * It reports which Styles API selectors each item exposes, so a user can write
- * `classNames={{ … }}` / `styles={{ … }}` or a theme `components.<X>` entry
- * without opening the component's source. Severity info, exit 0, and it
- * contributes nothing to `plan.ok` — there is no input to this module that can
- * refuse a run.
+ * It reports the Styles API selectors a registry author declares. A truthful
+ * declaration means the component exposes those named parts through its public
+ * `classNames={{ … }}` / `styles={{ … }}` interface; an internal CSS-module map
+ * alone is not a Styles API. This gate echoes the author assertion so a user does
+ * not have to open the source, but cannot prove the implementation honors it.
+ * Severity info, exit 0, and it contributes nothing to `plan.ok` — there is no
+ * input to this module that can refuse a run.
  *
  * ECHO-ONLY, AND PERMANENTLY SO. The obvious next step — cross-check the
  * declared selectors against what Mantine itself exposes — cannot be built, and
@@ -27,7 +29,7 @@
  *     from inside a gate, which §1's parameters-only convention forbids.
  *
  * §7's deferred-work table states the consequence directly: a cross-check would
- * compare against unverified registry declarations, so an UNDER-declaring
+ * compare against unverified author assertions, so an UNDER-declaring
  * registry would produce warnings about the user's perfectly correct code. That
  * is the failure mode this module must never have — hence reporting only, and
  * hence nothing here consults the user's theme or component call sites.

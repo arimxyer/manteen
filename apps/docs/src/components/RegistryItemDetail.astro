@@ -1,0 +1,398 @@
+---
+import { Aside, Badge, Code, Icon } from "@astrojs/starlight/components";
+
+import PlaygroundHost from "./PlaygroundHost";
+
+import {
+  acceptsProps,
+  codeLanguage,
+  fileKindLabel,
+  fileName,
+  isVisualItem,
+  itemPath,
+  kindLabel,
+  packageStyleImports,
+  type RegistryEntry,
+} from "../lib/registry";
+import { registryKindBadge, registryPresentationKind } from "../lib/registry-presentation";
+
+interface Props {
+  entry: RegistryEntry;
+}
+
+const { entry } = Astro.props;
+const { index, detail: item } = entry;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const type = kindLabel(index.type);
+const command = `npx manteen add @house/${index.name}`;
+const rawJsonHref = `${base}/r/${itemPath(index.name)}.json`;
+const sourceHref = item.files?.[0]
+  ? `https://github.com/arimxyer/manteen/blob/main/${item.files[0].path}`
+  : "https://github.com/arimxyer/manteen";
+const mantine = item.meta?.mantine;
+const files = item.files ?? [];
+const packageStyles = packageStyleImports(item);
+const stylesApi = mantine?.stylesApi;
+const hasStylesApi = Boolean(stylesApi && Object.keys(stylesApi).length > 0);
+const themeFragment = mantine?.themeFragment;
+// Author-published documentation (meta.mantine.props / .usage). Rendered verbatim when
+// present; the boundary asides below remain the honest fallback when they are not.
+const propDocs = mantine?.props;
+const propComponents = Object.entries(propDocs ?? {});
+const hasPropDocs = propComponents.some(([, docs]) => docs.length > 0);
+const usage = mantine?.usage;
+// An adapter file's existence IS the preview registration (see playgrounds/contract.ts):
+// the same glob feeds SiteHead's stylesheet gate and PlaygroundHost's client-side loader,
+// so a new `<name>.playground.tsx` lights up everything with no list to keep in sync.
+const playgroundModules = import.meta.glob("./playgrounds/*.playground.tsx");
+const hasCuratedPreview = `./playgrounds/${index.name}.playground.tsx` in playgroundModules;
+const presentationKind = registryPresentationKind(index);
+const presentationLabel =
+  presentationKind === "theme"
+    ? "Theme"
+    : presentationKind === "file"
+      ? "File"
+      : presentationKind.charAt(0).toUpperCase() + presentationKind.slice(1);
+const isProseFile = (file: (typeof files)[number]) => {
+  const path = file.target ?? file.path;
+  return /\.(?:txt|md)$/i.test(path) || /license/i.test(fileName(file));
+};
+// L5 — the requirement operator shipped glued to the number ("Mantine >=9"); the approved
+// header reads "Mantine ≥ 9". Applied everywhere `mantine.requires` renders so the badge
+// and the Requirements table never disagree on the same fact.
+const formatRequirement = (value: string | undefined) => value?.replace(/^>=\s*/, "≥ ");
+// L4 — a raw 40-char commit SHA in flowing prose produces a bad rag. Shortened to a git-style
+// short hash inside a non-breaking mono span, with the full hash recoverable via `title`.
+const SHA_PATTERN = /\b[0-9a-f]{40}\b/gi;
+const renderAuthorNotes = (text: string) => {
+  const parts: Array<string | { hash: string }> = [];
+  let lastIndex = 0;
+  for (const match of text.matchAll(SHA_PATTERN)) {
+    const start = match.index ?? 0;
+    if (start > lastIndex) parts.push(text.slice(lastIndex, start));
+    parts.push({ hash: match[0] });
+    lastIndex = start + match[0].length;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts;
+};
+// TextEncoder rather than Buffer so this stays runtime-agnostic.
+const fileSize = (content: string | undefined) => {
+  const bytes = new TextEncoder().encode(content ?? "").length;
+  return bytes >= 1000 ? `${(bytes / 1000).toFixed(1)} kB` : `${bytes} B`;
+};
+const npmDependencies = item.dependencies ?? [];
+// Registry dependencies install alongside the item but are not npm packages — they read as a
+// quiet footnote under the chips rather than as peer chips.
+const registryDependencies = (item.registryDependencies ?? []).map((name) => ({
+  name,
+  local: name.startsWith("@house/") ? name.slice(7) : null,
+}));
+---
+
+{
+  /*
+    The identity row carries the item's requirements — kind, Mantine range, provider — as
+    badges, in place of the Requirements table the rail used to draw. A fact that is not
+    declared simply has no badge; "Not declared" rows said the same thing in more space.
+  */
+}
+<div class="registry-item-meta">
+  <Badge text={presentationLabel} size="small" {...registryKindBadge(presentationKind)} />
+  {mantine?.requires && (
+    <Badge text={`Mantine ${formatRequirement(mantine.requires)}`} variant="note" size="small" />
+  )}
+  {mantine?.provider && (
+    <Badge text={mantine.provider} variant="default" class="registry-badge--neutral" size="small" />
+  )}
+  <span class="registry-item-meta__actions">
+    <a href={rawJsonHref} title="Registry JSON" aria-label="Registry JSON">
+      <Icon name="document" />
+    </a>
+    <a href={sourceHref} title="Source on GitHub" aria-label="Source on GitHub">
+      <Icon name="github" />
+    </a>
+  </span>
+</div>
+
+{index.description && <p>{index.description}</p>}
+
+<h2 id="install">Install</h2>
+<p>One command copies the item's source into your project, where you own and edit it.</p>
+<Code code={command} lang="sh" />
+
+<h2 id="dependencies">Dependencies</h2>
+{
+  npmDependencies.length > 0 ? (
+    <ul class="registry-deps">
+      {npmDependencies.map((name) => (
+        <li>
+          <code>{name}</code>
+          <span class="registry-deps__source">npm</span>
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p>No npm dependencies declared.</p>
+  )
+}
+{
+  registryDependencies.length > 0 && (
+    <p class="registry-file-facts">
+      Installing this item also installs{" "}
+      {registryDependencies.map((dependency, position) => (
+        <>
+          {position > 0 && ", "}
+          {dependency.local ? (
+            <a href={`${base}/registry/${itemPath(dependency.local)}/`}>
+              <code>{dependency.name}</code>
+            </a>
+          ) : (
+            <code>{dependency.name}</code>
+          )}
+        </>
+      ))}{" "}
+      from the registry.
+    </p>
+  )
+}
+
+<h2 id="preview">Preview</h2>
+{
+  hasCuratedPreview ? (
+    <PlaygroundHost client:only="react" item={index.name} />
+  ) : (
+    <Aside
+      type="note"
+      title={isVisualItem(index.type) ? "Curated preview not published" : "Preview does not apply"}
+    >
+      <p>
+        {
+          isVisualItem(index.type)
+            ? "The gallery image is a static example. This item does not publish a live preview adapter, and Manteen will not execute arbitrary registry source to manufacture one."
+            : `A live component preview is not meaningful for a ${presentationLabel.toLowerCase()} item. Its installable payload is listed under Source.`
+        }
+      </p>
+    </Aside>
+  )
+}
+
+<h2 id="usage">Usage</h2>
+{
+  usage?.content?.trim() ? (
+    <>
+      <p>
+        A copy-ready example published by the registry author. Imports use the aliases Manteen
+        configures at <code>init</code>.
+      </p>
+      <Code code={usage.content} lang={codeLanguage(usage.path)} meta={`title="${fileName({ path: usage.path, type: "" })}"`} wrap />
+    </>
+  ) : (
+    <Aside type="note" title="No structured usage example">
+      <p>
+        Manteen does not infer JSX, imports, callback behavior, or sample data from source files.
+        A copy-ready example will appear here only when the registry author publishes one.
+      </p>
+    </Aside>
+  )
+}
+
+<h2 id="props">Props</h2>
+{
+  hasPropDocs ? (
+    <>
+      <p>Author-documented props, carried verbatim from the registry item.</p>
+      {propComponents.map(([component, docs]) => (
+        <>
+          {propComponents.length > 1 && <h3 id={`props-${component.toLowerCase()}`}>{component}</h3>}
+          <table>
+            <thead>
+              <tr>
+                <th>Prop</th>
+                <th>Type</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {docs.map((prop) => (
+                <tr>
+                  <td>
+                    <code>{prop.name}</code>
+                    {prop.required && (
+                      <span class="registry-required" title="Required">
+                        *
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    <code>{prop.type}</code>
+                  </td>
+                  <td>{prop.default ? <code>{prop.default}</code> : "—"}</td>
+                  <td>{prop.description ?? ""}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      ))}
+      <p class="registry-file-facts">* required</p>
+    </>
+  ) : acceptsProps(index.type) ? (
+    <Aside type="note" title="Structured props not published">
+      <p>
+        This item document does not carry prop names, types, defaults, or descriptions. The source
+        is available, but this page does not present source inference as authored API
+        documentation. You can <a href="#source">inspect the typed source</a> instead.
+      </p>
+    </Aside>
+  ) : (
+    <p>This {type} item does not expose a component or hook prop surface.</p>
+  )
+}
+
+{
+  /*
+    Styling is the customization CONTRACT, kept deliberately compact: the selector chips are
+    what a consumer types into `classNames`, the package-style chips are what install composes
+    globally, and the theme fragment is content that exists nowhere else on the page. File
+    contents live under Source only; installed CSS being editable is already the product's
+    base promise ("source you own"), not a subsection.
+  */
+}
+<h2 id="styling">Styling</h2>
+{
+  hasStylesApi ? (
+    <>
+      {Object.entries(stylesApi ?? {}).map(([component, selectors]) => (
+          <>
+            <p>
+              <code>{component}</code> exposes these parts through the public{" "}
+              <code>classNames</code>/<code>styles</code> interface:
+            </p>
+            <ul class="registry-deps">
+              {selectors.map((selector) => (
+                <li>
+                  <code>{selector}</code>
+                </li>
+              ))}
+            </ul>
+          </>
+        ))}
+      <p class="registry-file-facts">
+        Author-declared; Manteen reports the declaration but does not verify each selector is
+        wired.
+      </p>
+    </>
+  ) : (
+    <p>
+      No public Styles API is declared. Installed CSS remains editable because your project owns
+      the source; internal class names are implementation details, not a customization contract.
+    </p>
+  )
+}
+
+{
+  packageStyles.length > 0 && (
+    <>
+      <p>Package-level styles, composed into the managed global stylesheet during install:</p>
+      <ul class="registry-deps">
+        {packageStyles.map((source) => (
+          <li>
+            <code>{source}</code>
+          </li>
+        ))}
+      </ul>
+    </>
+  )
+}
+
+{
+  themeFragment?.content?.trim() && (
+    <details class="registry-source-file">
+      <summary>
+        <code>{themeFragment.path}</code>
+        <span>theme fragment · {fileSize(themeFragment.content)}</span>
+      </summary>
+      <div class="registry-source-file__body">
+        <p>Folded into the configured project theme; not written at this source path.</p>
+        <Code code={themeFragment.content} lang={codeLanguage(themeFragment.path)} wrap />
+      </div>
+    </details>
+  )
+}
+
+<h2 id="source">Source</h2>
+{
+  files.length > 0 ? (
+    <>
+      <p>
+        {files.length === 1
+          ? "One installable file ships with this item."
+          : `${files.length} installable files ship with this item.`}
+      </p>
+      {
+        /*
+          One disclosure per file, first one open: source files can run long, so the rest stay
+          collapsed until asked for. Native <details> — no script, and the browser's
+          find-in-page can still auto-expand matches.
+        */
+      }
+      {files.map((file, position) => (
+        <details class="registry-source-file" open={position === 0}>
+          <summary>
+            <code>{file.path}</code>
+            <span>
+              {fileKindLabel(file)} · {fileSize(file.content)} ·{" "}
+              {isProseFile(file) ? "text" : codeLanguage(file.target ?? file.path)}
+            </span>
+          </summary>
+          <div class="registry-source-file__body">
+            {file.content?.trim() ? (
+              <Code
+                code={file.content}
+                lang={isProseFile(file) ? "txt" : codeLanguage(file.target ?? file.path)}
+                wrap
+              />
+            ) : (
+              <p>This file has no content.</p>
+            )}
+          </div>
+        </details>
+      ))}
+    </>
+  ) : (
+    <Aside type="caution" title="No installable files">
+      <p>The registry document does not contain a file payload.</p>
+    </Aside>
+  )
+}
+
+{
+  item.docs && (
+    <>
+      <h2 id="author-notes">Author notes</h2>
+      <p>
+        {renderAuthorNotes(item.docs).map((part) =>
+          typeof part === "string" ? (
+            part
+          ) : (
+            <code class="registry-note-hash" title={part.hash}>
+              {part.hash.slice(0, 10)}&hellip;
+            </code>
+          ),
+        )}
+      </p>
+    </>
+  )
+}
+
+<script>
+  // The previous design addressed its tab panels via `?tab=preview|usage|props|styling|source`.
+  // Those panels are now plain sections with the same names as ids, so old deep links keep
+  // landing on the right content.
+  const requested = new URL(window.location.href).searchParams.get("tab");
+  if (requested) {
+    document.getElementById(requested)?.scrollIntoView();
+  }
+</script>

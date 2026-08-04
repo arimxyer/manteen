@@ -65,7 +65,6 @@ the vendored interchange schema, exiting non-zero on either.
         { "path": "src/use-data-grid.ts", "as": "hook" }
       ],
       "themeFragment": "src/data-grid.theme.ts",
-      "stylesApi": { "DataGrid": ["root", "header", "row"] },
       "docs": "Usage, source and attribution notes carried into the compiled item."
     }
   ]
@@ -79,10 +78,34 @@ toward the wire format.
 attribution notes; it is not a substitute for shipping any license notice required with copied
 source.
 
-`mantine`, `provider`, `themeFragment` and `stylesApi` have no wire-format equivalent, so
-they compile into `meta.mantine` — an open object that survives into both the item JSON and
-the registry index. Clients that understand it act on it; clients that don't ignore it and
-still install the files correctly.
+`stylesApi` is an optional author assertion for a component that genuinely exposes named selectors
+through a public `classNames`/`styles` interface. Private CSS-module class names do not qualify, and
+the kit carries the declaration without trying to infer or verify the component implementation:
+
+```json
+{ "stylesApi": { "DataGrid": ["root", "header", "row"] } }
+```
+
+`props` and `usage` are the same kind of author assertion, for documentation clients. `props`
+documents the prop surface (keyed by exported component or hook name, each entry `name`/`type`
+plus optional `required`/`default`/`description`); `usage` names a copy-ready example module
+that is inlined at build time. The kit carries both verbatim — it never infers documentation
+from source — and `usage`, like `themeFragment`, is deliberately not listed in `files`, so no
+client installs it:
+
+```json
+{
+  "props": { "DataGrid": [{ "name": "rows", "type": "DataGridRow[]", "required": true }] },
+  "usage": "src/data-grid.usage.tsx"
+}
+```
+
+`mantine`, `provider`, `themeFragment`, `stylesApi`, `props` and `usage` have no direct
+wire-format equivalent, so
+they compile into the installable item JSON under the open `meta.mantine` object. The registry index
+contains only the discovery-safe `requires` and `provider` summary; `stylesApi` and the inlined theme
+fragment remain item-detail metadata. Clients that understand these fields act on them; clients that
+do not still install the files correctly.
 
 `themeFragment` is deliberately **not** listed in `files`: an unaware client must not drop a
 stray theme module into a project, and an aware one merges it instead.

@@ -35,7 +35,12 @@ is not currently assigned to a wave; whether it belongs in v1 remains undecided.
 Node floor. Packed npm, pnpm, Yarn PnP and Bun consumers pass, including the native Windows
 `.cmd`/caret path. The macOS image lacks a usable supported `script(1)` invocation, so its pty cases
 skip with that named reason while Linux supplies the positive 3/3 pty probe. `jsconfig`-only
-projects refuse — the refusal has never been read by a human.
+projects refuse, as `jsconfig-typescript-unsupported`, on any planned item that ships `.ts`/`.tsx` —
+built to §6's letter after a review found the row unimplemented (`load.ts` died at the generic
+"tsconfig.json does not exist" error, and its own hint — pointing `tsconfig` at `jsconfig.json` —
+was a working bypass that let TypeScript write into a JS project at exit 0). The refusal now fires
+in `plan()`, the bypass routes into the same refusal rather than around it, and both are covered by
+unit tests.
 
 **Distribution.** `manteen-kit@0.2.0` and `manteen@0.2.0` are public on npm as `latest`. Both were
 published from the tagged GitHub Actions OIDC workflow and expose npm publish plus SLSA provenance
@@ -47,8 +52,8 @@ receipts are in the [`0.2 release handoff`](v0.2-release-handoff.md).
 `SECURITY.md` and contributor ceremony remain deliberately deferred until the repository has
 outside contributors.
 
-**Content.** The catalog now has 14 items: the original five, a shared upstream-license item and
-eight adapted Mantine UI components/blocks. The initial six-item tranche and the Carousel/Dropzone
+**Content.** The catalog now has 16 items: the original five, a shared upstream-license item and
+ten adapted Mantine UI components/blocks. The initial six-item tranche and the Carousel/Dropzone
 extension stress cases compile, install and production-build in disposable consumers; their exact
 evidence and non-evidence are recorded in the [`Wc handoff`](wc-registry-content-handoff.md). The
 [`required-global-styles contract`](global-styles-handoff.md) is implemented, released and accepted
@@ -56,6 +61,23 @@ through a fresh public npm-plus-HTTPS Vite consumer. A
 [`second hand-authored live registry`](second-registry-handoff.md) also passes discovery, install,
 build and maintenance under two consumer-selected namespaces. Broader cross-framework visual
 acceptance remains. Every new item exercises the client harder than a fixture does.
+
+**Catalog detail and Styles API follow-on.** The completed documentation-site milestone remains
+closed; the richer registry browser is a separate additive track. Its detail contract is
+`Preview · Usage · Props · Styling · Source`, with tabs omitted or given an explicit not-applicable
+state when the item has no trustworthy data. The first implementation stage adds base-path-safe
+item routes, grouped navigation, copyable install commands and source/metadata views without
+requiring a live preview runtime or a registry-protocol change. Curated previews and prop
+descriptors follow one item at a time rather than being inferred from arbitrary source.
+
+Styles API support runs beside that work as a bounded contract milestone; it does not pause the
+site and is not implied by an editable CSS module. The present selector arrays are author
+declarations, and the audit found declarations that were not backed by public `classNames` /
+`styles` behavior. The safe sequence is to remove false claims, prove ArticleCard end to end with
+real named selectors and customization tests, render only the resulting truthful metadata, and
+then decide whether other suitable components should adopt the pattern. Broad conversion does not
+start until that vertical slice passes; opinionated blocks may legitimately keep editable internal
+CSS without exposing a public Styles API.
 
 ## The program
 

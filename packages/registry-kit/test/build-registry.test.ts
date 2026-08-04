@@ -130,6 +130,52 @@ describe("meta.mantine", () => {
     expect(files.map((file) => file.path)).not.toContain("src/data-grid.theme.ts");
   });
 
+  test("carries author-documented props verbatim", () => {
+    const documented = toWireItem(
+      {
+        name: "documented",
+        kind: "component",
+        files: [{ path: "src/callout.tsx", as: "component" }],
+        props: {
+          Callout: [
+            { name: "title", type: "string", description: "Heading above the body." },
+            { name: "children", type: "ReactNode", required: true },
+            { name: "color", type: "string", default: '"blue"' },
+          ],
+        },
+      },
+      "@kit",
+      join(FIXTURES, "kit"),
+    );
+    const meta = (documented.meta as { mantine: { props: Record<string, unknown[]> } }).mantine;
+
+    expect(meta.props.Callout).toHaveLength(3);
+    expect(meta.props.Callout![1]).toEqual({ name: "children", type: "ReactNode", required: true });
+    expect(createWireValidator()(documented)).toBeNull();
+  });
+
+  test("inlines the usage example in meta and NOT in files", () => {
+    // Same contract as themeFragment: a documentation client renders it, and no
+    // client may install it as a stray file.
+    const documented = toWireItem(
+      {
+        name: "documented",
+        kind: "component",
+        files: [{ path: "src/callout.tsx", as: "component" }],
+        usage: "src/callout.usage.tsx",
+      },
+      "@kit",
+      join(FIXTURES, "kit"),
+    );
+    const meta = (documented.meta as { mantine: { usage: { path: string; content: string } } })
+      .mantine;
+    const files = documented.files as { path: string }[];
+
+    expect(meta.usage.path).toBe("src/callout.usage.tsx");
+    expect(meta.usage.content).toContain("CalloutExample");
+    expect(files.map((file) => file.path)).not.toContain("src/callout.usage.tsx");
+  });
+
   test("omits meta when an item declares nothing Mantine-specific", () => {
     const bare = toWireItem(
       { name: "bare", kind: "component", files: [{ path: "src/callout.tsx", as: "component" }] },
@@ -195,6 +241,20 @@ describe("validation", () => {
     });
 
     expect(errors).not.toBeNull();
+  });
+
+  test("rejects a prop entry missing its type or carrying an unknown field", () => {
+    const catalog = (props: unknown) => ({
+      name: "bad",
+      namespace: "@bad",
+      items: [{ name: "x", kind: "component", files: [{ path: "a.tsx", as: "component" }], props }],
+    });
+
+    expect(validateCatalog(catalog({ X: [{ name: "title" }] }))).not.toBeNull();
+    expect(
+      validateCatalog(catalog({ X: [{ name: "title", type: "string", optional: true }] })),
+    ).not.toBeNull();
+    expect(validateCatalog(catalog({ X: [{ name: "title", type: "string" }] }))).toBeNull();
   });
 
   test("rejects duplicate or empty package stylesheet imports", () => {

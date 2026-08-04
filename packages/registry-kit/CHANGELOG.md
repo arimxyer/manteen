@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Authoring format: optional `props` — an author-documented prop surface keyed by exported
+  component or hook name — and `usage` — a path to a copy-ready example module, inlined into
+  the compiled item like `themeFragment` and never listed in `files`. Both ride under
+  `meta.mantine` and are carried verbatim; the kit never infers documentation from source.
+
 ## 0.2.0
 
 - Compile exact package-level stylesheet imports through the shadcn-compatible wire `css` field.

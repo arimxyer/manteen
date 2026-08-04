@@ -23,7 +23,7 @@
   box-shadow: var(--mantine-shadow-sm);
 }
 
-.leading {
+.itemSection {
   display: grid;
   min-width: 60px;
   font-size: 30px;
@@ -31,6 +31,13 @@
   place-items: center start;
 }
 
-.description {
+/*
+ * itemLabel is a purely structural selector: the label had no default styling
+ * before this selector existed either, so it intentionally has no rule here
+ * (see the customization test's carve-out comment for the same reason). Adding
+ * an empty rule just to satisfy tooling would trip Biome's noEmptyBlock lint.
+ */
+
+.itemDescription {
   color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-4));
 }

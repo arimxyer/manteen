@@ -5,11 +5,28 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node ../../scripts/build-site.mjs",
+    "build": "astro build && node ../../scripts/build-site.mjs && node ../../scripts/check-ec-css.mjs",
     "preview": "astro preview"
   },
   "devDependencies": {
     "@astrojs/starlight": "^0.41.5",
+    "@expressive-code/core": "0.44.1",
+    "@expressive-code/plugin-line-numbers": "0.44.1",
     "astro": "^7.1.6"
+  },
+  "dependencies": {
+    "@astrojs/react": "^6.0.2",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@mantine/carousel": "^9.5.0",
+    "@mantine/core": "^9.5.0",
+    "@mantine/dropzone": "^9.5.0",
+    "@mantine/form": "^9.5.0",
+    "@mantine/hooks": "^9.5.0",
+    "@tabler/icons-react": "^3.45.0",
+    "clsx": "^2.1.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   }
 }
