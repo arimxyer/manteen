@@ -92,10 +92,47 @@ is a judgment call, which is exactly why they are separate runs.
 | W7 | [`Hardening`](w7-hardening-handoff.md) | complete: matrix-driven, findings-first, hosted retry | Real Windows and macOS CI exposed path and line-ending defects that local Linux could not. |
 | W8 | [`Release`](w8-release-handoff.md) | complete: both `0.1.1` packages published through tagged OIDC with provenance | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
 | Wc | [`Registry content`](wc-registry-content-handoff.md) | ongoing: small curated tranches | Independent of all of the above; doubles as client stress-testing without turning fixtures into product evidence. |
+| Wt | [`Theme builder`](#wt--theme-builder-proposed) | proposed: one page, plan-first | Preview-then-install for the one registry item every consumer is expected to edit. Depends on nothing; blocked by nothing. |
 
 **Not workflow-shaped, do directly:** the hygiene set (LICENSE, linter, SECURITY, CONTRIBUTING,
 dependabot, README rename). Single-file, single-concern, no discovery — a workflow would be
 pure overhead.
+
+## Wt — theme builder (proposed)
+
+Not started. Recorded 2026-08-04 so the idea stops living in a conversation.
+
+`registry/lib/theme.ts` is already the opinions layer and already installable (`manteen add
+theme`). What is missing is any way to *see* a theme before installing it, or to produce a
+modified one without hand-editing a file you have never previewed. The shape: one docs route
+that lifts `createTheme` input into user-controlled state, renders the real catalog underneath
+it, and emits the `theme.ts` you would install.
+
+**Why it is cheap now and would not have been a week ago.** The playground adapter contract
+covers 14 of 16 items, and each adapter already renders a real registry component at default
+props inside a provider — `LiveMini` is exactly that composition at mini scale. The preview
+surface is assembly of things that exist, not new infrastructure.
+
+Scope notes, so the plan does not have to rediscover them:
+
+- Controls map onto what `theme.ts` actually declares — `primaryColor`, `defaultRadius`,
+  `fontFamily`, `headings.fontWeight`, and the Button/Card/Paper/Modal `defaultProps`. It
+  declares no `colors` key today.
+- An arbitrary brand colour needs a generated ten-shade tuple. `@mantine/colors-generator`
+  ships a version matched to the pinned Mantine line; adding it re-resolves the workspace, so
+  it is one deliberate install, never a casual one.
+- The output is a **file**, not a variable block. Mantine themes through `createTheme`, so
+  shadcn's "paste these CSS variables into globals.css" has no equivalent here — the install
+  path already exists and the page should feed it.
+
+**Explicitly out of scope: choosing a base component library.** shadcn's CLI asks that question
+because it sits on top of Radix or Base UI. manteen does not ask it and should not — Mantine is
+the base, and the strength of that base is the reason this project exists.
+
+Open before it starts: whether the `theme` card on the catalog index becomes this page's entry
+point. If it does, polishing that mini is wasted work — which is why the interim fix is only to
+stop it lying (it currently draws Surface/Success/Text swatches for tokens `theme.ts` does not
+define).
 
 ## Sequencing and dependencies
 
@@ -103,6 +140,7 @@ pure overhead.
 Phase 3 ✔ ─> W4 apply surface ✔ ─┬─> W5 command set ✔ ──┐
                                  └─> W6 init ✔ ─────────┴─> W7 hardening ✔ ─> W8 release ✔
 Wc registry content ......... any time, independent
+Wt theme builder ............ any time, independent, not started
 hygiene ..................... done, direct
 ```
 
