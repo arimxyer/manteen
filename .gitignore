@@ -6,3 +6,10 @@ public/index.html
 examples/registry-starter/public/r/
 *.tsbuildinfo
 .DS_Store
+
+# The Pencil design workspace. Deliberately untracked: it is research material for
+# the people working on this repo, not something a consumer needs to clone, and the
+# .pen file is a 5.4 MB encrypted binary that git cannot diff — every save would
+# rewrite it whole and grow history by its full size. Back it up outside git.
+# docs/design-qa.md cites frames in it by id; those references resolve only locally.
+pencil/
