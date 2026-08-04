@@ -1,15 +1,12 @@
 # manteen docs — whole-site visual QA synthesis
 
 **Sources:** 7 independent auditors (6 browser, 1 code/commit). 68 raw findings → 51 after dedupe.
-**Site:** http://127.0.0.1:4399/manteen/ · **Code:** `apps/docs/` · **Pass under review:** `f8a5186 feat(docs): unify the documentation visual system` · **Its self-report:** `/home/arimayer/orca/workspaces/mantine-components/cetacean/design-qa.md`
+**Site:** http://127.0.0.1:4399/manteen/ · **Code:** `apps/docs/` · **Pass under review:** `f8a5186 feat(docs): unify the documentation visual system` · **Its self-report:** [`design-qa.md`](./design-qa.md)
 
-**Evidence paths.** All 181 screenshots across the six auditor directories were verified to exist; all 113 paths cited below resolve. Convenience shortcut:
-
-```bash
-export SHOTS=/tmp/claude-1000/-home-arimayer-orca-workspaces-mantine-components-cetacean/0b905805-4c8b-4071-9ec2-33a84719599e/scratchpad/audit-shots
-export REFS=/tmp/claude-1000/-home-arimayer-orca-workspaces-mantine-components-cetacean/0b905805-4c8b-4071-9ec2-33a84719599e/scratchpad/pencil-refs
-xdg-open $SHOTS/gallery/gallery-dark-full.png
-```
+> **Archived 2026-08-04.** This is a historical record of the 2026-07-31 audit, kept for the
+> reasoning and the measurements. Every screenshot path it cites lived under a session
+> scratchpad in `/tmp` and **no longer exists** — the findings below are readable on their own,
+> but the images are gone. Re-shoot rather than hunting for them.
 
 ---
 

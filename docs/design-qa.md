@@ -1,5 +1,10 @@
 # Whole-product visual design QA
 
+> **Archived 2026-08-04.** Historical self-report from the 2026-07-31 pass, kept for its scope
+> and rationale. Its `/tmp` evidence paths have since been cleared and no longer resolve. The
+> independent review that graded these claims is [`docs-visual-audit.md`](./docs-visual-audit.md);
+> read that alongside this one, because it contradicts several of the claims below.
+
 ## Scope and evidence
 
 This pass covered the complete documentation product rather than only the original registry mock:
