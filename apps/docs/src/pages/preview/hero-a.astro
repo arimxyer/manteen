@@ -1,0 +1,41 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+
+import HeroLedger from "../../components/home/HeroLedger.astro";
+import "../../styles/specimen.css";
+
+// Review-only route. Both directions render in the real site chrome so that type, tokens, and
+// theme behave exactly as they would on the home page — a standalone HTML sandbox would prove
+// nothing about how they land in Starlight.
+---
+
+<StarlightPage
+  frontmatter={{
+    title: "Hero A — The Ledger",
+    description: "Home page direction A: leads with stewardship, anchored by a live component.",
+    template: "splash",
+    editUrl: false,
+    lastUpdated: false,
+    next: false,
+    prev: false,
+    pagefind: false,
+  }}
+  hasSidebar={false}
+>
+  <HeroLedger />
+</StarlightPage>
+
+<style is:global>
+  /* Review-page chrome only — not part of either direction.
+     StarlightPage always renders its frontmatter title, which the real home page would not have
+     (replacing `hero:` means there is no title block at all). Hiding it here keeps the review
+     honest about what ships. The container widening is real, though: `.sl-container`'s 1080px cap
+     is Starlight's prose measure, and a two-column hero wants the full 1216px. */
+  .content-panel:first-of-type {
+    display: none;
+  }
+
+  .content-panel .sl-container {
+    max-width: 76rem;
+  }
+</style>

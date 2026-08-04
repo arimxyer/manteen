@@ -1,0 +1,166 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  /* No shadow, no gradient — `.spec__panel` already supplies the one inset hairline that is this
+     system's entire depth cue. */
+}
+
+.dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--manteen-text-faint);
+  transition: background 320ms ease;
+}
+
+.dot[data-tone="mod"] {
+  background: var(--spec-mod);
+}
+
+.dot[data-tone="add"] {
+  background: var(--spec-add);
+}
+
+/* ---- The live component stage ------------------------------------------------------------ */
+.stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Fixed height, not min-height: the card grows by one row mid-loop, and letting the panel
+     resize would bounce the whole hero column on every cycle. */
+  height: 11.5rem;
+  padding: var(--manteen-space-5);
+  background: var(--manteen-panel);
+  border-bottom: 1px solid var(--manteen-border);
+}
+
+.card {
+  width: 100%;
+  max-width: 19rem;
+}
+
+/* ---- Source ------------------------------------------------------------------------------- */
+.source {
+  margin: 0;
+  padding: var(--manteen-space-4) 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  font-family: var(--spec-font-label);
+  font-size: 0.8125rem;
+  line-height: 1.75;
+  overflow-x: auto;
+}
+
+.source code {
+  display: block;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--manteen-text-muted);
+}
+
+.line {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  padding-right: var(--manteen-space-4);
+  white-space: pre;
+  transition: background 320ms ease;
+}
+
+/* The diff gutter — the motif that recurs down the specimen index. Reserved at every line so
+   marks appear in place instead of shifting the code sideways when they arrive. */
+.gutter {
+  flex: none;
+  width: 2rem;
+  padding-left: 0.85rem;
+  color: var(--manteen-text-faint);
+  user-select: none;
+}
+
+.added {
+  transition:
+    color 320ms ease,
+    opacity 320ms ease;
+}
+
+/* Before the update lands the line is present but not yet real: held at low opacity so the box is
+   already reserved (no reflow) while reading as "not in your file yet". */
+.line[data-state="pending"] .added {
+  opacity: 0.24;
+}
+
+.line[data-state="added"] {
+  background: color-mix(in srgb, var(--spec-add) 12%, transparent);
+}
+
+.line[data-state="added"] .gutter,
+.line[data-state="added"] .added {
+  color: var(--spec-add);
+  opacity: 1;
+}
+
+/* ---- Status line -------------------------------------------------------------------------- */
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  border-top: 1px solid var(--manteen-border);
+  background: var(--manteen-code-chrome);
+  font-family: var(--spec-font-label);
+  font-size: 0.78125rem;
+  color: var(--manteen-text-muted);
+  transition: color 320ms ease;
+}
+
+.statusPrompt {
+  flex: none;
+  width: 1ch;
+  color: var(--manteen-text-faint);
+}
+
+.status[data-tone="mod"] {
+  color: var(--spec-mod);
+}
+
+.status[data-tone="mod"] .statusPrompt {
+  color: var(--spec-mod);
+}
+
+.status[data-tone="add"] {
+  color: var(--spec-add);
+}
+
+.status[data-tone="add"] .statusPrompt {
+  color: var(--spec-add);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot,
+  .line,
+  .added,
+  .status {
+    transition: none;
+  }
+}
+
+@media (max-width: 30rem) {
+  .stage {
+    height: 10.5rem;
+    padding: var(--manteen-space-4);
+  }
+
+  .source {
+    font-size: 0.75rem;
+  }
+
+  .gutter {
+    width: 1.6rem;
+    padding-left: 0.6rem;
+  }
+}

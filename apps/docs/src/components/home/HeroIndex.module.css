@@ -1,0 +1,266 @@
+.sheet {
+  width: 100%;
+  max-width: 76rem;
+  margin-inline: auto;
+  padding: clamp(1.5rem, 4vw, 3rem) var(--manteen-space-5) clamp(2.5rem, 5vw, 4rem);
+}
+
+/* ---- Masthead ------------------------------------------------------------------------------ */
+.masthead {
+  display: flex;
+  align-items: center;
+  gap: var(--manteen-space-4);
+  padding-bottom: var(--manteen-space-3);
+  border-bottom: 1px solid var(--spec-rule-strong);
+}
+
+.masthead > :last-child {
+  margin-left: auto;
+}
+
+.mannyMark {
+  flex: none;
+  width: 3.5rem;
+}
+
+.wordmark.wordmark {
+  font-size: 0.9375rem;
+  letter-spacing: 0.2em;
+  color: var(--manteen-text);
+}
+
+/* ---- Cover entry --------------------------------------------------------------------------- */
+.cover {
+  padding-block: clamp(1.75rem, 4vw, 3rem);
+  border-bottom: 1px solid var(--spec-rule);
+}
+
+.coverHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--manteen-space-4);
+}
+
+.coverHead > :last-child {
+  margin-left: auto;
+}
+
+.coverBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: end;
+  margin-top: var(--manteen-space-5);
+}
+
+/* Wider measure than the shared display rule: this headline is a full sentence acting as the
+   page's cover line, not a two-word banner, so it wants ~20ch rather than 16ch. */
+.coverTitle.coverTitle {
+  max-width: 20ch;
+  font-size: clamp(2.25rem, 4.6vw, 3.5rem);
+}
+
+.coverSide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--manteen-space-5);
+}
+
+/* ---- Plate --------------------------------------------------------------------------------- */
+.plate {
+  padding-block: clamp(1.75rem, 4vw, 2.75rem);
+  border-bottom: 1px solid var(--spec-rule);
+}
+
+.plateGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--manteen-space-5);
+  margin-top: var(--manteen-space-5);
+  padding: 0;
+  list-style: none;
+}
+
+.plateCell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--manteen-space-3);
+}
+
+.plateFrame {
+  /* The mini brings its own fixed-height frame (RegistryCardPreview.module.css `.preview`,
+     8.875rem); this only supplies the specimen border around it. */
+  padding: 0;
+}
+
+/* ---- Index rows ---------------------------------------------------------------------------- */
+.rows {
+  margin-top: var(--manteen-space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  border-bottom: 1px solid var(--spec-rule);
+}
+
+/* Every row is its own grid container, so `auto` and `fr` tracks resolve per row and the columns
+   drift — measured: the kind column started at 414px, 398px, 398px, 403px down the first four
+   rows. Fixed tracks for everything except the description makes each row resolve identically,
+   which is what an index has to do to be scannable at all. */
+.rowLink {
+  display: grid;
+  grid-template-columns: 2.5rem 13rem 5.5rem minmax(0, 1fr) 19rem;
+  align-items: baseline;
+  gap: var(--manteen-space-4);
+  padding: 0.7rem 0.25rem;
+  text-decoration: none;
+  color: inherit;
+  transition: background 120ms ease;
+}
+
+.rowLink:hover {
+  background: color-mix(in srgb, var(--manteen-text) 5%, transparent);
+  color: inherit;
+}
+
+.rowNum {
+  color: var(--manteen-text-faint);
+}
+
+.rowLink:hover .rowNum {
+  color: var(--manteen-accent-soft);
+}
+
+.rowName {
+  font-size: var(--manteen-text-ui);
+  font-weight: 600;
+  color: var(--manteen-text);
+}
+
+.rowKind {
+  color: var(--manteen-text-faint);
+}
+
+.rowDesc {
+  font-size: var(--manteen-text-sm);
+  line-height: 1.5;
+  color: var(--manteen-text-muted);
+  /* One line, clipped: the index is scannable because every row is exactly one row tall. The
+     full description is one click away on the item's own page. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The command is the row's payoff, so it stays quiet until the row is under the cursor —
+   otherwise twenty-two repetitions of `manteen add` shout down the names they belong to. */
+.rowCmd {
+  justify-self: end;
+  font-family: var(--spec-font-label);
+  font-size: var(--manteen-text-sm);
+  white-space: nowrap;
+  color: var(--manteen-text-faint);
+  opacity: 0.45;
+  transition:
+    opacity 120ms ease,
+    color 120ms ease;
+}
+
+.rowLink:hover .rowCmd {
+  opacity: 1;
+  color: var(--manteen-accent-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rowLink,
+  .rowCmd {
+    transition: none;
+  }
+}
+
+/* ---- Colophon ------------------------------------------------------------------------------ */
+.colophon {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--manteen-space-5);
+  margin-top: clamp(2rem, 4vw, 3rem);
+  padding-top: var(--manteen-space-5);
+  border-top: 1px solid var(--spec-rule-strong);
+}
+
+.colophonLine {
+  margin: 0;
+  max-width: 48ch;
+  font-size: var(--manteen-text-ui);
+  line-height: 1.6;
+  color: var(--manteen-text-muted);
+}
+
+.colophonLine code {
+  font-family: var(--spec-font-label);
+  font-size: 0.9em;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--manteen-text);
+}
+
+/* ---- Responsive ---------------------------------------------------------------------------- */
+@media (max-width: 68rem) {
+  .plateGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 60rem) {
+  .coverBody {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .rowLink {
+    grid-template-columns: 2.5rem minmax(0, 1fr) 5.5rem;
+    row-gap: 0.3rem;
+  }
+
+  /* Description and command fold under the name rather than being squeezed; the command keeps
+     its own row so it never truncates the thing a reader came for. */
+  .rowDesc {
+    grid-column: 2 / -1;
+    white-space: normal;
+    overflow: visible;
+  }
+
+  /* The longest command (`@house/authentication-form`) is wider than a 390px row, and `nowrap`
+     pushed the page 1px into horizontal scroll. Breaking anywhere keeps the whole command visible
+     rather than letting it run off the edge. */
+  .rowCmd {
+    grid-column: 2 / -1;
+    justify-self: start;
+    opacity: 1;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 34rem) {
+  .sheet {
+    padding-inline: var(--manteen-space-4);
+  }
+
+  .plateGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .masthead {
+    flex-wrap: wrap;
+  }
+
+  .masthead > :last-child {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+}

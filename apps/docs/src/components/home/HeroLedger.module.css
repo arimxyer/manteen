@@ -1,0 +1,199 @@
+.hero {
+  width: 100%;
+  max-width: 76rem;
+  margin-inline: auto;
+  padding: clamp(2rem, 5vw, 4rem) var(--manteen-space-5) clamp(2.5rem, 5vw, 4rem);
+}
+
+.grid {
+  display: grid;
+  /* The right column is the wider one on purpose: the panel is the argument, the copy is the
+     caption. A 50/50 split reads as a generic marketing hero. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: center;
+  margin-top: clamp(2rem, 4vw, 3.25rem);
+}
+
+.lead {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--manteen-space-5);
+}
+
+.command {
+  align-self: stretch;
+  margin-top: var(--manteen-space-2);
+}
+
+.panelCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--manteen-space-3);
+}
+
+.actions {
+  gap: var(--manteen-space-4) var(--manteen-space-5);
+}
+
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--manteen-space-5);
+}
+
+/* Doubled class so this wins over `.spec__label`'s uppercase regardless of stylesheet order —
+   a caption is a sentence, and mono caps at this length reads as shouting, not as a label. */
+.figcap.figcap {
+  color: var(--manteen-text-faint);
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.figcap code {
+  font-family: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--manteen-text-muted);
+}
+
+/* ---- Section 02: toolkit -------------------------------------------------------------------- */
+.tools {
+  margin-top: clamp(2.5rem, 5vw, 4rem);
+}
+
+.toolGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  margin-top: var(--manteen-space-5);
+}
+
+.tool {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--manteen-space-3);
+}
+
+/* `margin-top: auto` rather than a fixed step: the two summaries are different lengths, so a
+   fixed gap left the two command rules on different baselines. Pushing them to the bottom of
+   their (grid-stretched) columns lands both on the same line. */
+.tool > .spec__command,
+.tool > p:last-child {
+  align-self: stretch;
+  margin-top: auto;
+  padding-top: var(--manteen-space-4);
+}
+
+.toolName {
+  margin: 0;
+  font-family: var(--spec-font-label);
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--manteen-text);
+}
+
+.toolSummary {
+  margin: 0;
+  max-width: 42ch;
+  font-size: var(--manteen-text-ui);
+  line-height: 1.6;
+  color: var(--manteen-text-muted);
+}
+
+.toolSummary code {
+  font-family: var(--spec-font-label);
+  font-size: 0.9em;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--manteen-text);
+}
+
+/* ---- Colophon ------------------------------------------------------------------------------ */
+.colophon {
+  display: flex;
+  align-items: center;
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+  margin-top: clamp(2.5rem, 5vw, 4rem);
+  padding-top: var(--manteen-space-5);
+  border-top: 1px solid var(--spec-rule);
+}
+
+.mannyMark {
+  flex: none;
+  width: 4.5rem;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--manteen-space-5);
+  margin: 0;
+  flex: 1;
+}
+
+.facts div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+/* `margin-inline-start` explicitly, not just `margin` — the UA sheet indents `dd` by 40px and
+   Starlight's markdown rules restate it, so a shorthand alone left the values hanging off the
+   labels. */
+.facts dd {
+  margin: 0;
+  margin-inline-start: 0;
+  font-size: var(--manteen-text-ui);
+  line-height: 1.45;
+  color: var(--manteen-text-muted);
+}
+
+.facts dd code {
+  font-family: var(--spec-font-label);
+  font-size: 0.9em;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--manteen-text);
+}
+
+@media (max-width: 60rem) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--manteen-space-6);
+  }
+
+  .facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .toolGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 34rem) {
+  .hero {
+    padding-inline: var(--manteen-space-4);
+  }
+
+  .colophon {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .facts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--manteen-space-4);
+    width: 100%;
+  }
+}

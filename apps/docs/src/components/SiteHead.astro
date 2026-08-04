@@ -27,7 +27,12 @@ const isCatalogPage =
   Astro.url.pathname === `${base}/registry` ||
   Astro.url.pathname === `${base}/` ||
   Astro.url.pathname === base;
-const needsCoreStyles = hasPlayground || isCatalogPage;
+// The home-page hero directions under review render a real Mantine component live (see
+// components/home/StewardshipPanel.tsx), so their review routes need the same core CSS the
+// catalog pages get. Prefix match, not an exact list, so adding a third direction doesn't
+// silently ship an unstyled component.
+const isHeroPreview = Astro.url.pathname.startsWith(`${base}/preview/`);
+const needsCoreStyles = hasPlayground || isCatalogPage || isHeroPreview;
 ---
 
 <DefaultHead />
