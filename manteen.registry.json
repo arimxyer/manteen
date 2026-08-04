@@ -397,6 +397,12 @@
             "description": "Heading text rendered as \"{heading}, {mode} with\" above the form, e.g. \"Welcome, login with\"."
           },
           {
+            "name": "initialTerms",
+            "type": "boolean",
+            "default": "false",
+            "description": "Initial checked state of the terms-and-conditions checkbox shown in register mode. Upstream Mantine UI initializes it true, which renders a pre-checked consent box the user never touched; this registry defaults it false. Set it true only if your flow genuinely warrants a pre-checked consent."
+          },
+          {
             "name": "onSubmit",
             "type": "(values: AuthenticationValues, mode: AuthenticationMode) => void",
             "description": "Called with the validated form values and current mode when the form is submitted."

@@ -145,6 +145,13 @@
   align-items: center;
   justify-content: center;
   padding: 0.75rem;
+  /* RC-1 / H-4 — Playground.tsx measures how far a portalled dropdown's real bottom edge sits
+     past the stage's own (flex-computed) height and reports the gap here as extra padding, not
+     extra `min-height`. Padding grows the box without moving the flex-centered content it
+     surrounds, so the trigger the dropdown is anchored to never shifts; growing min-height
+     instead would recentre the demo, move the trigger down, and reopen the same gap. See the
+     `stageOverflow` effect in Playground.tsx for the full mechanism. */
+  padding-block-end: calc(0.75rem + var(--playground-stage-overflow, 0px));
   overflow: auto;
   contain: layout;
   background: var(--manteen-demo-canvas-dark);
@@ -170,6 +177,24 @@
 
 :where(.portalHost) > * {
   pointer-events: auto;
+}
+
+/* RC-1 / H-5 — `position: absolute` does NOT create a containing block for `position: fixed`
+   descendants (only `contain: layout`/transform/filter/will-change do); Mantine's Drawer uses
+   `position: fixed`, so its percentage width skips `.portalHost` entirely and resolves against
+   the next ancestor that DOES establish one — `.stage` itself (see its own `contain: layout`
+   above) — which is the full 630px stage box, not the 320px simulated mobile column. Giving
+   `.portalHost` its own `contain: layout` intercepts that search one level earlier, and sizing
+   it to `--playground-mobile-width` (the same variable `.demoSlot` uses) makes it the
+   containing block the Drawer should have been measured against all along. Scoped to
+   `[data-viewport="mobile"]` only: header-mega-menu's desktop HoverCard dropdown is
+   legitimately wider than `.demoSlot` and must keep resolving against the full stage. */
+.stage[data-viewport="mobile"] .portalHost {
+  right: auto;
+  left: 50%;
+  width: var(--playground-mobile-width, min(20rem, 100%));
+  transform: translateX(-50%);
+  contain: layout;
 }
 
 .stage[data-preview-scheme="light"] {
@@ -290,6 +315,15 @@
   background: var(--manteen-panel-raised);
   color: var(--manteen-text-muted);
   font-size: var(--manteen-text-xs);
+}
+
+/* M-3 — the field's width comes from its category (compact/plain/wide), not from the default
+   value's length, so a long value hard-clipped mid-glyph with no cue. `title` (Playground.tsx)
+   covers the "how do I read the rest" half; this covers the "how do I tell it's truncated"
+   half. */
+.fields input {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .switchField button {

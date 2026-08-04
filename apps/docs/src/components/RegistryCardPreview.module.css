@@ -68,43 +68,51 @@
   margin: 0;
 }
 
+/* H-8: replaces the old 4-swatch role grid (Primary/Surface/Success/Text) — see ThemePreview's
+   doc comment in the .tsx for why those roles don't exist in `registry/lib/theme.ts`. Every
+   color here is either a real Mantine ramp value or read through `--manteen-*`/`--manteen-demo-*`
+   custom properties, which `.preview`'s `:root[data-theme="light"]` override above already
+   re-points per theme — so, unlike the old block, nothing in this one is a hardcoded hex tied to
+   a single color scheme. */
 .themeMini {
-  display: grid;
-  /* M2: 4 × 3.5rem swatches + 3 × 0.75rem gaps = 16.25rem, ~77% fill —
-     up from the previous 3.2rem swatches' ~65%. */
-  grid-template-columns: repeat(4, 3.5rem);
-  gap: 0.75rem;
-}
-
-.themeMini > div {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  text-align: center;
+  gap: 0.65rem;
+  width: 16.5rem;
 }
-.themeMini dt {
-  width: 3.5rem;
-  height: 3.9rem;
+
+.themeRamp {
+  display: flex;
+  height: 2.4rem;
   border: 1px solid var(--manteen-border);
   border-radius: var(--manteen-radius-sm);
+  overflow: hidden;
 }
-.themeMini dd {
+.themeSwatch {
+  flex: 1;
+}
+
+.themeFacts {
+  display: flex;
   margin: 0;
-  color: var(--manteen-text-muted);
-  font-size: 0.55rem;
+  gap: 1rem;
 }
-.themeMini .primary {
-  background: var(--manteen-demo-accent-soft);
+.themeFacts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
-.themeMini .surface {
-  background: #22252d;
+.themeFacts dt {
+  color: var(--manteen-text-faint);
+  font-size: 0.5rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
-.themeMini .success {
-  background: #65d6ad;
-}
-.themeMini .text {
-  border-color: var(--manteen-text-muted);
-  background: #f5f7ff;
+.themeFacts dd {
+  margin: 0;
+  color: var(--manteen-text);
+  font-size: 0.62rem;
+  font-weight: 600;
 }
 
 .fileMini {
@@ -129,18 +137,6 @@
 .fileMini small {
   color: var(--manteen-text-muted);
   font-size: 0.62rem;
-}
-
-.visuallyHidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
 }
 
 /*
@@ -227,4 +223,60 @@
 */
 .headerMegaMenuLiveMini {
   flex-shrink: 0;
+}
+
+/*
+  H-7/RC-3 (mobile half): HeaderMegaMenu's `visibleFrom="sm"` / `hiddenFrom="sm"` compile to
+  Mantine's own `mantine-visible-from-sm` / `mantine-hidden-from-sm` classes, backed by a
+  `@media (max-width | min-width)` rule keyed to the REAL browser viewport (injected once,
+  document-wide, by `LiveMiniStyles`'s dark `MantineClasses` provider — see MantineClasses.tsx)
+  — never against this box's declared 42rem. `LiveMini` always renders with
+  `context.viewport: "desktop"`, but nothing in the component itself reads that context for the
+  non-mobile case, so on an actual mobile browser (or any window under the `sm` breakpoint) the
+  real `@media` swaps the nav/login Groups for the hamburger, same as it correctly does on the
+  live page's own Mobile toggle — just never intended for this always-desktop mini. Both
+  Mantine rules ship `!important`; this selector's two classes give it higher specificity
+  ((0,2,0) vs (0,1,0)) in the same unlayered author origin, so it wins regardless of source
+  order, and it carries no `@media` of its own, so no real viewport can re-break it — the same
+  shape as the `.statsGridLiveMini` override above, applied to the mobile-collapse instance of
+  RC-3 instead of the SimpleGrid one. This is the cheap, one-off fix RC-3 names as the
+  alternative to a general declared-width-driven layout/media context (container queries or an
+  iframe stage); it does not generalize past this component.
+*/
+/* The target rule (Mantine's own injected MantineClasses <style>) is itself !important;
+   matching it is the only way an unlayered author rule of any specificity beats it — dropping
+   !important here would silently no-op. */
+.headerMegaMenuLiveMini :global(.mantine-visible-from-sm) {
+  /* biome-ignore lint/complexity/noImportantStyles: see comment above the rule. */
+  display: flex !important;
+}
+.headerMegaMenuLiveMini :global(.mantine-hidden-from-sm) {
+  /* biome-ignore lint/complexity/noImportantStyles: same as above — the `.mantine-hidden-from-sm`
+     rule this overrides ships !important too. */
+  display: none !important;
+}
+
+/*
+  A second, independent real-viewport leak sits inside the registry item's OWN CSS module —
+  `registry/mantine-ui/header-mega-menu/header-mega-menu.module.css`'s `.link` class carries
+  `@media (max-width: 48em) { width: 100%; height: 42px; }`, meant to size the DRAWER's stacked
+  mobile links. But `.link` is the SAME class the desktop nav bar's `<a>`/`<UnstyledButton>`
+  elements use, so at any real viewport under 48em (768px) — independent of the fix two rules
+  up — those elements also go full-width-and-stacked, undoing the single-row nav restored above
+  (verified live: each link's rect had `width` equal to the whole nav Group's width and a
+  distinct `y`, i.e., one per row, vs. sharing one row with sequential `x` at a wide viewport).
+  Not owned by this file/module, and its class name is a build-hashed CSS-modules identifier —
+  not a stable public hook like Mantine's `mantine-visible-from-sm` above — so it isn't safe to
+  target directly. Going one level up the DOM instead, to the already-scoped nav Group's direct
+  children, needs no knowledge of that hash at all: `.mantine-visible-from-sm > *` re-declares
+  the same `width`/`height` the class's own BASE (non-media) rule already implies (content-sized
+  width, full-height-of-row), at (0,3,0) specificity — one class higher than `.link`'s (0,1,0)
+  — which beats it unconditionally, in the same unlayered origin, with no `!important` needed
+  since specificity alone decides. This is a bounded, file-scoped workaround for a defect that
+  actually lives in registry source; the real fix is scoping `.link`'s mobile rule to the
+  Drawer's own subtree there, which this file can't do.
+*/
+.headerMegaMenuLiveMini :global(.mantine-visible-from-sm) > * {
+  width: auto;
+  height: 100%;
 }

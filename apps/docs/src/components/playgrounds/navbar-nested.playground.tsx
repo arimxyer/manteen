@@ -62,10 +62,14 @@ const adapter: PlaygroundAdapter = {
     />
   ),
   renderJsx: (props) => {
+    // L-1 — these fragments are spliced into the template below at the indent of their
+    // sibling line, not the indent of the line they're appended to: `versionLabel` is a
+    // sibling prop of `user={{` (8sp), and `avatar:` is a sibling field of `name:`/`email:`
+    // (10sp) — not of the shorter line each is concatenated onto.
     const versionProp = props.versionLabel
-      ? `\n      versionLabel=${JSON.stringify(props.versionLabel)}`
+      ? `\n        versionLabel=${JSON.stringify(props.versionLabel)}`
       : "";
-    const avatarProp = props.avatar ? `,\n        avatar: ${JSON.stringify(AVATAR_URL)}` : "";
+    const avatarProp = props.avatar ? `,\n          avatar: ${JSON.stringify(AVATAR_URL)}` : "";
 
     return `import { IconCalendarStats, IconGauge, IconLock, IconNotes } from "@tabler/icons-react";
 import { NavbarNested } from "@ui/navbar-nested";

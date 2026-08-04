@@ -527,6 +527,15 @@
   --sl-color-text-badge: var(--manteen-text-muted);
 }
 
+/* L-3 — Starlight's own `.sl-badge` (the Component / Mantine>=9 / MantineProvider pills) ships
+   a hardcoded 0.25rem radius in its own `<style>` block, never brought onto the manteen 3-step
+   scale. That block is `@layer starlight.components`, so this outranks it regardless of
+   specificity — no need to fight the badge's colour variables (those are already themed via
+   `--sl-color-*-badge` custom properties above), just the one property they don't expose. */
+.sl-badge {
+  border-radius: var(--manteen-radius-sm);
+}
+
 .registry-card__description {
   display: -webkit-box;
   overflow: hidden;
@@ -626,9 +635,13 @@
   font-size: var(--manteen-text-sm);
 }
 
+/* L-3 — this was the one eyebrow instance still hardcoding its own size (0.62rem/9.92px)
+   instead of the shared role token; PlaygroundShell.module.css's field labels already use
+   `--manteen-eyebrow-size`, so this was the sole outlier keeping "one size, one weight, one
+   tracking" from being true site-wide. */
 .registry-deps__source {
   color: var(--manteen-text-faint);
-  font-size: 0.62rem;
+  font-size: var(--manteen-eyebrow-size);
   font-weight: var(--manteen-eyebrow-weight);
   letter-spacing: var(--manteen-eyebrow-tracking);
   text-transform: uppercase;
@@ -825,23 +838,46 @@
 }
 
 /* A fade alone is ambiguous; the persistent thin bar is the affordance that says "scrollable".
-   A scroller whose content fits shows no bar, so this too is self-limiting. */
+   A scroller whose content fits shows no bar, so this too is self-limiting.
+
+   RC-2 — widened to the playground preview stage. `.stage` in PlaygroundShell.module.css is
+   `overflow: auto` behind a CSS-module hash, so it can't be named by class from here; it's
+   reached instead via the `data-viewport` + `data-preview-scheme` pair Playground.tsx sets on
+   that one element (verified the only place both attributes are used together in the site). */
 .manteen-table-scroll,
-.expressive-code pre {
+.expressive-code pre,
+[data-viewport][data-preview-scheme] {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--manteen-text-faint) 55%, transparent) transparent;
 }
 
 .manteen-table-scroll::-webkit-scrollbar,
-.expressive-code pre::-webkit-scrollbar {
+.expressive-code pre::-webkit-scrollbar,
+[data-viewport][data-preview-scheme]::-webkit-scrollbar {
   width: 0.5rem;
   height: 0.5rem;
 }
 
 .manteen-table-scroll::-webkit-scrollbar-thumb,
-.expressive-code pre::-webkit-scrollbar-thumb {
+.expressive-code pre::-webkit-scrollbar-thumb,
+[data-viewport][data-preview-scheme]::-webkit-scrollbar-thumb {
   border-radius: var(--manteen-radius-pill);
   background: color-mix(in srgb, var(--manteen-text-faint) 55%, transparent);
+}
+
+/* RC-2, third instance — Mantine's ScrollArea (the preview stage's own table/nav scrollers:
+   table-sort, data-table's Table.ScrollContainer, navbar-nested, header-mega-menu's drawer
+   list) isn't a native scroller at all, so the rule above can't reach it by widening its
+   selector list: ScrollArea hides the real scrollbar (`scrollbar-width: none`) and draws its
+   own thumb, shown only on `type="hover"` pointer-enter — an event a static preview never
+   receives. The thumb element still only *mounts* when the viewport genuinely overflows
+   (ScrollArea's own resize-observer gate is untouched by this rule), so forcing its hidden
+   state visible keeps the same self-limiting property as the native-scrollbar rule above: this
+   is the same "always show, never fake" policy, applied to the one container shape native
+   scrollbar styling can't touch. custom.css is unlayered, so this outranks ScrollArea's
+   layered styles.layer.css regardless of specificity — no `!important` needed. */
+[data-viewport][data-preview-scheme] .mantine-ScrollArea-scrollbar {
+  display: flex;
 }
 
 /* The table wrapper is only a scroller below the grid breakpoint (see the 40rem block), so it
@@ -930,20 +966,22 @@
    `npx manteen add @house/article-card`. The control is 32px at every width, and on framed
    blocks it sits in the title strip instead of over the code. What remains is width-specific —
    an unframed block has no strip to move the button to, so it reserves the button's footprint
-   as trailing padding instead. */
-@media (max-width: 40rem) {
-  /* H11 residual — the two longest install commands (41 chars) cannot fit inside a
-     390px viewport at any legible mono size, so unframed command blocks and terminal
-     frames wrap instead of hiding their tail behind a horizontal scroll. Shell
-     commands survive wrapping; multi-file source panes keep scrolling (they are
-     framed with titles, excluded here) behind the H16 edge affordance. */
-  .expressive-code figure.is-terminal .ec-line .code,
-  .expressive-code figure:not(.has-title):not(.is-terminal) .ec-line .code {
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-  }
+   as trailing padding instead.
 
-  .expressive-code figure:not(.has-title):not(.is-terminal) .ec-line .code {
-    padding-inline-end: calc(var(--ec-codePadInl) + 2.25rem);
-  }
+   M-2 — this used to be gated to `@media (max-width: 40rem)`, the same breakpoint
+   `.home-overview__grid` collapses at (see that rule above). The two conditions abutted
+   instead of overlapping: between 641px and 855px the grid had already gone two-column
+   (narrowing each card) but this wrap rule wasn't active yet, so the CONSUME card's install
+   command clipped mid-word behind the copy button with nothing to catch it. `pre-wrap` only
+   engages once a line no longer fits its box, so lifting the gate is a no-op at any width
+   wide enough to hold the command on one line — it only ever activates in the gap the two
+   breakpoints left open, exactly where it was missing. */
+.expressive-code figure.is-terminal .ec-line .code,
+.expressive-code figure:not(.has-title):not(.is-terminal) .ec-line .code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.expressive-code figure:not(.has-title):not(.is-terminal) .ec-line .code {
+  padding-inline-end: calc(var(--ec-codePadInl) + 2.25rem);
 }

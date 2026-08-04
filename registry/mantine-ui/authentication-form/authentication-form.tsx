@@ -2,6 +2,11 @@
  * Adapted from Mantine UI's AuthenticationForm at
  * ffbf61c559f374a7ea28fcf00355e84dcbe9a908. MIT licensed; see
  * LICENSES/MANTINE-UI.txt after installation.
+ *
+ * Curated deviation from upstream: the terms-and-conditions checkbox defaults to
+ * unchecked here (`initialTerms` prop, default `false`). Upstream initializes it
+ * `true`, which renders a pre-checked consent checkbox with no user action — a
+ * dark pattern this registry does not ship by default.
  */
 import {
   Anchor,
@@ -34,6 +39,9 @@ export interface AuthenticationValues {
 export interface AuthenticationFormProps extends PaperProps {
   initialMode?: AuthenticationMode;
   heading?: string;
+  /** Initial checked state of the terms-and-conditions checkbox. Defaults to `false` — the box
+   * must never render pre-checked without the consumer opting in explicitly. */
+  initialTerms?: boolean;
   onSubmit?: (values: AuthenticationValues, mode: AuthenticationMode) => void;
   onGoogle?: () => void;
   onGithub?: () => void;
@@ -42,6 +50,7 @@ export interface AuthenticationFormProps extends PaperProps {
 export function AuthenticationForm({
   initialMode = "login",
   heading = "Welcome",
+  initialTerms = false,
   onSubmit,
   onGoogle,
   onGithub,
@@ -51,7 +60,7 @@ export function AuthenticationForm({
   const [mode, toggle] = useToggle<AuthenticationMode>([initialMode, alternateMode]);
   const hasSocialLogin = Boolean(onGoogle || onGithub);
   const form = useForm<AuthenticationValues>({
-    initialValues: { email: "", name: "", password: "", terms: true },
+    initialValues: { email: "", name: "", password: "", terms: initialTerms },
     validate: {
       email: (value) => (/^\S+@\S+$/.test(value) ? null : "Enter a valid email address"),
       password: (value) =>

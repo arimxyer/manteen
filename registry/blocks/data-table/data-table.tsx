@@ -53,7 +53,13 @@ export function DataTable<T extends Record<string, unknown>>({
   }
 
   return (
-    <Table.ScrollContainer minWidth={480}>
+    // minWidth is the point below which the table scrolls horizontally instead of squeezing
+    // columns into wrapped, multi-line text. 420 was measured against this demo's four columns
+    // (id, name, currency + sort icon, status badge) with a small safety margin; it does not
+    // eliminate horizontal scroll on common phones (390-412px) but is 60px closer than the
+    // previous 480. Consumers adding wider or more columns should raise it — a lower floor
+    // forces wrapping sooner as column count/content grows.
+    <Table.ScrollContainer minWidth={420}>
       <Table highlightOnHover={Boolean(onRowClick)} verticalSpacing="sm">
         <Table.Thead>
           <Table.Tr>

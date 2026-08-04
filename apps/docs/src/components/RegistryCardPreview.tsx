@@ -1,6 +1,11 @@
-import { MantineProvider } from "@mantine/core";
+import { DEFAULT_THEME, MantineProvider } from "@mantine/core";
 import { IconFileDescription } from "@tabler/icons-react";
 import type { CSSProperties, ReactNode } from "react";
+// H-8: the House Theme mini has to describe the actual house theme, not invented roles — see
+// ThemePreview below. Same relative-depth pattern the playground adapters already use to reach
+// into `registry/` from `apps/docs/src` (e.g. playgrounds/article-card.playground.tsx), one
+// level shallower since this file lives in `components/`, not `components/playgrounds/`.
+import { theme as houseTheme } from "../../../../registry/lib/theme";
 import type { PlaygroundAdapter } from "./playgrounds/contract";
 import styles from "./RegistryCardPreview.module.css";
 
@@ -91,14 +96,22 @@ const MINI_FIT_OVERRIDES: Partial<Record<string, Partial<MiniFit>>> = {
   // 248` until `flexShrink: 0` was added, after which `clientWidth` matched the declared width
   // exactly. `naturalWidthRem: 42` is the smallest width (screenshot-verified in 1rem steps) at
   // which the login/signup buttons also stay on the header's row instead of wrapping under it —
-  // below 41rem they drop to a second row that the frame's fixed height then crops. Holding
-  // `DEFAULT_SCALE` fixed at that width would make the rendered mini nearly 2x TARGET_EFFECTIVE_
-  // WIDTH_REM (uncropped, unlike every sibling mini), so scale is re-derived here the same way
-  // cards-carousel's override already does: small enough that the header's nav — the widest,
-  // most text-dense row of any live mini — still reads as individual words, not a smear.
+  // below 41rem they drop to a second row that the frame's fixed height then crops.
+  //
+  // H-7: this entry used to also pin `scale: 0.26`, re-derived down from DEFAULT_SCALE so the
+  // rendered mini's effective width stayed near every sibling mini's ~9.4rem
+  // (TARGET_EFFECTIVE_WIDTH_REM) instead of nearly 2x it. That traded away legibility for
+  // visual-proportion consistency past the point of usability: at the header nav's 14px
+  // unscaled font, 0.26 measured as a 3.64px effective font — about half of every other card's
+  // ~7px and functionally illegible. Measured instead: leaving `scale` unset here (falling
+  // through to DEFAULT_SCALE, same as every non-overridden mini) renders the 42rem box at
+  // 295.68px, which still lands entirely inside the frame's ~326px content width with zero crop
+  // on either axis (verified live: the box's `getBoundingClientRect()` sat fully inside the
+  // frame's on all four edges) — so the "nearly 2x" concern the low scale was chosen to avoid
+  // never actually cost a crop, just a mini that reads bigger and denser than its siblings.
+  // Legibility wins that trade.
   "header-mega-menu": {
     naturalWidthRem: 42,
-    scale: 0.26,
     boxClassName: styles.headerMegaMenuLiveMini,
   },
   // A 4-5 row vertical list is taller than the frame at any legible scale (measured: its
@@ -243,25 +256,51 @@ export function LiveMiniStyles() {
   );
 }
 
-function ThemePreview() {
-  const tokens = [
-    ["Primary", "primary"],
-    ["Surface", "surface"],
-    ["Success", "success"],
-    ["Text", "text"],
-  ] as const;
+// H-8(b): `registry/lib/theme.ts` has no `colors` key — `createTheme()` only sets a stock
+// `primaryColor`, `defaultRadius`, fonts, and a handful of component `defaultProps`. The old
+// mini drew four hand-picked hex values under invented "Surface"/"Success"/"Text" role labels
+// that theme.ts never declares. This derives the mini from the theme object itself so it can't
+// state anything the theme doesn't actually do, and can't drift silently if theme.ts changes.
+const PRIMARY_COLOR = houseTheme.primaryColor ?? "indigo";
+// Mantine's own ramp for that color name — accurate because theme.ts never overrides `colors`,
+// so "indigo" here IS Mantine's stock indigo, not a look-alike.
+const FULL_RAMP =
+  DEFAULT_THEME.colors[PRIMARY_COLOR as keyof typeof DEFAULT_THEME.colors] ??
+  DEFAULT_THEME.colors.indigo;
+// H-8(a): the lightest 3 steps of most Mantine ramps sit within ~1-2:1 contrast of the light
+// panel background this mini renders on (`--manteen-demo-panel-active`, #edf0f8) — showing them
+// would reproduce the exact "swatch visible only via its border" defect this fix exists to
+// close. Measured (WCAG relative-luminance contrast, light panel): indigo[0..2] are 1.02-1.44:1,
+// indigo[3] is 2.01:1; dropping to indigo[3..] is the smallest cut that clears that band.
+const RAMP = FULL_RAMP.slice(3);
+const COMPONENT_NAMES = Object.keys(houseTheme.components ?? {});
 
+function ThemePreview() {
   return (
-    <dl className={styles.themeMini}>
-      {tokens.map(([label, token]) => (
-        <div key={token}>
-          <dt className={styles[token]}>
-            <span className={styles.visuallyHidden}>{label}</span>
-          </dt>
-          <dd>{label}</dd>
+    <div className={styles.themeMini}>
+      {/* One contiguous bar, no gaps: adjacent shades delimit each other by their own contrast
+          even where an individual shade's contrast against the panel is weak, and the strip's
+          outer border (below) keeps the whole thing visible regardless. */}
+      <div className={styles.themeRamp}>
+        {RAMP.map((hex) => (
+          <span key={hex} className={styles.themeSwatch} style={{ background: hex }} />
+        ))}
+      </div>
+      <dl className={styles.themeFacts}>
+        <div>
+          <dt>Color</dt>
+          <dd>{PRIMARY_COLOR}</dd>
         </div>
-      ))}
-    </dl>
+        <div>
+          <dt>Radius</dt>
+          <dd>{String(houseTheme.defaultRadius)}</dd>
+        </div>
+        <div>
+          <dt>Components</dt>
+          <dd>{COMPONENT_NAMES.join(" · ")}</dd>
+        </div>
+      </dl>
+    </div>
   );
 }
 
