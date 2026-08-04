@@ -11,5 +11,13 @@ examples/registry-starter/public/r/
 # the people working on this repo, not something a consumer needs to clone, and the
 # .pen file is a 5.4 MB encrypted binary that git cannot diff — every save would
 # rewrite it whole and grow history by its full size. Back it up outside git.
-# docs/design-qa.md cites frames in it by id; those references resolve only locally.
+# notes/design-qa.md cites frames in it by id; those references resolve only locally.
 pencil/
+
+# Working notes and audit reports. Same reasoning as pencil/: research material for
+# whoever is working on the repo, not documentation a consumer needs. Their evidence
+# is local anyway — dead /tmp screenshot paths and frame ids in the Pencil canvas —
+# so they cannot serve a reader who only has the repo. Decisions that outlive an
+# audit belong in docs/, in the code, or in a commit message; the audit itself does
+# not. Nothing here is backed up by this repository.
+notes/
