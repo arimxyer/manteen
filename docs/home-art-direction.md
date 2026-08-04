@@ -102,9 +102,11 @@ space around it — a colophon device or a logo, never a hero-sized character. C
 here precisely because the rest of the system is so restrained; a big cute render would fight the
 specimen voice instead of puncturing it.
 
-Asset: `apps/docs/src/assets/manny.png` — a transparent-background cutout, pixel-verified against
-the approved source art. It previously lived only in the gitignored `pencil/` workspace, which
-made every concept depending on it unbuildable.
+Asset: `apps/docs/src/assets/manny.png` — a transparent-background cutout, resampled (Lanczos) to
+303×320 for its 56–72px display box. It derives from art that was pixel-verified against the
+approved source, but this file is a faithful downscale of that crop, not the crop itself. It
+previously lived only in the gitignored `pencil/` workspace, which made every concept depending on
+it unbuildable.
 
 ## How to check a surface against this
 

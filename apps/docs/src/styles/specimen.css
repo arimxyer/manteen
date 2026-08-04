@@ -31,17 +31,16 @@
 }
 
 /* Starlight's `.sl-markdown-content * + * { margin-top: 1rem }` reaches into every container
-   authored here — the same leak `custom.css` documents at H1. Neutralised for this subtree; any
-   spacing below is then deliberate. `style` is in the list because `LiveMiniStyles` emits one as
-   a direct child, and the element after it would otherwise inherit the leaked margin.
+   authored here — the same leak `custom.css` documents at H1. This is the exact mirror of that
+   rule, so it cannot miss an element type: an earlier version enumerated tags and left the leak
+   live on `script`, `astro-island` (Astro's hydration wrapper) and the panel's own `figure`,
+   measured at 16px each. All spacing inside `.spec` is authored; none of it comes from Starlight.
 
-   Wrapped in `:where()` so the whole reset carries ZERO specificity. With `:is()` it measured
-   (0,1,1) and silently out-ranked every deliberate `margin-top` in the CSS modules that consume
-   it — sections that declared a 4rem top margin rendered flush against the previous block. A
-   reset must lose to anything authored on purpose, which is what `:where()` guarantees. */
-:where(.spec)
-  :where(div, section, header, footer, article, ul, ol, li, p, h1, h2, h3, dl, figure, style)
-  + * {
+   `:where()` drops the whole selector to ZERO specificity, which is the point. Written with
+   `:is()` it measured (0,1,1) and silently out-ranked every deliberate `margin-top` in the CSS
+   modules that consume it — sections declaring a 4rem top margin rendered flush against the
+   previous block. A reset has to lose to anything authored on purpose. */
+:where(.spec) * + * {
   margin-top: 0;
 }
 
