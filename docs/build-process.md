@@ -113,6 +113,55 @@ write, only stop it from masquerading as a type error.
 The repair, for the record, is `bun install --frozen-lockfile`. Frozen relinks
 without re-resolving, so a repair cannot drift the lockfile as a side effect.
 
+## Parallel agents partition by file, not by task
+
+When a batch of independent fixes is fanned out to concurrent agents, the natural
+split — one agent per defect — is wrong here, because defects pile up in shared
+files. On 2026-08-04 a fifteen-item defect list mapped onto **five** files: four
+separate entries lived in the playground shell, three more in `custom.css`.
+One-agent-per-defect would have put four agents inside one stylesheet.
+
+Partition by **file ownership** instead, then hand each partition whatever items
+happen to fall inside it. Groups come out lopsided — two entries in one, six in
+another — and that is correct.
+
+The failure this prevents is silent. Edits are exact-string replacements, so two
+agents working in different regions of one file usually both survive; the
+destructive case is a full-file write of content read *before* another agent's
+change landed, which discards it with no error anywhere. The quieter case is
+semantic: two agents "fixing" the same rule in opposite directions, where the one
+whose verifier already signed off is now signed off on a state that no longer
+exists.
+
+Ownership is an instruction, not a lock — nothing enforces it. So verify it
+afterwards: map every path in `git status` back to the agent permitted to touch
+it, and fail loudly on anything unowned. Nothing is committed until that check
+passes, which keeps the blast radius at uncommitted working-tree changes.
+
+The same reasoning forbids two concurrent workflows appending to
+`manteen.registry.json`. Shared spine files — that catalog, `tsconfig.json` —
+get a **single serialized writer**, never a fan-out. Fan out the per-item work,
+have each agent *describe* what the spine needs, and let one writer apply it.
+
+## Briefing agents that drive a browser
+
+Two failure modes have cost real time, both of which produce findings that look
+like product defects:
+
+- **Shell-mangled input.** An agent typed `$99,999` into a demo control through a
+  double-quoted shell argument; zsh expanded `$99` as a positional parameter and
+  the page received `,999`. The agent filed "component truncates long values."
+  Brief agents to single-quote any data they type into a page, and to suspect
+  their own command before filing a defect — mangled input resembles a real bug
+  far more than it resembles a mistake.
+- **Tooling that does not dispatch real events.** Clearing a debounced input by
+  setting its value to `""` left a stale filter in place and read as a stuck
+  control; a real select-all-plus-backspace behaved correctly.
+
+Both were caught only because every finding was re-verified by an agent whose job
+was to refute it. Fan-out without an adversarial verify stage ships this class of
+mistake straight into the report.
+
 ## Linting
 
 Biome, one binary for both lint and format. `tsc --noEmit` already covers type

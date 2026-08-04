@@ -32,7 +32,7 @@ A `Dnn` in a code comment refers to §4 of the build plan. A "§1's refusal tabl
 
 ```bash
 bun run test        # builds the kit first, then bun test
-bun run typecheck   # runs guard-workspace, then tsc --noEmit
+bun run typecheck   # guard-workspace, then tsc --noEmit, then astro check for apps/docs
 bun run lint        # biome check .
 bun run guard       # all three guards: workspace, runtime-apis, diagnostics
 
@@ -48,7 +48,22 @@ patterns, and `*.node-e2e.mjs` matches none of them.
 
 - **No bare `bun install`.** It re-resolves the workspace. If a dependency genuinely needs
   adding, say so and do it once, deliberately, from the root. To repair a broken tree use
-  `bun install --frozen-lockfile`, which relinks without re-resolving.
+  `bun install --frozen-lockfile`, which relinks without re-resolving. A package runner breaks
+  this rule without ever typing it: `bun x astro check` ignored the linked copy, downloaded its
+  own `astro`, re-resolved, wrote `bun.lock`, then prompted interactively to install a
+  dependency. Run workspace tools as `./node_modules/.bin/<tool>` or `bun --cwd=<pkg> run
+  <script>`.
+- **A fresh checkout serves a stale site until you rebuild it.** `public/r/` is generated and
+  gitignored, so a clone or a worktree renders whatever catalog was last built *there* — or a
+  partial one — with no error anywhere. Run `bun run build:registry` before trusting anything the
+  docs site shows. The same applies to `node_modules`: if it predates `apps/docs`, `astro` is
+  simply absent; repair with `bun install --frozen-lockfile`. (Cost: a catalog emitting 5 of 16
+  detail links, every `mantine-ui` route 404ing, diagnosed as a site defect.)
+- **Edit `manteen.registry.json` surgically, never by re-serializing.** `JSON.parse` → mutate →
+  `JSON.stringify` turns a six-line addition into a 163-line diff, because the file's formatting
+  is not what `stringify` emits. Use a targeted text edit and check `git diff --stat` before
+  trusting it. It is also a shared spine file: when work is fanned out, exactly one writer
+  touches it.
 - **A probe or test that needs its own `node_modules` builds it in `mkdtemp()`, never by writing
   into this repo's.** Doing the latter once replaced eight scoped symlinks with self-loops and
   produced 168 type errors in untouched files. `scripts/guard-workspace.mjs` now catches the
