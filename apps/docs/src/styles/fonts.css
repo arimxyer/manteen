@@ -1,0 +1,42 @@
+/* Self-hosted type for the home page. Nothing here reaches a third party at runtime: a docs site
+   should not hand every reader's IP to a font CDN, and a cross-origin round-trip before the
+   headline can paint is exactly the kind of detail this page is trying to get right.
+
+   Figtree — the workhorse, needs 400/500/600/800, so the variable font earns its keep. Ships via
+   @fontsource-variable/figtree (~81 KB installed; the browser fetches only the ~20 KB latin
+   subset, because `wght.css` splits by `unicode-range`).
+
+   Fraunces — used for exactly ONE word. Google serves it as an 80 KB variable font covering three
+   subsets and two live axes, which is absurd for a single accent. Vendored instead as a pinned,
+   subsetted static: opsz instantiated at 144 (the display end) and wght at 500, then cut to basic
+   Latin plus common punctuation. 80 KB -> 10.7 KB, and it still covers every ASCII character, so
+   changing the accent word later does not break it.
+
+   To regenerate (fonttools + brotli, both already on this machine):
+
+     curl -H 'User-Agent: <a modern browser UA>' \
+       'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..600' -o f.css
+     # take the LAST woff2 url — Google orders the faces vietnamese, latin-ext, latin
+     curl "$(grep -oE 'https://[^)]*\.woff2' f.css | tail -1)" -o fraunces-latin.woff2
+     python3 -c "
+     from fontTools.ttLib import TTFont; from fontTools.varLib import instancer
+     f=TTFont('fraunces-latin.woff2')
+     instancer.instantiateVariableFont(f, {'opsz':144,'wght':500}, inplace=True)
+     f.flavor='woff2'; f.save('pinned.woff2')"
+     pyftsubset pinned.woff2 --output-file=fraunces-500-latin-subset.woff2 --flavor=woff2 \
+       --unicodes="U+0020-007E,U+2018-201D,U+2013,U+2014,U+00A0" \
+       --layout-features="kern,liga,calt" --notdef-outline
+
+   Fraunces and Figtree are both SIL Open Font License 1.1. */
+
+@import "@fontsource-variable/figtree/wght.css";
+
+@font-face {
+  font-family: "Fraunces Subset";
+  src: url("../assets/fonts/fraunces-500-latin-subset.woff2") format("woff2");
+  /* The file is already pinned to 500/opsz-144, so the descriptor states what it is rather than a
+     range the file cannot actually deliver. */
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}

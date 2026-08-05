@@ -17,8 +17,10 @@
    in dark is the "lack of attention to detail" this pass exists to avoid. */
 
 .mh {
-  --mh-sans: Figtree, ui-sans-serif, system-ui, sans-serif;
-  --mh-serif: Fraunces, Georgia, "Times New Roman", serif;
+  /* Self-hosted — see fonts.css. "Figtree Variable" is @fontsource's family name for the variable
+     cut; "Fraunces Subset" is the vendored 10.7 KB static. */
+  --mh-sans: "Figtree Variable", ui-sans-serif, system-ui, sans-serif;
+  --mh-serif: "Fraunces Subset", Georgia, "Times New Roman", serif;
   --mh-mono: var(--sl-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
 
   --mh-bg: #0d0e12;
@@ -78,13 +80,16 @@
   text-wrap: balance;
 }
 
-/* The one gesture. Lighter weight and looser tracking than the surrounding 800 — an italic serif
-   set at the same weight as the sans reads as a glitch rather than a decision. */
+/* The one gesture. Upright, not italic — Ari's pick from the rendered shortlist (row B).
+   My own read had been that the lean was needed to stop the accent reading as an accidental
+   weight change; the mitigation for that, rather than overriding the call, is weight 500 instead
+   of 400. At 500 against the surrounding 800 the accent reads as a different FACE (Fraunces'
+   flared, high-contrast serifs) rather than as the same face gone thin. */
 .mh__display em {
   font-family: var(--mh-serif);
-  font-style: italic;
-  font-weight: 400;
-  letter-spacing: -0.005em;
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: -0.008em;
 }
 
 .mh__lede {

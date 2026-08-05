@@ -30,11 +30,23 @@ const PHASES: { phase: Phase; hold: number }[] = [
   { phase: "done", hold: 3800 },
 ];
 
-const STATUS: Record<Phase, { glyph: string; text: string; tone: "idle" | "mod" | "add" }> = {
-  rest: { glyph: "$", text: "manteen diff @house/stat-card", tone: "idle" },
-  detected: { glyph: "~", text: "1 change upstream", tone: "mod" },
-  updating: { glyph: "$", text: "manteen update @house/stat-card", tone: "idle" },
-  done: { glyph: "✓", text: "updated — your edits preserved", tone: "add" },
+/**
+ * Plain English, not CLI output.
+ *
+ * The first version narrated in raw commands (`manteen diff @house/stat-card`, `~ 1 change
+ * upstream`). Ari could not tell what the panel was showcasing — and if the person who built the
+ * product cannot read it, a first-time visitor has no chance. Commands describe what the tool
+ * types; these describe what is happening to your code, which is the thing the hero is claiming.
+ * `cmd` is shown in mono alongside, so the tool still gets named without leading with jargon.
+ */
+const STATUS: Record<
+  Phase,
+  { glyph: string; text: string; cmd?: string; tone: "idle" | "mod" | "add" }
+> = {
+  rest: { glyph: "•", text: "Installed. This file is yours to edit.", tone: "idle" },
+  detected: { glyph: "~", text: "Upstream changed this component.", tone: "mod" },
+  updating: { glyph: "$", text: "merging the change…", cmd: "manteen update", tone: "idle" },
+  done: { glyph: "✓", text: "Merged — and your edits were kept.", tone: "add" },
 };
 
 /** Minimal JSX colouring. Hand-rolled rather than a highlighter dependency: five lines of markup
@@ -96,10 +108,20 @@ export default function OwnershipPanel() {
       <figcaption className={styles.bar}>
         <span className={styles.dot} data-tone={status.tone} />
         <span className={styles.path}>src/components/ui/stat-card.tsx</span>
-        <span className={styles.badge}>yours</span>
+        <span className={styles.badge}>in your repo</span>
       </figcaption>
 
       <div className={styles.body}>
+        {/* Pane labels. Without them the two halves are just "some code" and "some component" and
+            the causal link between them — this file renders that thing, and an update changes both
+            at once — has to be inferred. It was not being inferred. */}
+        <p className={styles.paneLabel} data-pane="code">
+          the source that landed
+        </p>
+        <p className={styles.paneLabel} data-pane="render">
+          what it renders
+        </p>
+
         {/* Every line is gutter + ONE body span. The indentation cannot live as a bare `{"  "}`
             text node next to the gutter: `.line` is a flex container, and the flexbox spec drops
             whitespace-only anonymous flex items, so the two spaces were present in the DOM and
@@ -168,10 +190,11 @@ export default function OwnershipPanel() {
         </div>
       </div>
 
-      <p className={styles.status} data-tone={status.tone}>
+      <p className={styles.status} data-tone={status.tone} aria-live="polite">
         <span className={styles.glyph} aria-hidden="true">
           {status.glyph}
         </span>
+        {status.cmd && <code className={styles.cmd}>{status.cmd}</code>}
         <span>{status.text}</span>
       </p>
     </figure>

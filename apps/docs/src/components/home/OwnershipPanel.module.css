@@ -59,15 +59,42 @@
 }
 
 /* ---- Body: source | render ------------------------------------------------------------------ */
+/* Two columns, two rows: labels sit on their own row so both panes' content starts at the same
+   baseline regardless of label wrapping. */
 .body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+  grid-template-rows: auto 1fr;
+}
+
+/* Muted, not faint: these two labels are what makes the panel legible at all, so they cannot be
+   the quietest thing in it. */
+.paneLabel {
+  padding: 0.85rem 1rem 0;
+  font-size: 0.8125rem;
+  color: var(--mh-muted);
+}
+
+.paneLabel[data-pane="code"] {
+  grid-column: 1;
+  grid-row: 1;
+  padding-left: 3.25rem;
+  border-right: 1px solid var(--mh-line);
+  background: var(--mh-panel);
+}
+
+.paneLabel[data-pane="render"] {
+  grid-column: 2;
+  grid-row: 1;
+  background: var(--mh-panel-2);
 }
 
 /* Flex-centred rather than top-padded: the source is five lines and the pane's height is set by
    the live render beside it, so top-aligning left a block of dead space under the code that read
    as an unfinished panel. */
 .code {
+  grid-column: 1;
+  grid-row: 2;
   display: flex;
   align-items: center;
   margin: 0;
@@ -148,6 +175,8 @@
 
 /* ---- Live render ---------------------------------------------------------------------------- */
 .stage {
+  grid-column: 2;
+  grid-row: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -178,8 +207,10 @@
   padding: 0.75rem 0.95rem;
   border-top: 1px solid var(--mh-line);
   background: var(--mh-panel-2);
-  font-family: var(--mh-mono);
-  font-size: 0.8125rem;
+  /* Sans, not mono: this line is a sentence about your code, not terminal output. Only the
+     command chip inside it stays monospaced, because that IS something you type. */
+  font-family: var(--mh-sans);
+  font-size: 0.875rem;
   color: var(--mh-muted);
   transition: color 340ms ease;
 }
@@ -189,6 +220,17 @@
   width: 1ch;
   color: var(--mh-faint);
   transition: color 340ms ease;
+}
+
+/* The tool still gets named, just not as the headline of the sentence. */
+.cmd {
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--mh-line);
+  border-radius: 0.3rem;
+  background: var(--mh-panel);
+  font-family: var(--mh-mono);
+  font-size: 0.75rem;
+  color: var(--mh-text);
 }
 
 .status[data-tone="mod"],
@@ -213,14 +255,32 @@
 @media (max-width: 52rem) {
   .body {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto;
+  }
+
+  /* Single column: each label stacks directly above the pane it names, so the pairing survives
+     the reflow instead of both labels ending up over the code. */
+  .paneLabel[data-pane="code"] {
+    grid-column: 1;
+    grid-row: 1;
+    border-right: 0;
   }
 
   .code {
+    grid-column: 1;
+    grid-row: 2;
     border-right: 0;
     border-bottom: 1px solid var(--mh-line);
   }
 
+  .paneLabel[data-pane="render"] {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
   .stage {
+    grid-column: 1;
+    grid-row: 4;
     height: 13.5rem;
   }
 }
