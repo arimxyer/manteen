@@ -234,7 +234,7 @@ function hintFor(file: PlannedFile): string {
   const from = owner.registry === null ? "" : ` from ${owner.registry}`;
   if (owner.itemId !== file.itemId) return `installed by ${owner.itemId}${from}`;
 
-  const drifted = file.existing !== null && file.existing.sha256 !== owner.sha256;
+  const drifted = file.existing !== null && file.existing.sha256 !== owner.installedSha256;
   return drifted
     ? `installed by ${owner.itemId}${from}, edited since`
     : `installed by ${owner.itemId}${from}, item changed upstream`;

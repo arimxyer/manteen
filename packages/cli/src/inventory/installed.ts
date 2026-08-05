@@ -31,7 +31,7 @@ import { createHash } from "node:crypto";
 import { hashFileBytes } from "../apply/preflight";
 import type { CanonicalId, ReceiptState } from "../plan/types";
 import { createReceiptReader, createReceiptValidator } from "../receipt/load";
-import { fromReceiptPath, toReceiptPath } from "../receipt/path";
+import { basePathFor, fromReceiptPath, toReceiptPath } from "../receipt/path";
 import type { ReceiptReader, ReceiptValidator } from "../receipt/read";
 import { readReceipt } from "../receipt/read";
 import type {
@@ -125,8 +125,11 @@ export function fromReceiptState(state: ReceiptState, root: string, hash: FileHa
             destination,
             receiptPath: file.destination,
             wireType: file.wireType,
-            recordedSha256: file.sha256,
+            recordedSha256: file.installedSha256,
             currentSha256: hash(destination),
+            basePath: basePathFor(destination, root),
+            baseSha256: file.baseSha256,
+            baseCurrentSha256: hash(basePathFor(destination, root)),
           };
         })
         .sort(byReceiptPath),
@@ -241,8 +244,8 @@ export function ownerLabel(item: { registry: string | null; sourceUrl: string })
 }
 
 /**
- * sha256 of a string in `ReceiptFile.sha256`'s domain — the UTF-8 encoding of
- * the text, NOT of raw bytes off disk.
+ * sha256 of a string in receipt-file hash domain — the UTF-8 encoding of the
+ * text, NOT of raw bytes off disk.
  *
  * Exported because `diff` needs to hash content it fetched (a string) and
  * compare it against a recorded hash, and hand-rolling that at the call site is
@@ -298,7 +301,9 @@ function noteFor(source: InstalledSource, root: string): InventoryNote[] {
       message:
         source.reason === "future-version"
           ? `${where} was written by a newer version of manteen (lockfileVersion ${source.sawVersion ?? "?"}). Upgrade manteen, or remove the file to start a fresh record.`
-          : `${where} could not be read: ${source.detail}. Repair it by hand, or remove it and re-run \`manteen add\` to rebuild the ownership record.`,
+          : source.reason === "unsupported-version"
+            ? `${where} uses lockfileVersion ${source.sawVersion ?? "?"}, which has no exact merge bases. Remove it and re-run \`manteen add\` to create a native v3 record.`
+            : `${where} could not be read: ${source.detail}. Repair it by hand, or remove it and re-run \`manteen add\` to rebuild the ownership record.`,
     },
   ];
 }

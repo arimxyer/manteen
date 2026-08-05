@@ -62,9 +62,11 @@ export function preflight(plan: Plan): ApplyFailure | null {
     // Re-proved here rather than trusted from resolve(): `target-escapes-root` is
     // the one refusal §1's table lists in BOTH plan and apply preflight.
     assertInsideRoot(file.destination, plan.root);
+    assertInsideRoot(file.base.destination, plan.root);
   }
   if (plan.theme !== null) assertInsideRoot(plan.theme.destination, plan.root);
   if (plan.styles !== null) assertInsideRoot(plan.styles.destination, plan.root);
+  for (const base of plan.removedBases) assertInsideRoot(base.destination, plan.root);
   assertInsideRoot(plan.receipt.path, plan.root);
 
   const stale: string[] = [];
@@ -77,7 +79,11 @@ export function preflight(plan: Plan): ApplyFailure | null {
     reasons.push(reason);
   };
 
-  for (const file of plan.files) note(file.destination, file.existing?.sha256 ?? null);
+  for (const file of plan.files) {
+    note(file.destination, file.existing?.sha256 ?? null);
+    note(file.base.destination, file.base.existing?.sha256 ?? null);
+  }
+  for (const base of plan.removedBases) note(base.destination, base.existing?.sha256 ?? null);
   if (plan.theme !== null) note(plan.theme.destination, plan.theme.base?.sha256 ?? null);
   if (plan.styles !== null) note(plan.styles.destination, plan.styles.base?.sha256 ?? null);
 

@@ -10,31 +10,12 @@
  * receipt written last. A command that re-implemented writing would get none of
  * them, and would get none of them *silently*.
  *
- * ── The overwrite question is deliberately NOT special-cased ────────────────
- * Every file an update actually changes has disposition `overwrite` — that is
- * what "changed" means here — so `update` flows through W4's decision surface
- * exactly as `add` does: the grouped prompt, `--overwrite`, `--no-overwrite`,
- * `--yes`. Two reasons that is right rather than merely convenient:
- *
- *  - A locally modified file is indistinguishable, at the disposition level,
- *    from a file the registry changed. Updating either one replaces bytes on
- *    disk. `decide.ts`'s `hintFor` already tells the two apart in the prompt
- *    ("edited since" vs "item changed upstream") — its fourth case was written
- *    for precisely this command — so the user gets the distinction where it is
- *    actionable, per file, instead of a global flag that guesses for them.
- *  - `PlanOptions.overwrite` is one boolean for the whole run. There is no
- *    per-file channel, so "auto-overwrite the untouched ones, ask about the
- *    edited ones" cannot be expressed without bypassing the gate — and the
- *    bypass is exactly the thing that would silently discard someone's edit.
- *
- * CONSEQUENCE THE INTEGRATOR MUST SURFACE: a non-interactive `manteen update`
- * with neither `--overwrite` nor `--yes` refuses, essentially always, because
- * `checkDestinations` emits `destination-exists` at error severity for every
- * changed file — and `--dry-run` does not exempt it, since `dryRun` lives on
- * `ApplyOptions` and `plan()` never sees it, so a CI PREVIEW is unavailable
- * without `--overwrite` too. (Interactive is fine either way: the same gate
- * downgrades to `info` when there is a prompt to ask at.) That is §1's refusal
- * table working as specified, not a defect — but the help text has to say it.
+ * ── Ordinary source is a three-way update ───────────────────────────────────
+ * `plan()` receives `operation: "update"` and computes from the committed
+ * pristine base, the project file and current registry bytes. Conflict-free
+ * results apply without an overwrite prompt; conflicts refuse before apply.
+ * `--take-upstream` is the one explicit destructive spelling and is never
+ * inferred from `--yes` or interactivity.
  *
  * ── The theme ───────────────────────────────────────────────────────────────
  * SETTLED (roadmap, "Decisions taken"): update re-merges the theme DIRECTLY,
@@ -126,7 +107,6 @@ import { createReceiptReader, createReceiptValidator } from "../receipt/load";
 import { toReceiptPath } from "../receipt/path";
 import type { ReceiptReader, ReceiptValidator } from "../receipt/read";
 import { readReceipt } from "../receipt/read";
-import { interactiveFromProcess } from "../ui";
 
 const EXIT_OK = 0;
 const EXIT_REFUSED = 1;
@@ -141,10 +121,10 @@ const PACKAGE_MANAGER_NAMES: string[] = [...new Set(packageManagers.map((pm) => 
  * `PlanOptions` plus the two flags that are `update`'s own.
  *
  * Extended rather than restated so the flag set cannot drift from what `plan()`
- * accepts: `force`, `overwrite`, `interactive` and `packageManager` are passed
- * through verbatim and mean exactly what they mean for `add`.
+ * accepts: force, interactivity and package-manager selection are passed
+ * through; overwrite/reset is deliberately update-specific.
  */
-export interface UpdateOptions extends PlanOptions {
+export type UpdateOptions = Omit<PlanOptions, "overwrite" | "operation" | "takeUpstream"> & {
   /**
    * `--dry-run`. Delegated to `ApplyOptions.dryRun` — D19's preview is a
    * property of the path this command reuses, not something re-implemented
@@ -160,7 +140,9 @@ export interface UpdateOptions extends PlanOptions {
    * otherwise unreachable by any command.
    */
   all?: boolean;
-}
+  /** Explicitly discard local adaptations for files still shipped upstream. */
+  takeUpstream?: boolean;
+};
 
 /**
  * Every I/O edge, injected — so the whole command is drivable in-process with
@@ -173,12 +155,8 @@ export interface UpdateOptions extends PlanOptions {
  */
 export interface UpdatePorts {
   plan: PlanFn;
-  /**
-   * `apply`'s third parameter is optional, so the real `apply` is assignable
-   * here. It is threaded rather than dropped so a test can inject phase 1's
-   * overwrite prompt — the decision `update` most needs to exercise — without
-   * a pseudo-terminal and without re-wrapping.
-   */
+  /** `apply`'s third parameter remains threaded for programmatic parity. Update
+   * reaches it only after source conflicts were resolved in plan. */
   apply: (plan: Plan, options: ApplyOptions, ports?: ApplyPorts) => Promise<ApplyOutcome>;
   applyPorts?: ApplyPorts;
   /** `createReceiptReader()` in production. */
@@ -243,7 +221,7 @@ export async function update(
   // `installed.notes` carries `no-receipt` / `receipt-unreadable`. Both yield an
   // empty item list, so both fall out below as "no candidates" — which is the
   // point: an UNREADABLE receipt must never reach plan()/apply(). Planning zero
-  // refs under `--force` would push past `receipt-unreadable`, and phase 6 would
+  // refs under `--force` would push past `receipt-unreadable`, and phase 7 would
   // then merge from `null` and delete every ownership record in the file.
   const notes: InventoryNote[] = [...installed.notes];
   const skipped: UpdateSkip[] = [];
@@ -259,9 +237,10 @@ export async function update(
 
   const planned = await ports.plan(config, [...candidates], {
     force: options.force,
-    overwrite: options.overwrite,
     interactive: options.interactive,
     packageManager: options.packageManager,
+    operation: "update",
+    takeUpstream: options.takeUpstream,
   });
 
   const verdict = classify(candidates, planned, config);
@@ -282,19 +261,21 @@ export async function update(
    * back `up-to-date`.
    *
    * Short-circuiting on "nothing changed" looks like a free optimisation and is
-   * not: an all-`identical` plan is exactly the run `apply/index.ts` phase 6
+   * not: an all-`identical` plan is exactly the run `apply/index.ts` phase 7
    * calls out as the most valuable one to record — a destination that already
    * holds our bytes but has no ownership record (a new transitive item, or a
    * project installed before receipts existed) gets claimed by that run and by
    * no other. apply is a no-op when there is genuinely nothing to do: identical
-   * files are never written, and phase 6 is gated on the receipt BYTES
+   * files are never written, and phase 7 is gated on the receipt BYTES
    * differing, so an up-to-date project ends with an untouched tree.
    */
   const outcome = await ports.apply(
     planned,
     {
-      interactive: options.interactive,
-      overwrite: options.overwrite,
+      // Source conflicts were decided in plan. `true` means "apply that exact
+      // conflict-free result", not "replace with pristine upstream".
+      interactive: false,
+      overwrite: true,
       dryRun: options.dryRun,
     },
     ports.applyPorts,
@@ -506,10 +487,9 @@ function classify(
   );
 
   /**
-   * `identical` is plan()'s verdict that the bytes on disk already equal what
-   * the registry serves — the only disposition that means "no change". Both
-   * `create` (the file is gone; update restores it) and `overwrite` (the file
-   * moved, on either side) are real work.
+   * `identical` means update proposes no destination write. `create` and
+   * `overwrite` are real work after the three-way planner has either chosen
+   * incoming bytes or produced a conflict-free merge.
    */
   const moved = (item: PlanItem): boolean =>
     themeContributors.has(item.id) || item.files.some((file) => file.disposition !== "identical");
@@ -525,12 +505,20 @@ function classify(
     }
     if (moved(item)) continue;
 
+    const localOnly = item.files.some(
+      (file) =>
+        file.priorOwner !== null &&
+        file.upstream.sha256 === file.priorOwner.baseSha256 &&
+        file.existing !== null &&
+        file.existing.sha256 !== file.priorOwner.baseSha256,
+    );
+
     skipped.push({
       id,
-      reason: "up-to-date",
-      // "its own files" rather than "nothing changed": a dependency of this item
-      // may well have moved, and `selected` is where that is said.
-      detail: `${id} already matches what its registry serves; none of its own files changed.`,
+      reason: localOnly ? "local-only" : "up-to-date",
+      detail: localOnly
+        ? `${id} has local adaptations and no upstream source change; update preserved the project bytes.`
+        : `${id} needs no source write; none of its own files changed.`,
     });
   }
 
@@ -697,10 +685,7 @@ export interface UpdateFlags {
   dryRun?: boolean;
   force?: boolean;
   json?: boolean;
-  /** `undefined` until commander says the user typed one of the two spellings;
-   *  `false` means `--no-overwrite`. See `overwriteFrom`. */
-  overwrite?: boolean;
-  yes?: boolean;
+  takeUpstream?: boolean;
   /** D15's detection override. */
   pm?: string;
 }
@@ -720,7 +705,7 @@ export interface UpdateFlags {
 export async function runUpdate(
   refs: readonly string[],
   flags: UpdateFlags,
-  command: Pick<Command, "getOptionValueSource">,
+  _command: Pick<Command, "getOptionValueSource">,
   streams: Streams = PROCESS_STREAMS,
 ): Promise<number> {
   const loaded = loadProjectConfig(flags.cwd, streams.stderr);
@@ -743,9 +728,9 @@ export async function runUpdate(
     all: flags.all,
     dryRun: flags.dryRun,
     force: flags.force,
-    overwrite: overwriteFrom(flags, command),
-    interactive: interactiveFromProcess({ yes: Boolean(flags.yes) }),
+    interactive: false,
     packageManager: flags.pm as UpdateOptions["packageManager"],
+    takeUpstream: flags.takeUpstream,
   };
 
   // `update()` catches nothing on purpose (see the module docblock): the receipt
@@ -794,25 +779,6 @@ export async function runUpdate(
   streams.stderr(renderApplyFailure(result.outcome, result.plan.root));
 
   return exit;
-}
-
-/**
- * Three states out of two flags, character for character `runAdd`'s.
- *
- * Commander presets `overwrite` to `true` when `--no-overwrite` is declared
- * alone, so the option's VALUE cannot distinguish "defaulted" from "typed" — the
- * source can, and it is the only reading that survives however commander orders
- * its defaults.
- *
- * D14: `--yes` implies `--overwrite`, but an explicit `--no-overwrite` wins.
- */
-function overwriteFrom(
-  flags: UpdateFlags,
-  command: Pick<Command, "getOptionValueSource">,
-): PlanOptions["overwrite"] {
-  const typed = command.getOptionValueSource("overwrite") === "cli";
-  if (typed) return flags.overwrite === false ? "no" : true;
-  return flags.yes ? true : undefined;
 }
 
 /**

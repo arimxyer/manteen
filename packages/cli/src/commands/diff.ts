@@ -1,9 +1,10 @@
 /**
  * `manteen diff` — what changed since install, in BOTH directions.
  *
- * Three hashes per destination, not two:
+ * Four hashes per destination, not two:
  *
- *   recorded   `manteen.lock.json` — what manteen wrote
+ *   recorded   `manteen.lock.json` — the result last accepted
+ *   base       `.manteen/bases/` — pristine upstream at that acceptance
  *   current    the bytes on disk now
  *   upstream   what the registry serves today
  *
@@ -47,7 +48,7 @@
  * must not swallow them) propagate to the shell, which prints them and exits 1
  * the same way `add` does.
  */
-import type { Buffer } from "node:buffer";
+import { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
@@ -79,6 +80,7 @@ import type {
   LocalStatus,
 } from "../inventory/types";
 import { plan as planUpstream } from "../plan/index";
+import { mergeFile } from "../plan/merge-file";
 import { parseRef } from "../plan/ref";
 import type {
   CanonicalId,
@@ -123,9 +125,9 @@ export type ByteReader = (absolutePath: string) => Buffer | null;
  * The two fields also live in DIFFERENT HASH DOMAINS on purpose, matching the
  * rest of the codebase: `sha256` is of the RAW BYTES (the domain
  * `ReceiptState.sha256`, `PlannedFile.existing` and `HashPair.currentSha256`
- * all use), while `text` is the UTF-8 decoding the patch renderer needs.
- * Hashing the decoded string instead would agree on every ASCII fixture and
- * diverge only on a file with a BOM — i.e. it would ship green.
+ * all use), while `text` is the lossless UTF-8 decoding the patch renderer
+ * needs. Invalid UTF-8 has a hash but no text: returning Node's replacement
+ * characters would let diff preview a merge that update correctly refuses.
  *
  * Cached per absolute path, so the receipt's hash pass and the patch renderer
  * cannot disagree and no destination is read twice.
@@ -137,19 +139,20 @@ export interface FileSnapshot {
 }
 
 export function createFileSnapshot(read: ByteReader = readBytes): FileSnapshot {
-  const seen = new Map<string, { sha256: string; text: string } | null>();
+  const seen = new Map<string, { sha256: string; text: string | null } | null>();
 
-  const load = (absolutePath: string): { sha256: string; text: string } | null => {
+  const load = (absolutePath: string): { sha256: string; text: string | null } | null => {
     const cached = seen.get(absolutePath);
     if (cached !== undefined) return cached;
 
     const bytes = read(absolutePath);
+    const text = bytes?.toString("utf8") ?? null;
     const entry =
       bytes === null
         ? null
         : {
             sha256: createHash("sha256").update(bytes).digest("hex"),
-            text: bytes.toString("utf8"),
+            text: text !== null && Buffer.from(text, "utf8").equals(bytes) ? text : null,
           };
     seen.set(absolutePath, entry);
     return entry;
@@ -227,8 +230,7 @@ export interface DiffOptions {
   refs: readonly string[];
   /** Emit the `DiffResult` as JSON on stdout instead of the human report. */
   json?: boolean;
-  /** Summary only: no `patch` is computed, which is the case
-   *  `DiffFile.patch`'s docblock anticipates. */
+  /** Summary only: no file patches are computed. */
   stat?: boolean;
 }
 
@@ -280,7 +282,7 @@ export async function reportDiff(
    */
   const planned = await ports.plan(config, [...selection.ids], {
     interactive: false,
-    overwrite: true,
+    operation: "update",
   });
 
   const result = buildDiff({
@@ -510,6 +512,9 @@ function compareItem(
         destination: file.destination,
         receiptPath: file.receiptPath,
         recordedSha256: file.recordedSha256,
+        basePath: file.basePath,
+        baseSha256: file.baseSha256,
+        baseCurrentSha256: file.baseCurrentSha256,
         currentSha256: file.currentSha256,
         upstream,
         available,
@@ -533,6 +538,9 @@ function compareItem(
         destination: file.destination,
         receiptPath: toReceiptPath(file.destination, root),
         recordedSha256: null,
+        basePath: null,
+        baseSha256: null,
+        baseCurrentSha256: null,
         currentSha256: snapshot.hash(file.destination),
         upstream: file,
         available,
@@ -558,6 +566,9 @@ function newItem(item: PlanItem, root: string, snapshot: FileSnapshot, patches: 
       destination: file.destination,
       receiptPath: toReceiptPath(file.destination, root),
       recordedSha256: null,
+      basePath: null,
+      baseSha256: null,
+      baseCurrentSha256: null,
       currentSha256: snapshot.hash(file.destination),
       upstream: file,
       available: true,
@@ -579,6 +590,9 @@ interface RowInput {
   destination: string;
   receiptPath: string;
   recordedSha256: string | null;
+  basePath: string | null;
+  baseSha256: string | null;
+  baseCurrentSha256: string | null;
   currentSha256: string | null;
   upstream: PlannedFile | null;
   available: boolean;
@@ -588,21 +602,91 @@ interface RowInput {
 
 function row(input: RowInput): DiffFile {
   const change = classify(input);
+  const proposal = propose(input);
   return {
     itemId: input.itemId,
     destination: input.destination,
     receiptPath: input.receiptPath,
     recordedSha256: input.recordedSha256,
     currentSha256: input.currentSha256,
-    upstreamSha256: input.upstream?.sha256 ?? null,
+    upstreamSha256: input.upstream?.upstream.sha256 ?? null,
+    baseSha256: input.baseSha256,
+    baseCurrentSha256: input.baseCurrentSha256,
     change,
-    patch:
-      input.patches && input.upstream !== null && PATCHABLE.has(change)
-        ? filePatch(
-            input.receiptPath,
-            input.snapshot.text(input.destination) ?? "",
-            input.upstream.content,
-          )
+    outcome: proposal.outcome,
+    patches: input.patches
+      ? proposalPatches(input.receiptPath, proposal)
+      : { baseToLocal: null, baseToIncoming: null, localToResult: null },
+  };
+}
+
+type Proposal = {
+  outcome: DiffFile["outcome"];
+  base: string | null;
+  local: string | null;
+  incoming: string | null;
+  result: string | null;
+};
+
+function propose(input: RowInput): Proposal {
+  const local = input.snapshot.text(input.destination);
+  const incoming = input.upstream?.upstream.content ?? null;
+  const base =
+    input.basePath !== null &&
+    input.baseSha256 !== null &&
+    input.baseCurrentSha256 === input.baseSha256
+      ? input.snapshot.text(input.basePath)
+      : null;
+
+  if (!input.available)
+    return { outcome: "unavailable", base, local, incoming: null, result: null };
+  if (input.recordedSha256 === null) {
+    return input.currentSha256 === null
+      ? { outcome: "added-upstream", base: null, local, incoming, result: incoming }
+      : { outcome: "conflict", base: null, local, incoming, result: null };
+  }
+  if (input.upstream === null) {
+    return { outcome: "removed-upstream", base, local, incoming: null, result: local };
+  }
+  if (input.currentSha256 === null) {
+    return { outcome: "missing-local", base, local, incoming, result: null };
+  }
+  if (local === null) return { outcome: "conflict", base, local, incoming, result: null };
+  if (base === null || input.baseSha256 === null) {
+    return { outcome: "conflict", base, local, incoming, result: null };
+  }
+
+  const localChanged = input.currentSha256 !== input.baseSha256;
+  const upstreamChanged = input.upstream.upstream.sha256 !== input.baseSha256;
+  if (!localChanged && !upstreamChanged) {
+    return { outcome: "unchanged", base, local, incoming, result: local };
+  }
+  if (localChanged && !upstreamChanged) {
+    return { outcome: "local-only", base, local, incoming, result: local };
+  }
+  if (!localChanged && upstreamChanged) {
+    return { outcome: "upstream-only", base, local, incoming, result: incoming };
+  }
+
+  const merged = mergeFile(local, base, input.upstream.upstream.content);
+  return merged.ok
+    ? { outcome: "merged", base, local, incoming, result: merged.content }
+    : { outcome: "conflict", base, local, incoming, result: null };
+}
+
+function proposalPatches(label: string, proposal: Proposal): DiffFile["patches"] {
+  return {
+    baseToLocal:
+      proposal.base !== null && proposal.local !== null
+        ? filePatch(label, proposal.base, proposal.local, "base", "local")
+        : null,
+    baseToIncoming:
+      proposal.base !== null && proposal.incoming !== null
+        ? filePatch(label, proposal.base, proposal.incoming, "base", "incoming")
+        : null,
+    localToResult:
+      proposal.local !== null && proposal.result !== null
+        ? filePatch(label, proposal.local, proposal.result, "local", "result")
         : null,
   };
 }
@@ -624,22 +708,14 @@ function classify(input: RowInput): FileChange {
   if (input.upstream === null) return "removed-upstream";
   if (input.currentSha256 === null) return "missing";
 
-  const localChanged = input.currentSha256 !== input.recordedSha256;
-  const upstreamChanged = input.upstream.sha256 !== input.recordedSha256;
+  const baseSha256 = input.baseSha256 ?? input.recordedSha256;
+  const localChanged = input.currentSha256 !== baseSha256;
+  const upstreamChanged = input.upstream.upstream.sha256 !== baseSha256;
   if (localChanged && upstreamChanged) return "both";
   if (localChanged) return "local-only";
   if (upstreamChanged) return "upstream-only";
   return "unchanged";
 }
-
-/** The states where a patch is both computable and worth computing. */
-const PATCHABLE: ReadonlySet<FileChange> = new Set<FileChange>([
-  "local-only",
-  "upstream-only",
-  "both",
-  "missing",
-  "added-upstream",
-]);
 
 // ---- the theme ----------------------------------------------------------------
 
@@ -742,21 +818,10 @@ function artifactChange(localChanged: boolean, upstreamChanged: boolean): FileCh
 // ---- patches ------------------------------------------------------------------
 
 /**
- * ON DISK -> UPSTREAM, in that direction, always.
- *
- * Load-bearing and not a preference: of the three hashes, only two sides have
- * CONTENT. `recorded` exists solely as a hash in `manteen.lock.json` — manteen
- * does not keep a copy of what it wrote — so a patch against the recorded
- * version is not computable at all.
- *
- * The consequence to keep in mind before "fixing" this: for a `local-only` file
- * the patch shows the user's own edit being REVERTED, because upstream still
- * equals what was recorded. That is correct. It is what `manteen update` would
- * do to that file, which is the question `diff` is asked.
+ * Ordinary source has three explicit axes: base -> local, base -> incoming and
+ * local -> proposed result. Theme/styles retain their existing two-way artifact
+ * preview because they have separate structured/generated ownership contracts.
  */
-const ON_DISK = "on disk";
-const UPSTREAM = "upstream";
-
 /** jsdiff's own default is 4; three is the unified-diff convention. */
 const FILE_CONTEXT = 3;
 
@@ -769,19 +834,39 @@ const FILE_CONTEXT = 3;
  */
 const MAX_FULL_CONTEXT = 400;
 
-function filePatch(label: string, before: string, after: string): string | null {
-  return makePatch(label, before, after, FILE_CONTEXT);
+function filePatch(
+  label: string,
+  before: string,
+  after: string,
+  beforeLabel: string,
+  afterLabel: string,
+): string | null {
+  return makePatch(label, before, after, FILE_CONTEXT, beforeLabel, afterLabel);
 }
 
 function themePatch(label: string, before: string, after: string): string | null {
   const lineCount = before.split("\n").length;
-  return makePatch(label, before, after, lineCount <= MAX_FULL_CONTEXT ? lineCount : FILE_CONTEXT);
+  return makePatch(
+    label,
+    before,
+    after,
+    lineCount <= MAX_FULL_CONTEXT ? lineCount : FILE_CONTEXT,
+    "on disk",
+    "upstream",
+  );
 }
 
-function makePatch(label: string, before: string, after: string, context: number): string | null {
+function makePatch(
+  label: string,
+  before: string,
+  after: string,
+  context: number,
+  beforeLabel: string,
+  afterLabel: string,
+): string | null {
   if (before === after) return null;
 
-  const patch = createPatch(label, before, after, ON_DISK, UPSTREAM, { context });
+  const patch = createPatch(label, before, after, beforeLabel, afterLabel, { context });
 
   // jsdiff prefixes every patch with `Index: <file>` and a rule of `=`, which is
   // an RCS artifact and not part of a unified diff. The `---`/`+++`/`@@` body is.
@@ -866,14 +951,22 @@ function summarize(result: DiffResult, changed: number, unchanged: number): stri
 /** One item's rows, then its patches. Shared by the file blocks and the theme. */
 function renderBlock(
   heading: string,
-  rows: readonly { change: FileChange; receiptPath: string; patch: string | null }[],
+  rows: readonly (DiffFile | { change: FileChange; receiptPath: string; patch: string | null })[],
 ): string {
   const lines = [heading];
   for (const file of rows) {
     lines.push(`  ${file.change.padEnd(VERB_WIDTH)}  ${file.receiptPath}`);
   }
   for (const file of rows) {
-    if (file.patch !== null) lines.push("", file.patch);
+    if ("patches" in file) {
+      for (const [label, patch] of [
+        ["base -> local", file.patches.baseToLocal],
+        ["base -> incoming", file.patches.baseToIncoming],
+        ["local -> result", file.patches.localToResult],
+      ] as const) {
+        if (patch !== null) lines.push("", label, patch);
+      }
+    } else if (file.patch !== null) lines.push("", file.patch);
   }
   return `${lines.join("\n")}\n`;
 }

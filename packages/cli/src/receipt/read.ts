@@ -27,7 +27,7 @@ import { fromReceiptPath, receiptPathProblem } from "./path";
  * What the injected reader hands back.
  *
  * `sha256` is of the RAW BYTES, and `raw` is those bytes decoded as UTF-8. Both
- * ride together because apply's preflight compares the hash while phase 6
+ * ride together because apply's preflight compares the hash while phase 7
  * compares the text, and re-deriving either from the other is where the hash
  * domain quietly diverges.
  *
@@ -60,7 +60,7 @@ export function receiptPathFor(root: string): string {
  *
  * The raw bytes and their hash are captured on BOTH present arms: preflight
  * needs the hash even for an unreadable file that `--force` is about to
- * overwrite, and phase 6 needs the text for its byte-equality skip.
+ * overwrite, and phase 7 needs the text for its byte-equality skip.
  */
 export function readReceipt(
   root: string,
@@ -96,9 +96,9 @@ export function readReceipt(
 
 /**
  * Check order is load-bearing and easy to invert: JSON -> version -> schema ->
- * structure. `lockfileVersion` is read BEFORE validation so the validator can
- * dispatch to the frozen v1 schema or current v2 schema, and so a future file
- * is reported as version skew rather than corruption.
+ * structure. `lockfileVersion` is read BEFORE validation so legacy/future files
+ * are reported as version skew rather than corruption. V3 is the only accepted
+ * schema because exact merge bases are not derivable from older receipts.
  */
 export function parseReceipt(text: string, validate: ReceiptValidator): ParsedReceipt {
   let doc: unknown;
@@ -115,11 +115,14 @@ export function parseReceipt(text: string, validate: ReceiptValidator): ParsedRe
   if (typeof version !== "number" || !Number.isInteger(version) || version < 1) {
     return bad("invalid", "lockfileVersion is missing or is not a positive integer");
   }
-  if (version > RECEIPT_VERSION) {
+  if (version !== RECEIPT_VERSION) {
     return {
       ok: false,
-      reason: "future-version",
-      detail: `lockfileVersion ${version} is newer than this build understands (${RECEIPT_VERSION})`,
+      reason: version > RECEIPT_VERSION ? "future-version" : "unsupported-version",
+      detail:
+        version > RECEIPT_VERSION
+          ? `lockfileVersion ${version} is newer than this build understands (${RECEIPT_VERSION})`
+          : `lockfileVersion ${version} predates the merge-base contract (${RECEIPT_VERSION}); no legacy migration is supported`,
       sawVersion: version,
     };
   }
@@ -135,13 +138,7 @@ export function parseReceipt(text: string, validate: ReceiptValidator): ParsedRe
   const structural = structuralProblem(root, version);
   if (structural) return bad("invalid", structural);
 
-  return {
-    ok: true,
-    receipt:
-      version === 1
-        ? ({ ...root, lockfileVersion: RECEIPT_VERSION, styles: null } as unknown as Receipt)
-        : (root as unknown as Receipt),
-  };
+  return { ok: true, receipt: root as unknown as Receipt };
 }
 
 /**
@@ -167,7 +164,8 @@ export function buildIndex(state: ReceiptState, root: string): ReceiptIndex {
       index.set(fromReceiptPath(file.destination, root), {
         itemId: item.id,
         registry: item.registry,
-        sha256: file.sha256,
+        installedSha256: file.installedSha256,
+        baseSha256: file.baseSha256,
       });
     }
   }
@@ -250,8 +248,11 @@ function structuralProblem(root: Record<string, unknown>, version: number): stri
       if (typeof file["wireType"] !== "string") {
         return `item "${id}" has a file with a missing or non-string wireType`;
       }
-      if (typeof file["sha256"] !== "string" || !SHA256.test(file["sha256"])) {
-        return `item "${id}" has a file whose sha256 is not 64 lowercase hex characters`;
+      if (typeof file["installedSha256"] !== "string" || !SHA256.test(file["installedSha256"])) {
+        return `item "${id}" has a file whose installedSha256 is not 64 lowercase hex characters`;
+      }
+      if (typeof file["baseSha256"] !== "string" || !SHA256.test(file["baseSha256"])) {
+        return `item "${id}" has a file whose baseSha256 is not 64 lowercase hex characters`;
       }
 
       const key = destination as string;

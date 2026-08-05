@@ -34,13 +34,14 @@ exported it looks, and typecheck will not tell you. This was a real defect found
 **Diagnostics are data, not strings.** `plan/diagnostics.ts` holds `DIAGNOSTIC_CODES`, a
 `Record<DiagnosticCode, DiagnosticSpec>` — so adding a union member without a row is a compile
 error, and `scripts/guard-diagnostics.mjs` fails if a code lacks an emitter or a §1 table entry.
-Currently 41/41 emitted and documented, 0 pending. Never add a code without an emitter and a test.
+Currently 50/50 emitted and documented, 0 pending. Never add a code without an emitter and a test.
 
 **In the shipped command set, interactivity changes exactly one behaviour**,
 `destination-exists`: a terminal gets a prompt, CI gets an error naming `--overwrite` /
-`--no-overwrite`. `add` and `update` are the only two commands that can reach it — `diff` passes
-`overwrite: true` on purpose, and `list`/`info` never plan a write. W6 `init` has a separate frozen
-rule: one all-or-nothing confirmation for the coherent init plan, never a per-file selection.
+`--no-overwrite`. Only `add` reaches it. `update` plans an exact three-way result and refuses source
+conflicts before apply; `diff` plans the same update mode without applying; `list`/`info` never plan
+a write. W6 `init` has a separate frozen rule: one all-or-nothing confirmation for the coherent
+init plan, never a per-file selection.
 
 **`isInteractive` is `isTTY && !isCI() && !--yes`, and clack's `isCI` tests `CI === "true"`
 exactly.** `CI=1` is falsy to it, so a harness setting `CI=1` takes the interactive branch and

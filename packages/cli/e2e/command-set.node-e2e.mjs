@@ -244,7 +244,7 @@ test("every --json document carries the same three envelope keys on stdout alone
     ["list", ["list", "--json"]],
     ["info", ["info", ITEM, "--json"]],
     ["diff", ["diff", "--json"]],
-    ["update", ["update", "--json", "--overwrite"]],
+    ["update", ["update", "--json"]],
   ]) {
     const result = run(project, args);
     const doc = json(result);
@@ -345,7 +345,7 @@ test("diff reports a local edit as local-only, with a patch, and still exits 0",
   // A difference is the ANSWER to diff, never a failure of it.
   assert.equal(dirty.status, 0, dirty.all);
   assert.match(dirty.stdout, /local-only\s+src\/components\/ui\/empty-state\.tsx/, dirty.stdout);
-  assert.match(dirty.stdout, /^-\/\/ a local edit$/m, "the patch must show the edit reverted");
+  assert.match(dirty.stdout, /^\+\/\/ a local edit$/m, "base -> local must show the adaptation");
 
   // `--stat` is the same verdict with no patch computed.
   const stat = run(project, ["diff", "--stat"]);
@@ -358,9 +358,9 @@ test("diff reports a local edit as local-only, with a patch, and still exits 0",
   assert.equal(item.id, ITEM);
   assert.equal(item.files[0].change, "local-only");
   assert.match(
-    item.files[0].patch,
-    /^-\/\/ a local edit$/m,
-    "--json without --stat still carries the patch text",
+    item.files[0].patches.baseToLocal,
+    /^\+\/\/ a local edit$/m,
+    "--json carries the base -> local adaptation patch",
   );
 });
 
@@ -376,7 +376,7 @@ test("diff names an item that is not installed instead of fetching it", () => {
 
 // ---- update -----------------------------------------------------------------
 
-test("update restores a locally edited file, and reports what moved", () => {
+test("update preserves a local-only edit without writing the source", () => {
   const project = makeProject();
   assert.equal(run(project, ["add", ITEM]).status, 0);
 
@@ -384,53 +384,240 @@ test("update restores a locally edited file, and reports what moved", () => {
   const original = readFileSync(target, "utf8");
   writeFileSync(target, `${original}\n// a local edit\n`);
 
-  const result = run(project, ["update", "--overwrite"]);
+  const result = run(project, ["update"]);
   assert.equal(result.status, 0, result.all);
-  // `written`, not `overwrite`: `renderOutcome` prints the `WriteResult` apply
-  // OBSERVED, while `renderDryRun` prints the `Disposition` plan PREDICTED. The
-  // two vocabularies are deliberate and `add` has the same split.
-  assert.match(result.stdout, /written\s+src\/components\/ui\/empty-state\.tsx/, result.stdout);
-  assert.match(result.stdout, /^updated {2}@base\/empty-state$/m, result.stdout);
-  assert.equal(readFileSync(target, "utf8"), original, "update must restore the recorded bytes");
-
-  assert.match(run(project, ["diff"]).stdout, /No changes\./);
+  assert.match(result.stderr, /skip {2}local-only {2}@base\/empty-state/, result.stderr);
+  assert.equal(
+    readFileSync(target, "utf8"),
+    `${original}\n// a local edit\n`,
+    "default update must preserve project adaptations",
+  );
 });
 
 test("a second update is a no-op that says so, and writes nothing", () => {
   const project = makeProject();
   assert.equal(run(project, ["add", ITEM]).status, 0);
 
-  const result = run(project, ["update", "--overwrite"]);
+  const result = run(project, ["update"]);
   assert.equal(result.status, 0, result.all);
   // `identical` files are never written, so no `overwrite` line appears — but
-  // the run still happens, because apply's phase 6 is what claims a destination
+  // the run still happens, because apply's phase 7 is what claims a destination
   // that holds our bytes with no ownership record.
   assert.match(result.stderr, /skip {2}up-to-date {2}@base\/empty-state/, result.stderr);
 });
 
-test("a NON-INTERACTIVE update with a changed file refuses, and --dry-run does not exempt it", () => {
-  // §1's refusal table working as specified, not a defect: every file an update
-  // would change is a `destination-exists` error, `plan()` never sees `dryRun`,
-  // and the help text says both. This is the assertion that keeps the help text
-  // honest.
+test("a non-interactive local-only update and dry-run both preserve the edit", () => {
   const project = makeProject();
   assert.equal(run(project, ["add", ITEM]).status, 0);
 
   const target = join(project, DESTINATION);
   writeFileSync(target, `${readFileSync(target, "utf8")}\n// a local edit\n`);
 
-  const refused = run(project, ["update"]);
-  assert.equal(refused.status, 1, refused.all);
-  assert.match(refused.stderr, /error {2}destination-exists/, refused.stderr);
+  const updated = run(project, ["update"]);
+  assert.equal(updated.status, 0, updated.all);
+  assert.match(updated.stderr, /skip {2}local-only/, updated.stderr);
 
   const preview = run(project, ["update", "--dry-run"]);
-  assert.equal(preview.status, 1, preview.all);
-
-  // With `--overwrite`, the same preview works and writes nothing.
-  const dry = run(project, ["update", "--dry-run", "--overwrite"]);
-  assert.equal(dry.status, 0, dry.all);
-  assert.match(dry.stdout, /Dry run — nothing was written\./, dry.stdout);
+  assert.equal(preview.status, 0, preview.all);
+  assert.match(preview.stdout, /Dry run — nothing was written\./, preview.stdout);
   assert.match(readFileSync(target, "utf8"), /a local edit/, "a dry run must not write");
+});
+
+test("add commits an exact base and a clean two-sided update preserves both changes", () => {
+  const moved = publish(BASE_FIXTURE, "base-clean-merge");
+  const project = makeProject({ registries: { "@base": moved } });
+  assert.equal(run(project, ["add", ITEM]).status, 0);
+
+  const target = join(project, DESTINATION);
+  const basePath = join(project, ".manteen", "bases", `${DESTINATION}.base`);
+  const installed = readFileSync(target, "utf8");
+  assert.equal(readFileSync(basePath, "utf8"), installed, "add must retain exact upstream bytes");
+
+  const firstReceipt = JSON.parse(readFileSync(join(project, "manteen.lock.json"), "utf8"));
+  const firstFile = firstReceipt.items[0].files[0];
+  assert.equal(firstReceipt.lockfileVersion, 3);
+  assert.equal(firstFile.installedSha256, firstFile.baseSha256);
+
+  writeFileSync(
+    target,
+    installed.replace("\n\nexport function", "\n// local adaptation\n\nexport function"),
+  );
+
+  const itemDoc = join(WORK, "base-clean-merge", "empty-state.json");
+  const doc = JSON.parse(readFileSync(itemDoc, "utf8"));
+  doc.files[0].content = doc.files[0].content.replace("\n}\n", "\n  // upstream addition\n}\n");
+  writeFileSync(itemDoc, `${JSON.stringify(doc, null, 2)}\n`);
+
+  const updated = run(project, ["update"]);
+  assert.equal(updated.status, 0, updated.all);
+  const merged = readFileSync(target, "utf8");
+  assert.match(merged, /local adaptation/, merged);
+  assert.match(merged, /upstream addition/, merged);
+
+  const pristine = readFileSync(basePath, "utf8");
+  assert.doesNotMatch(pristine, /local adaptation/);
+  assert.match(pristine, /upstream addition/);
+
+  const receipt = JSON.parse(readFileSync(join(project, "manteen.lock.json"), "utf8"));
+  const file = receipt.items[0].files[0];
+  assert.notEqual(file.installedSha256, file.baseSha256);
+});
+
+test("an overlapping update refuses without markers and --take-upstream is explicit reset", () => {
+  const moved = publish(BASE_FIXTURE, "base-conflict");
+  const project = makeProject({ registries: { "@base": moved } });
+  assert.equal(run(project, ["add", ITEM]).status, 0);
+
+  const target = join(project, DESTINATION);
+  const local = readFileSync(target, "utf8").replace("Nothing here", "Nothing local");
+  writeFileSync(target, local);
+
+  const itemDoc = join(WORK, "base-conflict", "empty-state.json");
+  const doc = JSON.parse(readFileSync(itemDoc, "utf8"));
+  doc.files[0].content = doc.files[0].content.replace("Nothing here", "Nothing upstream");
+  writeFileSync(itemDoc, `${JSON.stringify(doc, null, 2)}\n`);
+
+  const receiptBefore = readFileSync(join(project, "manteen.lock.json"), "utf8");
+  const refused = run(project, ["update"]);
+  assert.equal(refused.status, 1, refused.all);
+  assert.match(refused.stderr, /error {2}update-conflict/, refused.stderr);
+  assert.equal(readFileSync(target, "utf8"), local, "a conflict must be zero-mutation");
+  assert.doesNotMatch(readFileSync(target, "utf8"), /<<<<<<<|=======|>>>>>>>/);
+  assert.equal(readFileSync(join(project, "manteen.lock.json"), "utf8"), receiptBefore);
+
+  const reset = run(project, ["update", "--take-upstream"]);
+  assert.equal(reset.status, 0, reset.all);
+  assert.match(readFileSync(target, "utf8"), /Nothing upstream/);
+  assert.doesNotMatch(readFileSync(target, "utf8"), /Nothing local/);
+});
+
+test("a missing tracked file refuses by default and --take-upstream restores it", () => {
+  const project = makeProject();
+  assert.equal(run(project, ["add", ITEM]).status, 0);
+  const target = join(project, DESTINATION);
+  rmSync(target);
+
+  const refused = run(project, ["update"]);
+  assert.equal(refused.status, 1, refused.all);
+  assert.match(refused.stderr, /tracked but missing locally/, refused.stderr);
+  assert.equal(existsSync(target), false);
+
+  const restored = run(project, ["update", "--take-upstream"]);
+  assert.equal(restored.status, 0, restored.all);
+  assert.equal(existsSync(target), true);
+});
+
+test("a missing or corrupt merge base refuses non-forceably", () => {
+  for (const state of ["missing", "corrupt"]) {
+    const project = makeProject();
+    assert.equal(run(project, ["add", ITEM]).status, 0);
+    const target = join(project, DESTINATION);
+    const targetBefore = readFileSync(target, "utf8");
+    const receiptPath = join(project, "manteen.lock.json");
+    const receiptBefore = readFileSync(receiptPath, "utf8");
+    const basePath = join(project, ".manteen", "bases", `${DESTINATION}.base`);
+
+    if (state === "missing") rmSync(basePath);
+    else writeFileSync(basePath, "not the recorded ancestor\n");
+
+    for (const args of [["update"], ["update", "--force"]]) {
+      const refused = run(project, args);
+      assert.equal(refused.status, 1, `${state}: ${refused.all}`);
+      assert.match(refused.stderr, /error {2}merge-base-unreadable/, refused.stderr);
+    }
+    assert.equal(readFileSync(target, "utf8"), targetBefore);
+    assert.equal(readFileSync(receiptPath, "utf8"), receiptBefore);
+  }
+});
+
+test("diff and update both refuse to invent text for invalid UTF-8 project bytes", () => {
+  const project = makeProject();
+  assert.equal(run(project, ["add", ITEM]).status, 0);
+  const target = join(project, DESTINATION);
+  const invalid = Buffer.from([0xff, 0xfe, 0xfd]);
+  writeFileSync(target, invalid);
+
+  const compared = run(project, ["diff", "--json"]);
+  assert.equal(compared.status, 0, compared.all);
+  assert.equal(json(compared).items[0].files[0].outcome, "conflict");
+
+  const refused = run(project, ["update"]);
+  assert.equal(refused.status, 1, refused.all);
+  assert.match(refused.stderr, /not valid UTF-8/, refused.stderr);
+  assert.deepEqual(readFileSync(target), invalid);
+});
+
+test("a newly shipped file creates only into absence and refuses an occupied unowned target", () => {
+  const moved = publish(BASE_FIXTURE, "base-added-file");
+  const project = makeProject({ registries: { "@base": moved } });
+  assert.equal(run(project, ["add", ITEM]).status, 0);
+
+  const itemDoc = join(WORK, "base-added-file", "empty-state.json");
+  const doc = JSON.parse(readFileSync(itemDoc, "utf8"));
+  doc.files.push({
+    path: "registry/ui/empty-state-helper.ts",
+    type: "registry:ui",
+    content: "export const helper = true;\n",
+  });
+  writeFileSync(itemDoc, `${JSON.stringify(doc, null, 2)}\n`);
+
+  const occupied = join(project, "src", "components", "ui", "empty-state-helper.ts");
+  writeFileSync(occupied, "export const projectHelper = true;\n");
+  const refused = run(project, ["update", "--take-upstream"]);
+  assert.equal(refused.status, 1, refused.all);
+  assert.match(refused.stderr, /newly shipped upstream but an unowned file/, refused.stderr);
+  assert.equal(readFileSync(occupied, "utf8"), "export const projectHelper = true;\n");
+
+  rmSync(occupied);
+  const created = run(project, ["update"]);
+  assert.equal(created.status, 0, created.all);
+  assert.equal(readFileSync(occupied, "utf8"), "export const helper = true;\n");
+});
+
+test("a file removed upstream is retained with its receipt and base", () => {
+  const moved = publish(BASE_FIXTURE, "base-removed-file");
+  const project = makeProject({ registries: { "@base": moved } });
+  assert.equal(run(project, ["add", ITEM]).status, 0);
+  const target = join(project, DESTINATION);
+  const basePath = join(project, ".manteen", "bases", `${DESTINATION}.base`);
+  const receiptPath = join(project, "manteen.lock.json");
+  const receiptBefore = readFileSync(receiptPath, "utf8");
+
+  const itemDoc = join(WORK, "base-removed-file", "empty-state.json");
+  const doc = JSON.parse(readFileSync(itemDoc, "utf8"));
+  doc.files = [];
+  writeFileSync(itemDoc, `${JSON.stringify(doc, null, 2)}\n`);
+
+  const compared = run(project, ["diff"]);
+  assert.equal(compared.status, 0, compared.all);
+  assert.match(compared.stdout, /removed-upstream/, compared.stdout);
+
+  const updated = run(project, ["update"]);
+  assert.equal(updated.status, 0, updated.all);
+  assert.equal(existsSync(target), true);
+  assert.equal(existsSync(basePath), true);
+  assert.equal(readFileSync(receiptPath, "utf8"), receiptBefore);
+});
+
+test("re-adding an item removes an obsolete base without deleting the project file", () => {
+  const moved = publish(BASE_FIXTURE, "base-obsolete-after-add");
+  const project = makeProject({ registries: { "@base": moved } });
+  assert.equal(run(project, ["add", ITEM]).status, 0);
+
+  const target = join(project, DESTINATION);
+  const basePath = join(project, ".manteen", "bases", `${DESTINATION}.base`);
+  const itemDoc = join(WORK, "base-obsolete-after-add", "empty-state.json");
+  const doc = JSON.parse(readFileSync(itemDoc, "utf8"));
+  doc.files = [];
+  writeFileSync(itemDoc, `${JSON.stringify(doc, null, 2)}\n`);
+
+  const added = run(project, ["add", ITEM]);
+  assert.equal(added.status, 0, added.all);
+  assert.equal(existsSync(target), true, "re-add must not delete project source");
+  assert.equal(existsSync(basePath), false, "the obsolete merge base must be collected");
+
+  const receipt = JSON.parse(readFileSync(join(project, "manteen.lock.json"), "utf8"));
+  assert.deepEqual(receipt.items[0].files, []);
 });
 
 test("update names an item that is not installed and changes nothing", () => {
@@ -485,7 +672,7 @@ test("diff sees an upstream change and update fetches it", () => {
   );
   assert.match(compared.stdout, /^\+\/\/ shipped upstream$/m, compared.stdout);
 
-  const updated = run(project, ["update", "--overwrite"]);
+  const updated = run(project, ["update"]);
   assert.equal(updated.status, 0, updated.all);
   assert.match(updated.stdout, /^updated {2}@base\/empty-state$/m, updated.stdout);
   assert.match(
@@ -539,7 +726,7 @@ test("diff and update carry the folded theme, and update re-merges it directly",
   assert.equal(doc.theme.receiptPath, "src/lib/theme.ts");
   assert.equal(doc.theme.change, "local-only");
 
-  const updated = run(project, ["update", "--overwrite"]);
+  const updated = run(project, ["update"]);
   assert.equal(updated.status, 0, updated.all);
   assert.match(
     readFileSync(theme, "utf8"),
@@ -587,9 +774,8 @@ test("every command is registered, and an unknown one is still exit 2", () => {
  * rather than against itself.
  *
  * Documentation that nothing executes is documentation that rots. This is the
- * one piece of help text in the CLI making a claim a reader cannot check by
- * looking — that `--dry-run` refuses without `--overwrite`/`--no-overwrite`, and
- * that `diff` needs neither — so each sentence is run rather than trusted.
+ * `add` still requires an overwrite decision. Update's three-way planner and
+ * diff both answer non-interactively without one.
  */
 test("the non-interactive help block is true of add, update and diff", () => {
   const project = makeProject();
@@ -597,24 +783,19 @@ test("the non-interactive help block is true of add, update and diff", () => {
   const target = join(project, DESTINATION);
   writeFileSync(target, `${readFileSync(target, "utf8")}\n// a local edit\n`);
 
-  for (const command of ["add", "update"]) {
-    const help = run(project, [command, "--help"]);
-    assert.equal(help.status, 0, help.all);
-    assert.match(help.stdout, /^NON-INTERACTIVE/m, `${command}: no help block`);
-    assert.match(help.stdout, /--dry-run/, `${command}: the block must name --dry-run`);
-  }
+  const addHelp = run(project, ["add", "--help"]);
+  assert.equal(addHelp.status, 0, addHelp.all);
+  assert.match(addHelp.stdout, /^NON-INTERACTIVE/m, "add: no help block");
 
-  // The claim: a bare --dry-run refuses over a changed file.
+  const updateHelp = run(project, ["update", "--help"]);
+  assert.equal(updateHelp.status, 0, updateHelp.all);
+  assert.doesNotMatch(updateHelp.stdout, /--overwrite|--no-overwrite|--yes/);
+  assert.match(updateHelp.stdout, /--take-upstream/);
+
+  // Update's claim: a bare dry run succeeds and preserves local adaptations.
   const bare = run(project, ["update", "--dry-run"]);
-  assert.equal(bare.status, 1, bare.all);
-  assert.match(bare.stderr, /destination-exists/, bare.stderr);
-
-  // The claim: EITHER flag turns that refusal into a preview.
-  for (const flag of ["--overwrite", "--no-overwrite"]) {
-    const preview = run(project, ["update", "--dry-run", flag]);
-    assert.equal(preview.status, 0, `${flag}: ${preview.all}`);
-    assert.match(preview.stdout, /Dry run — nothing was written\./, preview.stdout);
-  }
+  assert.equal(bare.status, 0, bare.all);
+  assert.match(bare.stdout, /Dry run — nothing was written\./, bare.stdout);
 
   // The claim: `diff` answers the same question with no flag and no refusal.
   const diff = run(project, ["diff"]);

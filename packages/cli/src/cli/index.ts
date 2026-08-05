@@ -209,8 +209,8 @@ const program = new Command()
   .exitOverride();
 
 /**
- * Shared by `add` and `update`, because the behaviour is one gate and writing it
- * twice is how the two drift apart.
+ * `add`'s non-interactive overwrite boundary. Update computes a three-way
+ * result during planning and therefore does not use this gate.
  *
  * The surprising half is `--dry-run`. Nobody expects the flag that means "just
  * show me" to need write authorisation, but `destination-exists` is a PLAN-time
@@ -325,17 +325,8 @@ program
   .option("--dry-run", "plan and preflight only; write nothing (see NON-INTERACTIVE)")
   .option("--force", "downgrade forceable refusals to warnings; never silences them")
   .option("--json", "emit the result as one JSON document")
-  // Worded as an obligation rather than a nicety: without one of these three, a
-  // NON-INTERACTIVE update refuses essentially always, because every file it
-  // would change is a `destination-exists` error at error severity. `--dry-run`
-  // does not exempt it — `dryRun` lives on `ApplyOptions` and `plan()` never
-  // sees it — so a CI preview needs `--overwrite` too. Interactive is fine
-  // either way: the same gate downgrades to `info` when there is a prompt.
-  .option("--overwrite", "replace changed files without asking (required in CI)")
-  .option("--no-overwrite", "keep existing files without asking")
-  .option("-y, --yes", "assume yes at every prompt; implies --overwrite")
+  .option("--take-upstream", "discard local adaptations and restore current upstream files")
   .option("--pm <name>", "override package-manager detection (npm, pnpm, yarn, bun, deno)")
-  .addHelpText("after", NON_INTERACTIVE_HELP)
   .action(async (refs: string[], flags: UpdateFlags, command: Command) => {
     process.exitCode = await runUpdate(refs, flags, command);
   });

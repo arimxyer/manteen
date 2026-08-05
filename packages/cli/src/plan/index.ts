@@ -35,15 +35,17 @@ import { checkMantineVersion } from "../gates/mantine-version";
 import { checkProvider } from "../gates/provider";
 import { checkReceipt } from "../gates/receipt";
 import { aggregate } from "../gates/report";
+import { checkReservedTargets } from "../gates/reserved";
 import { installedVersion, resolveMantineInstall } from "../gates/resolve-mantine-install";
 import { reportStylesApi } from "../gates/styles-api";
 import { indexSourceFor } from "../inventory/available";
 import { createReceiptReader, createReceiptValidator } from "../receipt/load";
-import { toReceiptPath } from "../receipt/path";
+import { basePathFor, toReceiptPath } from "../receipt/path";
 import { buildIndex, ownerOf, readReceipt } from "../receipt/read";
 import { diag } from "./diagnostics";
 import { createHttpLoader, type IndexResolver, type IndexSource, isHttpUrl } from "./loader-http";
 import { createFileLoader, isFileUrl } from "./loader-local";
+import { mergeFile } from "./merge-file";
 import { resolve as resolveGraph } from "./resolve";
 import { foldStyles, needsStylePlan, type StyleBase } from "./styles-fold";
 import { foldTheme } from "./theme-fold";
@@ -80,6 +82,7 @@ export const plan = planImpl satisfies PlanFn;
 async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptions): Promise<Plan> {
   const root = config.root;
   const force = options.force === true;
+  const operation = options.operation ?? "add";
 
   // Mutates `process.env` (see `loadEnv`), and is the ONLY place that reads it.
   // Everything downstream takes the returned map as a parameter — a module that
@@ -91,6 +94,7 @@ async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptio
 
   const diagnostics: Diagnostic[] = [...graph.diagnostics];
   diagnostics.push(...checkCollisions(graph.files, root));
+  diagnostics.push(...checkReservedTargets(graph.files, root));
   // §6. Config-level state (`config.jsconfigOnly`), but the refusal is
   // conditioned on what the RESOLVED graph actually ships, so it lives here —
   // needs no hash, no receipt, no gate that reads the network.
@@ -154,6 +158,8 @@ async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptio
 
   // ---- one hash pass over every planned destination -------------------------
   const existing: Map<string, string | null> = new Map();
+  const existingBases: Map<string, string | null> = new Map();
+  const unreadableBases = new Set<string>();
   for (const file of graph.files) {
     if (existing.has(file.destination)) continue;
     // EISDIR ONLY, and by `code` rather than by message text. `hashFileBytes`
@@ -173,6 +179,22 @@ async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptio
       existing.set(file.destination, null);
       diagnostics.push(directoryAtDestination(file.itemId, file.destination, root));
     }
+    const baseDestination = basePathFor(file.destination, root);
+    if (!existingBases.has(baseDestination)) {
+      try {
+        existingBases.set(baseDestination, hashFileBytes(baseDestination));
+      } catch (error) {
+        existingBases.set(baseDestination, null);
+        unreadableBases.add(baseDestination);
+        diagnostics.push(
+          diag(
+            "merge-base-unreadable",
+            `${toReceiptPath(baseDestination, root)} cannot be read as a merge base: ${(error as Error).message}`,
+            { items: [file.itemId], path: baseDestination },
+          ),
+        );
+      }
+    }
   }
 
   diagnostics.push(
@@ -187,9 +209,22 @@ async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptio
     }),
   );
 
-  const items = graph.items.map((item) => toPlanItem(item, existing, index));
+  const items = graph.items.map((item) =>
+    toPlanItem(
+      item,
+      existing,
+      existingBases,
+      unreadableBases,
+      index,
+      root,
+      operation,
+      options,
+      diagnostics,
+    ),
+  );
   const files = items.flatMap((item) => item.files);
-  diagnostics.push(...checkDestinations(files, options, root));
+  const removedBases = planRemovedBases(receipt, items, operation, root, diagnostics);
+  if (operation === "add") diagnostics.push(...checkDestinations(files, options, root));
 
   // ---- dependencies (D17) ---------------------------------------------------
   const deps = filterDependencies(graph.dependencies, root, diagnostics);
@@ -263,10 +298,12 @@ async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptio
 
   return {
     version: 1,
+    operation,
     root,
     configPath: config.configPath,
     items,
     files,
+    removedBases,
     dependencies: deps,
     packageManager,
     installCommand: detected === undefined ? null : installCommandFor(detected, deps),
@@ -277,6 +314,45 @@ async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptio
     diagnostics: report.diagnostics,
     ok: report.ok,
   };
+}
+
+function planRemovedBases(
+  receipt: ReceiptState,
+  items: readonly PlanItem[],
+  operation: "add" | "update",
+  root: string,
+  diagnostics: Diagnostic[],
+): Plan["removedBases"] {
+  if (operation === "update" || !receipt.present || !receipt.ok) return [];
+
+  const current = new Map(
+    items.map((item) => [
+      item.id,
+      new Set(item.files.map((file) => toReceiptPath(file.destination, root))),
+    ]),
+  );
+  const removed: Plan["removedBases"] = [];
+  for (const priorItem of receipt.receipt.items) {
+    const destinations = current.get(priorItem.id);
+    if (destinations === undefined) continue;
+    for (const priorFile of priorItem.files) {
+      if (destinations.has(priorFile.destination)) continue;
+      const destination = basePathFor(resolvePath(root, ...priorFile.destination.split("/")), root);
+      try {
+        const sha256 = hashFileBytes(destination);
+        removed.push({ destination, existing: sha256 === null ? null : { sha256 } });
+      } catch (error) {
+        diagnostics.push(
+          diag(
+            "merge-base-unreadable",
+            `${toReceiptPath(destination, root)} cannot be removed as obsolete Manteen state: ${(error as Error).message}`,
+            { items: [priorItem.id], path: destination },
+          ),
+        );
+      }
+    }
+  }
+  return removed;
 }
 
 function readStylesBase(destination: string | null, needed: boolean): StyleBase | null {
@@ -395,7 +471,13 @@ function indexResolverFor(
 function toPlanItem(
   item: ResolvedItem,
   existing: ExistingHashes,
+  existingBases: ExistingHashes,
+  unreadableBases: ReadonlySet<string>,
   index: ReturnType<typeof buildIndex>,
+  root: string,
+  operation: "add" | "update",
+  options: PlanOptions,
+  diagnostics: Diagnostic[],
 ): PlanItem {
   const files: PlannedFile[] = item.files.map((file) => {
     // Of the UTF-8 encoding of the STRING we would write. `existing` hashes RAW
@@ -403,16 +485,211 @@ function toPlanItem(
     // explicit "utf8" encoding, no BOM and no newline translation.
     const sha256 = createHash("sha256").update(file.content, "utf8").digest("hex");
     const onDisk = existing.get(file.destination) ?? null;
-    return {
+    const baseDestination = basePathFor(file.destination, root);
+    const baseOnDisk = existingBases.get(baseDestination) ?? null;
+    const upstream = { content: file.content, sha256 };
+    const common = {
       ...file,
-      sha256,
+      upstream,
+      base: {
+        destination: baseDestination,
+        content: file.content,
+        sha256,
+        existing: baseOnDisk === null ? null : { sha256: baseOnDisk },
+      },
       existing: onDisk === null ? null : { sha256: onDisk },
-      disposition: dispositionFor(sha256, onDisk),
-      priorOwner: ownerOf(index, file.destination),
     };
+
+    const priorOwner = ownerOf(index, file.destination);
+    if (operation === "add") {
+      return {
+        ...common,
+        sha256,
+        disposition: dispositionFor(sha256, onDisk),
+        priorOwner,
+      };
+    }
+
+    return planUpdatedFile({
+      common,
+      priorOwner,
+      onDisk,
+      baseOnDisk,
+      baseReadFailed: unreadableBases.has(baseDestination),
+      root,
+      takeUpstream: options.takeUpstream === true,
+      diagnostics,
+    });
   });
 
   return { ...item, files };
+}
+
+type CommonPlannedFile = Omit<PlannedFile, "sha256" | "disposition" | "priorOwner">;
+
+function planUpdatedFile(input: {
+  common: CommonPlannedFile;
+  priorOwner: PlannedFile["priorOwner"];
+  onDisk: string | null;
+  baseOnDisk: string | null;
+  baseReadFailed: boolean;
+  root: string;
+  takeUpstream: boolean;
+  diagnostics: Diagnostic[];
+}): PlannedFile {
+  const { common, priorOwner, onDisk, root, diagnostics } = input;
+  const where = toReceiptPath(common.destination, root);
+
+  // A current item may start shipping a new file. Absence is the only implicit
+  // permission to create it; an occupied unowned target is not an ancestor.
+  if (priorOwner === null) {
+    if (onDisk !== null) {
+      diagnostics.push(
+        diag(
+          "update-conflict",
+          `${where} is newly shipped upstream but an unowned file already occupies that destination. ` +
+            "Move it or resolve the collision explicitly; update will not replace it.",
+          { items: [common.itemId], path: common.destination },
+        ),
+      );
+    }
+    return {
+      ...common,
+      sha256: common.upstream.sha256,
+      disposition: dispositionFor(common.upstream.sha256, onDisk),
+      priorOwner,
+    };
+  }
+
+  const expectedBase = priorOwner.baseSha256;
+  if (input.baseReadFailed) {
+    return {
+      ...common,
+      sha256: common.upstream.sha256,
+      disposition: dispositionFor(common.upstream.sha256, onDisk),
+      priorOwner,
+    };
+  }
+  if (input.baseOnDisk !== expectedBase) {
+    const observed = input.baseOnDisk === null ? "missing" : `hash ${input.baseOnDisk}`;
+    diagnostics.push(
+      diag(
+        "merge-base-unreadable",
+        `${where} cannot be updated because its pristine base is ${observed}; ` +
+          `manteen.lock.json records ${expectedBase}. Restore ${toReceiptPath(common.base.destination, root)} from version control and re-run.`,
+        { items: [common.itemId], path: common.base.destination },
+      ),
+    );
+    return {
+      ...common,
+      sha256: common.upstream.sha256,
+      disposition: dispositionFor(common.upstream.sha256, onDisk),
+      priorOwner,
+    };
+  }
+
+  const base = readExactUtf8(common.base.destination, expectedBase);
+  if (!base.ok) {
+    diagnostics.push(
+      diag("merge-base-unreadable", `${where} cannot be updated: ${base.detail}`, {
+        items: [common.itemId],
+        path: common.base.destination,
+      }),
+    );
+    return {
+      ...common,
+      sha256: common.upstream.sha256,
+      disposition: dispositionFor(common.upstream.sha256, onDisk),
+      priorOwner,
+    };
+  }
+
+  if (onDisk === null && !input.takeUpstream) {
+    diagnostics.push(
+      diag(
+        "update-conflict",
+        `${where} is tracked but missing locally. Update treats deletion as intentional; pass --take-upstream to restore it.`,
+        { items: [common.itemId], path: common.destination },
+      ),
+    );
+    return {
+      ...common,
+      sha256: common.upstream.sha256,
+      disposition: "create",
+      priorOwner,
+    };
+  }
+
+  let content = common.upstream.content;
+  if (!input.takeUpstream && onDisk !== null) {
+    const local = readExactUtf8(common.destination, onDisk);
+    if (!local.ok) {
+      diagnostics.push(
+        diag("update-conflict", `${where} cannot be merged: ${local.detail}`, {
+          items: [common.itemId],
+          path: common.destination,
+        }),
+      );
+    } else if (onDisk === expectedBase) {
+      content = common.upstream.content;
+    } else if (common.upstream.sha256 === expectedBase) {
+      content = local.text;
+    } else if (onDisk === common.upstream.sha256) {
+      content = local.text;
+    } else {
+      const merged = mergeFile(local.text, base.text, common.upstream.content);
+      if (merged.ok) content = merged.content;
+      else {
+        const regions = merged.conflicts
+          .slice(0, 3)
+          .map(
+            (conflict) =>
+              `local line ${conflict.localStart + 1}, base line ${conflict.baseStart + 1}, upstream line ${conflict.incomingStart + 1}`,
+          )
+          .join("; ");
+        diagnostics.push(
+          diag(
+            "update-conflict",
+            `${where} has ${merged.conflicts.length} overlapping local/upstream change${merged.conflicts.length === 1 ? "" : "s"} (${regions}). ` +
+              "Nothing will be written. Resolve the edits manually or pass --take-upstream to discard local adaptations for currently shipped files.",
+            { items: [common.itemId], path: common.destination },
+          ),
+        );
+        // Conflict bytes are never written. Keep the local projection so
+        // reporters cannot mistake a marker-filled synthetic result for output.
+        content = local.text;
+      }
+    }
+  }
+
+  const finalSha256 = createHash("sha256").update(content, "utf8").digest("hex");
+  return {
+    ...common,
+    content,
+    sha256: finalSha256,
+    disposition: dispositionFor(finalSha256, onDisk),
+    priorOwner,
+  };
+}
+
+type ExactText = { ok: true; text: string } | { ok: false; detail: string };
+
+function readExactUtf8(path: string, expectedSha256: string): ExactText {
+  let bytes: Buffer;
+  try {
+    bytes = readFileSync(path);
+  } catch (error) {
+    return { ok: false, detail: `${path} could not be read: ${(error as Error).message}` };
+  }
+  const actual = createHash("sha256").update(bytes).digest("hex");
+  if (actual !== expectedSha256) {
+    return { ok: false, detail: `${path} changed while the update plan was being computed` };
+  }
+  const text = bytes.toString("utf8");
+  if (!Buffer.from(text, "utf8").equals(bytes)) {
+    return { ok: false, detail: `${path} is not valid UTF-8 and cannot be line-merged exactly` };
+  }
+  return { ok: true, text };
 }
 
 function dispositionFor(planned: string, onDisk: string | null): Disposition {
@@ -574,7 +851,7 @@ function describeOwner(file: PlannedFile): string {
   if (owner === null) return " and was not installed by manteen";
   const from = owner.registry === null ? "" : ` from ${owner.registry}`;
   if (owner.itemId !== file.itemId) return `, installed by ${owner.itemId}${from}`;
-  const drifted = file.existing !== null && file.existing.sha256 !== owner.sha256;
+  const drifted = file.existing !== null && file.existing.sha256 !== owner.installedSha256;
   return drifted
     ? `, installed by ${owner.itemId}${from} and modified since manteen wrote it`
     : `, installed by ${owner.itemId}${from}`;
@@ -750,15 +1027,14 @@ function readThemeBase(
  * being discarded.
  */
 function receiptUnreadable(state: Extract<ReceiptState, { present: true; ok: false }>): Diagnostic {
-  const head =
-    state.reason === "future-version"
-      ? `${state.path} was written by a newer version of manteen (lockfileVersion ${state.sawVersion ?? "?"}; this build understands ${RECEIPT_VERSION}).`
-      : `${state.path} could not be read: ${state.detail}`;
+  const newer = state.reason === "future-version";
+  const head = newer
+    ? `${state.path} was written by a newer version of manteen (lockfileVersion ${state.sawVersion ?? "?"}; this build understands ${RECEIPT_VERSION}).`
+    : `${state.path} could not be read: ${state.detail}`;
 
-  const forcing =
-    state.reason === "future-version"
-      ? `Forcing rewrites it at version ${RECEIPT_VERSION}, discarding fields this version does not understand,`
-      : "Forcing discards the ownership records of every previously installed item,";
+  const forcing = newer
+    ? `Forcing rewrites it at version ${RECEIPT_VERSION}, discarding fields this version does not understand,`
+    : "Forcing discards the ownership records of every previously installed item,";
 
   return diag(
     "receipt-unreadable",

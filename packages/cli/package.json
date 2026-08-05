@@ -50,6 +50,7 @@
     "diff": "^9",
     "get-tsconfig": "^4.14",
     "manteen-kit": "^0.2.0",
+    "node-diff3": "^3.2.1",
     "nypm": "^0.6.9",
     "semver": "^7.8.5",
     "ts-morph": "^28.0.0"

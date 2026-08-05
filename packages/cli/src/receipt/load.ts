@@ -25,7 +25,6 @@ import type { ReceiptReader, ReceiptValidator } from "./read";
 
 const SCHEMA_CANDIDATES = ["../schema", "../../schema"] as const;
 const LOCK_SCHEMA_FILE = "manteen.lock.schema.json";
-const LOCK_V1_SCHEMA_FILE = "manteen.lock.v1.schema.json";
 
 /**
  * Reads the receipt, or reports absence.
@@ -38,7 +37,7 @@ const LOCK_V1_SCHEMA_FILE = "manteen.lock.v1.schema.json";
  * it.
  *
  * The hash is of the RAW BYTES and `raw` is those same bytes decoded as UTF-8.
- * Both ride together because apply's preflight compares the hash while phase 6
+ * Both ride together because apply's preflight compares the hash while phase 7
  * compares the text, and re-deriving either from the other is where the hash
  * domain quietly diverges.
  */
@@ -69,24 +68,15 @@ export function createReceiptReader(): ReceiptReader {
  * needs to stay discoverable.
  *
  * `allErrors` because a hand-edited receipt usually has more than one problem
- * and the user fixes them in an editor, in one pass.
+ * and the user fixes them in an editor, in one pass. There is intentionally one
+ * schema: v1/v2 do not carry the exact ancestor v3 requires.
  */
 export function createReceiptValidator(): ReceiptValidator {
-  // The frozen v1 schema deliberately keeps its original $id, so compile the
-  // two versions in separate Ajv registries rather than mutating either schema.
-  const validateV1 = new Ajv({ strict: false, allErrors: true }).compile(
-    readLockSchema(LOCK_V1_SCHEMA_FILE),
-  );
-  const validateV2 = new Ajv({ strict: false, allErrors: true }).compile(
+  const validate = new Ajv({ strict: false, allErrors: true }).compile(
     readLockSchema(LOCK_SCHEMA_FILE),
   );
 
   return (doc) => {
-    const version =
-      typeof doc === "object" && doc !== null && !Array.isArray(doc)
-        ? (doc as Record<string, unknown>)["lockfileVersion"]
-        : undefined;
-    const validate = version === 1 ? validateV1 : validateV2;
     if (validate(doc)) return true;
     return (validate.errors ?? [])
       .map((error) => `${error.instancePath || "/"} ${error.message ?? "is invalid"}`)

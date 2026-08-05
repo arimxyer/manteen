@@ -1,6 +1,6 @@
 # Update merge handoff
 
-Status: contract frozen on 2026-08-05; implementation is the active CLI milestone.
+Status: complete on 2026-08-05; source and built-Node acceptance are green.
 
 ## The question
 
@@ -124,17 +124,28 @@ JSON carries all three patches plus the proposed outcome (`unchanged`, `local-on
 `upstream-only`, `merged`, `conflict`, `missing-local`, `removed-upstream`, `added-upstream`). Text
 may summarize unchanged axes, but it must never call a two-way replacement patch a merge preview.
 
-## Implementation order
+## Implemented surface
 
-1. Freeze receipt v3, sidecar path rules, plan types, and diagnostics.
-2. Make `add` write exact bases and the receipt atomically.
-3. Add the pure three-way merge planner and update-mode plan semantics.
-4. Replace update's overwrite flags with `--take-upstream` and make conflict-free updates
+1. Receipt v3, sidecar path rules, plan types, and diagnostics are native; v1/v2 readers refuse.
+2. `add` writes exact bases and the receipt through one pre-image journal.
+3. The pure line-oriented planner handles local-only, upstream-only, clean two-sided merges and
+   conflicts without emitting markers.
+4. Update exposes `--take-upstream`, not overwrite/no-overwrite/yes, and conflict-free runs are
    non-interactive.
-5. Upgrade diff text/JSON to the three-patch model.
-6. Prove source behavior and the built `dist/` under real Node, including clean merges, conflicts,
-   missing/corrupt bases, local-only no-ops, explicit reset, rollback after a sidecar write, and
-   non-interactive dry-run.
+5. Diff text/JSON carries base-to-local, base-to-incoming and local-to-result patches plus the
+   proposed outcome.
+6. Source and built-Node acceptance cover clean merges, conflicts, missing/corrupt bases,
+   local-only no-ops, explicit reset, new-file occupancy, removed-upstream retention and
+   non-interactive dry-run. Existing later-write rollback coverage exercises bases through the
+   same whole-tree manifest boundary.
+
+Verification receipts from the completion run:
+
+- `bun run test`: 225 passed, 0 failed.
+- `bun run typecheck`: 0 errors; Astro reported two pre-existing deprecation hints.
+- `bun run lint`: clean across 280 files.
+- `bun run guard`: all five guards clean; 50 diagnostics emitted/documented, 0 pending.
+- built Node e2e: 109 passed, 0 failed, 1 opt-in packed-consumer smoke skipped.
 
 ## Evidence boundary
 

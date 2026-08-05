@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Replace update's skip-or-overwrite behavior with exact three-way source merging backed by
+  committed pristine bases. Local-only adaptations are preserved, upstream-only changes apply,
+  clean two-sided changes merge, and overlapping changes refuse before mutation.
+- Add receipt v3 with separate accepted-result and pristine-base hashes under `.manteen/bases/`.
+  Legacy receipts are rejected because no released consumer relies on them.
+- Replace update's overwrite/yes flags with the explicit destructive `--take-upstream` operation,
+  and render base-to-local, base-to-incoming, and local-to-result patches in `manteen diff`.
+
 ## 0.2.0
 
 - Initialize and maintain one explicitly configured, Manteen-owned package stylesheet without

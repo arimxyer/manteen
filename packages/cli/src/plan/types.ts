@@ -38,6 +38,7 @@ export type DiagnosticCode =
   | "meta-degraded"
   | "target-collision"
   | "target-escapes-root"
+  | "target-reserved"
   | "target-refused-type"
   | "resolution-applied"
   | "dependency-cycle"
@@ -65,6 +66,8 @@ export type DiagnosticCode =
   | "receipt-stale"
   | "receipt-unreadable"
   | "receipt-drift"
+  | "merge-base-unreadable"
+  | "update-conflict"
   /**
    * §5a resolution 4: the version gate reads `@mantine/core` ONLY, so a
    * `@mantine/hooks@^9` sitting on a mismatched major would otherwise pass in
@@ -220,7 +223,14 @@ export interface ResolvedGraph {
 export type Disposition = "create" | "overwrite" | "identical";
 
 export interface PlannedFile extends ResolvedFile {
-  sha256: string; // of `content`
+  /** Of the final destination text this plan will accept/write. Under `add`
+   *  this equals the pristine upstream hash; under `update` it may be the hash
+   *  of a conflict-free merged result. */
+  sha256: string;
+  /** The pristine registry bytes that become the next three-way ancestor. */
+  upstream: { content: string; sha256: string };
+  /** The committed sidecar that stores `upstream` outside the JSON receipt. */
+  base: PlannedBase;
   existing: { sha256: string } | null; // pre-image hash, for TOCTOU + disposition
   disposition: Disposition;
   /**
@@ -228,11 +238,19 @@ export interface PlannedFile extends ResolvedFile {
    * is no receipt, or when the receipt was unreadable. Feeds the overwrite
    * prompt's attribution.
    *
-   * `existing.sha256 !== priorOwner.sha256` is the drift test — deliberately
+   * `existing.sha256 !== priorOwner.installedSha256` is the drift test — deliberately
    * NOT stored as a precomputed boolean, so the two hashes cannot drift apart
    * from a cached verdict.
    */
   priorOwner: ReceiptOwnerRef | null;
+}
+
+export interface PlannedBase {
+  destination: string; // ABSOLUTE, under `<root>/.manteen/bases/`
+  content: string; // exact pristine upstream bytes
+  sha256: string;
+  /** Pre-image hash for apply preflight and journal decisions. */
+  existing: { sha256: string } | null;
 }
 
 export interface PlannedDependency {
@@ -301,10 +319,14 @@ export interface PlanItem {
 
 export interface Plan {
   version: 1;
+  /** The write semantics used to construct every `PlannedFile`. */
+  operation: "add" | "update";
   root: string; // absolute project root = dirname(manteen.json)
   configPath: string;
   items: PlanItem[]; // topologically sorted, lexicographic tiebreak
   files: PlannedFile[]; // flattened in item order — the write list
+  /** Obsolete sidecars dropped only by add's historical item-replacement path. */
+  removedBases: PlannedBaseRemoval[];
   dependencies: PlannedDependency[];
   packageManager: PackageManagerName; // from nypm, resolved at plan time
   installCommand: string | null; // exactly what apply will run, corepack prefix included
@@ -317,6 +339,11 @@ export interface Plan {
   ok: boolean; // see the refusal contract in §1
 }
 
+export interface PlannedBaseRemoval {
+  destination: string; // ABSOLUTE, under `<root>/.manteen/bases/`
+  existing: { sha256: string } | null;
+}
+
 export interface PlanOptions {
   force?: boolean;
   overwrite?: boolean | "no";
@@ -325,6 +352,11 @@ export interface PlanOptions {
    *  command builder yields an unrunnable string, so the override is resolved
    *  here rather than at install time. */
   packageManager?: PackageManagerName;
+  /** `add` keeps the ordinary overwrite surface; `update` computes from the
+   *  recorded pristine base. Defaulted to add for programmatic callers. */
+  operation?: "add" | "update";
+  /** Update-only explicit destructive mode. Never inferred from `--yes`. */
+  takeUpstream?: boolean;
 }
 
 // ---- apply -----------------------------------------------------------------
@@ -402,15 +434,14 @@ export type ApplyFn = (plan: Plan, options: ApplyOptions) => Promise<ApplyOutcom
 // by one registry is not silently replaced by a same-named item from another on
 // a LATER run. D8's in-run check closes that within one command only.
 //
-// Hash domain, because the asymmetry is real and a false `receipt-drift` on
-// Windows is how it gets discovered: `ReceiptFile.sha256` / `ReceiptTheme.sha256`
-// hash the UTF-8 encoding of the STRING manteen wrote (identical to
-// `PlannedFile.sha256`), while `ReceiptState.sha256` and `PlannedFile.existing`
-// hash RAW FILE BYTES. They compare equal only because write-files.ts writes
-// with an explicit "utf8" encoding, no BOM and no newline translation.
+// Hash domain, because the asymmetry is real and a false drift verdict on
+// Windows is how it gets discovered: receipt file hashes encode STRINGS as
+// UTF-8, while `ReceiptState.sha256` and `PlannedFile.existing` hash RAW FILE
+// BYTES. They compare equal only because writes use explicit UTF-8 with no BOM
+// or newline translation.
 
 export const RECEIPT_FILENAME = "manteen.lock.json";
-export const RECEIPT_VERSION = 2;
+export const RECEIPT_VERSION = 3;
 
 /** POSIX, relative to `Plan.root`. Never absolute, never contains a `..` segment. */
 export type ReceiptPath = string;
@@ -418,9 +449,10 @@ export type ReceiptPath = string;
 export interface ReceiptFile {
   destination: ReceiptPath;
   wireType: string;
-  /** Of the content manteen wrote — not of what is on disk now. Byte-identical
-   *  to the `PlannedFile.sha256` of the run that wrote it; no second hash pass. */
-  sha256: string;
+  /** Of the destination result accepted by the last successful run. */
+  installedSha256: string;
+  /** Of the exact pristine upstream bytes stored in the derived base sidecar. */
+  baseSha256: string;
 }
 
 export interface ReceiptItem {
@@ -470,12 +502,16 @@ export interface Receipt {
   styles: ReceiptStyles | null;
 }
 
-export type ReceiptUnreadable = "unparseable" | "invalid" | "future-version";
+export type ReceiptUnreadable =
+  | "unparseable"
+  | "invalid"
+  | "unsupported-version"
+  | "future-version";
 
 /**
  * `sha256` is of the RAW BYTES on disk. Apply's preflight re-reads and compares
  * it — the same TOCTOU defence every planned destination gets. `raw` is the
- * pre-image the journal records and the text phase 6 compares against for the
+ * pre-image the journal records and the text phase 7 compares against for the
  * byte-equality skip.
  */
 export type ReceiptState =
@@ -495,8 +531,10 @@ export type ReceiptState =
 export interface ReceiptOwnerRef {
   itemId: CanonicalId;
   registry: string | null;
-  /** What manteen wrote at this destination. */
-  sha256: string;
+  /** Result accepted by the last successful run. */
+  installedSha256: string;
+  /** Pristine upstream ancestor stored in the base sidecar. */
+  baseSha256: string;
 }
 
 /** Key is the ABSOLUTE destination, so it joins directly against `PlannedFile`. */

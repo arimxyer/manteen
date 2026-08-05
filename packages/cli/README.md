@@ -126,14 +126,17 @@ manteen list
 manteen info @house/data-table
 manteen diff
 manteen update
+manteen update --take-upstream # explicitly discard local source adaptations
 ```
 
-Every install is recorded in `manteen.lock.json` — which item came from which registry
-and what was written where. Commit it: it is what stops a same-named component from a
-second registry silently replacing one you already installed.
+Every install is recorded in `manteen.lock.json`, with exact pristine upstream bases under
+`.manteen/bases/`. Commit both. They stop cross-registry replacement and let `update` merge current
+registry changes around project adaptations. Conflict-free changes apply without prompting;
+overlapping edits refuse without writing conflict markers. `--take-upstream` is the separate,
+destructive reset for files the registry still ships.
 
 Items may also require package-level styles such as `@mantine/carousel/styles.css`. Manteen composes
-those imports into the configured `styles` file and records each item's contribution in receipt v2.
+those imports into the configured `styles` file and records each item's contribution in receipt v3.
 The file is Manteen-owned; put project overrides in the host stylesheet imported after it. Manteen
 does not rewrite that host stylesheet or a project's Tailwind/PostCSS plugin order.
 

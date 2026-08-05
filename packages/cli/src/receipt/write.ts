@@ -2,7 +2,7 @@
  * Producing the next `manteen.lock.json`: merge, then bytes.
  *
  * Pure — this module writes nothing. `apply()` owns the write, as its final
- * mutation (phase 6), inside the same pre-image journal as phases 3 through 5.
+ * mutation (phase 7), inside the same pre-image journal as phases 3 through 6.
  * That ordering is the whole invariant: a rolled-back run leaves a receipt
  * describing the state its files were restored to, and a SIGKILL mid-write
  * leaves one that UNDER-claims. Under-claiming costs a missed cross-run refusal;
@@ -57,7 +57,8 @@ export function serializeReceipt(receipt: Receipt): string {
         .map((file) => ({
           destination: file.destination,
           wireType: file.wireType,
-          sha256: file.sha256,
+          installedSha256: file.installedSha256,
+          baseSha256: file.baseSha256,
         })),
     }));
   canonical["theme"] = receipt.theme
@@ -104,11 +105,9 @@ export function mergeReceipt(
   const priorItems = new Map<CanonicalId, ReceiptItem>();
   for (const item of prior?.items ?? []) priorItems.set(item.id, item);
 
-  // 1. Rebuild every item this run touched. Prior claims of a rebuilt item at
-  //    destinations NOT planned this run are dropped by construction: an item
-  //    whose file list shrank must not keep claiming a destination it no longer
-  //    produces, or a later unrelated item lands on a `receipt-collision` that
-  //    nothing can clear.
+  // 1. Rebuild every item this run touched. Add retains its historical
+  //    replacement semantics. Update keeps no-longer-shipped files and their
+  //    bases: source deletion/rename requires a separate explicit contract.
   const rebuilt: ReceiptItem[] = [];
   const recorded = new Set<ReceiptPath>();
 
@@ -129,7 +128,12 @@ export function mergeReceipt(
         // case — a project installed before receipts existed would stay
         // permanently unprotected, which is the single most valuable thing the
         // receipt does.
-        files.push({ destination, wireType: file.wireType, sha256: file.sha256 });
+        files.push({
+          destination,
+          wireType: file.wireType,
+          installedSha256: file.sha256,
+          baseSha256: file.upstream.sha256,
+        });
       } else {
         // `skipped` (declined prompt or `--no-overwrite`), or a destination
         // phases 3/4 never reported. We do not own a file we declined to write,
@@ -141,10 +145,18 @@ export function mergeReceipt(
         files.push({
           destination: carried.destination,
           wireType: carried.wireType,
-          sha256: carried.sha256,
+          installedSha256: carried.installedSha256,
+          baseSha256: carried.baseSha256,
         });
       }
       recorded.add(destination);
+    }
+
+    if (plan.operation === "update") {
+      const planned = new Set(item.files.map((file) => toReceiptPath(file.destination, root)));
+      for (const priorFile of priorItem?.files ?? []) {
+        if (!planned.has(priorFile.destination)) files.push(priorFile);
+      }
     }
 
     rebuilt.push({

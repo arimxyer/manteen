@@ -23,6 +23,36 @@ export function fromReceiptPath(p: ReceiptPath, root: string): string {
   return resolve(root, ...p.split("/"));
 }
 
+/** Manteen-owned state. Registry destinations inside this tree are refused. */
+export const MANTEEN_STATE_DIRECTORY = ".manteen";
+
+/**
+ * The one current pristine ancestor for a project destination.
+ *
+ * Mirroring the receipt path makes storage O(installed files), while the
+ * `.base` suffix keeps TypeScript/JS source out of compiler globs. The input is
+ * already absolute and proven inside `root`; `toReceiptPath` gives the portable
+ * relative identity used by the receipt too.
+ */
+export function basePathFor(absoluteDestination: string, root: string): string {
+  const receiptPath = toReceiptPath(absoluteDestination, root);
+  const segments = receiptPath.split("/");
+  const filename = segments.pop();
+  if (filename === undefined || filename === "") {
+    throw new Error(`cannot derive a merge base path for ${absoluteDestination}`);
+  }
+  return resolve(root, MANTEEN_STATE_DIRECTORY, "bases", ...segments, `${filename}.base`);
+}
+
+/** Whether an absolute destination reaches Manteen's reserved state tree. */
+export function isManteenStatePath(absoluteDestination: string, root: string): boolean {
+  const relativePath = toReceiptPath(absoluteDestination, root);
+  return (
+    relativePath === MANTEEN_STATE_DIRECTORY ||
+    relativePath.startsWith(`${MANTEEN_STATE_DIRECTORY}/`)
+  );
+}
+
 /**
  * Why this stored path is not usable, or null when it is fine.
  *
