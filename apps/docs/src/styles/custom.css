@@ -1005,16 +1005,24 @@
    This is the fix instead: unlayered, so it beats every layer whatever the order, and wrapped in
    `:where()` so it carries ZERO specificity — Mantine's own inline `--*-fz` variables, a caller's
    `styles` prop and any consumer override all still win. The values are copied verbatim from
-   Mantine's own declarations (Input.css:184, Button.css:41 and :252) so this restores its sizing
-   rather than inventing one. */
+   Mantine's own declarations (Input.css:184, Button.css:41) so this restores its sizing rather
+   than inventing one.
+
+   TWO rules, and only two: Starlight's reset names ELEMENTS, so only Mantine parts that ARE one of
+   those elements are casualties. `.mantine-Input-input` is an <input> (and carries the Textarea and
+   Select inputs with it) and `.mantine-Button-root` is a <button>. The section slots are a <div>
+   and a <span>, so Mantine's own rules for them never lost and re-declaring them here would be
+   inventing sizing rather than restoring it — verified by querying which rules actually match each
+   element, not by reading Mantine's source.
+
+   Site-wide by design, because the bug was. Checked on /registry/, /registry/authentication-form/,
+   /registry/table-sort/ and the hero: the only visible change is inside the catalog's scaled card
+   previews, 0.07% of pixels at 1440x1000, no reflow. The `size`-bearing buttons it corrects were
+   being flattened — a `size="xl"` CTA rendered at 16px where Mantine sizes it 22px. */
 :where(.mantine-Input-input) {
   font-size: var(--_input-fz, var(--input-fz, var(--mantine-font-size-md)));
 }
 
 :where(.mantine-Button-root) {
   font-size: var(--button-fz, var(--mantine-font-size-sm));
-}
-
-:where(.mantine-Button-section) {
-  font-size: var(--section-fz, var(--mantine-font-size-sm));
 }
