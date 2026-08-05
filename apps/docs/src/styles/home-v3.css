@@ -1,17 +1,17 @@
-/* Home page, third pass. Scoped under `.mh` so it shares nothing with the earlier `specimen.css`
-   while both are reviewable side by side.
+/* The home page's design language. Scoped under `.mh`, which is now the only such scope — the
+   earlier `specimen.css` and the three directions built on it (A "Ledger", B "Index", C) are
+   deleted; D is the direction.
 
-   What changed and why: the first two directions invented a uppercase-tracked-mono label system
-   that appears on ZERO of the twenty-five component-library and dev-tool sites surveyed
-   (notes/home-hero-research). That was costume, not design language. This pass deletes it. The
-   look now comes from three decisions instead of fifteen devices:
+   What that earlier pass got wrong and why this one exists: it invented an uppercase-tracked-mono
+   label system that appears on ZERO of the twenty-five component-library and dev-tool sites
+   surveyed (notes/home-hero-research). That was costume, not design language. The look now comes
+   from three decisions instead of fifteen devices:
 
-     1. A real typeface pairing — Figtree 800 for display, Fraunces italic for one accent word.
-        Verified by rendering: with Fraunces upright the accent reads as an accidental weight
-        change; the lean is what makes it read as deliberate.
+     1. A real typeface pairing — Figtree 800 for display, Fraunces for one accent word, upright
+        at 400 (the rendered shortlist Ari picked from; see `.mh__display em` below).
      2. One committed accent, and diff colours that appear ONLY inside the artifact.
-     3. One large honest artifact instead of a component collage — the collage is what ~10 of 15
-        peer sites already do, so leading with one would read as a clone.
+     3. Real components at the size you would use them, rather than a shrunken collage — the
+        collage is what ~10 of 15 peer sites already do, so leading with one would read as a clone.
 
    Both themes are defined. The site has a working theme toggle; a page that only holds together
    in dark is the "lack of attention to detail" this pass exists to avoid. */
@@ -147,7 +147,7 @@
 
 /* No min-height here: the same class is used both as a row-level action (where it needs to match
    the button's 2.75rem tap target) and inline inside a sentence, where a 2.75rem box opens a gap
-   mid-paragraph. The action row adds the height back — see HeroHome.module.css `.actions`. */
+   mid-paragraph. The action row adds the height back — see HeroRadix.module.css `.actions`. */
 .mh__ghost {
   display: inline-flex;
   align-items: center;

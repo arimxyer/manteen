@@ -1,5 +1,21 @@
 # Home page art direction — "Specimen"
 
+> **Status: partly superseded. Read the per-section markers.**
+>
+> "Specimen" was the first written direction and it produced three concepts — A "Ledger",
+> B "Index", and C — all now deleted along with `specimen.css`. Direction D is the one that
+> shipped (`components/home/HeroRadix.astro`), and it kept this document's diagnosis, voice,
+> motion rule, material rule and Manny rule while replacing its **Type** and **Motif** sections
+> outright.
+>
+> The replacement is not a drift to be corrected: a reference sweep of twenty-five component
+> library and dev-tool sites (`notes/home-hero-research`) found the uppercase-tracked-mono label
+> system this document prescribes on **zero** of them. It was costume rather than design language.
+> The live type and colour decisions now live in `apps/docs/src/styles/home-v3.css`.
+>
+> Kept here because the diagnosis below is the reason any of it exists, and it is still the thing
+> to re-read before generating another concept.
+
 This file exists because six independently-generated hero concepts all read as generic, and the
 reason was upstream of any of them: nobody had decided what manteen *looks like*. Six agents each
 invented a visual language from scratch, so every concept was a layout exercise, and layout
@@ -28,6 +44,13 @@ Confidence comes from craft and density, never from gradients, glow, or motion v
 is someone who keeps code, not someone being sold to.
 
 ## Type — the highest-leverage decision
+
+> **SUPERSEDED.** The diagnosis in the first paragraph held; the call in the second did not. The
+> shipped answer is a real pairing, self-hosted: Figtree Variable for display at weight 800, and a
+> `wght`-400 Fraunces subset with its optical-size axis live for exactly one accent word. Ari chose
+> it from a rendered shortlist. The mono label row below was deleted, not adjusted. See
+> `apps/docs/src/styles/fonts.css` (which carries the subsetting recipe and why `opsz` must stay
+> live) and `home-v3.css`.
 
 The current page reads templated mostly because it is Starlight's default font stack at default
 sizes. Layout cleverness on top of default type still reads as a docs template.
@@ -64,6 +87,10 @@ And the colors mean something: they are the colors the CLI itself uses to descri
 palette is the product rather than a skin over it.
 
 ## Motif
+
+> **SUPERSEDED — all three.** They were the "fifteen devices" the next pass replaced with three
+> decisions. The diff gutter survives in one place only, inside `OwnershipPanel`, where it is
+> reporting a real reconciliation rather than decorating a rail.
 
 1. **Hairline rule + mono kicker + figure number.** Every section opens with the same three-part
    header (`── 01 / SPECIMEN ──`). Repetition of one device is what makes a page feel authored.
