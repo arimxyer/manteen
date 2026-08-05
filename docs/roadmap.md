@@ -93,6 +93,7 @@ is a judgment call, which is exactly why they are separate runs.
 | W8 | [`Release`](w8-release-handoff.md) | complete: both `0.1.1` packages published through tagged OIDC with provenance | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
 | Wc | [`Registry content`](wc-registry-content-handoff.md) | ongoing: small curated tranches | Independent of all of the above; doubles as client stress-testing without turning fixtures into product evidence. |
 | Wt | [`Theme builder`](#wt--theme-builder-proposed) | proposed: one page, plan-first | Preview-then-install for the one registry item every consumer is expected to edit. Depends on nothing; blocked by nothing. |
+| Wu | [`Update merging`](update-merge-handoff.md) | active: contract → base/receipt → merge → diff → built-Node acceptance | Changes ordinary source maintenance from skip-or-replace to reproducible three-way merging without weakening the existing plan/apply transaction. |
 
 **Not workflow-shaped, do directly:** the hygiene set (LICENSE, linter, SECURITY, CONTRIBUTING,
 dependabot, README rename). Single-file, single-concern, no discovery — a workflow would be
@@ -141,6 +142,7 @@ Phase 3 ✔ ─> W4 apply surface ✔ ─┬─> W5 command set ✔ ──┐
                                  └─> W6 init ✔ ─────────┴─> W7 hardening ✔ ─> W8 release ✔
 Wc registry content ......... any time, independent
 Wt theme builder ............ any time, independent, not started
+Wu update merging ........... active; independent of content/theme-builder work
 hygiene ..................... done, direct
 ```
 
@@ -193,9 +195,11 @@ made Phase 3 work depends on a human reading the probe.
   code already carries Windows-aware handling in places. W7's `windows-latest` built and packed
   jobs now pass, including the native `.cmd`/caret path. That is current positive evidence, while
   the best-effort policy keeps future platform drift from becoming an unsupported promise.
-- **`update` re-merges directly.** No confirmation diff. `mergeThemeSource` is idempotent and
-  keeps existing values on conflict, and the receipt records pre-update hashes, so the operation
-  is recoverable. `manteen diff` still ships for people who want to look first.
+- **`update` re-merges directly.** The original decision applied truthfully to the structured
+  theme fold but left ordinary component source on add's skip-or-replace surface. Wu supersedes
+  that half: ordinary tracked files use a durable pristine base and fail-closed three-way merge;
+  the theme keeps `mergeThemeSource`, and `manteen.css` remains generated. See
+  [`update-merge-handoff.md`](update-merge-handoff.md).
 
 ## Releasing
 
