@@ -30,6 +30,13 @@ import "../../styles/home-v3.css";
     display: none;
   }
 
+  /* These two must travel with the component when it ships, not stay behind on the preview route.
+     The real home page's `.sl-container` computes to max-width: 1080px with 24px of panel padding,
+     which leaves the hero a 1032px measure — and HeroRadix's two-column breakpoint keys on VIEWPORT
+     width while the real constraint is CONTAINER width. Above a 1280px viewport the two-column
+     layout would engage inside a 1080px container, putting the copy track at ~445px, under the
+     519px the usage sample needs to stay on two lines. Either carry these overrides across, or
+     convert the breakpoint to a container query. */
   .content-panel .sl-container {
     max-width: none;
   }
