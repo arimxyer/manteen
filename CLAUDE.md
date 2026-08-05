@@ -62,12 +62,15 @@ patterns, and `*.node-e2e.mjs` matches none of them.
   branch home and deleting the worktree is the same trap from the other end: a dependency added
   there arrives in `package.json` and `bun.lock` with the merge, but was only ever *linked* into
   the worktree's tree — so it is declared here and absent here. Relink with `bun install
-  --frozen-lockfile` after landing any branch that added one. Nothing warns you when the import is
-  CSS: neither `tsc --noEmit` nor `astro check` resolves an `@import` specifier, so a missing style
-  package passes every gate and first appears as an opaque dev-server 500. `astro dev` is a daemon
-  — a second one no-ops rather than starting — so read `astro dev logs`, never the response body.
-  (Cost: `@fontsource-variable/figtree` unlinked after a merge; every hero route 500ing behind a
-  71-byte page.)
+  --frozen-lockfile` after landing any branch that added one. A JS import fails loudly here, but a
+  CSS one does not: neither `tsc --noEmit` nor `astro check` resolves an `@import` specifier, so a
+  missing style package clears `test`, `typecheck`, `lint` and `guard` and first appears as an
+  opaque dev-server 500. **`bun run build:site` is the gate that catches it** — it runs the real
+  Vite pipeline and exits 1 naming the specifier. CI never sees the failure at all, because every
+  job begins with `bun install --frozen-lockfile` on a clean runner; green CI is not evidence your
+  tree is linked. And `astro dev` is a daemon — a second one no-ops rather than starting — so read
+  `astro dev logs`, never the response body. (Cost: `@fontsource-variable/figtree` unlinked after a
+  merge; every hero route 500ing behind a 71-byte page.)
 - **Edit `manteen.registry.json` surgically, never by re-serializing.** `JSON.parse` → mutate →
   `JSON.stringify` turns a six-line addition into a 163-line diff, because the file's formatting
   is not what `stringify` emits. Use a targeted text edit and check `git diff --stat` before
