@@ -34,12 +34,31 @@ that originated in the brief itself twice.
 
 ## Guards, not vigilance
 
-Four checks encode rules that a reader could otherwise silently break:
+Five checks encode rules that a reader could otherwise silently break:
 
 - `scripts/guard-workspace.mjs` — every symlink under a `node_modules` resolves
   and does not point at itself. Runs in front of `tsc` in the `typecheck` script
   and immediately after `bun install` in CI. See the incident below; unlike the
-  other two, its value is the message rather than the detection.
+  others, its value is the message rather than the detection.
+- `scripts/guard-deps.mjs` — every name in `dependencies` or `devDependencies`
+  of every workspace manifest is actually installed. The pair above is the
+  distinction to keep straight: `guard-workspace` asks whether the links that
+  exist resolve, this asks whether the ones that should exist are there. It is a
+  separate file for the reason `guard-workspace` gives in its own header — that
+  guard sits in front of `tsc` and must stay in the milliseconds — so this one
+  runs in `guard` only, never in `typecheck`.
+
+  The gap it closes is structural rather than accidental, and worktree isolation
+  is what creates it: a branch that adds a dependency inside a worktree commits
+  the declaration through `package.json` and `bun.lock` while the install lands
+  in that worktree's gitignored `node_modules` and dies with it. A JS import
+  then fails loudly under `tsc`, but a CSS `@import` resolves through no
+  typechecker at all, so it clears every check and appears as a bare 500 from
+  the dev server. Presence only — versions stay with `bun install
+  --frozen-lockfile`, and `peerDependencies` and `optionalDependencies` are
+  skipped because absent is legal for both. Note that CI cannot fail on this:
+  every job installs from the lockfile first, so green CI says nothing about
+  whether a local checkout is complete.
 - `scripts/guard-runtime-apis.mjs` — two checks sharing one walk. The rules
   proper are below; `checkText` additionally bans **raw control characters**
   anywhere in scanned source. That is not pedantry: a literal NUL byte makes a

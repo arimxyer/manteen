@@ -61,16 +61,17 @@ patterns, and `*.node-e2e.mjs` matches none of them.
   detail links, every `mantine-ui` route 404ing, diagnosed as a site defect.) Merging a worktree
   branch home and deleting the worktree is the same trap from the other end: a dependency added
   there arrives in `package.json` and `bun.lock` with the merge, but was only ever *linked* into
-  the worktree's tree — so it is declared here and absent here. Relink with `bun install
-  --frozen-lockfile` after landing any branch that added one. A JS import fails loudly here, but a
-  CSS one does not: neither `tsc --noEmit` nor `astro check` resolves an `@import` specifier, so a
-  missing style package clears `test`, `typecheck`, `lint` and `guard` and first appears as an
-  opaque dev-server 500. **`bun run build:site` is the gate that catches it** — it runs the real
-  Vite pipeline and exits 1 naming the specifier. CI never sees the failure at all, because every
-  job begins with `bun install --frozen-lockfile` on a clean runner; green CI is not evidence your
-  tree is linked. And `astro dev` is a daemon — a second one no-ops rather than starting — so read
-  `astro dev logs`, never the response body. (Cost: `@fontsource-variable/figtree` unlinked after a
-  merge; every hero route 500ing behind a 71-byte page.)
+  the worktree's tree — so it is declared here and absent here. **`bun run guard` now catches this**
+  — `scripts/guard-deps.mjs` names the package and the manifest — so relink with `bun install
+  --frozen-lockfile` and move on. It needed a guard because the failure is silent: a JS import
+  fails loudly under `tsc`, but no typechecker resolves a CSS `@import`, so before this a missing
+  style package cleared `test`, `typecheck`, `lint` and `guard` alike and first appeared as an
+  opaque dev-server 500. `bun run build:site` also catches it, at the cost of a full build. CI never
+  sees it at all — every job begins with `bun install --frozen-lockfile` on a clean runner, so green
+  CI is no evidence your tree is complete. And `astro dev` is a daemon — a second one no-ops rather
+  than starting — so read `astro dev logs`, never the response body. (Cost:
+  `@fontsource-variable/figtree` unlinked after a merge; every hero route 500ing behind a 71-byte
+  page.)
 - **Edit `manteen.registry.json` surgically, never by re-serializing.** `JSON.parse` → mutate →
   `JSON.stringify` turns a six-line addition into a 163-line diff, because the file's formatting
   is not what `stringify` emits. Use a targeted text edit and check `git diff --stat` before
@@ -89,5 +90,6 @@ patterns, and `*.node-e2e.mjs` matches none of them.
 - **Unimplemented seams refuse and name the missing module.** They never no-op — a silent no-op
   is indistinguishable from success.
 
-Prefer a guard over a convention whenever the rule is mechanically checkable. Three exist; adding
-a fourth is cheaper than a paragraph nobody reads.
+Prefer a guard over a convention whenever the rule is mechanically checkable. Five exist; adding
+a sixth is cheaper than a paragraph nobody reads. `guard-deps.mjs` is the worked example — it
+started life as the paragraph above it, which is exactly the outcome this line warns against.

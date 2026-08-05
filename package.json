@@ -13,7 +13,7 @@
     "//typecheck": "guard-workspace runs first because a broken node_modules makes tsc report hundreds of errors in files nobody touched. Checking link integrity costs a few milliseconds and turns that wall into one actionable line. `astro check` runs last because the root tsconfig's include covers registry, test and packages only: apps/docs needs Astro's own compiler for .astro files, and its .tsx needs Vite's ambient types (import.meta.glob) that plain tsc does not have. Without this leg the docs app - playground shell, adapters, catalog previews - is typechecked by nothing at all; astro build only strips types.",
     "typecheck": "node scripts/guard-workspace.mjs && tsc --noEmit && bun --cwd=apps/docs run check",
     "//guard": "Every mechanical guard in one place. CI invokes them individually so a failure names itself in the job log.",
-    "guard": "node scripts/guard-workspace.mjs && node scripts/guard-runtime-apis.mjs && node packages/cli/scripts/guard-diagnostics.mjs && node scripts/guard-release.mjs",
+    "guard": "node scripts/guard-workspace.mjs && node scripts/guard-deps.mjs && node scripts/guard-runtime-apis.mjs && node packages/cli/scripts/guard-diagnostics.mjs && node scripts/guard-release.mjs",
     "guard:release": "node scripts/guard-release.mjs",
     "verify:node": "bun run build:kit && node packages/registry-kit/dist/cli.mjs build",
     "docs:dev": "bun run build:registry && bun --cwd=apps/docs run dev",

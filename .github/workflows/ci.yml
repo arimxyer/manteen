@@ -37,6 +37,10 @@ jobs:
       - run: node scripts/guard-runtime-apis.mjs
       - run: node packages/cli/scripts/guard-diagnostics.mjs
       - run: node scripts/guard-release.mjs
+      # Cannot fail here — the install above always produces a complete tree.
+      # Listed so a manifest declaring something the lockfile cannot supply is
+      # caught, and so CI and `bun run guard` stay the same set.
+      - run: node scripts/guard-deps.mjs
 
   built-node:
     name: Built Node ${{ matrix.node }} on ${{ matrix.os }}
