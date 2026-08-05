@@ -37,3 +37,19 @@ const needsCoreStyles = hasPlayground || isCatalogPage || isHeroPreview;
 
 <DefaultHead />
 {needsCoreStyles && <link rel="stylesheet" href={mantineStylesHref} />}
+{
+  /* Review-only, and deliberately temporary: direction C is typeset in Figtree + Fraunces, and
+     this is the fastest way to judge the design. Before any of this ships the faces must be
+     self-hosted (vendored .woff2 under src/assets/fonts, or @fontsource) — a docs site on GitHub
+     Pages should not hand every reader's IP to a third party for a font, and a CDN round-trip is
+     exactly the kind of detail this pass exists to get right. Flagged, not forgotten. */
+  isHeroPreview && (
+    <>
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;800&family=Fraunces:ital,opsz,wght@1,9..144,400..500&display=swap"
+      />
+    </>
+  )
+}

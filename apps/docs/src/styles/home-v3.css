@@ -1,0 +1,173 @@
+/* Home page, third pass. Scoped under `.mh` so it shares nothing with the earlier `specimen.css`
+   while both are reviewable side by side.
+
+   What changed and why: the first two directions invented a uppercase-tracked-mono label system
+   that appears on ZERO of the twenty-five component-library and dev-tool sites surveyed
+   (notes/home-hero-research). That was costume, not design language. This pass deletes it. The
+   look now comes from three decisions instead of fifteen devices:
+
+     1. A real typeface pairing — Figtree 800 for display, Fraunces italic for one accent word.
+        Verified by rendering: with Fraunces upright the accent reads as an accidental weight
+        change; the lean is what makes it read as deliberate.
+     2. One committed accent, and diff colours that appear ONLY inside the artifact.
+     3. One large honest artifact instead of a component collage — the collage is what ~10 of 15
+        peer sites already do, so leading with one would read as a clone.
+
+   Both themes are defined. The site has a working theme toggle; a page that only holds together
+   in dark is the "lack of attention to detail" this pass exists to avoid. */
+
+.mh {
+  --mh-sans: Figtree, ui-sans-serif, system-ui, sans-serif;
+  --mh-serif: Fraunces, Georgia, "Times New Roman", serif;
+  --mh-mono: var(--sl-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+
+  --mh-bg: #0d0e12;
+  --mh-panel: #14161c;
+  --mh-panel-2: #1a1d25;
+  --mh-line: #272b35;
+  --mh-line-soft: rgba(242, 244, 248, 0.09);
+  --mh-text: #f2f4f8;
+  --mh-muted: #9ba3b2;
+  --mh-faint: #6c7484;
+  --mh-accent: #8f9bff;
+  --mh-accent-ink: #0d0e12;
+  --mh-add: #64d99a;
+  --mh-add-wash: rgba(100, 217, 154, 0.13);
+  --mh-mod: #e8b06a;
+
+  color: var(--mh-text);
+  font-family: var(--mh-sans);
+  /* Figtree and Fraunces are both variable with an optical-size axis; letting the browser drive
+     opsz is why the accent word holds its colour against 800-weight display type. */
+  font-optical-sizing: auto;
+}
+
+:root[data-theme="light"] .mh {
+  --mh-bg: #fbfbfd;
+  --mh-panel: #ffffff;
+  --mh-panel-2: #f3f4f8;
+  --mh-line: #e0e3ec;
+  --mh-line-soft: rgba(16, 18, 24, 0.09);
+  --mh-text: #14161c;
+  --mh-muted: #545c6b;
+  --mh-faint: #6c7484;
+  --mh-accent: #4553d8;
+  --mh-accent-ink: #ffffff;
+  --mh-add: #16874f;
+  --mh-add-wash: rgba(22, 135, 79, 0.11);
+  --mh-mod: #9a5a05;
+}
+
+/* Starlight's `.sl-markdown-content * + * { margin-top: 1rem }` leaks into every container
+   authored here. Zero-specificity mirror of that exact rule, so it cannot miss an element type
+   and always loses to anything declared on purpose below. */
+:where(.mh) * + * {
+  margin-top: 0;
+}
+
+.mh :is(h1, h2, h3, p, ul, ol, dl, figure) {
+  margin: 0;
+}
+
+/* ---- Type ---------------------------------------------------------------------------------- */
+.mh__display {
+  font-size: clamp(2.5rem, 5.9vw, 4.25rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  text-wrap: balance;
+}
+
+/* The one gesture. Lighter weight and looser tracking than the surrounding 800 — an italic serif
+   set at the same weight as the sans reads as a glitch rather than a decision. */
+.mh__display em {
+  font-family: var(--mh-serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+}
+
+.mh__lede {
+  max-width: 54ch;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: var(--mh-muted);
+}
+
+.mh__lede code,
+.mh__inline {
+  font-family: var(--mh-mono);
+  font-size: 0.9em;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--mh-text);
+}
+
+/* ---- Controls ------------------------------------------------------------------------------ */
+.mh__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: var(--mh-accent);
+  color: var(--mh-accent-ink);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    filter 140ms ease,
+    transform 140ms ease;
+}
+
+.mh__cta:hover {
+  filter: brightness(1.08);
+  color: var(--mh-accent-ink);
+}
+
+.mh__cta:active {
+  transform: translateY(1px);
+}
+
+/* No min-height here: the same class is used both as a row-level action (where it needs to match
+   the button's 2.75rem tap target) and inline inside a sentence, where a 2.75rem box opens a gap
+   mid-paragraph. The action row adds the height back — see HeroHome.module.css `.actions`. */
+.mh__ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.25rem;
+  color: var(--mh-muted);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+  /* Underline drawn as a background so it can animate width without reflowing the text. */
+  background-image: linear-gradient(var(--mh-text), var(--mh-text));
+  background-repeat: no-repeat;
+  background-position: 0.25rem 82%;
+  background-size: 0% 1px;
+  transition:
+    color 160ms ease,
+    background-size 220ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.mh__ghost:hover {
+  color: var(--mh-text);
+  background-size: calc(100% - 0.5rem) 1px;
+}
+
+.mh :is(a, button):focus-visible {
+  outline: 2px solid var(--mh-accent);
+  outline-offset: 3px;
+  border-radius: 0.35rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mh :is(.mh__cta, .mh__ghost) {
+    transition: none;
+  }
+}

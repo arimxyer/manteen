@@ -1,0 +1,100 @@
+---
+// Plain <img>, not astro:assets <Image>: the image service needs Sharp, which this workspace does
+// not install — dev transforms it fine and only `astro build` fails.
+import manny from "../../assets/manny.png";
+import { readRegistry } from "../../lib/registry";
+import OwnershipPanel from "./OwnershipPanel";
+import styles from "./HeroHome.module.css";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+// Counted, never typed — a hand-written total goes stale the next time the catalog grows and
+// nothing fails when it does.
+const { entries } = readRegistry();
+const INSTALL = "npx manteen add @house/stat-card";
+---
+
+{/*
+  Direction C. Austere in the Base UI sense — few elements, lots of air — but with no manifesto:
+  the positioning is stated in one sentence and then demonstrated, because "shadcn's workflow
+  applied to Mantine" is a thing you can show rather than argue.
+
+  Five elements above the artifact. That is the whole page. See docs/home-art-direction.md.
+*/}
+
+<section class={`mh ${styles.hero}`} aria-labelledby="home-title">
+  <div class={styles.copy}>
+    <h1 class={`mh__display ${styles.title}`} id="home-title">
+      Mantine components, <em>yours</em> to keep.
+    </h1>
+
+    <p class="mh__lede">
+      The shadcn workflow, applied to Mantine. <code>manteen add</code> writes real source into your
+      repository — yours to read and edit — and <code>manteen update</code> reconciles it with
+      upstream later, without taking it back.
+    </p>
+
+    <div class={styles.install}>
+      <code class={styles.installText}><span class={styles.prompt} aria-hidden="true">$</span>{INSTALL}</code>
+      <button type="button" class={styles.copyBtn} data-copy={INSTALL} aria-label="Copy install command">
+        <span data-copy-idle>Copy</span>
+        <span data-copy-done hidden>Copied</span>
+      </button>
+    </div>
+
+    <div class={styles.actions}>
+      <a class="mh__cta" href={`${base}/getting-started/`}>
+        Get started
+        <span aria-hidden="true">&rarr;</span>
+      </a>
+      <a class="mh__ghost" href={`${base}/registry/`}>Browse the registry</a>
+    </div>
+  </div>
+
+  <div class={styles.artifact}>
+    {/* `client:only` — a timer-driven React subtree has nothing useful to SSR. */}
+    <OwnershipPanel client:only="react" />
+  </div>
+
+  {/* Manny's one appearance, at mark scale, carrying the closing line so the page has somewhere to
+      land without needing a second section. */}
+  <p class={styles.closing}>
+    <img class={styles.manny} src={manny.src} alt="" width={manny.width} height={manny.height} />
+    <span>
+      {entries.length} components, blocks, hooks and themes — every one of them installable as
+      source you own. <a class="mh__ghost" href={`${base}/registry/`}>See all {entries.length}</a>
+    </span>
+  </p>
+</section>
+
+<script>
+  // Progressive enhancement: the command is selectable text with or without this running.
+  for (const button of document.querySelectorAll<HTMLButtonElement>("[data-copy]")) {
+    button.addEventListener("click", async () => {
+      const text = button.dataset.copy;
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        // Older/permission-restricted browsers: fall back rather than failing silently.
+        const scratch = document.createElement("textarea");
+        scratch.value = text;
+        scratch.style.cssText = "position:fixed;opacity:0";
+        document.body.append(scratch);
+        scratch.select();
+        document.execCommand("copy");
+        scratch.remove();
+      }
+      const idle = button.querySelector<HTMLElement>("[data-copy-idle]");
+      const done = button.querySelector<HTMLElement>("[data-copy-done]");
+      if (!idle || !done) return;
+      idle.hidden = true;
+      done.hidden = false;
+      button.dataset.copied = "true";
+      window.setTimeout(() => {
+        idle.hidden = false;
+        done.hidden = true;
+        delete button.dataset.copied;
+      }, 1600);
+    });
+  }
+</script>

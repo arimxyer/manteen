@@ -1,0 +1,134 @@
+.hero {
+  width: 100%;
+  max-width: 68rem;
+  margin-inline: auto;
+  padding: clamp(3rem, 8vw, 6.5rem) 1.5rem clamp(3rem, 6vw, 5rem);
+}
+
+/* Copy sits in its own measure and does NOT stretch to the artifact's width. A headline running
+   the full 68rem is the single most common way an austere layout starts looking accidental. */
+.copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.5rem;
+  max-width: 42rem;
+}
+
+.title {
+  max-width: 15ch;
+}
+
+/* ---- Install line ---------------------------------------------------------------------------- */
+.install {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  align-self: stretch;
+  max-width: 30rem;
+  padding: 0.15rem 0.15rem 0.15rem 0.9rem;
+  border: 1px solid var(--mh-line);
+  border-radius: 0.6rem;
+  background: var(--mh-panel);
+}
+
+.installText {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--mh-mono);
+  font-size: 0.875rem;
+  color: var(--mh-text);
+  white-space: nowrap;
+  overflow-x: auto;
+  /* Hide the scrollbar but keep the overflow scrollable — a visible track inside a 2.5rem-tall
+     pill reads as a rendering bug. */
+  scrollbar-width: none;
+}
+
+.installText::-webkit-scrollbar {
+  display: none;
+}
+
+.prompt {
+  margin-right: 0.65rem;
+  color: var(--mh-faint);
+  user-select: none;
+}
+
+.copyBtn {
+  flex: none;
+  min-height: 2.15rem;
+  padding: 0 0.85rem;
+  border: 1px solid var(--mh-line);
+  border-radius: 0.45rem;
+  background: var(--mh-panel-2);
+  color: var(--mh-muted);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    color 140ms ease,
+    border-color 140ms ease;
+}
+
+.copyBtn:hover {
+  color: var(--mh-text);
+  border-color: var(--mh-faint);
+}
+
+.copyBtn[data-copied] {
+  color: var(--mh-add);
+  border-color: var(--mh-add);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+}
+
+/* Restores the 2.75rem tap target the shared class deliberately omits, so the secondary link
+   matches the primary button's height here without inflating the inline use in the closing line. */
+.actions :global(.mh__ghost) {
+  min-height: 2.75rem;
+}
+
+/* ---- Artifact -------------------------------------------------------------------------------- */
+.artifact {
+  margin-top: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+/* ---- Closing --------------------------------------------------------------------------------- */
+.closing {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: clamp(2rem, 4vw, 3rem);
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--mh-line-soft);
+  max-width: 52rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--mh-muted);
+}
+
+.manny {
+  flex: none;
+  width: 3.25rem;
+  height: auto;
+}
+
+@media (max-width: 40rem) {
+  .hero {
+    padding-inline: 1.15rem;
+  }
+
+  .closing {
+    align-items: flex-start;
+  }
+}
