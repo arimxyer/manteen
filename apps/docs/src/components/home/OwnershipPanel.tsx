@@ -171,7 +171,13 @@ export default function OwnershipPanel() {
           </code>
         </pre>
 
-        <div className={styles.stage}>
+        {/* The scheme attribute has to be on the same element as `cssVariablesSelector` below.
+            Mantine emits its scheme-dependent variables under `<selector>[data-mantine-color-scheme=…]`
+            and only stamps that attribute on :root, which this subtree does not use — so
+            `--mantine-color-indigo-light` resolved to the empty string, the ThemeIcon's
+            `variant="light"` got a transparent background, and its glyph fell through to inherited
+            white. Invisible in light, and only accidentally acceptable in dark. */}
+        <div className={styles.stage} data-mantine-color-scheme={scheme}>
           <MantineProvider
             forceColorScheme={scheme}
             theme={{ fontFamily: "Figtree, sans-serif", primaryColor: "indigo" }}

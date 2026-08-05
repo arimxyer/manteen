@@ -101,13 +101,18 @@ const USAGE = `import { StatCard } from "@/components/ui/stat-card";
     </div>
   </section>
 
-  <p class={styles.closing}>
+  {/* A <footer>, not a <p>. `home-v3.css` resets `.mh :is(h1,h2,h3,p,…) { margin: 0 }` at (0,1,1),
+      which out-ranks a CSS-module class at (0,1,0) — as a <p> this row silently lost BOTH its
+      4rem `margin-top` and its `margin-inline: auto`, so it sat flush against the panel above and
+      jammed to the viewport's left edge. Demoting the reset is not the fix: it is what holds
+      Starlight's `.sl-markdown-content * + *` leak shut for headings and paragraphs. */}
+  <footer class={styles.closing}>
     <img class={styles.manny} src={manny.src} alt="" width={manny.width} height={manny.height} />
     <span>
       {entries.length} components, blocks, hooks and themes — every one installable as source you
       own. <a class="mh__ghost" href={`${base}/registry/`}>See all {entries.length}</a>
     </span>
-  </p>
+  </footer>
 </div>
 
 <script>

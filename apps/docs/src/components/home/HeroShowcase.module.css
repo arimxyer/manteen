@@ -2,12 +2,19 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  /* No max-width and no centring: the column is allowed to run past the grid cell and off the
-     right edge of the viewport. That overflow is the design, not a bug — see HeroShowcase.tsx. */
-  width: max-content;
+  /* `align-items: flex-start`, not the default `stretch`. Stretched, every panel took the column
+     width regardless of its own `--panel-w`, so the 27rem auth form sat left-aligned inside a
+     586px frame with 173px of empty panel to its right and two nested borders 20px apart — the
+     opposite of the per-item natural width HeroShowcase.tsx sets out to give it.
+     `width: max-content` is gone with it: it made the column 642px (the widest panel) whatever the
+     cell was, which is what let the stack overshoot the viewport between 1025 and 1280. */
+  align-items: flex-start;
+  width: 100%;
+  min-width: 0;
 }
 
 .panel {
+  max-width: 100%;
   border: 1px solid var(--mh-line);
   border-radius: 0.875rem;
   background: var(--mh-panel);
@@ -22,13 +29,17 @@
 }
 
 /* Second panel is nudged right so the stack reads as a loose arrangement rather than a rigid
-   left-aligned column — the difference between "an app" and "a table of contents". */
+   left-aligned column — the difference between "an app" and "a table of contents". The max-width
+   subtracts the nudge, which sits outside the border box and would otherwise let this panel push
+   past the column it is capped against. */
 .panel:nth-child(2) {
   margin-left: 3.5rem;
+  max-width: calc(100% - 3.5rem);
 }
 
 .panelInner {
   width: var(--panel-w);
+  max-width: 100%;
   padding: 1.25rem;
 }
 
@@ -56,19 +67,20 @@
   --mantine-color-body: var(--mh-panel);
 }
 
-@media (max-width: 64rem) {
-  .column {
-    width: 100%;
-  }
-
+/* Matches HeroRadix.module.css's breakpoint — they must move together. */
+@media (max-width: 80rem) {
+  /* Single-column: the stack sits under the copy rather than beside it, so the offset that made it
+     read as an arrangement stops helping and only pushes the second panel out of line. Panels keep
+     their per-item natural width — stretching a 27rem sign-in form across a 1232px measure is the
+     "uniform grid cell" this component exists to avoid. */
   .panel:nth-child(2) {
     margin-left: 0;
+    max-width: 100%;
   }
+}
 
-  /* Below the two-column breakpoint the panels stop being a bleeding collage and become ordinary
-     stacked cards, so they need to fit rather than overflow. */
+@media (max-width: 40rem) {
   .panelInner {
-    width: 100%;
     padding: 1rem;
   }
 }

@@ -5,17 +5,17 @@ import type { PlaygroundAdapter } from "../playgrounds/contract";
 import styles from "./HeroShowcase.module.css";
 
 /**
- * The right-hand column: real registry components, rendered at their NATURAL size, stacked and
- * deliberately bleeding off the right edge of the viewport.
+ * The right-hand column: real registry components, rendered at their NATURAL size and stacked.
  *
- * Two things distinguish this from the component collage every other library site has, and both
- * are what Radix gets right (see notes/home-hero-research):
+ * What distinguishes this from the component collage every other library site has is full size,
+ * not miniatures (see notes/home-hero-research). A tidy grid of shrunken cards reads as a
+ * catalogue thumbnail sheet; components at the size you would actually use them read as a
+ * working app.
  *
- *  - full size, not miniatures. A tidy grid of shrunken cards reads as a catalogue thumbnail
- *    sheet; components at the size you would actually use them read as a working app.
- *  - it bleeds. Cutting the column off at the viewport edge implies there is more, which is the
- *    whole point of a registry. A collage that fits neatly inside the page implies that is all
- *    there is.
+ * An earlier pass also claimed the column bled off the right edge of the viewport. It did not —
+ * it stopped 82px short at 1440 and overshot by up to 90px between 1025 and 1280, where the
+ * clip cut real content. That is now removed; see HeroShowcase.module.css. A real bleed would
+ * need panels genuinely wider than the cell, and is an open design decision, not a margin.
  *
  * Zero client JS. `eager: true` because this renders at build time with no client directive —
  * the same discovery glob PlaygroundHost lazy-loads at runtime.

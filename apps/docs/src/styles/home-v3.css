@@ -23,6 +23,10 @@
   --mh-serif: "Fraunces Subset", Georgia, "Times New Roman", serif;
   --mh-mono: var(--sl-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
 
+  /* NOT PAINTED ANYWHERE — the page renders on Starlight's ground (#111318 dark, #eef1f7 light).
+     Held pending a decision: the panel/page value relationship was designed against this and
+     ships against something four steps lighter, so in dark the panel fill measures 1.03:1 against
+     the page and the panels read as outlines. Either paint this or lighten --mh-panel. */
   --mh-bg: #0d0e12;
   --mh-panel: #14161c;
   --mh-panel-2: #1a1d25;
@@ -30,7 +34,9 @@
   --mh-line-soft: rgba(242, 244, 248, 0.09);
   --mh-text: #f2f4f8;
   --mh-muted: #9ba3b2;
-  --mh-faint: #6c7484;
+  /* 4.75:1 on the page ground and 4.62:1 on a panel. The previous #6c7484 measured 3.95:1 and
+     carried 13px text (the showcase caption, the `$` prompt) — under AA. */
+  --mh-faint: #798192;
   --mh-accent: #8f9bff;
   --mh-accent-ink: #0d0e12;
   --mh-add: #64d99a;
@@ -52,7 +58,9 @@
   --mh-line-soft: rgba(16, 18, 24, 0.09);
   --mh-text: #14161c;
   --mh-muted: #545c6b;
-  --mh-faint: #6c7484;
+  /* Same correction in light: #6c7484 measured 4.15:1 against the real page ground (#eef1f7),
+     not the 4.7:1 it gets against pure white. This is 5.03:1. */
+  --mh-faint: #5f6776;
   --mh-accent: #4553d8;
   --mh-accent-ink: #ffffff;
   --mh-add: #16874f;

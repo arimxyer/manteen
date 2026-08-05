@@ -1,8 +1,21 @@
 .wrap {
-  /* The hero column bleeds off the right edge deliberately, so the page must not grow a
-     horizontal scrollbar because of it. Clipping here rather than on <body> keeps the rest of the
-     document scrollable and the site header unaffected. */
+  /* Belt and braces only. Nothing is supposed to reach past the measure any more — see `.showcase`
+     — but Mantine components inside the panels can size themselves, and a stray overflow must not
+     grow a page-level horizontal scrollbar. Clipping here rather than on <body> keeps the rest of
+     the document scrollable and the site header unaffected. */
   overflow-x: clip;
+}
+
+/* ---- Shared measure --------------------------------------------------------------------------- */
+/* One container for all three bands. They previously ran on 80rem/72rem/72rem with an asymmetric
+   padding on the hero, which put four different left edges (104 / 144 / 168 / 0) and four
+   different right edges on the same desktop page. */
+.hero,
+.feature,
+.closing {
+  max-width: 80rem;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
 }
 
 /* ---- Hero ------------------------------------------------------------------------------------ */
@@ -15,9 +28,7 @@
   /* Top-aligned, not centred. Centring hung the shorter copy column in the middle of the taller
      showcase and opened a large void beneath the install line. */
   align-items: start;
-  max-width: 80rem;
-  margin-inline: auto;
-  padding: clamp(2.5rem, 6vw, 5rem) 0 clamp(2.5rem, 5vw, 4rem) 1.5rem;
+  padding-block: clamp(2.5rem, 6vw, 5rem) clamp(2.5rem, 5vw, 4rem);
 }
 
 .copy {
@@ -142,19 +153,27 @@
 }
 
 /* ---- Showcase column ------------------------------------------------------------------------- */
-/* The bleed. Panels are wider than the grid cell and the column is pulled further right, so the
-   stack runs past the page's right margin and gets cut by `.wrap`'s `overflow-x: clip`. The cut
-   edge is the point — it implies the registry continues past the frame, which a collage that fits
-   neatly inside the page does not. */
+/* This used to carry `margin-right: clamp(-9rem, -6vw, -3rem)` to bleed the stack off the right
+   edge. Measured, it did the opposite of what the comment claimed:
+     - at 1440 the column is `max-content` = 642px inside a 731px cell, so it stopped 82px SHORT of
+       the viewport and the negative margin only widened a cell nothing filled;
+     - at every width from ~1025 to 1280 the widened cell pushed the panels past the viewport and
+       `.wrap`'s clip silently cut them — 90px at 1100, 39px at 1200;
+     - below the single-column breakpoint the margin was never reset, cutting 24–37px at 1024, 768
+       and 390. That, not the component's own ScrollContainer, is what cut the table on mobile.
+   The clip was masking a layout bug rather than delivering an effect. The column now fits its
+   cell at every width and shares the page's right measure. Making the bleed real is a separate,
+   deliberate change — it needs the panels to be genuinely wider than the cell, not a margin. */
 .showcase {
   display: flex;
   flex-direction: column;
   gap: 1rem;
   min-width: 0;
-  margin-right: clamp(-9rem, -6vw, -3rem);
 }
 
 .showcaseNote {
+  /* Was inheriting the over-wide cell and running 6px past the viewport. */
+  max-width: 100%;
   font-size: 0.8125rem;
   color: var(--mh-faint);
 }
@@ -164,11 +183,11 @@
   display: grid;
   grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
   gap: clamp(2rem, 5vw, 4rem);
-  align-items: center;
-  max-width: 72rem;
-  margin-inline: auto;
+  /* Top-aligned, for the same reason `.hero` is: centring floated the h2 105px below the panel it
+     names, with nothing at that height to relate it to. */
+  align-items: start;
   margin-top: clamp(3rem, 7vw, 6rem);
-  padding: clamp(2.5rem, 5vw, 3.5rem) 1.5rem 0;
+  padding-top: clamp(2.5rem, 5vw, 3.5rem);
   border-top: 1px solid var(--mh-line-soft);
 }
 
@@ -194,10 +213,8 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  max-width: 72rem;
-  margin-inline: auto;
   margin-top: clamp(2.5rem, 5vw, 4rem);
-  padding: 1.5rem 1.5rem 0;
+  padding-top: 1.5rem;
   border-top: 1px solid var(--mh-line-soft);
   font-size: 0.9375rem;
   line-height: 1.6;
@@ -211,11 +228,16 @@
 }
 
 /* ---- Responsive -------------------------------------------------------------------------------- */
-@media (max-width: 64rem) {
+/* 80rem, not 64rem — the same number as the container's own max-width, so the rule is simply
+   "two columns only once the container is at full measure".
+   The old 64rem let the two-column layout run down to 1025, where the copy track was ~470px and
+   both lines of the usage sample soft-wrapped to double height; a sample meant to read as "that
+   is all of it" cannot wrap. Measured: wrapped at a 502px track, clean at 519px, and the track is
+   537px at 1281. See notes/home-hero-research/audit/FINDINGS.md. */
+@media (max-width: 80rem) {
   .hero,
   .feature {
     grid-template-columns: minmax(0, 1fr);
-    padding-inline: 1.5rem;
   }
 
   .copy {
@@ -232,5 +254,15 @@
 
   .closing {
     align-items: flex-start;
+  }
+
+  /* At 390 the command was 3px wider than its box and the last character of `stat-card` was cut,
+     with the scrollbar hidden — it read as broken rather than scrollable. */
+  .installText {
+    font-size: 0.75rem;
+  }
+
+  .install {
+    padding-left: 0.7rem;
   }
 }
