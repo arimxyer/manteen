@@ -38,11 +38,11 @@ verbatim upstream notice once at `LICENSES/MANTINE-UI.txt`.
 | Item | Shape exercised | Curated change |
 | --- | --- | --- |
 | `article-card` | TSX + targeted CSS module + Tabler icons | Hardcoded article and external demo assets became props; dead action buttons are omitted. |
-| `authentication-form` | Three source files + `@mantine/form` + `@mantine/hooks` | Submission/social actions became callbacks; social UI appears only when wired. |
+| `authentication-form` | Three source files + `@mantine/form` + `@mantine/hooks` | Submission/social actions became callbacks; social UI appears only when wired. Placeholders normalized to one `Enter your …` shape. The social buttons set `styles={{ section: { marginInlineEnd: 8 } }}` because upstream leaves the icon flush against the label — measured 0px, now 8px. |
 | `button-progress` | Stateful hook-driven component + CSS module | Labels, duration and completion became public inputs. |
 | `dnd-list` | `@dnd-kit/*`, `clsx`, keyboard/pointer behavior + CSS module | Periodic-table fixture became a reusable item and reorder contract. |
 | `stats-grid` | Responsive block + React-node inputs + icons | Fixed metrics became consumer-owned data, icons and comparison labels. |
-| `table-sort` | Derived search/sort state + empty state + CSS module | Fixed rows became props; filtered rows are derived rather than copied into stale state. |
+| `table-sort` | Derived search/sort state + empty state + CSS module | Fixed rows became props; filtered rows are derived rather than copied into stale state. `Table miw` lowered from upstream's 700 to 560. Consumer-visible: it changes where the horizontal scroll starts. 700 made the component scroll inside any content box narrower than 700px even when its three default columns had already fitted — measured in a 600px box, 111px of scroll with the last column fully visible, i.e. scrolling over empty table. |
 | `cards-carousel` | `@mantine/carousel`, package CSS + image-backed interaction | Demo data became props and callbacks; a dark overlay makes the white labels contrast-safe. |
 | `dropzone-button` | `@mantine/dropzone`, package CSS + file input behavior | Accepted files and labels became inputs; the hidden input has an accessible name. |
 

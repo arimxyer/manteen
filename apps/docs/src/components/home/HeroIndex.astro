@@ -1,5 +1,9 @@
 ---
-// Plain <img>, not astro:assets <Image> — see HeroLedger.astro for why (no Sharp in this workspace).
+import { Image } from "astro:assets";
+
+// astro:assets <Image>, not a plain <img> — see HeroLedger.astro for why (one pipeline, one
+// emitted copy of the asset).
+
 import manny from "../../assets/manny-canonical.png";
 import { LiveMiniStyles, RegistryCardPreview } from "../RegistryCardPreview";
 import { itemPath, kindLabel, readRegistry } from "../../lib/registry";
@@ -30,13 +34,7 @@ const plate = PLATE.map((name) => entries.find((entry) => entry.index.name === n
   <LiveMiniStyles />
 
   <header class={styles.masthead}>
-    <img
-      class={`spec__manny ${styles.mannyMark}`}
-      src={manny.src}
-      alt=""
-      width={manny.width}
-      height={manny.height}
-    />
+    <Image class={`spec__manny ${styles.mannyMark}`} src={manny} alt="" />
     <p class={`spec__label ${styles.wordmark}`}>manteen</p>
     <p class="spec__label">{entries.length} specimens &middot; MIT &middot; Mantine v9</p>
   </header>

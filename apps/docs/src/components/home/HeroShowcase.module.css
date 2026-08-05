@@ -23,6 +23,7 @@
 }
 
 .panelInner {
+  position: relative;
   width: var(--panel-w);
   max-width: 100%;
   padding: 1.25rem;
@@ -53,12 +54,54 @@
   gap: 0.5rem;
 }
 
+/* Out of flow on purpose. In flow this line was mounted by the first interaction and added 16.8px
+   to the panel, so the very click the hero invites reflowed the column under the pointer. As an
+   overlay it costs no height, and `pointer-events: none` keeps it from stealing a click from the
+   component it is reporting on. */
 .event {
-  margin: 0.75rem 0 0;
-  color: var(--mh-faint);
+  position: absolute;
+  inset-block-end: 0.6rem;
+  inset-inline: 0;
+  width: max-content;
+  max-width: calc(100% - 2.5rem);
+  margin: 0 auto;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--mh-line);
+  border-radius: 999px;
+  background: var(--mh-panel-2);
+  color: var(--mh-muted);
   font-size: 0.75rem;
   line-height: 1.4;
   text-align: center;
+  pointer-events: none;
+  animation: hero-event-in 160ms ease;
+}
+
+@keyframes hero-event-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.25rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event {
+    animation: none;
+  }
+}
+
+/* The announcing half of the pair. Always mounted so a live region exists before its first
+   message; visually hidden because `.event` above is the visible one. */
+.announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Both schemes are in the markup; CSS picks one. */

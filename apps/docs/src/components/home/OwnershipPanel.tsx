@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 // The real component from the real registry. `diff` below is its actual optional prop — see
 // registry/ui/stat-card.tsx. Nothing here is a drawing of a StatCard.
 import { StatCard } from "../../../../../registry/ui/stat-card";
+import { useStarlightScheme } from "../../lib/useStarlightScheme";
 import styles from "./OwnershipPanel.module.css";
 
 /**
@@ -63,19 +64,10 @@ function Attr({ name, value }: { name: string; value: string }) {
 
 export default function OwnershipPanel() {
   const [index, setIndex] = useState(0);
-  const [scheme, setScheme] = useState<"dark" | "light">("dark");
   const [reduced, setReduced] = useState(false);
-
-  // Starlight stamps `data-theme` before hydration, so this has to be an effect: reading it during
-  // render would disagree with what the browser already painted.
-  useEffect(() => {
-    const root = document.documentElement;
-    const sync = () => setScheme(root.dataset.theme === "light" ? "light" : "dark");
-    sync();
-    const observer = new MutationObserver(sync);
-    observer.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
-    return () => observer.disconnect();
-  }, []);
+  // Was an inline effect here; HeroShowcase became the second consumer of the identical rule, so
+  // it moved to src/lib rather than being copied.
+  const scheme = useStarlightScheme();
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");

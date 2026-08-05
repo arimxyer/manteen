@@ -1,6 +1,7 @@
 import { MantineProvider } from "@mantine/core";
-import { type CSSProperties, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 
+import { type Scheme, useMounted, useStarlightScheme } from "../../lib/useStarlightScheme";
 import authenticationFormAdapter from "../playgrounds/authentication-form.playground";
 import type { PlaygroundAdapter } from "../playgrounds/contract";
 import tableSortAdapter from "../playgrounds/table-sort.playground";
@@ -50,18 +51,56 @@ const PANELS: { name: string; widthRem: number }[] = [
   { name: "authentication-form", widthRem: 27 },
 ];
 
+/** How long an event chip stays up. Matches PlaygroundShell, which owns the same adapter contract. */
+const EVENT_LINGER_MS = 2600;
+
 /**
- * A subtree with no hydration cannot react to Starlight's theme toggle, and Mantine stamps
- * `data-mantine-color-scheme` via a client effect that never runs here. So both schemes are
- * rendered at build time, each with the correct attribute baked into its markup, and a plain CSS
- * rule keyed on Starlight's `data-theme` picks the visible one. No script, no observer, no FOUC —
- * the same approach RegistryCardPreview already uses for the catalog minis.
+ * One instance per panel — but two on the server.
+ *
+ * Before this island hydrated it could not read Starlight's `data-theme`, so it rendered BOTH
+ * schemes into the markup and let a CSS rule pick the visible one: no script, no observer, no
+ * FOUC. That trick was free while the subtree was `inert`, because there was no state to lose.
+ *
+ * It stopped being free the moment the components became interactive. Two rendered schemes are two
+ * independent React instances, and the CSS rule only chooses which one is `display: none`. A theme
+ * change therefore swapped the reader onto the *other* instance — discarding whatever they had
+ * typed or sorted and destroying keyboard focus, with no announcement. Under the "Auto" setting
+ * that can happen with no user action at all, because Starlight follows the OS.
+ *
+ * So: both schemes for the server render and the first client pass (hydration must match, and the
+ * no-FOUC property is worth keeping), then exactly one from the moment we know which. The swap
+ * happens in the mount effect, before a reader can have typed anything, so there is no state to
+ * carry across it. From then on a theme change only re-renders `forceColorScheme` and two
+ * attributes in place.
+ *
+ * Verified rather than assumed: type "Silkeater" into the table's search, flip `data-theme`, and
+ * the input still reads "Silkeater", `document.activeElement` is still the input, the filtered row
+ * count is still 1, and the panel has re-themed (`--mantine-color-body: #fff`).
  */
 function Panel({ adapter, widthRem }: { adapter: PlaygroundAdapter; widthRem: number }) {
   const [event, setEvent] = useState("");
-  const scheme = (value: "dark" | "light") => (
+  const timer = useRef<number | undefined>(undefined);
+  const scheme = useStarlightScheme();
+  const mounted = useMounted();
+
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+
+  // Each event replaces the chip and restarts its dismissal clock, so the panel returns to the
+  // composition it started in rather than growing a line permanently.
+  const recordEvent = (name: string) => {
+    setEvent(name);
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setEvent(""), EVENT_LINGER_MS);
+  };
+
+  // The key is deliberately NOT the scheme. Keying on it made React unmount and remount the whole
+  // subtree on every theme change, which is the exact state-and-focus loss this rewrite exists to
+  // fix — verified: typing "Silkeater" into the table's search and flipping `data-theme` returned
+  // value "" and activeElement BODY. With a constant key the instance survives and only
+  // `forceColorScheme` and two attributes change.
+  const render = (value: Scheme, key: string) => (
     <div
-      key={value}
+      key={key}
       className={`${styles.scheme} ${value === "dark" ? styles.schemeDark : styles.schemeLight}`}
       data-mantine-color-scheme={value}
     >
@@ -77,22 +116,31 @@ function Panel({ adapter, widthRem }: { adapter: PlaygroundAdapter; widthRem: nu
           className={styles.panelInner}
           style={{ "--panel-w": `${widthRem}rem` } as CSSProperties}
         >
-          {adapter.render(adapter.defaultProps, setEvent, { viewport: "desktop", scheme: value })}
+          {adapter.render(adapter.defaultProps, recordEvent, {
+            viewport: "desktop",
+            scheme: value,
+          })}
+          {/* The chip is decoration and is `aria-hidden`; the always-mounted live region below
+              does the announcing, so a reader hears each event exactly once. Mounting a live
+              region together with its first message is unreliable — several screen readers skip
+              it — which is why the region is rendered empty rather than conditionally. It is also
+              positioned out of flow, so the first interaction does not push the rest of the
+              column down. Same shape as PlaygroundShell, which already solved this. */}
           {event && (
-            <p className={styles.event} role="status" aria-live="polite">
+            <p className={styles.event} aria-hidden="true">
               {event}
             </p>
           )}
+          <span className={styles.announcement} aria-live="polite">
+            {event}
+          </span>
         </div>
       </MantineProvider>
     </div>
   );
 
   return (
-    <>
-      {scheme("dark")}
-      {scheme("light")}
-    </>
+    <>{mounted ? render(scheme, "live") : [render("dark", "dark"), render("light", "light")]}</>
   );
 }
 

@@ -1,6 +1,9 @@
 ---
-// Plain <img>, not astro:assets <Image>: the image service needs Sharp, which this workspace does
-// not install — dev transforms it fine and only `astro build` fails.
+import { Image } from "astro:assets";
+
+// astro:assets <Image>, not a plain <img> — see HeroLedger.astro for why (one pipeline, one
+// emitted copy of the asset).
+
 import manny from "../../assets/manny-canonical.png";
 import { readRegistry } from "../../lib/registry";
 import OwnershipPanel from "./OwnershipPanel";
@@ -58,7 +61,7 @@ const INSTALL = "npx manteen add @house/stat-card";
   {/* Manny's one appearance, at mark scale, carrying the closing line so the page has somewhere to
       land without needing a second section. */}
   <p class={styles.closing}>
-    <img class={styles.manny} src={manny.src} alt="" width={manny.width} height={manny.height} />
+    <Image class={styles.manny} src={manny} alt="" />
     <span>
       {entries.length} components, blocks, hooks and themes — every one of them installable as
       source you own. <a class="mh__ghost" href={`${base}/registry/`}>See all {entries.length}</a>

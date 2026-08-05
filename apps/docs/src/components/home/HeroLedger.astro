@@ -1,8 +1,13 @@
 ---
-// Plain <img>, not astro:assets <Image>: the image service needs Sharp, which this workspace does
-// not install — `astro dev` transformed it happily and only `astro build` failed
-// ("MissingSharp"). The asset is pre-sized to 303x320 for its 56-72px display box, so there is
-// nothing for an optimizer to do here anyway.
+import { Image } from "astro:assets";
+
+// astro:assets <Image>, same as HeroRadix. This used to be a plain <img> because the image service
+// needed Sharp, which this workspace does not install — `astro dev` transformed it happily and only
+// `astro build` failed ("MissingSharp"). `passthroughImageService()` in astro.config.mjs removes
+// that constraint, and using one pipeline for one asset matters: while hero-d went through <Image>
+// and these three did not, the same 80 KB PNG was emitted twice into dist/_astro under two content
+// hashes. The asset is still pre-sized for its display box, so passthrough has nothing to optimise
+// away — the point is the width/height attributes and a single emitted copy.
 import manny from "../../assets/manny-canonical.png";
 import { readRegistry } from "../../lib/registry";
 import StewardshipPanel from "./StewardshipPanel";
@@ -114,13 +119,7 @@ const { entries } = readRegistry();
 
   {/* Colophon: Manny at mark scale, once, with room around him — never a hero-sized character. */}
   <footer class={styles.colophon}>
-    <img
-      class={`spec__manny ${styles.mannyMark}`}
-      src={manny.src}
-      alt=""
-      width={manny.width}
-      height={manny.height}
-    />
+    <Image class={`spec__manny ${styles.mannyMark}`} src={manny} alt="" />
     <dl class={styles.facts}>
       <div>
         <dt class="spec__label">Base</dt>

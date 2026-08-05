@@ -107,7 +107,6 @@ export function AuthenticationForm({
               key={form.key("name")}
               {...form.getInputProps("name")}
               radius="md"
-              styles={{ input: { fontSize: "var(--mantine-font-size-sm)" } }}
             />
           )}
 
@@ -118,7 +117,6 @@ export function AuthenticationForm({
             key={form.key("email")}
             {...form.getInputProps("email")}
             radius="md"
-            styles={{ input: { fontSize: "var(--mantine-font-size-sm)" } }}
           />
 
           <PasswordInput
@@ -128,7 +126,6 @@ export function AuthenticationForm({
             key={form.key("password")}
             {...form.getInputProps("password")}
             radius="md"
-            styles={{ innerInput: { fontSize: "var(--mantine-font-size-sm)" } }}
           />
 
           {mode === "register" && (

@@ -102,11 +102,17 @@ space around it — a colophon device or a logo, never a hero-sized character. C
 here precisely because the rest of the system is so restrained; a big cute render would fight the
 specimen voice instead of puncturing it.
 
-Asset: `apps/docs/src/assets/manny.png` — a transparent-background cutout, resampled (Lanczos) to
-303×320 for its 56–72px display box. It derives from art that was pixel-verified against the
-approved source, but this file is a faithful downscale of that crop, not the crop itself. It
-previously lived only in the gitignored `pencil/` workspace, which made every concept depending on
-it unbuildable.
+Asset: `apps/docs/src/assets/manny-canonical.png` — a transparent-background cutout at 303×320 for a
+display box that runs 56–72px on the older concepts and 72px on hero-d. It derives from art that
+was pixel-verified against the approved source. It previously lived only in the gitignored
+`pencil/` workspace, which made every concept depending on it unbuildable; the same hazard
+recurred when it was replaced, since an untracked file builds locally and nowhere else.
+
+All four heroes render it through astro:assets `<Image>`, and `astro.config.mjs` sets
+`passthroughImageService()` so that works without Sharp — verified load-bearing, not decorative:
+removing it makes `astro build` exit 1. Use one pipeline for it. While hero-d used `<Image>` and
+the others used a plain `<img src={manny.src}>`, the same 80 KB emitted twice under two content
+hashes.
 
 ## How to check a surface against this
 

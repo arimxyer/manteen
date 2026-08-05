@@ -985,3 +985,36 @@
 .expressive-code figure:not(.has-title):not(.is-terminal) .ec-line .code {
   padding-inline-end: calc(var(--ec-codePadInl) + 2.25rem);
 }
+
+/* ---- Mantine sizing vs Starlight's reset layer -------------------------------------------------
+   Starlight ships `input, button, textarea, select { font-size: inherit }` in `@layer
+   starlight.reset`. Mantine ships its real sizing in `@layer mantine`, and Mantine's stylesheet is
+   encountered FIRST — so `mantine` registers before Starlight's declared order (`starlight.base,
+   starlight.reset, starlight.core, starlight.content, starlight.components, starlight.utils`) and
+   loses to every one of them. Layer precedence is decided before specificity, so a class rule in
+   the earlier layer cannot beat a bare element rule in the later one.
+
+   The result was that EVERY Mantine input and button in this site rendered at the inherited 16px
+   instead of its own scale — measured: the hero's table search field and both social buttons at
+   16px where Mantine sizes them 14px, while `--input-fz` was correctly set to 0.875rem and simply
+   never consumed. It was diagnosed once as a component problem and patched with a `styles={{ input:
+   { fontSize } }}` prop inside `registry/mantine-ui/authentication-form/`, which fixed three of the
+   inputs on this page and nothing else anywhere — and shipped a pin consumers cannot override into
+   a catalog component that renders correctly in a plain Mantine app.
+
+   This is the fix instead: unlayered, so it beats every layer whatever the order, and wrapped in
+   `:where()` so it carries ZERO specificity — Mantine's own inline `--*-fz` variables, a caller's
+   `styles` prop and any consumer override all still win. The values are copied verbatim from
+   Mantine's own declarations (Input.css:184, Button.css:41 and :252) so this restores its sizing
+   rather than inventing one. */
+:where(.mantine-Input-input) {
+  font-size: var(--_input-fz, var(--input-fz, var(--mantine-font-size-md)));
+}
+
+:where(.mantine-Button-root) {
+  font-size: var(--button-fz, var(--mantine-font-size-sm));
+}
+
+:where(.mantine-Button-section) {
+  font-size: var(--section-fz, var(--mantine-font-size-sm));
+}
