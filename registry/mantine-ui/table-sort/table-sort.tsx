@@ -122,7 +122,7 @@ export function TableSort({
         value={search}
         onChange={handleSearchChange}
       />
-      <Table horizontalSpacing="md" verticalSpacing="xs" miw={700} layout="fixed">
+      <Table horizontalSpacing="md" verticalSpacing="xs" miw={560} layout="fixed">
         <Table.Thead>
           <Table.Tr>
             <SortableHeader

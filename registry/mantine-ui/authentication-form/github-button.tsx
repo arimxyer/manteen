@@ -9,5 +9,12 @@ import { IconBrandGithub } from "@tabler/icons-react";
 import type { ComponentPropsWithoutRef } from "react";
 
 export function GithubButton(props: ButtonProps & ComponentPropsWithoutRef<"button">) {
-  return <Button leftSection={<IconBrandGithub size={16} />} variant="default" {...props} />;
+  return (
+    <Button
+      leftSection={<IconBrandGithub size={16} />}
+      variant="default"
+      styles={{ section: { marginInlineEnd: 8 } }}
+      {...props}
+    />
+  );
 }

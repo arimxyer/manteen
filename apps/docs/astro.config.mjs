@@ -1,10 +1,14 @@
 import react from "@astrojs/react";
 import starlight from "@astrojs/starlight";
-import { defineConfig } from "astro/config";
+import { defineConfig, passthroughImageService } from "astro/config";
 
 export default defineConfig({
   site: "https://arimxyer.github.io",
   base: "/manteen",
+  // Keep astro:assets metadata and markup without adding Sharp for tiny, pre-sized assets.
+  image: {
+    service: passthroughImageService(),
+  },
   vite: {
     resolve: {
       // Registry sources are written with the CONSUMER's alias shape (see the root

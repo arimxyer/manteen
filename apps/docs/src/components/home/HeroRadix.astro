@@ -1,7 +1,8 @@
 ---
 import { Code } from "@astrojs/starlight/components";
+import { Image } from "astro:assets";
 
-import manny from "../../assets/manny.png";
+import manny from "../../assets/manny-canonical.png";
 import { readRegistry } from "../../lib/registry";
 import { HeroShowcase, HeroShowcaseStyles } from "./HeroShowcase";
 import OwnershipPanel from "./OwnershipPanel";
@@ -76,8 +77,8 @@ const USAGE = `import { StatCard } from "@/components/ui/stat-card";
     </div>
 
     <div class={styles.showcase}>
-      <HeroShowcase />
-      <p class={styles.showcaseNote}>Rendered live from the registry — not screenshots.</p>
+      <HeroShowcase client:load />
+      <p class={styles.showcaseNote}>Live registry components — search, sort, type, and switch modes.</p>
     </div>
   </section>
 
@@ -107,7 +108,7 @@ const USAGE = `import { StatCard } from "@/components/ui/stat-card";
       jammed to the viewport's left edge. Demoting the reset is not the fix: it is what holds
       Starlight's `.sl-markdown-content * + *` leak shut for headings and paragraphs. */}
   <footer class={styles.closing}>
-    <img class={styles.manny} src={manny.src} alt="" width={manny.width} height={manny.height} />
+    <Image class={styles.manny} src={manny} alt="" />
     <span>
       {entries.length} components, blocks, hooks and themes — every one installable as source you
       own. <a class="mh__ghost" href={`${base}/registry/`}>See all {entries.length}</a>

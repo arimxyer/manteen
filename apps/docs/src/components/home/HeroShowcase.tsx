@@ -1,7 +1,9 @@
 import { MantineProvider } from "@mantine/core";
-import type { CSSProperties } from "react";
+import { type CSSProperties, useState } from "react";
 
+import authenticationFormAdapter from "../playgrounds/authentication-form.playground";
 import type { PlaygroundAdapter } from "../playgrounds/contract";
+import tableSortAdapter from "../playgrounds/table-sort.playground";
 import styles from "./HeroShowcase.module.css";
 
 /**
@@ -17,19 +19,13 @@ import styles from "./HeroShowcase.module.css";
  * clip cut real content. That is now removed; see HeroShowcase.module.css. A real bleed would
  * need panels genuinely wider than the cell, and is an open design decision, not a margin.
  *
- * Zero client JS. `eager: true` because this renders at build time with no client directive —
- * the same discovery glob PlaygroundHost lazy-loads at runtime.
+ * Only the two adapters used here are imported. Pulling the playground discovery glob into this
+ * hydrated island would ship every registry demo and its dependencies in the hero bundle.
  */
-const adapterModules = import.meta.glob<{ default: PlaygroundAdapter }>(
-  "../playgrounds/*.playground.tsx",
-  { eager: true },
-);
-
-function adapterFor(name: string): PlaygroundAdapter | undefined {
-  return adapterModules[`../playgrounds/${name}.playground.tsx`]?.default;
-}
-
-const noop = () => {};
+const ADAPTERS: Record<string, PlaygroundAdapter> = {
+  "table-sort": tableSortAdapter,
+  "authentication-form": authenticationFormAdapter,
+};
 
 const showcaseTheme = {
   fontFamily: '"Figtree Variable", sans-serif',
@@ -50,7 +46,7 @@ const showcaseTheme = {
    container-query rewrite; showing it broken to prove the components are real would prove the
    opposite. */
 const PANELS: { name: string; widthRem: number }[] = [
-  { name: "table-sort", widthRem: 40 },
+  { name: "table-sort", widthRem: 37.5 },
   { name: "authentication-form", widthRem: 27 },
 ];
 
@@ -62,15 +58,12 @@ const PANELS: { name: string; widthRem: number }[] = [
  * the same approach RegistryCardPreview already uses for the catalog minis.
  */
 function Panel({ adapter, widthRem }: { adapter: PlaygroundAdapter; widthRem: number }) {
+  const [event, setEvent] = useState("");
   const scheme = (value: "dark" | "light") => (
     <div
       key={value}
       className={`${styles.scheme} ${value === "dark" ? styles.schemeDark : styles.schemeLight}`}
       data-mantine-color-scheme={value}
-      // Decorative duplicates of real interactive components (inputs, buttons, sort headers).
-      // `inert` removes the whole subtree from focus AND the accessibility tree, which
-      // `aria-hidden` alone does not do for focusable descendants.
-      inert
     >
       <MantineProvider
         forceColorScheme={value}
@@ -84,7 +77,12 @@ function Panel({ adapter, widthRem }: { adapter: PlaygroundAdapter; widthRem: nu
           className={styles.panelInner}
           style={{ "--panel-w": `${widthRem}rem` } as CSSProperties}
         >
-          {adapter.render(adapter.defaultProps, noop, { viewport: "desktop", scheme: value })}
+          {adapter.render(adapter.defaultProps, setEvent, { viewport: "desktop", scheme: value })}
+          {event && (
+            <p className={styles.event} role="status" aria-live="polite">
+              {event}
+            </p>
+          )}
         </div>
       </MantineProvider>
     </div>
@@ -120,9 +118,13 @@ export function HeroShowcaseStyles() {
 
 export function HeroShowcase() {
   return (
-    <div className={styles.column} aria-hidden="true">
+    <section
+      className={styles.column}
+      aria-label="Interactive registry component previews"
+      data-playground
+    >
       {PANELS.map(({ name, widthRem }) => {
-        const adapter = adapterFor(name);
+        const adapter = ADAPTERS[name];
         if (!adapter) return null;
         return (
           <div className={styles.panel} key={name}>
@@ -130,6 +132,6 @@ export function HeroShowcase() {
           </div>
         );
       })}
-    </div>
+    </section>
   );
 }

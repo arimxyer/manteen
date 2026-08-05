@@ -38,5 +38,12 @@ function GoogleIcon(props: ComponentPropsWithoutRef<"svg">) {
 }
 
 export function GoogleButton(props: ButtonProps & ComponentPropsWithoutRef<"button">) {
-  return <Button leftSection={<GoogleIcon />} variant="default" {...props} />;
+  return (
+    <Button
+      leftSection={<GoogleIcon />}
+      variant="default"
+      styles={{ section: { marginInlineEnd: 8 } }}
+      {...props}
+    />
+  );
 }

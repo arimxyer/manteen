@@ -2,13 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  /* `align-items: flex-start`, not the default `stretch`. Stretched, every panel took the column
-     width regardless of its own `--panel-w`, so the 27rem auth form sat left-aligned inside a
-     586px frame with 173px of empty panel to its right and two nested borders 20px apart — the
-     opposite of the per-item natural width HeroShowcase.tsx sets out to give it.
-     `width: max-content` is gone with it: it made the column 642px (the widest panel) whatever the
-     cell was, which is what let the stack overshoot the viewport between 1025 and 1280. */
-  align-items: flex-start;
+  align-items: center;
   width: 100%;
   min-width: 0;
 }
@@ -28,19 +22,43 @@
     0 1px 2px rgba(16, 18, 24, 0.05);
 }
 
-/* Second panel is nudged right so the stack reads as a loose arrangement rather than a rigid
-   left-aligned column — the difference between "an app" and "a table of contents". The max-width
-   subtracts the nudge, which sits outside the border box and would otherwise let this panel push
-   past the column it is capped against. */
-.panel:nth-child(2) {
-  margin-left: 3.5rem;
-  max-width: calc(100% - 3.5rem);
-}
-
 .panelInner {
   width: var(--panel-w);
   max-width: 100%;
   padding: 1.25rem;
+}
+
+/* The table is intentionally compact; its search field should be narrower still and centered over
+   the data rather than reading as another full-width row. */
+.panel:first-child .panelInner :global(.mantine-TextInput-root) {
+  max-width: 22rem;
+  margin-inline: auto;
+}
+
+/* Starlight's markdown table rule changes every table to block layout. This is a live component,
+   not prose: restore table layout, then center the headers, sort icons, and cell values so the
+   compact three-column presentation feels balanced. */
+.panel:first-child .panelInner :global(.mantine-Table-table) {
+  display: table;
+  width: 100%;
+}
+
+.panel:first-child .panelInner :global(.mantine-Table-th),
+.panel:first-child .panelInner :global(.mantine-Table-td) {
+  text-align: center;
+}
+
+.panel:first-child .panelInner :global(.mantine-Table-th .mantine-Group-root) {
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.event {
+  margin: 0.75rem 0 0;
+  color: var(--mh-faint);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  text-align: center;
 }
 
 /* Both schemes are in the markup; CSS picks one. */
@@ -65,18 +83,6 @@
    material instead of three slightly-off greys. */
 .scheme {
   --mantine-color-body: var(--mh-panel);
-}
-
-/* Matches HeroRadix.module.css's breakpoint — they must move together. */
-@media (max-width: 80rem) {
-  /* Single-column: the stack sits under the copy rather than beside it, so the offset that made it
-     read as an arrangement stops helping and only pushes the second panel out of line. Panels keep
-     their per-item natural width — stretching a 27rem sign-in form across a 1232px measure is the
-     "uniform grid cell" this component exists to avoid. */
-  .panel:nth-child(2) {
-    margin-left: 0;
-    max-width: 100%;
-  }
 }
 
 @media (max-width: 40rem) {

@@ -103,29 +103,32 @@ export function AuthenticationForm({
           {mode === "register" && (
             <TextInput
               label="Name"
-              placeholder="Your name"
+              placeholder="Enter your name"
               key={form.key("name")}
               {...form.getInputProps("name")}
               radius="md"
+              styles={{ input: { fontSize: "var(--mantine-font-size-sm)" } }}
             />
           )}
 
           <TextInput
             required
             label="Email"
-            placeholder="you@example.com"
+            placeholder="Enter your email"
             key={form.key("email")}
             {...form.getInputProps("email")}
             radius="md"
+            styles={{ input: { fontSize: "var(--mantine-font-size-sm)" } }}
           />
 
           <PasswordInput
             required
             label="Password"
-            placeholder="Your password"
+            placeholder="Enter your password"
             key={form.key("password")}
             {...form.getInputProps("password")}
             radius="md"
+            styles={{ innerInput: { fontSize: "var(--mantine-font-size-sm)" } }}
           />
 
           {mode === "register" && (

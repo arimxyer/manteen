@@ -13,7 +13,7 @@
 .hero,
 .feature,
 .closing {
-  max-width: 80rem;
+  max-width: 90rem;
   margin-inline: auto;
   padding-inline: 1.5rem;
 }
@@ -21,9 +21,9 @@
 /* ---- Hero ------------------------------------------------------------------------------------ */
 .hero {
   display: grid;
-  /* Radix's proportions: the copy takes a little under half, the evidence takes the rest and then
-     some. `minmax(0, …)` on both so neither column can be forced wider by its content. */
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+  /* Keep the evidence track slightly wider so both previews have breathing room without forcing
+     either component to stretch to the full column width. */
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1fr);
   gap: clamp(2rem, 5vw, 4rem);
   /* Top-aligned, not centred. Centring hung the shorter copy column in the middle of the taller
      showcase and opened a large void beneath the install line. */
@@ -176,6 +176,7 @@
   max-width: 100%;
   font-size: 0.8125rem;
   color: var(--mh-faint);
+  text-align: center;
 }
 
 /* ---- Feature band ---------------------------------------------------------------------------- */
@@ -223,18 +224,14 @@
 
 .manny {
   flex: none;
-  width: 3.25rem;
+  width: 4.5rem;
   height: auto;
 }
 
 /* ---- Responsive -------------------------------------------------------------------------------- */
-/* 80rem, not 64rem — the same number as the container's own max-width, so the rule is simply
-   "two columns only once the container is at full measure".
-   The old 64rem let the two-column layout run down to 1025, where the copy track was ~470px and
-   both lines of the usage sample soft-wrapped to double height; a sample meant to read as "that
-   is all of it" cannot wrap. Measured: wrapped at a 502px track, clean at 519px, and the track is
-   537px at 1281. See notes/home-hero-research/audit/FINDINGS.md. */
-@media (max-width: 80rem) {
+/* Keep the split until there is enough room for both the two-line usage sample and the live
+   previews. Below the full 90rem measure, stacking is cleaner than squeezing either. */
+@media (max-width: 90rem) {
   .hero,
   .feature {
     grid-template-columns: minmax(0, 1fr);
