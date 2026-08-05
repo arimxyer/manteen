@@ -7,10 +7,17 @@
    subset, because `wght.css` splits by `unicode-range`).
 
    Fraunces — used for exactly ONE word. Google serves it as an 80 KB variable font covering three
-   subsets and two live axes, which is absurd for a single accent. Vendored instead as a pinned,
-   subsetted static: opsz instantiated at 144 (the display end) and wght at 500, then cut to basic
-   Latin plus common punctuation. 80 KB -> 10.7 KB, and it still covers every ASCII character, so
-   changing the accent word later does not break it.
+   subsets and two live axes, which is absurd for a single accent. Vendored instead with `wght`
+   pinned at 400 and cut to basic Latin plus common punctuation: 80 KB -> 21.9 KB, still covering
+   every ASCII character so the accent word can change without a rebuild.
+
+   `opsz` is deliberately LEFT LIVE, and the extra ~11 KB that costs is the point. A previous
+   version instantiated opsz at 144 and wght at 500 to reach 10.7 KB — which silently shipped a
+   different typeface than the one that was approved. Fraunces' optical-size axis is what gives it
+   contrast and delicacy at display sizes; freezing it produced visibly heavier, wider, lower-
+   contrast letterforms. That was a design change made as a file-size decision. Keep the axis, and
+   keep `font-optical-sizing: auto` on `.mh` (home-v3.css) so the browser resolves opsz from the
+   rendered size the way the approved specimen did.
 
    To regenerate (fonttools + brotli, both already on this machine):
 
@@ -21,9 +28,9 @@
      python3 -c "
      from fontTools.ttLib import TTFont; from fontTools.varLib import instancer
      f=TTFont('fraunces-latin.woff2')
-     instancer.instantiateVariableFont(f, {'opsz':144,'wght':500}, inplace=True)
+     instancer.instantiateVariableFont(f, {'wght':400}, inplace=True)   # opsz stays live
      f.flavor='woff2'; f.save('pinned.woff2')"
-     pyftsubset pinned.woff2 --output-file=fraunces-500-latin-subset.woff2 --flavor=woff2 \
+     pyftsubset pinned.woff2 --output-file=fraunces-400-latin-subset.woff2 --flavor=woff2 \
        --unicodes="U+0020-007E,U+2018-201D,U+2013,U+2014,U+00A0" \
        --layout-features="kern,liga,calt" --notdef-outline
 
@@ -33,10 +40,10 @@
 
 @font-face {
   font-family: "Fraunces Subset";
-  src: url("../assets/fonts/fraunces-500-latin-subset.woff2") format("woff2");
-  /* The file is already pinned to 500/opsz-144, so the descriptor states what it is rather than a
-     range the file cannot actually deliver. */
-  font-weight: 500;
+  src: url("../assets/fonts/fraunces-400-latin-subset.woff2") format("woff2");
+  /* Weight is baked into the file; the descriptor states what it actually is rather than a range
+     it cannot deliver. `opsz` is a live axis and is driven by `font-optical-sizing: auto`. */
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }

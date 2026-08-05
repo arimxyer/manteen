@@ -80,15 +80,14 @@
   text-wrap: balance;
 }
 
-/* The one gesture. Upright, not italic — Ari's pick from the rendered shortlist (row B).
-   My own read had been that the lean was needed to stop the accent reading as an accidental
-   weight change; the mitigation for that, rather than overriding the call, is weight 500 instead
-   of 400. At 500 against the surrounding 800 the accent reads as a different FACE (Fraunces'
-   flared, high-contrast serifs) rather than as the same face gone thin. */
+/* The one gesture. Upright, not italic — Ari's pick from the rendered shortlist (row B), at the
+   weight that shortlist actually showed: 400, with the optical-size axis live. An earlier pass
+   used 500 against a display-pinned opsz and shipped visibly different letterforms than the ones
+   approved; see the note in fonts.css. */
 .mh__display em {
   font-family: var(--mh-serif);
   font-style: normal;
-  font-weight: 500;
+  font-weight: 400;
   letter-spacing: -0.008em;
 }
 

@@ -1,0 +1,47 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+
+import HeroRadix from "../../components/home/HeroRadix.astro";
+import "../../styles/fonts.css";
+import "../../styles/home-v3.css";
+
+// Review-only route.
+---
+
+<StarlightPage
+  frontmatter={{
+    title: "Hero D",
+    description: "Home page direction D: usage code as the argument, real components as evidence.",
+    template: "splash",
+    editUrl: false,
+    lastUpdated: false,
+    next: false,
+    prev: false,
+    pagefind: false,
+  }}
+  hasSidebar={false}
+>
+  <HeroRadix />
+</StarlightPage>
+
+<style is:global>
+  /* Review-page chrome only — the real home page has no frontmatter title block. */
+  .content-panel:first-of-type {
+    display: none;
+  }
+
+  .content-panel .sl-container {
+    max-width: none;
+  }
+
+  .content-panel {
+    padding-inline: 0;
+  }
+
+  /* The showcase column is meant to run off the right edge; Starlight's wrappers must not clip it
+     early or grow a scrollbar around it. `.wrap` owns the clip. */
+  .main-pane,
+  .main-frame {
+    overflow-x: clip;
+  }
+</style>
