@@ -189,3 +189,38 @@ Unit fixtures can prove deterministic merge classification, exact planned bytes,
 rollback. Built-Node e2e can prove the shipped CLI and committed base/receipt surface. Neither
 proves that a conflict-free text merge preserves application behavior; only the consumer's own
 typecheck/tests/runtime can establish that, and Manteen does not claim otherwise.
+
+## AST investigation — 2026-08-06
+
+A post-milestone investigation asked whether a TypeScript AST could reduce textual conflicts
+without weakening the exact-byte ownership contract above. It did not implement or benchmark an
+AST merger. It ran two bounded probes and classified the available registry history.
+
+The printer probe rejected one specific output path. Parsing and returning untouched source text
+was mostly exact only because no AST-produced replacement was emitted. Calling ts-morph's
+`formatText()` on one 119-line TSX input changed 89 lines without changing program behavior; all
+observed changes were whitespace. The tested printer path also did not preserve the exact CRLF/BOM
+boundary. That is enough to reject an AST printer or formatter as the source of default merge
+bytes: a merge that rewrites unrelated layout makes ownership and review worse even when it
+compiles. It is not enough to reject an AST used read-only to classify edits or identify original
+byte ranges.
+
+The rename-versus-edit probe was synthetic. It showed that the current line merge can conflict on
+that constructed shape and that a naive name-keyed structural merger can retain a rename while
+losing an independent edit. It did not find such a rename in this repository. Any future
+structural merger must treat an unmatched old declaration plus a modified counterpart as
+delete-versus-modify unless it can prove the mapping; ambiguity refuses rather than choosing a
+side.
+
+The history classification was also narrower than a product corpus. After correcting the
+merge-reachable population, it covered eight commits that modified existing registry source: 26
+file events and 791 touched lines, dominated by one large Styles API sweep. Those are upstream
+authoring changes only. The sample contains no independently authored consumer adaptations, no
+naturally occurring three-way conflicts and no measured conflict rate. It therefore cannot support
+a percentage claim about how often users will conflict or how many conflicts an AST approach would
+remove.
+
+D41 keeps the exact line-oriented merger for `0.3.0`, rejects AST-produced output bytes, and leaves
+conservative AST-assisted classification open. Revisit it only against a corpus containing real or
+controlled local adaptations and named old/new upstream revisions, with exact-output preservation,
+conflict reduction and lost-edit refusal measured separately.
