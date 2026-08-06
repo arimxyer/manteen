@@ -414,6 +414,10 @@ export interface ApplyOutcome {
   theme: { path: string; written: boolean } | null;
   styles: { path: string; written: boolean } | null;
   receipt: { path: string; written: boolean };
+  /** Whether this successful run changed the receipt or a pristine-base
+   *  sidecar. False for previews and every unsuccessful outcome. Callers use
+   *  this observed fact to remind users to version the two together. */
+  updateState: { changed: boolean };
   failure: ApplyFailure | null;
 }
 

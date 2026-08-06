@@ -259,6 +259,9 @@ test("every --json document carries the same three envelope keys on stdout alone
     // consumer parsing stdout silently sees a partial answer.
     assert.ok(Array.isArray(doc.notes), `${command}: notes must always be present`);
     assert.equal(result.stderr, "", `${command}: --json must leave stderr empty`);
+    if (command === "update") {
+      assert.deepEqual(doc.updateState, { changed: false, versioningRequired: false });
+    }
   }
 });
 
@@ -404,6 +407,7 @@ test("a second update is a no-op that says so, and writes nothing", () => {
   // the run still happens, because apply's phase 7 is what claims a destination
   // that holds our bytes with no ownership record.
   assert.match(result.stderr, /skip {2}up-to-date {2}@base\/empty-state/, result.stderr);
+  assert.doesNotMatch(result.stderr, /state-versioning-required/, result.stderr);
 });
 
 test("a non-interactive local-only update and dry-run both preserve the edit", () => {
@@ -415,10 +419,14 @@ test("a non-interactive local-only update and dry-run both preserve the edit", (
 
   const updated = run(project, ["update"]);
   assert.equal(updated.status, 0, updated.all);
+  // The source is preserved, but update accepts its current hash into the
+  // receipt, so the versioned state still changed.
+  assert.match(updated.stderr, /warn {2}state-versioning-required/, updated.stderr);
   assert.match(updated.stderr, /skip {2}local-only/, updated.stderr);
 
   const preview = run(project, ["update", "--dry-run"]);
   assert.equal(preview.status, 0, preview.all);
+  assert.doesNotMatch(preview.stderr, /state-versioning-required/, preview.stderr);
   assert.match(preview.stdout, /Dry run — nothing was written\./, preview.stdout);
   assert.match(readFileSync(target, "utf8"), /a local edit/, "a dry run must not write");
 });
@@ -450,6 +458,7 @@ test("add commits an exact base and a clean two-sided update preserves both chan
 
   const updated = run(project, ["update"]);
   assert.equal(updated.status, 0, updated.all);
+  assert.match(updated.stderr, /warn {2}state-versioning-required/, updated.stderr);
   const merged = readFileSync(target, "utf8");
   assert.match(merged, /local adaptation/, merged);
   assert.match(merged, /upstream addition/, merged);
@@ -481,6 +490,7 @@ test("an overlapping update refuses without markers and --take-upstream is expli
   const refused = run(project, ["update"]);
   assert.equal(refused.status, 1, refused.all);
   assert.match(refused.stderr, /error {2}update-conflict/, refused.stderr);
+  assert.doesNotMatch(refused.stderr, /state-versioning-required/, refused.stderr);
   assert.equal(readFileSync(target, "utf8"), local, "a conflict must be zero-mutation");
   assert.doesNotMatch(readFileSync(target, "utf8"), /<<<<<<<|=======|>>>>>>>/);
   assert.equal(readFileSync(join(project, "manteen.lock.json"), "utf8"), receiptBefore);
@@ -558,13 +568,31 @@ test("--take-upstream repairs a missing or corrupt merge base instead of refusin
     const repaired = run(project, ["update", "--take-upstream"]);
     assert.equal(repaired.status, 0, `${state}: ${repaired.all}`);
     assert.doesNotMatch(repaired.stderr, /merge-base-unreadable/, repaired.stderr);
+    assert.match(repaired.stderr, /warn {2}state-versioning-required/, repaired.stderr);
     assert.equal(readFileSync(target, "utf8"), pristine, `${state}: upstream bytes`);
     assert.equal(readFileSync(basePath, "utf8"), pristine, `${state}: base rewritten`);
 
     // The project is unstuck: an ordinary merging update now plans normally.
     const after = run(project, ["update"]);
     assert.equal(after.status, 0, `${state}: ${after.all}`);
+    assert.doesNotMatch(after.stderr, /state-versioning-required/, after.stderr);
   }
+});
+
+test("a state-changing JSON update reports required versioning on stdout alone", () => {
+  const moved = publish(BASE_FIXTURE, "base-json-state");
+  const project = makeProject({ registries: { "@base": moved } });
+  assert.equal(run(project, ["add", ITEM]).status, 0);
+
+  const itemDoc = join(WORK, "base-json-state", "empty-state.json");
+  const doc = JSON.parse(readFileSync(itemDoc, "utf8"));
+  doc.files[0].content = doc.files[0].content.replace("Nothing here", "Nothing upstream");
+  writeFileSync(itemDoc, `${JSON.stringify(doc, null, 2)}\n`);
+
+  const result = run(project, ["update", "--json"]);
+  assert.equal(result.status, 0, result.all);
+  assert.equal(result.stderr, "", result.stderr);
+  assert.deepEqual(json(result).updateState, { changed: true, versioningRequired: true });
 });
 
 /**

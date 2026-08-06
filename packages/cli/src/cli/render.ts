@@ -295,6 +295,24 @@ export function renderOutcome(outcome: ApplyOutcome, root: string): string {
   return lines.length > 0 ? `${lines.join("\n")}\n` : "";
 }
 
+/**
+ * Required follow-up after a mutating run changed Manteen's update ancestry.
+ *
+ * This is intentionally an APPLY advisory rather than a plan diagnostic:
+ * `diff` constructs an update-shaped Plan but writes nothing, and only apply
+ * knows whether phase 1 accepted a file and phase 6/7 actually changed a base
+ * or receipt. Keeping it on stderr preserves the stdout report for pipelines.
+ */
+export function renderUpdateStateAdvisory(outcome: ApplyOutcome): string {
+  if (!outcome.ok || outcome.dryRun || !outcome.updateState.changed) return "";
+  return (
+    "warn  state-versioning-required\n" +
+    "  This run changed Manteen's update state.\n" +
+    "  Version manteen.lock.json and .manteen/bases/ together; do not ignore .manteen/.\n" +
+    "  A clone missing either cannot safely merge local adaptations during update.\n"
+  );
+}
+
 /** An apply failure, in `renderDiagnostic`'s head-then-indented shape. */
 export function renderApplyFailure(outcome: ApplyOutcome, root: string): string {
   const failure = outcome.failure;

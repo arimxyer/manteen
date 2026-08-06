@@ -85,6 +85,7 @@ import {
   renderNotes,
   renderOutcome,
   renderThrown,
+  renderUpdateStateAdvisory,
   sortNotes,
 } from "../cli/render";
 import type { LoadedConfig } from "../config/types";
@@ -671,6 +672,13 @@ function toUpdateJson(
       outcome?.failure == null
         ? null
         : { kind: outcome.failure.kind, message: outcome.failure.message },
+    updateState:
+      outcome === null
+        ? null
+        : {
+            changed: outcome.updateState.changed,
+            versioningRequired: outcome.updateState.changed,
+          },
     diagnostics: plan?.diagnostics ?? [],
     notes: result.notes,
   };
@@ -777,6 +785,7 @@ export async function runUpdate(
   );
   streams.stdout(renderSelected(result.selected));
   streams.stderr(renderApplyFailure(result.outcome, result.plan.root));
+  streams.stderr(renderUpdateStateAdvisory(result.outcome));
 
   return exit;
 }

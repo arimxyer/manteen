@@ -93,6 +93,7 @@ function emptyOutcome(plan: Plan, options: ApplyOptions): ApplyOutcome {
     theme: plan.theme === null ? null : { path: plan.theme.destination, written: false },
     styles: plan.styles === null ? null : { path: plan.styles.destination, written: false },
     receipt: { path: plan.receipt.path, written: false },
+    updateState: { changed: false },
     failure: null,
   };
 }
@@ -227,6 +228,7 @@ async function applyPlan(
   let themeWritten = false;
   let stylesWritten = false;
   let receiptWritten = false;
+  let updateStateChanged = false;
 
   try {
     // ---- phase 3: write files ----------------------------------------------
@@ -246,8 +248,9 @@ async function applyPlan(
     // Bases and receipt share the component/theme/styles journal. A later
     // receipt failure therefore cannot leave a new ancestor paired with an old
     // ownership record (or vice versa).
-    writeBases(plan.files, results, journal);
-    removeBases(plan.removedBases, journal);
+    const basesWritten = writeBases(plan.files, results, journal);
+    const basesRemoved = removeBases(plan.removedBases, journal);
+    updateStateChanged = basesWritten || basesRemoved;
 
     // ---- phase 7: write receipt --------------------------------------------
     // An unreadable receipt forced past merges from `null`: the prior records are
@@ -270,6 +273,7 @@ async function applyPlan(
     if (text !== priorRaw) {
       journal.write(plan.receipt.path, text);
       receiptWritten = true;
+      updateStateChanged = true;
     }
   } catch (error) {
     const touched = journal.entries().map((entry) => entry.destination);
@@ -318,6 +322,7 @@ async function applyPlan(
     theme: plan.theme === null ? null : { path: plan.theme.destination, written: themeWritten },
     styles: plan.styles === null ? null : { path: plan.styles.destination, written: stylesWritten },
     receipt: { path: plan.receipt.path, written: receiptWritten },
+    updateState: { changed: updateStateChanged },
   };
 }
 

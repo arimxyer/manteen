@@ -53,6 +53,7 @@ import {
   renderDryRun,
   renderOutcome,
   renderThrown,
+  renderUpdateStateAdvisory,
 } from "./render";
 
 const EXIT_OK = 0;
@@ -189,6 +190,7 @@ async function runAdd(refs: string[], flags: AddFlags, command: Command): Promis
   process.stdout.write(flags.dryRun ? renderDryRun(planned) : renderOutcome(outcome, planned.root));
 
   process.stderr.write(renderApplyFailure(outcome, planned.root));
+  process.stderr.write(renderUpdateStateAdvisory(outcome));
 
   return outcome.ok ? EXIT_OK : EXIT_REFUSED;
 }

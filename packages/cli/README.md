@@ -136,6 +136,9 @@ base, `update` refuses rather than guess which side of a difference is yours; re
 `manteen update --take-upstream`, which reinstalls upstream bytes and rewrites the base.
 Conflict-free changes apply without prompting; overlapping edits refuse without writing conflict
 markers. `--take-upstream` is the separate, destructive reset for files the registry still ships.
+After a successful command changes either part of that update state, Manteen prints
+`state-versioning-required` as a reminder; it does not inspect Git or claim the files are already
+tracked.
 
 Items may also require package-level styles such as `@mantine/carousel/styles.css`. Manteen composes
 those imports into the configured `styles` file and records each item's contribution in receipt v3.

@@ -17,7 +17,7 @@
 > The surrounding package/type sketches and the phase/slice narrative preserve the plan that built
 > the original client; they are historical implementation records, not a description of every
 > current type. Decisions are cumulative: later numbered rows override earlier text where they
-> disagree, and D32–D38 plus [`update-merge-handoff.md`](update-merge-handoff.md) are the current
+> disagree, and D32–D39 plus [`update-merge-handoff.md`](update-merge-handoff.md) are the current
 > receipt-v3 and update contract. Sections 5 and 6 preserve closed questions and original
 > deferrals; their headings and row labels state which work subsequently shipped.
 
@@ -459,6 +459,7 @@ node <repo>/packages/cli/dist/cli.mjs add @base/empty-state
 | D36 | Base sidecars are Manteen-owned, are written through the same journal after project files and before the receipt, and are preflight-hashed. `.manteen/` is a reserved registry destination. | Project bytes, their ancestor, and the receipt form one transaction. A receipt that points at a base that did not land is as untruthful as one that claims a project file that rolled back. | Cache writes outside the journal; accepting registry output inside the state tree. |
 | D37 | A locally missing tracked file conflicts unless `--take-upstream` restores it. A file removed upstream is reported and retained; this milestone performs no inferred source deletion or rename. | Absence can be an intentional project edit, and delete/rename attribution is a separate contract. Conservative retention is recoverable and makes the deferred boundary visible. | Automatically restoring every missing file; guessing rename from similar contents; silently deleting a locally adapted file. |
 | D38 | `diff` renders `base -> local`, `base -> incoming`, and `local -> proposed result`, and labels a clean textual result “conflict-free,” never semantically safe. | Once the ancestor exists, a two-way on-disk-to-upstream patch understates what update will do and cannot explain which side contributed a hunk. A text merge cannot prove application behavior. | Keeping the old patch and adding “merged” copy around it — a product claim unsupported by the bytes shown. |
+| D39 | After a successful non-preview `add` or `update` actually changes the receipt or a pristine base, apply reports that observed state mutation and the text CLI emits one `state-versioning-required` advisory. Update JSON carries the same fact structurally. Manteen does not inspect Git or claim the state is tracked. | Receipt v3 and `.manteen/bases/` are one reproducible update unit, but neither Git presence nor ignore status can prove that a future commit will contain both. An apply-time fact is exact about what this run changed and avoids turning read-only `diff` into a version-control warning. | Shelling out to Git makes a Git-independent Node tool depend on one VCS and still cannot prove a future commit; parsing `.gitignore` incompletely produces reassuring false passes; a plan diagnostic fires before apply knows whether state changed. |
 
 ---
 
