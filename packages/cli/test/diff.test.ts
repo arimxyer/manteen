@@ -43,6 +43,7 @@ import {
   reportDiff,
 } from "../src/commands/diff";
 import type { AliasBacking, AliasKey, LoadedConfig } from "../src/config/types";
+import { fromReceiptState } from "../src/inventory/installed";
 import type { DiffFile, DiffResult, FileChange } from "../src/inventory/types";
 import type {
   Diagnostic,
@@ -505,6 +506,36 @@ function fileOf(result: DiffResult, id: string, receiptPath: string): DiffFile {
 }
 
 // ---- tests ---------------------------------------------------------------------
+
+describe("base inventory reporting", () => {
+  test("user-created unusable paths degrade without hiding unrelated failures", () => {
+    const root = makeProject();
+    const receipt = readReceipt(root, createReceiptReader(), createReceiptValidator());
+
+    for (const code of ["EISDIR", "EACCES", "EPERM", "ENOTDIR", "ELOOP"]) {
+      const installed = fromReceiptState(receipt, root, (path) => {
+        if (path.includes(`${sep}.manteen${sep}`)) {
+          throw Object.assign(new Error(code), { code });
+        }
+        return null;
+      });
+      expect(
+        installed.items
+          .flatMap((item) => item.files)
+          .every((file) => file.baseCurrentSha256 === null),
+      ).toBe(true);
+    }
+
+    expect(() =>
+      fromReceiptState(receipt, root, (path) => {
+        if (path.includes(`${sep}.manteen${sep}`)) {
+          throw Object.assign(new Error("EIO"), { code: "EIO" });
+        }
+        return null;
+      }),
+    ).toThrow("EIO");
+  });
+});
 
 describe("the eight states", () => {
   let root: string;

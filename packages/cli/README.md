@@ -130,10 +130,12 @@ manteen update --take-upstream # explicitly discard local source adaptations
 ```
 
 Every install is recorded in `manteen.lock.json`, with exact pristine upstream bases under
-`.manteen/bases/`. Commit both. They stop cross-registry replacement and let `update` merge current
-registry changes around project adaptations. Conflict-free changes apply without prompting;
-overlapping edits refuse without writing conflict markers. `--take-upstream` is the separate,
-destructive reset for files the registry still ships.
+`.manteen/bases/`. **Commit both — do not gitignore `.manteen/`.** They stop cross-registry
+replacement and let `update` merge current registry changes around project adaptations. Without a
+base, `update` refuses rather than guess which side of a difference is yours; recover with
+`manteen update --take-upstream`, which reinstalls upstream bytes and rewrites the base.
+Conflict-free changes apply without prompting; overlapping edits refuse without writing conflict
+markers. `--take-upstream` is the separate, destructive reset for files the registry still ships.
 
 Items may also require package-level styles such as `@mantine/carousel/styles.css`. Manteen composes
 those imports into the configured `styles` file and records each item's contribution in receipt v3.

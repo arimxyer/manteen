@@ -151,7 +151,9 @@ export interface InstalledFile extends HashPair {
   basePath: string;
   /** Hash of the exact pristine ancestor recorded in the receipt. */
   baseSha256: string;
-  /** Hash of the base bytes on disk now; null when the sidecar is missing. */
+  /** Hash of the base bytes on disk now; null when the sidecar is missing OR
+   *  cannot be read. Both mean "no usable ancestor" to every consumer, and the
+   *  coded refusal for the second case belongs to `plan()`, not to a report. */
   baseCurrentSha256: string | null;
 }
 

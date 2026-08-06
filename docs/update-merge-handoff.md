@@ -57,8 +57,9 @@ options. A conflict-free update has no overwrite question: the command itself is
 apply the computed result, and `manteen diff` is the preview.
 
 `manteen update --take-upstream` is the deliberately destructive alternative. For files the
-current item still ships, it writes pristine incoming bytes and restores a locally missing file.
-It does not infer deletion for files the item stopped shipping.
+current item still ships, it writes pristine incoming bytes and restores a locally missing file —
+and, because it consults no ancestor, a locally missing or damaged base too. It does not infer
+deletion for files the item stopped shipping.
 
 `--yes` must never be the spelling of “discard my adaptations.” A non-interactive dry run needs no
 extra overwrite flag.
@@ -109,7 +110,10 @@ other plan refusal, one conflict means no dependencies, project files, bases, th
 receipt are mutated.
 
 `--take-upstream` suppresses the merge-conflict diagnostic only because it changes the requested
-operation: the user explicitly chose incoming bytes. `--force` never clears a source conflict or a
+operation: the user explicitly chose incoming bytes. It reads no ancestor, so a missing or corrupt
+sidecar cannot refuse it, and the run rewrites the base from the bytes it installs. A path whose
+pre-image cannot be read or safely replaced still refuses every operation that must land a base;
+the journal cannot promise rollback there. `--force` still never clears a source conflict or a
 missing/corrupt base.
 
 ## `diff` contract
@@ -134,18 +138,48 @@ may summarize unchanged axes, but it must never call a two-way replacement patch
    non-interactive.
 5. Diff text/JSON carries base-to-local, base-to-incoming and local-to-result patches plus the
    proposed outcome.
-6. Source and built-Node acceptance cover clean merges, conflicts, missing/corrupt bases,
-   local-only no-ops, explicit reset, new-file occupancy, removed-upstream retention and
-   non-interactive dry-run. Existing later-write rollback coverage exercises bases through the
-   same whole-tree manifest boundary.
+6. Source and built-Node acceptance cover clean merges, conflicts, missing/corrupt bases (both
+   that they refuse a merging update and that `--take-upstream` repairs them), local-only no-ops,
+   explicit reset, new-file occupancy, removed-upstream retention and non-interactive dry-run.
+   Existing later-write rollback coverage exercises bases through the same whole-tree manifest
+   boundary.
 
-Verification receipts from the completion run:
+## Amendment — 2026-08-05, after review
 
-- `bun run test`: 225 passed, 0 failed.
+The first implementation gated every base check on the presence of a valid ancestor regardless of
+operation, so `update --take-upstream` refused a missing or corrupt sidecar even though it reads no
+ancestor. That left `add --overwrite` as the only escape from a lost base, expressing the same
+destructive reset indirectly through reinstall semantics, and it fired even when nothing had
+changed upstream. `planUpdatedFile` now reads the ancestor only when it will merge against it, so
+`--take-upstream` explicitly chooses upstream and overwrites a missing or corrupt sidecar.
+
+The two base failures turned out to need separating, and the fix is only correct once they are:
+
+- **Missing or corrupt** — the path is readable and holds the wrong bytes. An *input* problem. It
+  blocks a merging update and nothing else; `--take-upstream` and `add` write over it.
+- **Unusable output path** — a directory, permission failure, symlink loop or non-directory parent
+  prevents the journal from reading a trustworthy pre-image and safely replacing it. Every
+  operation that must land a base refuses, `--take-upstream` included. That refusal stays in
+  `plan()`, where it is coded and reportable.
+
+Probing that second case exposed a separate defect in the first implementation. `fromReceiptState`
+hashed the base with the unguarded `hashFileBytes`, which by contract throws for anything that is
+not ENOENT — and it runs *before* any gate. An unreadable sidecar therefore killed `list`, `info`,
+`diff` and `update` alike with a bare `error <cmd>`, including the two commands that never consult
+an ancestor. The inventory is a report, not a write phase, so it now answers `null` for both
+absence and inaccessibility; every consumer already compares against `baseSha256` and treats a
+mismatch as "no usable ancestor", and the coded refusal remains `plan()`'s.
+
+`D30` was also marked superseded by `D32`, which it had contradicted since the version-3 receipt
+landed.
+
+Verification receipts from the completion run, re-run after the amendment:
+
+- `bun run test`: 226 passed, 0 failed.
 - `bun run typecheck`: 0 errors; Astro reported two pre-existing deprecation hints.
 - `bun run lint`: clean across 280 files.
 - `bun run guard`: all five guards clean; 50 diagnostics emitted/documented, 0 pending.
-- built Node e2e: 109 passed, 0 failed, 1 opt-in packed-consumer smoke skipped.
+- built Node e2e: 111 passed, 0 failed, 1 opt-in packed-consumer smoke skipped.
 
 ## Evidence boundary
 

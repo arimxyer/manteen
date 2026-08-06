@@ -9,6 +9,11 @@
   Legacy receipts are rejected because no released consumer relies on them.
 - Replace update's overwrite/yes flags with the explicit destructive `--take-upstream` operation,
   and render base-to-local, base-to-incoming, and local-to-result patches in `manteen diff`.
+- `manteen update --take-upstream` no longer refuses when a pristine base is missing or corrupt.
+  It reads no ancestor, so the explicit destructive reset repairs the sidecar too — previously
+  recovery required expressing that reset indirectly as `add --overwrite`.
+- `list` and `info` no longer fail when a base path is unreadable, and `diff`/`update`/`add` report
+  it as `merge-base-unreadable` rather than dying with an uncoded error.
 
 ## 0.2.0
 

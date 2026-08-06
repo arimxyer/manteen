@@ -530,6 +530,86 @@ test("a missing or corrupt merge base refuses non-forceably", () => {
   }
 });
 
+/**
+ * The complement of the test above, and the reason that one is not the whole
+ * rule. `--take-upstream` reads no ancestor — it installs incoming bytes — so a
+ * lost or corrupt sidecar must not refuse it. Without this, a project that
+ * gitignored `.manteen/` is stuck: every `update` exits 1 (even with nothing to
+ * update), the error says "restore from version control" for a file that was
+ * never committed, and the only escape is `add --overwrite`, which discards
+ * exactly the local adaptations the merge contract exists to protect.
+ */
+test("--take-upstream repairs a missing or corrupt merge base instead of refusing", () => {
+  for (const state of ["missing", "corrupt"]) {
+    const moved = publish(BASE_FIXTURE, `base-repair-${state}`);
+    const project = makeProject({ registries: { "@base": moved } });
+    assert.equal(run(project, ["add", ITEM]).status, 0);
+
+    const target = join(project, DESTINATION);
+    const pristine = readFileSync(target, "utf8");
+    const basePath = join(project, ".manteen", "bases", `${DESTINATION}.base`);
+
+    // A local adaptation, so the assertions below distinguish "took upstream"
+    // from "did nothing".
+    writeFileSync(target, pristine.replace("Nothing here", "Nothing local"));
+    if (state === "missing") rmSync(basePath);
+    else writeFileSync(basePath, "not the recorded ancestor\n");
+
+    const repaired = run(project, ["update", "--take-upstream"]);
+    assert.equal(repaired.status, 0, `${state}: ${repaired.all}`);
+    assert.doesNotMatch(repaired.stderr, /merge-base-unreadable/, repaired.stderr);
+    assert.equal(readFileSync(target, "utf8"), pristine, `${state}: upstream bytes`);
+    assert.equal(readFileSync(basePath, "utf8"), pristine, `${state}: base rewritten`);
+
+    // The project is unstuck: an ordinary merging update now plans normally.
+    const after = run(project, ["update"]);
+    assert.equal(after.status, 0, `${state}: ${after.all}`);
+  }
+});
+
+/**
+ * A base path the journal cannot snapshot and safely replace is a different
+ * failure from one holding the wrong bytes, so every command that has to land a
+ * base refuses — including `--take-upstream`, which needs no ancestor but still
+ * needs the destination. The seam being pinned is that this refusal is CODED
+ * and comes from `plan()`. The inventory reads the same path first, before any
+ * gate runs, and a throw escaping there took out `list` and `info` too — commands
+ * with no stake in the sidecar at all — with a bare `error <cmd>`.
+ */
+test("an unusable base output path refuses where a base must land, and nowhere else", () => {
+  for (const state of ["directory-at-leaf", "file-in-parent-path"]) {
+    const project = makeProject();
+    assert.equal(run(project, ["add", ITEM]).status, 0);
+    const bases = join(project, ".manteen", "bases");
+    const basePath = join(bases, `${DESTINATION}.base`);
+
+    if (state === "directory-at-leaf") {
+      rmSync(basePath);
+      mkdirSync(join(basePath, "occupied"), { recursive: true });
+    } else {
+      rmSync(join(bases, "src"), { recursive: true });
+      writeFileSync(join(bases, "src"), "blocks the expected base directory\n");
+    }
+
+    for (const args of [["list"], ["info", ITEM]]) {
+      const reported = run(project, args);
+      assert.equal(reported.status, 0, `${state} ${args.join(" ")}: ${reported.all}`);
+      assert.doesNotMatch(reported.stderr, /merge-base-unreadable/, reported.stderr);
+    }
+
+    // Read-only, so it reports the refusal without adopting its exit code.
+    const compared = run(project, ["diff"]);
+    assert.equal(compared.status, 0, `${state}: ${compared.all}`);
+    assert.match(compared.stderr, /error {2}merge-base-unreadable/, compared.stderr);
+
+    for (const args of [["update"], ["update", "--take-upstream"], ["add", ITEM, "--overwrite"]]) {
+      const refused = run(project, args);
+      assert.equal(refused.status, 1, `${state} ${args.join(" ")}: ${refused.all}`);
+      assert.match(refused.stderr, /error {2}merge-base-unreadable/, refused.stderr);
+    }
+  }
+});
+
 test("diff and update both refuse to invent text for invalid UTF-8 project bytes", () => {
   const project = makeProject();
   assert.equal(run(project, ["add", ITEM]).status, 0);

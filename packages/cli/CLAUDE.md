@@ -51,8 +51,8 @@ blocks forever on a prompt. Tests must use `CI=true`. (D14.)
 
 | Tier | Runs | Command |
 | --- | --- | --- |
-| unit | bun, source | `bun test` — 90 |
-| e2e | **node, built `dist/`** | `node --test packages/cli/e2e/*.node-e2e.mjs` — 82 |
+| unit | bun, source | `bun test packages/cli/test` — 145 |
+| e2e | **node, built `dist/`** | `node --test packages/cli/e2e/*.node-e2e.mjs` — 112, 1 opt-in skip |
 
 `e2e/helpers/child-env.mjs` owns every child process's environment. Use it rather than spreading
 `process.env` inline: an inherited `FORCE_COLOR` makes node warn onto stderr, which breaks every

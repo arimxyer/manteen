@@ -86,6 +86,46 @@ export function readInstalled(root: string, ports: InstalledPorts): Installed {
 }
 
 /**
+ * The merge base, hashed for a REPORT rather than for a decision to write.
+ *
+ * `hashFileBytes` throws for everything that is not ENOENT, deliberately: a
+ * write phase must never read EACCES as absence. This layer is not a write
+ * phase. It feeds `list`, `info`, `diff` and update's ref selection, all of
+ * which run before any gate — so letting the throw escape makes a sidecar that
+ * is a directory (or unreadable) kill four commands with a bare `error <cmd>`,
+ * including two that never touch the file.
+ *
+ * `null` is the honest answer here for both absence and inaccessibility, and it
+ * is the SAFE one: every consumer compares against `baseSha256` and treats a
+ * mismatch as "no usable ancestor", which is exactly the state. The refusal
+ * still happens where it can be coded and forced against — `plan()` re-reads
+ * the same path and emits `merge-base-unreadable` for the operations that have
+ * to write there.
+ *
+ * A bounded set, not a blanket catch: `plan/CLAUDE.md`'s rule holds here too.
+ * These are confirmed path-shape or permission failures a user can create. A
+ * report has no usable ancestor for any of them; unrelated failures such as
+ * resource exhaustion or I/O errors still throw.
+ */
+const UNUSABLE_BASE_CODES: ReadonlySet<string> = new Set([
+  "EISDIR",
+  "EACCES",
+  "EPERM",
+  "ENOTDIR",
+  "ELOOP",
+]);
+
+function hashBaseForReport(hash: FileHasher, basePath: string): string | null {
+  try {
+    return hash(basePath);
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === undefined || !UNUSABLE_BASE_CODES.has(code)) throw error;
+    return null;
+  }
+}
+
+/**
  * The primary entry point. Turn an already-read `ReceiptState` into an
  * inventory.
  *
@@ -121,15 +161,16 @@ export function fromReceiptState(state: ReceiptState, root: string, hash: FileHa
       files: item.files
         .map((file): InstalledFile => {
           const destination = fromReceiptPath(file.destination, root);
+          const basePath = basePathFor(destination, root);
           return {
             destination,
             receiptPath: file.destination,
             wireType: file.wireType,
             recordedSha256: file.installedSha256,
             currentSha256: hash(destination),
-            basePath: basePathFor(destination, root),
+            basePath,
             baseSha256: file.baseSha256,
-            baseCurrentSha256: hash(basePathFor(destination, root)),
+            baseCurrentSha256: hashBaseForReport(hash, basePath),
           };
         })
         .sort(byReceiptPath),

@@ -186,6 +186,20 @@ async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptio
       } catch (error) {
         existingBases.set(baseDestination, null);
         unreadableBases.add(baseDestination);
+        // UNCONDITIONAL, and the distinction is worth stating because the two
+        // base failures are not the same kind of problem:
+        //
+        //   - unusable output path (EISDIR, EACCES, ENOTDIR, ELOOP — here)
+        //     cannot supply a trustworthy pre-image and be safely replaced
+        //     through the journal, so every operation is blocked, including
+        //     `add` and `--take-upstream`, which consult no ancestor but still
+        //     have to land one. Refusing in plan is what keeps it a coded
+        //     refusal; without this the run reaches `writeBases` and dies as a
+        //     bare `error apply` after the journal unwinds — legible only to
+        //     whoever wrote the journal.
+        //   - missing or corrupt (readable, wrong bytes — `planUpdatedFile`) is
+        //     an INPUT problem. It blocks only a merging update; `--take-upstream`
+        //     overwrites it, which is what makes that flag the repair path.
         diagnostics.push(
           diag(
             "merge-base-unreadable",
@@ -562,7 +576,14 @@ function planUpdatedFile(input: {
   }
 
   const expectedBase = priorOwner.baseSha256;
-  if (input.baseReadFailed) {
+
+  // `--take-upstream` is a request for incoming bytes, not a merge. It reads no
+  // ancestor, so an absent or corrupt one cannot make it fail — and refusing
+  // here would strand the one flag that can repair a lost sidecar. The base is
+  // still rewritten by apply's phase 6 from the bytes we are about to install.
+  const merging = !input.takeUpstream;
+
+  if (merging && input.baseReadFailed) {
     return {
       ...common,
       sha256: common.upstream.sha256,
@@ -570,7 +591,7 @@ function planUpdatedFile(input: {
       priorOwner,
     };
   }
-  if (input.baseOnDisk !== expectedBase) {
+  if (merging && input.baseOnDisk !== expectedBase) {
     const observed = input.baseOnDisk === null ? "missing" : `hash ${input.baseOnDisk}`;
     diagnostics.push(
       diag(
@@ -588,20 +609,26 @@ function planUpdatedFile(input: {
     };
   }
 
-  const base = readExactUtf8(common.base.destination, expectedBase);
-  if (!base.ok) {
-    diagnostics.push(
-      diag("merge-base-unreadable", `${where} cannot be updated: ${base.detail}`, {
-        items: [common.itemId],
-        path: common.base.destination,
-      }),
-    );
-    return {
-      ...common,
-      sha256: common.upstream.sha256,
-      disposition: dispositionFor(common.upstream.sha256, onDisk),
-      priorOwner,
-    };
+  // Read only on the merging path. `baseText !== null` below is therefore the
+  // same condition as `merging`, in a form the compiler can narrow.
+  let baseText: string | null = null;
+  if (merging) {
+    const base = readExactUtf8(common.base.destination, expectedBase);
+    if (!base.ok) {
+      diagnostics.push(
+        diag("merge-base-unreadable", `${where} cannot be updated: ${base.detail}`, {
+          items: [common.itemId],
+          path: common.base.destination,
+        }),
+      );
+      return {
+        ...common,
+        sha256: common.upstream.sha256,
+        disposition: dispositionFor(common.upstream.sha256, onDisk),
+        priorOwner,
+      };
+    }
+    baseText = base.text;
   }
 
   if (onDisk === null && !input.takeUpstream) {
@@ -621,7 +648,7 @@ function planUpdatedFile(input: {
   }
 
   let content = common.upstream.content;
-  if (!input.takeUpstream && onDisk !== null) {
+  if (baseText !== null && onDisk !== null) {
     const local = readExactUtf8(common.destination, onDisk);
     if (!local.ok) {
       diagnostics.push(
@@ -637,7 +664,7 @@ function planUpdatedFile(input: {
     } else if (onDisk === common.upstream.sha256) {
       content = local.text;
     } else {
-      const merged = mergeFile(local.text, base.text, common.upstream.content);
+      const merged = mergeFile(local.text, baseText, common.upstream.content);
       if (merged.ok) content = merged.content;
       else {
         const regions = merged.conflicts
