@@ -138,8 +138,11 @@ base, `update` refuses rather than guess which side of a difference is yours; re
 Conflict-free changes apply without prompting; overlapping edits refuse without writing conflict
 markers. `--take-upstream` is the separate, destructive reset for files the registry still ships.
 After a successful command changes either part of that update state, Manteen prints
-`state-versioning-required` as a reminder; it does not inspect Git or claim the files are already
-tracked.
+`state-versioning-required` as a reminder. It does not inspect Git or claim the files are already
+tracked — but it does read your `.gitignore`, and if a rule there hides `.manteen/` the reminder is
+raised to a warning that names what breaks. The check runs one way only: a recognized rule is
+evidence of a problem, while no matching rule is not evidence the state is committed. That is why
+the reminder prints either way and nothing is ever gated on the answer.
 
 To have `update` check the resulting live project, opt into ordered `package.json` scripts in
 `manteen.json`:
@@ -148,7 +151,8 @@ To have `update` check the resulting live project, opt into ordered `package.jso
 {
   // ...existing registries, aliases, theme, styles and tsconfig...
   "verification": {
-    "update": ["typecheck", "test", "build"]
+    "update": ["typecheck", "test", "build"],
+    "timeoutMs": 300000
   }
 }
 ```
@@ -158,6 +162,13 @@ preserves the authored order, and stops at the first failure. Configured checks 
 successful non-dry update, including one whose component and state bytes were already current.
 `--dry-run` validates and shows the planned checks without running them; `--no-verify` skips their
 dynamic resolution and execution for that run.
+
+`timeoutMs` bounds **one check**, not the run, so ordering never decides whether a suite fits. It
+defaults to five minutes — enough for a cold production build on a project consuming a component
+registry, and short enough that a script which will never finish does not hold the command open
+indefinitely. A check that hits the ceiling is terminated and reported as `timed-out`, kept
+distinct from `script-failed` so a process Manteen cut short is never described as your test suite
+failing. Raise it if a check is legitimately slower.
 
 Verification is deliberately after the update transaction. If a check fails to start, exits
 non-zero, is terminated, or changes a Manteen-managed/control file, the command exits 1 and says

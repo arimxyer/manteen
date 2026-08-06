@@ -71,6 +71,19 @@ export function verificationExecutionCommand(
   return { executable: check.executable, args: check.args };
 }
 
+/**
+ * Whether a thrown spawn error is our own timeout rather than a real failure.
+ *
+ * Matched on the pair — `AbortError` carrying a `TimeoutError` cause — because
+ * `AbortError` alone is also what an externally-supplied signal produces, and
+ * that is a cancellation, not a check that outlived its ceiling.
+ */
+function isTimeoutAbort(error: unknown): boolean {
+  if (!(error instanceof Error) || error.name !== "AbortError") return false;
+  const cause = (error as { cause?: unknown }).cause;
+  return cause instanceof Error && cause.name === "TimeoutError";
+}
+
 /** Both child streams use `write`; the CLI supplies its stderr channel. */
 export function createVerificationRunner(write: VerificationOutput): VerificationRunner {
   let corepackProbe: Promise<boolean> | null = null;
@@ -94,10 +107,13 @@ export function createVerificationRunner(write: VerificationOutput): Verificatio
     return corepackProbe;
   };
 
-  return async ({ cwd, check }) => {
+  return async ({ cwd, check, timeoutMs }) => {
     const useCorepack = !DIRECT_PACKAGE_MANAGERS.has(check.executable) && (await hasCorepack(cwd));
     const command = verificationExecutionCommand(check, useCorepack);
 
+    // Declared outside the `try` because the catch branch needs it too: a
+    // timeout throws, and the child it killed still carries the signal.
+    let child: ReturnType<typeof x>["process"];
     try {
       // `x` supplies the cross-platform normalizer used by nypm itself,
       // including Windows `.cmd` handling. PATH is explicitly based on the
@@ -105,13 +121,14 @@ export function createVerificationRunner(write: VerificationOutput): Verificatio
       const execution = x(command.executable, command.args, {
         throwOnError: false,
         nodePath: false,
+        timeout: timeoutMs,
         nodeOptions: {
           cwd,
           env: verificationEnvironment(cwd),
           stdio: ["ignore", "pipe", "pipe"],
         },
       });
-      const child = execution.process;
+      child = execution.process;
       child?.stdout?.on("data", (chunk: Buffer | string) => write(chunk.toString()));
       child?.stderr?.on("data", (chunk: Buffer | string) => write(chunk.toString()));
       const result = await execution;
@@ -119,8 +136,19 @@ export function createVerificationRunner(write: VerificationOutput): Verificatio
         started: true,
         exitCode: result.exitCode ?? null,
         signal: child?.signalCode ?? null,
+        timedOut: false,
       };
     } catch (error) {
+      // tinyexec implements `timeout` as an `AbortSignal.timeout()` on the
+      // spawn, and — unlike an ordinary abort, which it swallows — it RETHROWS
+      // when the abort reason is a timeout. So the timeout arrives here, in the
+      // same branch as "the executable does not exist", and the two must not be
+      // conflated: one means nothing ever ran, the other means something ran and
+      // was cut short. `started` is the field that distinguishes them, and it is
+      // true for a timeout.
+      if (isTimeoutAbort(error)) {
+        return { started: true, exitCode: null, signal: child?.signalCode ?? null, timedOut: true };
+      }
       return {
         started: false,
         message: error instanceof Error ? error.message : String(error),
@@ -321,7 +349,11 @@ export async function verifyAppliedUpdate(
     const check = verification.checks[index] as PlannedVerification["checks"][number];
     let processResult: VerificationProcessResult;
     try {
-      processResult = await ports.run({ cwd: plan.root, check });
+      processResult = await ports.run({
+        cwd: plan.root,
+        check,
+        timeoutMs: verification.timeoutMs,
+      });
     } catch (error) {
       processResult = {
         started: false,
@@ -354,6 +386,21 @@ export async function verifyAppliedUpdate(
       // process invalidated Manteen's managed/control state.
       observed.result = "failed";
       return failed(checks, after.failure);
+    }
+
+    // Reported before `script-failed`, because a killed child also exits
+    // non-zero: "your test suite failed" is the wrong sentence for a check
+    // Manteen never let finish, and it sends the reader after the wrong bug.
+    if (processResult.timedOut) {
+      return failed(checks, {
+        kind: "timed-out",
+        script: check.script,
+        timeoutMs: verification.timeoutMs,
+        message:
+          `Verification script ${JSON.stringify(check.script)} did not finish within ${verification.timeoutMs}ms and was terminated. ` +
+          "The update was applied and Manteen did not roll it back. " +
+          'Raise "verification".timeoutMs in manteen.json if this check is legitimately slower.',
+      });
     }
 
     if (!successful) {

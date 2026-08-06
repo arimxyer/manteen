@@ -18,6 +18,22 @@ export interface VerificationPlanPorts {
   read(path: string): Buffer;
 }
 
+/**
+ * Five minutes, per check rather than per run.
+ *
+ * The point of a ceiling is to bound a HANG, not to police a slow suite, so the
+ * number wants to sit above what these scripts really cost and well below "the
+ * user gave up and pressed Ctrl-C". On a project consuming a component
+ * registry, a typecheck or unit run is seconds and a production build is single
+ * -digit minutes; five leaves room for all of them on a cold cache.
+ *
+ * Per CHECK is the load-bearing half. A per-run budget would make an earlier
+ * script's duration decide whether a later one is allowed to finish, so
+ * reordering `["typecheck", "test"]` could change the verdict — the check that
+ * failed would depend on the check before it. Each one gets the same ceiling.
+ */
+export const DEFAULT_VERIFICATION_TIMEOUT_MS = 300_000;
+
 const FILE_PORTS: VerificationPlanPorts = {
   read: (path) => readFileSync(path),
 };
@@ -61,6 +77,7 @@ export function planUpdateVerification(
   scripts: readonly string[],
   packageManager: PackageManagerName,
   ports: VerificationPlanPorts = FILE_PORTS,
+  timeoutMs: number = DEFAULT_VERIFICATION_TIMEOUT_MS,
 ): VerificationPlanResult {
   const path = resolve(root, "package.json");
   let bytes: Buffer;
@@ -123,6 +140,7 @@ export function planUpdateVerification(
         sha256: createHash("sha256").update(bytes).digest("hex"),
       },
       checks,
+      timeoutMs,
     },
     diagnostics: [],
   };

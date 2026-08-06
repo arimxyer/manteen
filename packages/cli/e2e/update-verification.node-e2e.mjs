@@ -86,7 +86,7 @@ function publish(name) {
   };
 }
 
-function makeProject({ registry, checks, scripts = {} }) {
+function makeProject({ registry, checks, scripts = {}, timeoutMs }) {
   // Keep the spelling of the fixture root identical to getcwd(3), including on
   // systems where the temporary directory is exposed through a symlink.
   const dir = realpathSync(mkdtempSync(join(tmpdir(), "manteen-verification-project-")));
@@ -123,7 +123,11 @@ function makeProject({ registry, checks, scripts = {} }) {
       {
         registries: { "@base": registry.config },
         aliases: ALIASES,
-        ...(checks === undefined ? {} : { verification: { update: checks } }),
+        ...(checks === undefined
+          ? {}
+          : {
+              verification: { update: checks, ...(timeoutMs === undefined ? {} : { timeoutMs }) },
+            }),
       },
       null,
       2,
@@ -278,6 +282,72 @@ test("verification is fail-fast and failure leaves source, base and receipt appl
   );
   assert.equal(existsSync(join(project, ".verify-first")), true);
   assert.equal(existsSync(join(project, ".verify-later")), false, "later script was not skipped");
+  assertAppliedTree(project, incoming);
+});
+
+/**
+ * A hang is the one verification failure the CLI cannot report by waiting for
+ * it, so the ceiling has to end the run itself. The seam worth pinning is that
+ * a terminated check reports as `timed-out` and NOT as `script-failed`: a killed
+ * child also exits non-zero, and "your script failed" sends the reader after a
+ * bug in their test suite rather than at a process that never finished.
+ *
+ * `timeoutMs` is tiny here on purpose. This asserts the mechanism, not the
+ * default — a test that waited out the shipped five minutes would be a hang of
+ * its own.
+ */
+test("a check that never finishes is terminated and reported as a timeout", () => {
+  const registry = publish("timeout");
+  const project = makeProject({
+    registry,
+    checks: ["verify:hang", "verify:later"],
+    scripts: {
+      "verify:hang": "node verify-hang.mjs",
+      "verify:later": "node verify-later.mjs",
+    },
+    timeoutMs: 1000,
+  });
+  writeVerifier(
+    project,
+    "verify-hang.mjs",
+    `
+      // No timer to clear and nothing to resolve it: this process only ends
+      // when something outside it decides to end it.
+      setInterval(() => {}, 1000);
+    `,
+  );
+  writeVerifier(
+    project,
+    "verify-later.mjs",
+    `
+      import { writeFileSync } from "node:fs";
+      writeFileSync(".verify-later", "must not run\\n");
+    `,
+  );
+  install(project);
+  const incoming = moveUpstream(registry, "timed out verification upstream");
+
+  const result = run(project, ["update", "--json"]);
+  assert.equal(result.status, 1, result.all);
+  const doc = json(result);
+  assert.equal(doc.ok, false);
+  assert.equal(doc.kind, "applied", "a timeout must not relabel apply as refused");
+  assert.equal(doc.verification.status, "failed");
+  assert.equal(doc.verification.failure.kind, "timed-out");
+  assert.equal(doc.verification.failure.script, "verify:hang");
+  assert.equal(doc.verification.failure.timeoutMs, 1000);
+  assert.match(doc.verification.failure.message, /did not finish within 1000ms/);
+  assert.match(doc.verification.failure.message, /update was applied/i);
+  assert.match(doc.verification.failure.message, /did not roll it back/i);
+  assert.match(doc.verification.failure.message, /timeoutMs/, "the message names the way out");
+  assert.deepEqual(
+    doc.verification.checks.map(({ script, result: checkResult }) => [script, checkResult]),
+    [
+      ["verify:hang", "failed"],
+      ["verify:later", "not-run"],
+    ],
+  );
+  assert.equal(existsSync(join(project, ".verify-later")), false, "fail-fast still holds");
   assertAppliedTree(project, incoming);
 });
 

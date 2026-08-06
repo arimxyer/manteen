@@ -1,7 +1,11 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, test } from "bun:test";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import { checkReservedTargets } from "../src/gates/reserved";
 import { mergeFile, splitExactLines } from "../src/plan/merge-file";
+import { manteenStateIsGitIgnored } from "../src/plan/state-ignored";
 import type { ResolvedFile } from "../src/plan/types";
 
 describe("exact three-way file merge", () => {
@@ -54,5 +58,53 @@ describe("reserved Manteen state tree", () => {
 
   test("does not reserve ordinary dot-directories", () => {
     expect(checkReservedTargets([file("/project/.storybook/widget.tsx")], "/project")).toEqual([]);
+  });
+});
+
+describe("recognizing an ignored state tree", () => {
+  const roots: string[] = [];
+  afterAll(() => {
+    for (const root of roots) rmSync(root, { recursive: true, force: true });
+  });
+
+  function withGitignore(contents: string | null): string {
+    const root = mkdtempSync(join(tmpdir(), "manteen-ignore-"));
+    roots.push(root);
+    if (contents !== null) writeFileSync(join(root, ".gitignore"), contents);
+    return root;
+  }
+
+  test("recognizes the spellings people write for a root directory", () => {
+    for (const line of [
+      ".manteen",
+      ".manteen/",
+      "/.manteen",
+      "/.manteen/",
+      ".manteen/*",
+      ".manteen/**",
+      "**/.manteen",
+      "**/.manteen/",
+    ]) {
+      expect(manteenStateIsGitIgnored(withGitignore(`node_modules\n${line}\ndist\n`))).toBe(true);
+    }
+  });
+
+  test("comments, blank lines and trailing whitespace do not change the answer", () => {
+    expect(manteenStateIsGitIgnored(withGitignore("\n# .manteen\n\n  \nnode_modules\n"))).toBe(
+      false,
+    );
+    expect(manteenStateIsGitIgnored(withGitignore("\n.manteen/   \n"))).toBe(true);
+  });
+
+  test("a later negation wins, because that is Git's own precedence", () => {
+    expect(manteenStateIsGitIgnored(withGitignore(".manteen\n!.manteen\n"))).toBe(false);
+    expect(manteenStateIsGitIgnored(withGitignore("!.manteen\n.manteen\n"))).toBe(true);
+  });
+
+  test("an absent or unrelated .gitignore answers no rather than throwing", () => {
+    expect(manteenStateIsGitIgnored(withGitignore(null))).toBe(false);
+    expect(manteenStateIsGitIgnored(withGitignore("node_modules\ndist\n.env*\n"))).toBe(false);
+    // Substring, not a rule: `false` here is correct rather than a near miss.
+    expect(manteenStateIsGitIgnored(withGitignore(".manteen-cache\n"))).toBe(false);
   });
 });

@@ -74,6 +74,11 @@
             "minLength": 1,
             "pattern": "\\S"
           }
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "description": "Wall-clock ceiling for ONE check, in milliseconds. Applies per check, not per run, so ordering never decides whether a suite fits. Defaults to 300000 (five minutes).",
+          "minimum": 1000
         }
       }
     }

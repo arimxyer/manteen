@@ -22,6 +22,9 @@ export interface PlannedVerification {
   };
   /** Authored order; never sorted. */
   checks: PlannedVerificationCheck[];
+  /** Wall-clock ceiling for ONE check, in milliseconds. Per check rather than
+   *  per run so ordering never changes whether a suite fits. */
+  timeoutMs: number;
 }
 
 export type VerificationStatus = "not-configured" | "skipped" | "planned" | "passed" | "failed";
@@ -55,6 +58,12 @@ export type VerificationFailure =
       signal: string | null;
     }
   | {
+      kind: "timed-out";
+      message: string;
+      script: string;
+      timeoutMs: number;
+    }
+  | {
       kind: "managed-byte-drift";
       message: string;
       /** Absolute internally; CLI JSON projects these relative to the root. */
@@ -71,10 +80,12 @@ export interface VerificationOutcome {
 export interface VerificationProcessRequest {
   cwd: string;
   check: PlannedVerificationCheck;
+  /** Ceiling for this one check. The runner kills the child when it elapses. */
+  timeoutMs: number;
 }
 
 export type VerificationProcessResult =
-  | { started: true; exitCode: number | null; signal: string | null }
+  | { started: true; exitCode: number | null; signal: string | null; timedOut: boolean }
   | { started: false; message: string };
 
 export type VerificationRunner = (

@@ -57,6 +57,8 @@ export interface MantineConfig {
   verification?: {
     /** Authored order is execution order. Names resolve against root package.json. */
     update: string[];
+    /** Ceiling for ONE check. Absent means `DEFAULT_VERIFICATION_TIMEOUT_MS`. */
+    timeoutMs?: number;
   };
 }
 

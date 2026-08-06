@@ -48,6 +48,7 @@ import { createHttpLoader, type IndexResolver, type IndexSource, isHttpUrl } fro
 import { createFileLoader, isFileUrl } from "./loader-local";
 import { mergeFile } from "./merge-file";
 import { resolve as resolveGraph } from "./resolve";
+import { manteenStateIsGitIgnored } from "./state-ignored";
 import { foldStyles, needsStylePlan, type StyleBase } from "./styles-fold";
 import { foldTheme } from "./theme-fold";
 import type {
@@ -286,7 +287,13 @@ async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptio
   const verificationResult =
     verificationScripts === null || detected === undefined
       ? { verification: null, diagnostics: [] }
-      : planUpdateVerification(root, verificationScripts, detected);
+      : planUpdateVerification(
+          root,
+          verificationScripts,
+          detected,
+          undefined,
+          config.raw.verification?.timeoutMs,
+        );
   diagnostics.push(...verificationResult.diagnostics);
 
   // ---- theme (D5, D6, D7) ---------------------------------------------------
@@ -342,6 +349,9 @@ async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptio
     verification: verificationResult.verification,
     mantine,
     receipt,
+    // Reporting only, and read here rather than at render time so the one place
+    // allowed to touch the disk before apply stays the one place that does.
+    stateIgnored: manteenStateIsGitIgnored(root),
     diagnostics: report.diagnostics,
     ok: report.ok,
   };

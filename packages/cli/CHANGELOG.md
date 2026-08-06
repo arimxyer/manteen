@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Bound each post-update verification check with a wall-clock ceiling, five minutes by default and
+  configurable as `verification.timeoutMs`. The ceiling is per check rather than per run, so
+  ordering never decides whether a suite fits, and a terminated check reports `timed-out` rather
+  than `script-failed`.
+- Raise `state-versioning-required` from `info` to `warn` when the project's own `.gitignore`
+  carries a recognized rule hiding `.manteen/`, naming the `merge-base-unreadable` refusal it
+  causes. The check is one-directional and gates nothing: no matching rule is not evidence the
+  state is committed, so the advisory still prints either way.
+
 ## 0.3.0
 
 - Replace update's skip-or-overwrite behavior with exact three-way source merging backed by

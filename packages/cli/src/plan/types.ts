@@ -339,6 +339,9 @@ export interface Plan {
   mantine: MantineInstall;
   /** Read once in plan(); apply() re-reads only to hash-verify in preflight. */
   receipt: ReceiptState;
+  /** A recognized `.gitignore` rule hides `.manteen/`. Reporting only — see
+   *  `state-ignored.ts` for why a `false` proves nothing and gates nothing. */
+  stateIgnored: boolean;
   diagnostics: Diagnostic[];
   ok: boolean; // see the refusal contract in §1
 }

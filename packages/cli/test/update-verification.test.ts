@@ -225,6 +225,7 @@ function verificationFixture(scriptNames: string[]): VerificationFixture {
       raw: receiptRaw,
       receipt,
     },
+    stateIgnored: false,
     diagnostics: [],
     ok: true,
   };
@@ -292,7 +293,7 @@ describe("post-apply verification", () => {
       fixture.verification,
       ports(async ({ check }) => {
         called.push(check.script);
-        return { started: true, exitCode: 0, signal: null };
+        return { started: true, exitCode: 0, signal: null, timedOut: false };
       }),
     );
 
@@ -311,7 +312,7 @@ describe("post-apply verification", () => {
       fixture.verification,
       ports(async ({ check }) => {
         called.push(check.script);
-        return { started: true, exitCode: 7, signal: null };
+        return { started: true, exitCode: 7, signal: null, timedOut: false };
       }),
     );
 
@@ -346,7 +347,7 @@ describe("post-apply verification", () => {
     const outcome = await verifyAppliedUpdate(
       fixture.plan,
       fixture.verification,
-      ports(async () => ({ started: true, exitCode: null, signal: "SIGTERM" })),
+      ports(async () => ({ started: true, exitCode: null, signal: "SIGTERM", timedOut: false })),
     );
 
     expect(outcome.status).toBe("failed");
@@ -373,7 +374,7 @@ describe("post-apply verification", () => {
       fixture.verification,
       ports(async () => {
         calls += 1;
-        return { started: true, exitCode: 0, signal: null };
+        return { started: true, exitCode: 0, signal: null, timedOut: false };
       }),
     );
 
@@ -390,7 +391,7 @@ describe("post-apply verification", () => {
     const outcome = await verifyAppliedUpdate(fixture.plan, fixture.verification, {
       ...ports(async () => {
         calls += 1;
-        return { started: true, exitCode: 0, signal: null };
+        return { started: true, exitCode: 0, signal: null, timedOut: false };
       }),
       readReceipt: () => {
         throw Object.assign(new Error("permission denied"), { code: "EACCES" });
@@ -414,7 +415,7 @@ describe("post-apply verification", () => {
       fixture.verification,
       ports(async () => {
         write(fixture.source, "export const Component = 'rewritten';\n");
-        return { started: true, exitCode: 0, signal: null };
+        return { started: true, exitCode: 0, signal: null, timedOut: false };
       }),
     );
 
@@ -506,7 +507,7 @@ describe("update verification orchestration", () => {
         hash: hashFileBytes,
         verification: ports(async () => {
           calls += 1;
-          return { started: true, exitCode: 0, signal: null };
+          return { started: true, exitCode: 0, signal: null, timedOut: false };
         }),
       },
     );

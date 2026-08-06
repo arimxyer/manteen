@@ -311,13 +311,28 @@ export function renderOutcome(outcome: ApplyOutcome, root: string): string {
  * warnings beside it down too. The severity states what it is: a standing fact
  * about how Manteen stores state, not a report that something is wrong.
  */
-export function renderUpdateStateAdvisory(outcome: ApplyOutcome): string {
+export function renderUpdateStateAdvisory(outcome: ApplyOutcome, plan: Plan): string {
   if (!outcome.ok || outcome.dryRun || !outcome.updateState.changed) return "";
+  if (!plan.stateIgnored) {
+    return (
+      "info  state-versioning-required\n" +
+      "  This run changed Manteen's update state.\n" +
+      "  Version manteen.lock.json and .manteen/bases/ together; do not ignore .manteen/.\n" +
+      "  A clone missing either cannot safely merge local adaptations during update.\n"
+    );
+  }
+  // `warn`, not `info`, precisely because this half is CONDITIONAL — the reason
+  // the unignored case was demoted does not apply to a project that has already
+  // made the mistake. Naming the file and the effect rather than the fix: the
+  // rule may be deliberate, and Manteen is in no position to edit it.
   return (
-    "info  state-versioning-required\n" +
-    "  This run changed Manteen's update state.\n" +
-    "  Version manteen.lock.json and .manteen/bases/ together; do not ignore .manteen/.\n" +
-    "  A clone missing either cannot safely merge local adaptations during update.\n"
+    "warn  state-versioning-required\n" +
+    "  This run changed Manteen's update state, and .gitignore appears to ignore .manteen/.\n" +
+    "  The pristine bases under .manteen/bases/ are how update merges registry changes\n" +
+    "  around your local adaptations. Without them a fresh clone cannot update at all:\n" +
+    "  every run refuses with merge-base-unreadable until the bases are restored, and the\n" +
+    "  only way through is `manteen update --take-upstream`, which discards adaptations.\n" +
+    "  Un-ignore .manteen/ and commit it with manteen.lock.json.\n"
   );
 }
 

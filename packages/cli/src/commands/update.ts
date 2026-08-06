@@ -867,7 +867,7 @@ export async function runUpdate(
   );
   streams.stdout(renderSelected(result.selected));
   streams.stderr(renderApplyFailure(result.outcome, result.plan.root));
-  streams.stderr(renderUpdateStateAdvisory(result.outcome));
+  streams.stderr(renderUpdateStateAdvisory(result.outcome, result.plan));
   if (result.outcome.ok) {
     streams.stderr(renderVerification(result.verification, result.plan.root));
   }

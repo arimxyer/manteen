@@ -416,6 +416,7 @@ function stubPlan(options: StubOptions = {}): DiffPorts["plan"] {
       verification: null,
       mantine: { state: "not-installed" },
       receipt,
+      stateIgnored: false,
       diagnostics: options.diagnostics ?? [],
       ok: true,
     } satisfies Plan;
@@ -938,6 +939,7 @@ describe("buildDiff is pure with respect to the receipt", () => {
         verification: null,
         mantine: { state: "not-installed" },
         receipt: { present: false, path: join(root, "manteen.lock.json") },
+        stateIgnored: false,
         diagnostics: [],
         ok: true,
       },

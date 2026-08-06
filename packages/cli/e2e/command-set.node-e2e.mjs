@@ -604,6 +604,38 @@ test("a state-changing JSON update reports required versioning on stdout alone",
  * gate runs, and a throw escaping there took out `list` and `info` too — commands
  * with no stake in the sidecar at all — with a bare `error <cmd>`.
  */
+/**
+ * The state advisory is `info` because it fires on every mutating run, and a
+ * warning present on the whole happy path stops being read. That reasoning stops
+ * applying the moment a project has actually made the mistake, so the ignored
+ * case escalates.
+ *
+ * Both halves are pinned together: an escalation nobody can reach is the same
+ * defect as no escalation at all.
+ */
+test("the state advisory escalates when .gitignore hides .manteen/", () => {
+  const quiet = makeProject();
+  const informed = run(quiet, ["add", ITEM]);
+  assert.equal(informed.status, 0, informed.all);
+  assert.match(informed.stderr, /info {2}state-versioning-required/, informed.stderr);
+
+  const ignoring = makeProject();
+  writeFileSync(join(ignoring, ".gitignore"), "node_modules\n.manteen/\ndist\n");
+  const warned = run(ignoring, ["add", ITEM]);
+  assert.equal(warned.status, 0, warned.all);
+  assert.match(warned.stderr, /warn {2}state-versioning-required/, warned.stderr);
+  assert.match(warned.stderr, /\.gitignore appears to ignore \.manteen\//, warned.stderr);
+  assert.match(warned.stderr, /merge-base-unreadable/, "it names the failure it prevents");
+  assert.match(warned.stderr, /--take-upstream/, "and the cost of the only way through");
+
+  // A negation is a deliberate choice, not a mistake to warn at.
+  const reincluded = makeProject();
+  writeFileSync(join(reincluded, ".gitignore"), ".manteen/\n!.manteen\n");
+  const calm = run(reincluded, ["add", ITEM]);
+  assert.equal(calm.status, 0, calm.all);
+  assert.match(calm.stderr, /info {2}state-versioning-required/, calm.stderr);
+});
+
 test("an unusable base output path refuses where a base must land, and nowhere else", () => {
   for (const state of ["directory-at-leaf", "file-in-parent-path"]) {
     const project = makeProject();

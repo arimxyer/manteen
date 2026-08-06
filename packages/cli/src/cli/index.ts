@@ -190,7 +190,7 @@ async function runAdd(refs: string[], flags: AddFlags, command: Command): Promis
   process.stdout.write(flags.dryRun ? renderDryRun(planned) : renderOutcome(outcome, planned.root));
 
   process.stderr.write(renderApplyFailure(outcome, planned.root));
-  process.stderr.write(renderUpdateStateAdvisory(outcome));
+  process.stderr.write(renderUpdateStateAdvisory(outcome, planned));
 
   return outcome.ok ? EXIT_OK : EXIT_REFUSED;
 }
