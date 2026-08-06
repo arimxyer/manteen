@@ -19,6 +19,7 @@ import type { MergeConflict } from "manteen-kit";
 import type { PackageManagerName } from "nypm";
 
 import type { LoadedConfig } from "../config/types";
+import type { PlannedVerification } from "../verification/types";
 
 /** Re-exported so consumers of the contract need only one import. */
 export type { MergeConflict };
@@ -68,6 +69,7 @@ export type DiagnosticCode =
   | "receipt-drift"
   | "merge-base-unreadable"
   | "update-conflict"
+  | "verification-script-unavailable"
   /**
    * §5a resolution 4: the version gate reads `@mantine/core` ONLY, so a
    * `@mantine/hooks@^9` sitting on a mismatched major would otherwise pass in
@@ -332,6 +334,8 @@ export interface Plan {
   installCommand: string | null; // exactly what apply will run, corepack prefix included
   theme: PlannedTheme | null;
   styles: PlannedStyles | null;
+  /** Null for add, an unconfigured update, or update --no-verify. */
+  verification: PlannedVerification | null;
   mantine: MantineInstall;
   /** Read once in plan(); apply() re-reads only to hash-verify in preflight. */
   receipt: ReceiptState;
@@ -357,6 +361,8 @@ export interface PlanOptions {
   operation?: "add" | "update";
   /** Update-only explicit destructive mode. Never inferred from `--yes`. */
   takeUpstream?: boolean;
+  /** Update-only. False skips dynamic script planning and execution. */
+  verify?: boolean;
 }
 
 // ---- apply -----------------------------------------------------------------

@@ -127,6 +127,7 @@ manteen info @house/data-table
 manteen diff
 manteen update
 manteen update --take-upstream # explicitly discard local source adaptations
+manteen update --no-verify     # skip configured project checks for this run
 ```
 
 Every install is recorded in `manteen.lock.json`, with exact pristine upstream bases under
@@ -139,6 +140,33 @@ markers. `--take-upstream` is the separate, destructive reset for files the regi
 After a successful command changes either part of that update state, Manteen prints
 `state-versioning-required` as a reminder; it does not inspect Git or claim the files are already
 tracked.
+
+To have `update` check the resulting live project, opt into ordered `package.json` scripts in
+`manteen.json`:
+
+```jsonc
+{
+  // ...existing registries, aliases, theme, styles and tsconfig...
+  "verification": {
+    "update": ["typecheck", "test", "build"]
+  }
+}
+```
+
+These are script names, not shell command strings. Manteen uses the selected package manager,
+preserves the authored order, and stops at the first failure. Configured checks run after every
+successful non-dry update, including one whose component and state bytes were already current.
+`--dry-run` validates and shows the planned checks without running them; `--no-verify` skips their
+dynamic resolution and execution for that run.
+
+Verification is deliberately after the update transaction. If a check fails to start, exits
+non-zero, is terminated, or changes a Manteen-managed/control file, the command exits 1 and says
+that the source, pristine bases, and receipt remain applied. It does not claim to roll back caches,
+snapshots, generated files, or any other side effect of a project script. Child stdout and stderr
+are both streamed to the CLI's stderr, including under `--json`, so the JSON document on stdout
+stays parseable; no output transcript or time-specific verification certificate is written to the
+receipt. With no configured checks, text output stays silent about verification and JSON reports
+`status: "not-configured"` rather than implying a semantic pass.
 
 Items may also require package-level styles such as `@mantine/carousel/styles.css`. Manteen composes
 those imports into the configured `styles` file and records each item's contribution in receipt v3.

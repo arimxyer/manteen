@@ -90,6 +90,9 @@ export const DIAGNOSTIC_CODES: Record<DiagnosticCode, DiagnosticSpec> = {
   /** Both local and upstream touched an overlapping region, or update found an
    *  occupied destination with no prior ownership record. */
   "update-conflict": { severity: "error", forceable: false, exit: 1 },
+  /** The project opted into update verification, but its root package.json
+   *  cannot supply one exact string definition for every configured script. */
+  "verification-script-unavailable": { severity: "error", forceable: false, exit: 1 },
 
   // ---- blocking, forceable --------------------------------------------------
   /** Ranges provably disjoint (`semver.intersects` false, D10). */

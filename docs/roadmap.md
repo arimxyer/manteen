@@ -22,9 +22,10 @@ through its built-Node acceptance tier, W7 closed with a green hosted runtime, O
 package-manager matrix, W8 established provenance-bearing releases, and `0.2.0` publicly carries
 the managed-styles and registry-content stress-case contract.
 
-The current source tree is one contract milestone ahead of that public release: Wu is complete
-with receipt v3, committed pristine bases and three-way updates. That update model is not part of
-the public `0.2.0` package yet; it belongs to the next contract-bearing release.
+The current source tree is two contract milestones ahead of that public release: Wu is complete
+with receipt v3, committed pristine bases and three-way updates, and Wv is complete with opt-in
+post-update project verification. Neither milestone is part of the public `0.2.0` package yet;
+they belong to the next contract-bearing release.
 
 ## Known gaps, by kind
 
@@ -35,7 +36,10 @@ complete. The findings and hosted closure receipt are recorded in
 **Commands.** `init`, `add`, `list`, `info`, `diff` and `update` ship. In the current source,
 `update` uses Wu's receipt-v3 three-way model; public `0.2.0` still carries the earlier update
 behavior. `search` does not exist and is not currently assigned to a wave; whether it belongs in
-v1 remains undecided.
+v1 remains undecided. The current source also supports project-owned verification: configured
+`package.json` scripts run only after a coherent update has applied, and a failed check never
+pretends the update rolled back. Its frozen boundary and completed local source/built-Node receipt
+are in [`update-verification-handoff.md`](update-verification-handoff.md).
 
 **Portability.** The built tier passes on Linux Node 22.12, 24 and 26 plus macOS and Windows at the
 Node floor. Packed npm, pnpm, Yarn PnP and Bun consumers pass, including the native Windows
@@ -100,6 +104,7 @@ is a judgment call, which is exactly why they are separate runs.
 | Wc | [`Registry content`](wc-registry-content-handoff.md) | ongoing: small curated tranches | Independent of all of the above; doubles as client stress-testing without turning fixtures into product evidence. |
 | Wt | [`Theme builder`](#wt--theme-builder-proposed) | proposed: one page, plan-first | Preview-then-install for the one registry item every consumer is expected to edit. Depends on nothing; blocked by nothing. |
 | Wu | [`Update merging`](update-merge-handoff.md) | complete: receipt v3, exact bases, three-way plan, explicit reset, three-axis diff, built-Node acceptance | Changes ordinary source maintenance from skip-or-replace to reproducible three-way merging without weakening the existing plan/apply transaction. |
+| Wv | [`Update verification`](update-verification-handoff.md) | complete: post-apply orchestration, fail-fast project scripts, bounded drift detection, built-Node acceptance | Lets a consumer define what “the merged component still works here” means without placing arbitrary scripts inside Manteen's rollback journal. |
 
 **Not workflow-shaped, do directly:** the hygiene set (LICENSE, linter, SECURITY, CONTRIBUTING,
 dependabot, README rename). Single-file, single-concern, no discovery — a workflow would be
@@ -149,6 +154,7 @@ Phase 3 ✔ ─> W4 apply surface ✔ ─┬─> W5 command set ✔ ──┐
 Wc registry content ......... any time, independent
 Wt theme builder ............ any time, independent, not started
 Wu update merging ........... complete; pending a contract-bearing release
+Wv update verification ...... complete in source; pending a contract-bearing release
 hygiene ..................... done, direct
 ```
 
@@ -178,6 +184,13 @@ skip-or-replace behavior with an explicit add/update operation, exact committed 
 conflict-free three-way planning, `--take-upstream` as the named destructive reset, and a
 three-axis `diff`. Its local and built-Node closure receipt is in the
 [`update merge handoff`](update-merge-handoff.md); publication remains a separate release step.
+
+Wv is complete in the current source. Verification stays outside `apply()` and the journal,
+resolves ordered project script names during planning, runs them fail-fast only after a successful
+non-dry update, and detects changes to the exact Manteen-managed/control snapshot. A verification
+failure leaves the coherent update applied and exits 1; it is evidence about the consumer's
+configured checks, not a rollback or a universal runtime guarantee. Its handoff records the green
+source and real-Node acceptance receipt; publication remains a separate release step.
 
 ## On one large program workflow
 

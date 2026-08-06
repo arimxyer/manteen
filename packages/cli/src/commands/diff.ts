@@ -283,6 +283,10 @@ export async function reportDiff(
   const planned = await ports.plan(config, [...selection.ids], {
     interactive: false,
     operation: "update",
+    // Diff borrows update's three-way planner but is not an update operation.
+    // Project verification is post-apply state and must never resolve, refuse,
+    // or run while this read-only report is being built.
+    verify: false,
   });
 
   const result = buildDiff({

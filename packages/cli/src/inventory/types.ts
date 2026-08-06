@@ -36,6 +36,7 @@ import type {
   ThemeSourceKind,
 } from "../plan/types";
 import type { MantineMeta } from "../plan/validate-item";
+import type { VerificationOutcome } from "../verification/types";
 
 /** Re-exported so a command needs one import for the inspect vocabulary. */
 export type { MantineMeta };
@@ -551,6 +552,8 @@ export type UpdateResult =
       kind: "applied";
       plan: Plan;
       outcome: ApplyOutcome;
+      /** Post-apply project checks. Never part of ApplyOutcome or its journal. */
+      verification: VerificationOutcome;
       selected: CanonicalId[];
       skipped: UpdateSkip[];
       notes: InventoryNote[];

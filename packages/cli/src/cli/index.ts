@@ -328,6 +328,7 @@ program
   .option("--force", "downgrade forceable refusals to warnings; never silences them")
   .option("--json", "emit the result as one JSON document")
   .option("--take-upstream", "discard local adaptations and restore current upstream files")
+  .option("--no-verify", "skip configured post-update package scripts")
   .option("--pm <name>", "override package-manager detection (npm, pnpm, yarn, bun, deno)")
   .action(async (refs: string[], flags: UpdateFlags, command: Command) => {
     process.exitCode = await runUpdate(refs, flags, command);

@@ -61,7 +61,10 @@
  *                                            cancelled, `outcome.ok` is false)
  *   applied + outcome.failure !== null    -> 1  (stale-plan, install-failed,
  *                                            write-failed, rollback-failed)
- *   applied + outcome.ok                  -> 0
+ *   applied + outcome.ok + verification
+ *             failed                      -> 1  (the coherent update remains applied)
+ *   applied + outcome.ok + verification
+ *             not failed                  -> 0
  *
  * `runAdd` in `cli/index.ts` is the reference for all five rows, including the
  * deliberate `force: false` on `blockingExitCode` — `plan.diagnostics` has
@@ -108,6 +111,14 @@ import { createReceiptReader, createReceiptValidator } from "../receipt/load";
 import { toReceiptPath } from "../receipt/path";
 import type { ReceiptReader, ReceiptValidator } from "../receipt/read";
 import { readReceipt } from "../receipt/read";
+import {
+  createVerificationPorts,
+  plannedVerificationOutcome,
+  type VerificationOutput,
+  type VerificationPorts,
+  verifyAppliedUpdate,
+} from "../verification/run";
+import type { VerificationOutcome } from "../verification/types";
 
 const EXIT_OK = 0;
 const EXIT_REFUSED = 1;
@@ -167,16 +178,46 @@ export interface UpdatePorts {
   /** `hashFileBytes` in production; MUST throw for any failure that is not
    *  ENOENT (see `FileHasher`). */
   hash: FileHasher;
+  /** Post-apply only. It is intentionally not an ApplyPort. */
+  verification: VerificationPorts;
 }
 
-export function createUpdatePorts(): UpdatePorts {
+export function createUpdatePorts(
+  output: VerificationOutput = (chunk) => {
+    process.stderr.write(chunk);
+  },
+): UpdatePorts {
+  const read = createReceiptReader();
+  const validate = createReceiptValidator();
   return {
     plan,
     apply,
-    read: createReceiptReader(),
-    validate: createReceiptValidator(),
+    read,
+    validate,
     hash: hashFileBytes,
+    verification: {
+      ...createVerificationPorts(output, hashFileBytes),
+      readReceipt: read,
+      validateReceipt: validate,
+    },
   };
+}
+
+function unavailableVerification(
+  config: LoadedConfig,
+  options: UpdateOptions,
+  planned: Plan,
+): VerificationOutcome {
+  if (config.raw.verification === undefined) {
+    return { status: "not-configured", checks: [], failure: null };
+  }
+  if (options.verify === false) return { status: "skipped", checks: [], failure: null };
+  if (planned.verification === null) {
+    // Reachable only on a refused plan. An ok plan with configured verification
+    // must carry the exact definitions the runner will revalidate.
+    return { status: "planned", checks: [], failure: null };
+  }
+  return plannedVerificationOutcome(planned.verification);
 }
 
 /**
@@ -242,6 +283,7 @@ export async function update(
     packageManager: options.packageManager,
     operation: "update",
     takeUpstream: options.takeUpstream,
+    verify: options.verify,
   });
 
   const verdict = classify(candidates, planned, config);
@@ -282,10 +324,20 @@ export async function update(
     ports.applyPorts,
   );
 
+  let verification = unavailableVerification(config, options, planned);
+  if (verification.status === "planned" && planned.verification !== null) {
+    if (!outcome.ok) {
+      verification = { status: "skipped", checks: [], failure: null };
+    } else if (!outcome.dryRun) {
+      verification = await verifyAppliedUpdate(planned, planned.verification, ports.verification);
+    }
+  }
+
   return {
     kind: "applied",
     plan: planned,
     outcome,
+    verification,
     selected: verdict.selected,
     skipped: sortSkips(skipped),
     notes,
@@ -625,9 +677,11 @@ function toUpdateJson(
   root: string,
   result: UpdateResult,
   ok: boolean,
+  fallbackVerification: VerificationOutcome,
 ): JsonEnvelope & Record<string, unknown> {
   const plan = result.kind === "nothing-to-do" ? null : result.plan;
   const outcome = result.kind === "applied" ? result.outcome : null;
+  const verification = result.kind === "applied" ? result.verification : fallbackVerification;
 
   return {
     command: "update",
@@ -679,6 +733,25 @@ function toUpdateJson(
             changed: outcome.updateState.changed,
             versioningRequired: outcome.updateState.changed,
           },
+    verification: {
+      status: verification.status,
+      checks: verification.checks.map((check) => ({
+        script: check.script,
+        command: check.command,
+        result: check.result,
+        exitCode: check.exitCode,
+        signal: check.signal,
+      })),
+      failure:
+        verification.failure === null
+          ? null
+          : verification.failure.kind === "managed-byte-drift"
+            ? {
+                ...verification.failure,
+                paths: verification.failure.paths.map((path) => toReceiptPath(path, root)),
+              }
+            : verification.failure,
+    },
     diagnostics: plan?.diagnostics ?? [],
     notes: result.notes,
   };
@@ -694,6 +767,8 @@ export interface UpdateFlags {
   force?: boolean;
   json?: boolean;
   takeUpstream?: boolean;
+  /** Commander sets false only for --no-verify. */
+  verify?: boolean;
   /** D15's detection override. */
   pm?: string;
 }
@@ -739,6 +814,7 @@ export async function runUpdate(
     interactive: false,
     packageManager: flags.pm as UpdateOptions["packageManager"],
     takeUpstream: flags.takeUpstream,
+    verify: flags.verify,
   };
 
   // `update()` catches nothing on purpose (see the module docblock): the receipt
@@ -747,7 +823,7 @@ export async function runUpdate(
   // gives a throw out of `plan()`.
   let result: UpdateResult;
   try {
-    result = await update(config, refs, options);
+    result = await update(config, refs, options, createUpdatePorts(streams.stderr));
   } catch (error) {
     streams.stderr("error  update\n");
     streams.stderr(renderThrown(error));
@@ -755,9 +831,15 @@ export async function runUpdate(
   }
 
   const exit = updateExitCode(result);
+  const fallbackVerification: VerificationOutcome =
+    config.raw.verification === undefined
+      ? { status: "not-configured", checks: [], failure: null }
+      : { status: "skipped", checks: [], failure: null };
 
   if (flags.json === true) {
-    streams.stdout(renderJson(toUpdateJson(config.root, result, exit === EXIT_OK)));
+    streams.stdout(
+      renderJson(toUpdateJson(config.root, result, exit === EXIT_OK, fallbackVerification)),
+    );
     return exit;
   }
 
@@ -786,6 +868,9 @@ export async function runUpdate(
   streams.stdout(renderSelected(result.selected));
   streams.stderr(renderApplyFailure(result.outcome, result.plan.root));
   streams.stderr(renderUpdateStateAdvisory(result.outcome));
+  if (result.outcome.ok) {
+    streams.stderr(renderVerification(result.verification, result.plan.root));
+  }
 
   return exit;
 }
@@ -807,5 +892,24 @@ export function updateExitCode(result: UpdateResult): number {
       : EXIT_REFUSED;
   }
   if (result.outcome.cancelled) return EXIT_CANCELLED;
-  return result.outcome.ok ? EXIT_OK : EXIT_REFUSED;
+  if (!result.outcome.ok) return EXIT_REFUSED;
+  return result.verification.status === "failed" ? EXIT_REFUSED : EXIT_OK;
+}
+
+export function renderVerification(verification: VerificationOutcome, root: string): string {
+  if (verification.status === "not-configured") return "";
+  if (verification.status === "skipped") return "skip  verification  --no-verify\n";
+
+  const lines = verification.checks.map(
+    (check) =>
+      `${verification.status === "planned" && check.result === "not-run" ? "planned" : check.result}  verification  ${check.command}`,
+  );
+  if (verification.failure !== null) {
+    lines.push(`error  verification  ${verification.failure.kind}`);
+    for (const line of verification.failure.message.split("\n")) lines.push(`  ${line}`);
+    if (verification.failure.kind === "managed-byte-drift") {
+      for (const path of verification.failure.paths) lines.push(`  ${toReceiptPath(path, root)}`);
+    }
+  }
+  return lines.length === 0 ? "" : `${lines.join("\n")}\n`;
 }

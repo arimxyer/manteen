@@ -51,6 +51,7 @@ import type {
   PlanItem,
   PlannedFile,
   PlannedTheme,
+  PlanOptions,
   Receipt,
 } from "../src/plan/types";
 import { createReceiptReader, createReceiptValidator } from "../src/receipt/load";
@@ -388,12 +389,13 @@ interface StubOptions {
   theme?: PlannedTheme | null;
   diagnostics?: Diagnostic[];
   /** Records what `reportDiff` asked for. */
-  seen?: { refs: string[][] };
+  seen?: { refs: string[][]; options?: PlanOptions[] };
 }
 
 function stubPlan(options: StubOptions = {}): DiffPorts["plan"] {
-  return async (loaded, refs) => {
+  return async (loaded, refs, planOptions) => {
     options.seen?.refs.push([...refs]);
+    options.seen?.options?.push(planOptions);
     const items = options.items ?? [];
     // The REAL read, because `fromReceiptState` requires the `ok: true` arm as
     // proof the structural pass ran.
@@ -411,6 +413,7 @@ function stubPlan(options: StubOptions = {}): DiffPorts["plan"] {
       installCommand: null,
       theme: options.theme ?? null,
       styles: null,
+      verification: null,
       mantine: { state: "not-installed" },
       receipt,
       diagnostics: options.diagnostics ?? [],
@@ -709,6 +712,16 @@ describe("the theme", () => {
 });
 
 describe("selection", () => {
+  test("diff explicitly disables configured update verification", async () => {
+    const root = makeProject();
+    const seen = { refs: [] as string[][], options: [] as PlanOptions[] };
+
+    await result(root, [], { items: [widget(root)], seen });
+
+    expect(seen.options).toHaveLength(1);
+    expect(seen.options[0]).toMatchObject({ operation: "update", verify: false });
+  });
+
   test("no refs compares every installed item", async () => {
     const root = makeProject();
     const seen = { refs: [] as string[][] };
@@ -922,6 +935,7 @@ describe("buildDiff is pure with respect to the receipt", () => {
         installCommand: null,
         theme: null,
         styles: null,
+        verification: null,
         mantine: { state: "not-installed" },
         receipt: { present: false, path: join(root, "manteen.lock.json") },
         diagnostics: [],
