@@ -421,7 +421,7 @@ test("a non-interactive local-only update and dry-run both preserve the edit", (
   assert.equal(updated.status, 0, updated.all);
   // The source is preserved, but update accepts its current hash into the
   // receipt, so the versioned state still changed.
-  assert.match(updated.stderr, /warn {2}state-versioning-required/, updated.stderr);
+  assert.match(updated.stderr, /info {2}state-versioning-required/, updated.stderr);
   assert.match(updated.stderr, /skip {2}local-only/, updated.stderr);
 
   const preview = run(project, ["update", "--dry-run"]);
@@ -458,7 +458,7 @@ test("add commits an exact base and a clean two-sided update preserves both chan
 
   const updated = run(project, ["update"]);
   assert.equal(updated.status, 0, updated.all);
-  assert.match(updated.stderr, /warn {2}state-versioning-required/, updated.stderr);
+  assert.match(updated.stderr, /info {2}state-versioning-required/, updated.stderr);
   const merged = readFileSync(target, "utf8");
   assert.match(merged, /local adaptation/, merged);
   assert.match(merged, /upstream addition/, merged);
@@ -568,7 +568,7 @@ test("--take-upstream repairs a missing or corrupt merge base instead of refusin
     const repaired = run(project, ["update", "--take-upstream"]);
     assert.equal(repaired.status, 0, `${state}: ${repaired.all}`);
     assert.doesNotMatch(repaired.stderr, /merge-base-unreadable/, repaired.stderr);
-    assert.match(repaired.stderr, /warn {2}state-versioning-required/, repaired.stderr);
+    assert.match(repaired.stderr, /info {2}state-versioning-required/, repaired.stderr);
     assert.equal(readFileSync(target, "utf8"), pristine, `${state}: upstream bytes`);
     assert.equal(readFileSync(basePath, "utf8"), pristine, `${state}: base rewritten`);
 

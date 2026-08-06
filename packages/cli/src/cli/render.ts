@@ -302,11 +302,19 @@ export function renderOutcome(outcome: ApplyOutcome, root: string): string {
  * `diff` constructs an update-shaped Plan but writes nothing, and only apply
  * knows whether phase 1 accepted a file and phase 6/7 actually changed a base
  * or receipt. Keeping it on stderr preserves the stdout report for pipelines.
+ *
+ * `info`, not `warn`, and the reason is its firing rate rather than its
+ * importance. D39 rules out inspecting Git, so this cannot know whether the
+ * project already versions both paths — which means it fires after essentially
+ * every successful `add` and every real `update`. A warning that is present on
+ * the whole happy path stops being read, and takes the genuinely conditional
+ * warnings beside it down too. The severity states what it is: a standing fact
+ * about how Manteen stores state, not a report that something is wrong.
  */
 export function renderUpdateStateAdvisory(outcome: ApplyOutcome): string {
   if (!outcome.ok || outcome.dryRun || !outcome.updateState.changed) return "";
   return (
-    "warn  state-versioning-required\n" +
+    "info  state-versioning-required\n" +
     "  This run changed Manteen's update state.\n" +
     "  Version manteen.lock.json and .manteen/bases/ together; do not ignore .manteen/.\n" +
     "  A clone missing either cannot safely merge local adaptations during update.\n"

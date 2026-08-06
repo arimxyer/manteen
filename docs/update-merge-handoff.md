@@ -173,7 +173,9 @@ mismatch as "no usable ancestor", and the coded refusal remains `plan()`'s.
 `D30` was also marked superseded by `D32`, which it had contradicted since the version-3 receipt
 landed.
 
-Verification receipts from the completion run, re-run after the amendment:
+Verification receipts as of the amendment, **2026-08-05**. These are a dated record of what Wu
+proved on the day it closed, not a running total — later milestones add tests and diagnostics, so
+a number here that no longer matches `bun run guard` is expected rather than stale:
 
 - `bun run test`: 226 passed, 0 failed.
 - `bun run typecheck`: 0 errors; Astro reported two pre-existing deprecation hints.

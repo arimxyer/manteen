@@ -213,7 +213,7 @@ const installedPackageJson = readFileSync(join(installed, "package.json"));
 test("add writes the component at its paths-resolved destination", () => {
   const result = run(installed, ["add", "@base/empty-state"]);
   assert.equal(result.status, 0, result.all);
-  assert.match(result.stderr, /warn {2}state-versioning-required/, result.stderr);
+  assert.match(result.stderr, /info {2}state-versioning-required/, result.stderr);
 
   const written = readFileSync(join(installed, DESTINATION));
   assert.equal(

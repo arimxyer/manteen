@@ -51,8 +51,14 @@ blocks forever on a prompt. Tests must use `CI=true`. (D14.)
 
 | Tier | Runs | Command |
 | --- | --- | --- |
-| unit | bun, source | `bun test packages/cli/test` — 145 |
-| e2e | **node, built `dist/`** | `node --test packages/cli/e2e/*.node-e2e.mjs` — 112, 1 opt-in skip |
+| unit | bun, source | `bun test packages/cli/test` |
+| e2e | **node, built `dist/`** | `node --test packages/cli/e2e/*.node-e2e.mjs` (1 opt-in skip) |
+
+No test counts here, deliberately. They were written down twice and were stale both times within a
+commit or two, because the number legitimately changes every time anyone adds a test — which is
+also why a guard is the wrong instrument for it. Every guard in this repo asserts something that
+must NEVER change; a tripwire that fires on correct behaviour teaches people to silence it. Run the
+command if you want the number.
 
 `e2e/helpers/child-env.mjs` owns every child process's environment. Use it rather than spreading
 `process.env` inline: an inherited `FORCE_COLOR` makes node warn onto stderr, which breaks every
