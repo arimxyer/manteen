@@ -22,14 +22,20 @@ through its built-Node acceptance tier, W7 closed with a green hosted runtime, O
 package-manager matrix, W8 established provenance-bearing releases, and `0.2.0` publicly carries
 the managed-styles and registry-content stress-case contract.
 
+The current source tree is one contract milestone ahead of that public release: Wu is complete
+with receipt v3, committed pristine bases and three-way updates. That update model is not part of
+the public `0.2.0` package yet; it belongs to the next contract-bearing release.
+
 ## Known gaps, by kind
 
 **Client.** W4's apply surface, W5's command set, W6 `init`, and W7 portability hardening are
 complete. The findings and hosted closure receipt are recorded in
 [`w7-hardening-handoff.md`](w7-hardening-handoff.md).
 
-**Commands.** `init`, `add`, `list`, `info`, `diff` and `update` ship. `search` does not exist and
-is not currently assigned to a wave; whether it belongs in v1 remains undecided.
+**Commands.** `init`, `add`, `list`, `info`, `diff` and `update` ship. In the current source,
+`update` uses Wu's receipt-v3 three-way model; public `0.2.0` still carries the earlier update
+behavior. `search` does not exist and is not currently assigned to a wave; whether it belongs in
+v1 remains undecided.
 
 **Portability.** The built tier passes on Linux Node 22.12, 24 and 26 plus macOS and Windows at the
 Node floor. Packed npm, pnpm, Yarn PnP and Bun consumers pass, including the native Windows
@@ -142,7 +148,7 @@ Phase 3 ✔ ─> W4 apply surface ✔ ─┬─> W5 command set ✔ ──┐
                                  └─> W6 init ✔ ─────────┴─> W7 hardening ✔ ─> W8 release ✔
 Wc registry content ......... any time, independent
 Wt theme builder ............ any time, independent, not started
-Wu update merging ........... active; independent of content/theme-builder work
+Wu update merging ........... complete; pending a contract-bearing release
 hygiene ..................... done, direct
 ```
 
@@ -166,6 +172,12 @@ implementation, local acceptance, hosted CI, public deployment, browser acceptan
 registry-byte receipt are complete. Wc remains an independent, ongoing content stream rather than
 a release blocker; its next boundaries are further small curated tranches and broader
 framework-specific visual acceptance.
+
+Wu is also complete in the current source. It replaced ordinary update's inherited
+skip-or-replace behavior with an explicit add/update operation, exact committed bases,
+conflict-free three-way planning, `--take-upstream` as the named destructive reset, and a
+three-axis `diff`. Its local and built-Node closure receipt is in the
+[`update merge handoff`](update-merge-handoff.md); publication remains a separate release step.
 
 ## On one large program workflow
 

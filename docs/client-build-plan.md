@@ -11,7 +11,15 @@
 > References to `@mantine/core`, `meta.mantine`, and diagnostic codes such as
 > `mantine-version-mismatch` are unaffected — those name Mantine itself.
 
-# mantine-cli — Build Plan
+# mantine-cli — Build Plan and Decision Record
+
+> **Status guide.** §1's refusal table remains the live, guard-enforced diagnostic contract.
+> The surrounding package/type sketches and the phase/slice narrative preserve the plan that built
+> the original client; they are historical implementation records, not a description of every
+> current type. Decisions are cumulative: later numbered rows override earlier text where they
+> disagree, and D32–D38 plus [`update-merge-handoff.md`](update-merge-handoff.md) are the current
+> receipt-v3 and update contract. Sections 5 and 6 preserve closed questions and original
+> deferrals; their headings and row labels state which work subsequently shipped.
 
 ## 1. Shape
 
@@ -501,7 +509,9 @@ Consequences that bind every phase:
   run does not leave the receipt describing files that were rolled back.
 - Every read path must still handle "no receipt yet" — that branch is unavoidable for existing
   projects, and shipping it in v1 is cheaper than retrofitting it later.
-- `manteen diff` and `manteen update` stay deferred, but are no longer blocked on format design.
+- At this checkpoint, `manteen diff` and `manteen update` remained deferred but were no longer
+  blocked on format design. W5 subsequently shipped both commands, and D32–D38/Wu supersede their
+  receipt and update semantics.
 
 Rows in §6 for "Install receipt / `manteen.lock.json`" and the open question below are superseded.
 
@@ -532,16 +542,18 @@ install phase. Dry-run performs read-only preflight, prompts for nothing, and ex
 
 ---
 
-## 5. Open questions
+## 5. Historical open questions — closed
 
-Genuine forks, merged across dimensions. Each has a recommendation you can accept by silence.
+These were genuine forks in the original plan. They are retained because their rejected
+alternatives explain the implementation, but they are not current questions: §5a and §5b record
+their closure, and D32–D38 contain the later receipt/update overrides.
 
 1. **Dotenv on the Node 20.11 floor.** `process.loadEnvFile` landed in 20.12, but shadcn's docs — which registry authors will link to — tell users to put `REGISTRY_TOKEN` in `.env.local`.
    *Options:* guarded `typeof process.loadEnvFile === "function"` call (silently no-ops on 20.11); hand-roll a ~20-line parser (correct on the whole floor, but a quoting/escaping bug surface that handles secrets); require exported env vars only; **raise the floor to >=20.12**.
    **Recommendation:** raise `engines.node` to `>=20.12` and call `process.loadEnvFile` unguarded. The floor is asserted-not-tested today anyway (local Node is v26), the 20.11→20.12 gap is one patch release, and it removes a guard whose failure mode is silent. `process.env` always wins over file values.
 
-2. **Install receipt.** *(raised independently by apply and gates.)* Cross-**run** collisions are invisible today: `@base/empty-state` installed this week over `@house/empty-state` installed last week is an ordinary overwrite prompt with no registry attribution, which reproduces the original bug across invocations. A receipt (item → registry → destination → content hash) also unlocks `mantine diff`/`mantine update`.
-   **Recommendation:** defer to v1.1, and ship the v1 overwrite prompt with a plain "file exists, overwrite?" — but reserve the filename `mantine.lock.json` in the README now so the migration is additive. Cost of adding later: a new persisted format plus a "no receipt exists yet" branch on every path that reads it.
+2. **Install receipt.** *(raised independently by apply and gates.)* Cross-**run** collisions were invisible at this checkpoint: `@base/empty-state` installed over `@house/empty-state` was an ordinary overwrite prompt with no registry attribution, reproducing the original bug across invocations. A receipt (item → registry → destination → content hash) also unlocked `manteen diff`/`manteen update`.
+   **Historical recommendation:** defer to v1.1 and reserve `manteen.lock.json`. §5a rejected that recommendation and shipped a receipt in v1; D32 later replaced the legacy formats with receipt v3 and committed pristine bases.
 
 3. **`resolutions` key shape.** *(config + resolver, merged.)* Flat map of bare item name → winning fully-qualified id, versus keying by resolved destination path (which is what actually collides, and would also catch two *differently*-named items whose targets coincide).
    **Recommendation:** name-keyed with a fully-qualified value (`{"empty-state": "@house/empty-state"}`). It reads the way users will guess and covers every case the fixtures and the real incident produce. Path-keyed is strictly more expressive and can be added as an accepted alternate value shape later without a breaking change.
@@ -560,23 +572,26 @@ Genuine forks, merged across dimensions. Each has a recommendation you can accep
 
 ---
 
-## 6. Deferred
+## 6. Historical deferrals and current status
 
-Nothing here was dropped silently; each row names the dimension that scoped it and what it costs to add.
+This table began as the original scope ledger, not a permanent backlog. Unmarked rows remain
+deferred; rows labeled **shipped** retain the old rationale while naming the decision or workflow
+that replaced it.
 
-| Deferred | Scoped by | Why not v1 | Cost later |
+| Originally deferred | Scoped by | Why not v1 / current status | Cost later |
 |---|---|---|---|
 | **Post-install re-gate** (re-read `@mantine/core` after `nypm` installs, before writing files) | gates | Re-litigates the settled "nothing touches disk until every check has passed" — an install *is* a disk write. D10's static pre-proof (`intersects` false ⇒ refuse; `subset` ⇒ silent; otherwise warn "verified after install") covers the greenfield case without it. | Low: one extra `resolveMantineInstall()` call between apply phases 2 and 3, gated on plan-time state ≠ `found`. Needs the settled decision amended first, and a `--force` semantics answer. |
-| **Install receipt / `mantine.lock.json`** | apply, gates | See open question 2. | Medium: new persisted format, migration branch, and the overwrite prompt gains registry attribution. |
-| **`mantine list` / `search` / `info`** | resolver, gates | Needs the per-registry `index` URL to be populated and fetched; `add` never needs it. The field ships in v1 (D21) so the schema doesn't change. | Low: one fetch + a table renderer. `stylesApi` display already exists as a gate output. |
+| **Install receipt / `manteen.lock.json` — shipped; receipt v3 is current** | apply, gates | Originally deferred pending a persisted format. §5a moved the receipt into v1; D32 then established the current v3-only format and committed base sidecars. | No remaining implementation cost for the receipt itself. |
+| **`manteen list` / `info` — shipped in W5** | resolver, gates | Originally deferred until the per-registry `index` URL could be fetched. W5 landed that inventory contract and both renderers. | No remaining implementation cost for these commands. |
+| **`manteen search` — still deferred** | resolver, gates | The index/fetch prerequisite now exists, but the command is not assigned to a wave and whether it belongs in v1 remains undecided. | Low: search behavior plus a renderer over the existing inventory. |
 | **Yarn PnP version resolution** | gates | The gate degrades to `undeterminable` with an explicit "Yarn PnP detected" message, so the user knows it's off rather than assuming it passed. | Medium: a PnP-aware resolver, or shelling out to `yarn info`. |
 | **TS→JS transpilation for jsconfig-only projects** | config | Content ships verbatim; transpiling is a property change to the interchange format, not a feature. **Shipped, not deferred:** `plan()` refuses with `jsconfig-typescript-unsupported` (§1) when the project has only `jsconfig.json` and the item ships `.ts`/`.tsx` — including when `tsconfig` in `manteen.json` is pointed at a `jsconfig.json`, which does not count as a real tsconfig. What stays deferred is the transform itself: manteen still never rewrites `.ts`/`.tsx` into `.js`/`.jsx`, so the remedy is a real `tsconfig.json`, not this row. | High: a transform step that invalidates "we never rewrite content", which several other decisions rest on. |
-| **`--prefer incoming` / `--strict-theme` on `mantine add`** | apply, testing | `prefer: "base"` is the only non-destructive setting for an installer; exposing the flip invites data loss the default-Yes confirm no longer covers. `--strict-theme` (promote conflicts to a refusal) is the kit's semantics, wrong for an installer where a conflict means "we kept your value". | Trivial: both are one flag threaded to `mergeThemeSource`/`ok`. Kit semantics are already tested in `merge-theme.test.ts`. |
+| **`--prefer incoming` / `--strict-theme` on `manteen add`** | apply, testing | `prefer: "base"` is the only non-destructive setting for an installer; exposing the flip invites data loss the default-Yes confirm no longer covers. `--strict-theme` (promote conflicts to a refusal) is the kit's semantics, wrong for an installer where a conflict means "we kept your value". | Trivial: both are one flag threaded to `mergeThemeSource`/`ok`. Kit semantics are already tested in `merge-theme.test.ts`. |
 | **Astro / Gatsby / Redwood / plain-React codemods** | init | See open question 6. | Medium each; Astro is high because there is no single provider mount point. |
 | **`stylesApi` ↔ theme `classNames` cross-check** | gates | `@mantine/core` exports no selector metadata, so the comparison is against unverified registry declarations — a registry that under-declares produces warnings about the user's correct code. | Low mechanically, but only worth it if selector declarations prove reliable in practice. |
 | **Negative `resolutions` form** (pin a name to "never from `@base`") | config | The positive form covers every collision the fixtures and the real incident produce. | Trivial: an alternate value shape on the same field. |
-| **`defaultRegistry` for bare-name refs** (`mantine add empty-state`) | gates | v1 refuses an ambiguous bare name listing the qualified alternatives; the remedy is typing the namespace. Prompting would make one command mean different things on different machines and is impossible in CI. | Low: one config field plus a resolution step before `splitItemId`. |
+| **`defaultRegistry` for bare-name refs** (`manteen add empty-state`) | gates | v1 refuses an ambiguous bare name listing the qualified alternatives; the remedy is typing the namespace. Prompting would make one command mean different things on different machines and is impossible in CI. | Low: one config field plus a resolution step before `splitItemId`. |
 | **Post-write formatting (prettier/biome) and typecheck** | apply, init | We have no formatter dependency and adding one changes install weight materially. `mergeThemeSource` already preserves the base file's indent, comma style and comments. | Low if opt-in (`--format <cmd>`); high if bundled. |
-| **`mantine diff` / `mantine update`** | apply | Both require the install receipt. | Blocked on receipt; cheap after. |
+| **`manteen diff` / `manteen update` — shipped; Wu is current** | apply | Both were originally blocked on the install receipt. W5 shipped the commands; D32–D38 and Wu now define receipt-v3 diff and three-way update behavior. | No remaining implementation cost for the listed commands. |
 | **Persisting the journal to disk** (surviving SIGKILL mid-write) | apply | The mutating window is a short in-memory write phase in a directory that is nearly always version-controlled. v1 documents the journal as best-effort convenience, not durability, and points at `git checkout -- <paths>` on rollback failure. | Low: write pre-images to `node_modules/.cache` before phase 3. |
 | **`mantine-styles.d.ts` emission** | init | Present in `next-app-min-template` but in none of Mantine's guides; needed only under tsconfig settings that error on untyped CSS side-effect imports, which hasn't been checked. | Trivial once the triggering tsconfig setting is identified. |
