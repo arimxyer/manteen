@@ -1,7 +1,7 @@
 # Update verification handoff
 
-Status: complete in the source tree on 2026-08-06. This is a local implementation and acceptance
-claim, not a release claim; public `0.2.0` still predates this contract.
+Status: complete in the source tree on 2026-08-06 and public in `manteen@0.3.0` on 2026-08-07.
+Local, built-Node, hosted and fresh public-consumer acceptance are recorded below.
 
 ## The question
 
@@ -49,7 +49,8 @@ verify and keeps the existing `nothing-to-do` behavior.
 ```json
 {
   "verification": {
-    "update": ["typecheck", "test", "build"]
+    "update": ["typecheck", "test", "build"],
+    "timeoutMs": 300000
   }
 }
 ```
@@ -58,6 +59,11 @@ The `update` array is ordered, non-empty when present, and contains unique non-e
 Order is authored behavior: Manteen does not sort it or infer a preferred typecheck/test/build
 sequence. A project that needs arguments, workspace filters, environment setup, or several tools
 behind one check can expose one wrapper script such as `manteen:verify`.
+
+`timeoutMs` is the wall-clock ceiling for each check, not a shared run budget. It defaults to five
+minutes (`300000`) and accepts integers of at least `1000`. A per-check ceiling keeps an earlier
+script's duration from deciding whether a later script may finish, while ensuring a verifier that
+never returns can still produce a bounded failure report.
 
 The first contract accepts package-script names only. It does not accept shell command strings,
 inline environment assignments, per-check working directories, or registry-auth-style `${VAR}`
@@ -100,7 +106,7 @@ apply
 verification, outside apply and outside the journal
   8  re-read and compare the planned package-script definitions
   9  snapshot the Manteen-managed/control surface
-  10 run the next configured project script
+  10 run the next configured project script under its per-check wall-clock ceiling
   11 re-hash the managed/control surface; stop on failure or drift
      repeat 10-11 in authored order
 ```
@@ -139,13 +145,15 @@ type VerificationFailure =
       exitCode: number | null;
       signal: string | null;
     }
+  | { kind: "timed-out"; script: string; timeoutMs: number; message: string }
   | { kind: "managed-byte-drift"; paths: string[] };
 ```
 
-Checks run in authored order and fail fast. The first definition, spawn, non-zero/signal, or
-managed-byte failure ends execution; every later check is retained in the public result as
+Checks run in authored order and fail fast. The first definition, spawn, timeout, non-zero/signal,
+or managed-byte failure ends execution; every later check is retained in the public result as
 `not-run`. A successful check is `passed`, and the check at which execution fails is `failed`.
-The overall status is `failed` whenever `failure` is non-null.
+The overall status is `failed` whenever `failure` is non-null. A process that outlives its ceiling
+is terminated as a process tree and reports `timed-out`, never `script-failed`.
 
 Status precedence is exact: no configured checks is `not-configured`; configured checks with
 `--no-verify`, or with a preceding update that never reaches a successful real apply, are
@@ -161,6 +169,7 @@ semantic pass.
 | successful real update, no configured checks | `not-configured` | 0 | Coherent update applied; no semantic claim |
 | successful real update, all configured checks pass | passed | 0 | Coherent update applied; configured checks passed |
 | successful real update, a definition becomes stale | failed | 1 | Coherent update applied; no changed command executed |
+| successful real update, a check times out | failed | 1 | Coherent update applied; the verifier process tree is terminated |
 | successful real update, a check fails to start or exits unsuccessfully | failed | 1 | Coherent update applied; no verification rollback attempted |
 | successful real update, a check changes a managed/control path | failed | 1 | Update was coherent before the script; its later side effect is detected, not rolled back |
 
@@ -249,8 +258,9 @@ Source tests and built-Node e2e must cover at least:
 9. The whole `package.json` pre-image is checked before apply. A changed package-script definition
    after dependency installation is never executed; the coherent update stays applied and the
    command exits 1 with `definition-stale`.
-10. A check that fails to spawn, is terminated, or exits non-zero produces a distinct verification
-    failure; the coherent update, base, and receipt remain applied.
+10. A check that fails to spawn, times out, or exits non-zero produces a distinct verification
+    failure; timeout reports `timed-out` and terminates the process tree, while the coherent
+    update, base, and receipt remain applied.
 11. A check that returns zero but mutates a selected managed/control path is reported as drift and
     is not recorded as verified success.
 12. An allowed build/cache artifact outside that selected set is not described as journalled or
@@ -271,10 +281,10 @@ changed path is observable and the output does not claim rollback.
 
 The implementation checkpoint closed every remaining fork:
 
-1. Checks are fail-fast; later checks remain visible as `not-run`.
+1. Checks are fail-fast and bounded per check; later checks remain visible as `not-run`.
 2. Public statuses are `not-configured`, `skipped`, `planned`, `passed`, and `failed`; public check
    results are `passed`, `failed`, and `not-run`; failures are `definition-stale`, `spawn-failed`,
-   `script-failed`, and `managed-byte-drift`.
+   `script-failed`, `timed-out`, and `managed-byte-drift`.
 3. Child stdout and stderr both stream to CLI stderr, and no transcript is persisted.
 4. The snapshot is exactly the receipt, its ordinary destinations and bases, its recorded current
    theme and managed styles, `manteen.json`, and root `package.json`; package-manager lockfiles are
@@ -322,5 +332,36 @@ them. The receipt remains ownership/ancestry state; verification remains command
 Package-manager execution delegates to `tinyexec`'s established local-bin/Windows spawn path and
 matches nypm's optional Corepack selection, with `tinyexec` declared directly rather than relied
 on transitively. The local source tier proves that wiring, but this receipt does not claim a hosted
-Windows execution of the new verification path; that belongs in the pre-release portability
+Windows execution of the new verification path; that belonged in the pre-release portability
 matrix.
+
+## Release hardening and public acceptance — 2026-08-07
+
+The pre-release portability pass closed three boundaries after the local completion receipt:
+
+- verifier timeouts terminate the package-manager process and its descendants, using a POSIX
+  process group or Windows `taskkill`, so a descendant cannot keep captured streams open forever;
+- Windows keeps ordinary `.cmd` stdout/stderr streaming while retaining explicit process-tree
+  termination; and
+- merge-base preflight distinguishes a creatable missing path from a non-directory parent on
+  Windows, while exact CRLF base/update behavior remains covered.
+
+The hardened implementation merged as
+`123d3c1a1ef047994326cdcb3ffba7cc07e3dea9`. Main CI and the signed-tag release workflow completed
+successfully at <https://github.com/arimxyer/manteen/actions/runs/31148992494> and
+<https://github.com/arimxyer/manteen/actions/runs/31149087619>; the latter published
+`manteen@0.3.0` with provenance.
+
+A fresh public npm-plus-HTTPS consumer resolved `manteen@0.3.0`, `manteen-kit@0.2.0` and the
+14-item public registry, then added `@house/empty-state` and ran configured `typecheck` plus `build`
+checks at exit 0. Its v3 source/base hash was
+`824cd4dab40597935615719f5392547d0ca2dde0437f6d871bca9134eaf6fcc4`, the pristine base was 979
+bytes, and the receipt carried no `verification` field. The exact setup and command sequence are
+recorded in [`v0.3-release-handoff.md`](v0.3-release-handoff.md).
+
+The separately identified `@proof/lifecycle` revisions ran a verifier that exited `7`: the CLI
+correctly exited 1 with `kind: "applied"` and `script-failed`, retained coherent updated
+source/base/receipt state, wrote no verification certificate, and did not increment the prior pass
+count. The outer assertion wrapper exited 0 only after proving that expected CLI failure. These
+receipts close public distribution and both verification outcomes without claiming that
+unconfigured checks or other environments passed.

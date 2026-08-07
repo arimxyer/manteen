@@ -1,16 +1,17 @@
 # Update merge handoff
 
-Status: complete on 2026-08-05; source and built-Node acceptance are green.
+Status: complete on 2026-08-05 and public in `manteen@0.3.0` on 2026-08-07; source,
+built-Node, hosted and controlled-revision acceptance are green.
 
 ## The question
 
 Can `manteen update` bring current registry changes into component source without silently
 discarding the adaptations that make the installed copy belong to its project?
 
-The existing command cannot. It has the on-disk file and the current registry file, while
-`manteen.lock.json` retains only a hash of the originally installed bytes. That is enough to say
-that each side moved and not enough to attribute either change. Ordinary component files therefore
-fall through the same skip-or-replace surface as `add`.
+The pre-`0.3.0` command could not. It had the on-disk file and the current registry file, while
+`manteen.lock.json` retained only a hash of the originally installed bytes. That was enough to say
+that each side moved and not enough to attribute either change. Ordinary component files
+therefore fell through the same skip-or-replace surface as `add`.
 
 This milestone replaces that behavior. There are no active consumer projects whose old receipts
 need migrating, so the new receipt is one native version-3 contract: readers reject versions 1 and
@@ -189,6 +190,30 @@ Unit fixtures can prove deterministic merge classification, exact planned bytes,
 rollback. Built-Node e2e can prove the shipped CLI and committed base/receipt surface. Neither
 proves that a conflict-free text merge preserves application behavior; only the consumer's own
 typecheck/tests/runtime can establish that, and Manteen does not claim otherwise.
+
+## Public release acceptance — 2026-08-07
+
+The exact implementation merged as commit
+`123d3c1a1ef047994326cdcb3ffba7cc07e3dea9`, shipped under the signed `manteen-v0.3.0` tag, and
+completed the trusted release workflow at
+<https://github.com/arimxyer/manteen/actions/runs/31149087619>. The full publication/provenance and
+fresh public-consumer receipts are in [`v0.3-release-handoff.md`](v0.3-release-handoff.md).
+
+The canonical controlled receipt in the release handoff names registry ref `@proof/lifecycle` and
+the exact item/source SHA-256 pairs for its old, new, conflict and failure revisions. Its command
+sequence was `add`, clean `update --json`, refused `update --json`, explicit
+`update --take-upstream --json`, and an applied update whose verifier exited `7`.
+
+That sequence proved a local-only adaptation plus a non-overlapping upstream-only change, exact
+source/base/receipt preservation and no verifier on conflict, explicit destructive recovery, and
+coherent applied source/base/receipt state after verification failure. The two expected CLI
+exit-1 results were the conflict refusal and the applied-but-unverified final update; the outer
+assertion wrapper exited 0 after proving them. No conflict markers or verification certificate
+were written.
+
+This closes distribution and lifecycle execution for the line-oriented merge contract. It does
+not widen the evidence boundary above or deploy the source catalog: public Pages still serves 14
+items while the checkout contains 22.
 
 ## AST investigation — 2026-08-06
 

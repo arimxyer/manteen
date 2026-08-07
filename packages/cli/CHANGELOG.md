@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.3.0
+
 - Bound each post-update verification check with a wall-clock ceiling, five minutes by default and
   configurable as `verification.timeoutMs`. The ceiling is per check rather than per run, so
   ordering never decides whether a suite fits, and a terminated check reports `timed-out` rather
@@ -10,9 +12,12 @@
   carries a recognized rule hiding `.manteen/`, naming the `merge-base-unreadable` refusal it
   causes. The check is one-directional and gates nothing: no matching rule is not evidence the
   state is committed, so the advisory still prints either way.
-
-## 0.3.0
-
+- Terminate timed-out verifier process trees, including descendants that retain captured streams,
+  through POSIX process groups or Windows `taskkill`.
+- Preserve ordinary stdout/stderr streaming for Windows `.cmd` verification scripts while keeping
+  explicit process-tree termination.
+- Harden Windows merge-base preflight so a path below a non-directory parent is not mistaken for a
+  creatable missing path, with exact CRLF base/update coverage.
 - Replace update's skip-or-overwrite behavior with exact three-way source merging backed by
   committed pristine bases. Local-only adaptations are preserved, upstream-only changes apply,
   clean two-sided changes merge, and overlapping changes refuse before mutation.

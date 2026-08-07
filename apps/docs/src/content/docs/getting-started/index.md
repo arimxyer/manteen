@@ -36,14 +36,32 @@ npx manteen info @house/article-card
 npx manteen add @house/article-card
 ```
 
-:::caution[Release availability]
-The receipt-v3 storage and update workflow below are implemented in the current repository source
-but are not in the public `manteen@0.2.0` package installed by the command above. They will arrive
-in the next contract-bearing release.
+:::caution[Receipt v3 compatibility break]
+Public `manteen@0.3.0` includes the receipt-v3 storage and update workflow below, and accepts only
+v3 state. A project with a v1/v2 receipt from `0.2.x` cannot perform an ordinary in-place update.
+
+Manual re-adoption is a destructive reset, not a migration. First commit or back up the whole
+project and the legacy receipt. Recover every exact direct registry ref from that backup, move the
+v1/v2 `manteen.lock.json` aside without deleting it, and preview all refs in one operation:
+
+```bash
+npx manteen add <exact-ref-1> <exact-ref-2> --overwrite --dry-run
+```
+
+Review every proposed replacement, then rerun that exact command without `--dry-run` only if
+discarding the selected ordinary source is intended. The apply resets those files to current
+upstream and creates a new v3 receipt and pristine bases; local adaptations must be reapplied
+manually afterward.
+
+This procedure is not established as universal for legacy theme or managed-styles contributions.
+If the old receipt includes either, any exact direct ref cannot be recovered, or any replacement is
+unclear, stay on `0.2.x`. See the
+[0.3 release handoff](https://github.com/arimxyer/manteen/blob/main/docs/v0.3-release-handoff.md)
+for the compatibility and evidence boundary.
 :::
 
-The source is copied into your aliases and belongs to your project afterward. In the current
-source, Manteen records the source URL, ownership, installed hash, pristine-base hash, theme
+The source is copied into your aliases and belongs to your project afterward. In `manteen@0.3.0`,
+Manteen records the source URL, ownership, installed hash, pristine-base hash, theme
 contribution, and package styles in the receipt-v3 `manteen.lock.json`. The exact pristine source
 for each ordinary file lives under `.manteen/bases/`. Commit the receipt, installed source, and
 `.manteen/bases/` together so updates remain reproducible in every clone.
