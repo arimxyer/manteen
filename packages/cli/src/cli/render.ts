@@ -52,7 +52,7 @@ import type { ApplyOutcome, Diagnostic, Plan } from "../plan/types";
 // ---- streams ----------------------------------------------------------------
 
 /** One write. A parameter rather than `process.stdout` so a command is drivable
- *  in-process, which is how three of the five shells are tested. */
+ *  in-process, which is how several shells are tested. */
 export type Writer = (text: string) => void;
 
 export interface Streams {
@@ -313,7 +313,14 @@ export function renderOutcome(outcome: ApplyOutcome, root: string): string {
  */
 export function renderUpdateStateAdvisory(outcome: ApplyOutcome, plan: Plan): string {
   if (!outcome.ok || outcome.dryRun || !outcome.updateState.changed) return "";
-  if (!plan.stateIgnored) {
+  return renderStateVersioningAdvisory(plan.stateIgnored);
+}
+
+/** Shared D39 wording for any successful lifecycle transaction that observed
+ * a receipt/base mutation. Callers must establish success and real mutation;
+ * discovery and previews never reach this function. */
+export function renderStateVersioningAdvisory(stateIgnored: boolean): string {
+  if (!stateIgnored) {
     return (
       "info  state-versioning-required\n" +
       "  This run changed Manteen's update state.\n" +
@@ -380,7 +387,7 @@ export function renderApplyFailure(outcome: ApplyOutcome, root: string): string 
  * `not-installed` indistinguishable from a refusal.
  */
 export interface JsonEnvelope {
-  command: "init" | "list" | "info" | "diff" | "update";
+  command: "init" | "list" | "info" | "diff" | "update" | "remove";
   root: string;
   ok: boolean;
 }
@@ -440,7 +447,7 @@ export type ConfigOutcome =
 /**
  * Resolve `--cwd`, load `manteen.json`, and report a failure exactly once.
  *
- * All five shells need this and each had written it: `loadConfig` reports
+ * All six configured-project shells need this and each had written it: `loadConfig` reports
  * authored problems by RETURNING (there can be several at once — three unbacked
  * aliases are three edits), while an EACCES on `tsconfig.json` or a bug still
  * throws. Both are exit 2, because both happened before there was anything to

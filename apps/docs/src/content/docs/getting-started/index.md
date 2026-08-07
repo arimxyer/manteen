@@ -87,6 +87,41 @@ npx manteen update @house/article-card --take-upstream
 ```
 
 That reset also rebuilds a missing or corrupt pristine base. Files removed upstream are reported
-and retained; Manteen does not infer deletions or renames.
+and retained by `update`; Manteen does not infer deletions or renames.
+
+:::caution[Upstream removal is not in public 0.3.0]
+The repository's unreleased client implements the explicit removal workflow below, but the
+currently published `manteen@0.3.0` package does not contain it. This is not a `0.4.0` release
+announcement.
+:::
+
+In a source build containing that command (shown as `manteen` below), first discover every file
+proven absent from the same current registry item:
+
+```bash
+manteen remove --upstream-removed --dry-run
+```
+
+Then preview the exact POSIX receipt destination you intend to remove, and rerun without
+`--dry-run` only after reviewing it:
+
+```bash
+manteen remove --upstream-removed --file src/components/ui/old.tsx --dry-run
+manteen remove --upstream-removed --file src/components/ui/old.tsx
+```
+
+If the local file differs from its pristine upstream base, the selection refuses as adapted.
+Preserve the file, or repeat the same exact selection with the additional destructive intent only
+when discarding that adaptation is deliberate:
+
+```bash
+manteen remove --upstream-removed \
+  --file src/components/ui/old.tsx \
+  --discard-adapted
+```
+
+The removal transaction covers that project file, its obsolete base, and its exact receipt record.
+It does not infer a rename or uninstall the item, dependencies, theme contributions, or managed
+styles. A real run without an exact `--file` refuses as usage rather than broadening the deletion.
 
 Next, learn how to [build your own registry](../registry-authors/).

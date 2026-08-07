@@ -128,6 +128,7 @@ manteen diff
 manteen update
 manteen update --take-upstream # explicitly discard local source adaptations
 manteen update --no-verify     # skip configured project checks for this run
+manteen remove --upstream-removed --dry-run
 ```
 
 Every install is recorded in `manteen.lock.json`, with exact pristine upstream bases under
@@ -143,6 +144,39 @@ tracked — but it does read your `.gitignore`, and if a rule there hides `.mant
 raised to a warning that names what breaks. The check runs one way only: a recognized rule is
 evidence of a problem, while no matching rule is not evidence the state is committed. That is why
 the reminder prints either way and nothing is ever gated on the answer.
+
+The repository's unreleased client also implements explicit pruning for ordinary files that their
+same registry item no longer publishes. The public `manteen@0.3.0` package does **not** contain this
+command yet. In a source build that includes it, discover every proven candidate first:
+
+```bash
+manteen remove --upstream-removed --dry-run
+```
+
+A real run removes only exact POSIX, root-relative receipt destinations named through repeated
+`--file` flags. Preview the same selection before applying it:
+
+```bash
+manteen remove --upstream-removed --file src/components/ui/old.tsx --dry-run
+manteen remove --upstream-removed --file src/components/ui/old.tsx
+```
+
+If a candidate differs from its pristine upstream base, Manteen reports it as adapted and refuses
+the selection. Removing it requires both the exact `--file` and the separate destructive intent:
+
+```bash
+manteen remove --upstream-removed \
+  --file src/components/ui/old.tsx \
+  --discard-adapted
+```
+
+The transaction removes the selected project file when present, its obsolete pristine base, and
+its exact receipt record through one rollback journal. It does not infer renames, uninstall
+packages, remove directories or items, or rewrite theme and managed-styles artifacts. An
+unselected dry run is discovery only; a real run without `--file` exits 2. Resolution, selection,
+state, preflight, write, or rollback failures exit 1. There are no prompts and no `--all`, `--yes`,
+or `--force` escape hatches. Use `--json` for the same candidate, selection, receipt, transaction,
+diagnostic, and failure facts as one document.
 
 To have `update` check the resulting live project, opt into ordered `package.json` scripts in
 `manteen.json`:

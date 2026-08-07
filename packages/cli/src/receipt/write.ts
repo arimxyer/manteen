@@ -165,7 +165,8 @@ export function mergeReceipt(
       sourceUrl: item.sourceUrl,
       wireType: item.wireType,
       // Sticky: a transitive re-reach must not demote a user's explicit install.
-      // A future `manteen remove` is what clears it.
+      // D42's upstream-file pruning keeps it; only a separately contracted
+      // item uninstall may clear it.
       direct: (priorItem?.direct ?? false) || item.requestedBy.includes("<root>"),
       files,
     });
