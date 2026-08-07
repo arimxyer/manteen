@@ -1,9 +1,9 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
+  # Manual runs deliberately exercise the full matrix.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,8 +17,73 @@ jobs:
     name: Source, types, lint, guards
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      docs_only: ${{ steps.changed-paths.outputs.docs_only }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Classify changed paths
+        id: changed-paths
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || '' }}
+        run: |
+          # Fail closed: only a valid, non-empty pull-request diff containing
+          # exclusively documentation paths may skip the portability matrices.
+          echo "docs_only=false" >> "$GITHUB_OUTPUT"
+
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            exit 0
+          fi
+
+          sha_pattern='^[0-9a-fA-F]{40,64}$'
+          if [[ ! "$BASE_SHA" =~ $sha_pattern || ! "$HEAD_SHA" =~ $sha_pattern ]]; then
+            exit 0
+          fi
+          if ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null ||
+             ! git cat-file -e "$HEAD_SHA^{commit}" 2>/dev/null; then
+            exit 0
+          fi
+          if ! git merge-base "$BASE_SHA" "$HEAD_SHA" >/dev/null 2>&1; then
+            exit 0
+          fi
+
+          diff_file="$(mktemp)"
+          trap 'rm -f "$diff_file"' EXIT
+          if ! git diff --name-status -z --no-renames "$BASE_SHA...$HEAD_SHA" -- > "$diff_file"; then
+            exit 0
+          fi
+          if [[ ! -s "$diff_file" ]]; then
+            exit 0
+          fi
+
+          mapfile -d '' -t changes < "$diff_file"
+          if (( ${#changes[@]} == 0 || ${#changes[@]} % 2 != 0 )); then
+            exit 0
+          fi
+
+          for ((i = 0; i < ${#changes[@]}; i += 2)); do
+            status="${changes[i]}"
+            path="${changes[i + 1]}"
+
+            # Type changes and any future status are full-CI.
+            if [[ ! "$status" =~ ^[AMD]$ ]]; then
+              exit 0
+            fi
+
+            case "$path" in
+              README.md|docs/*|apps/docs/*|packages/cli/README.md|packages/cli/CHANGELOG.md|packages/registry-kit/README.md|packages/registry-kit/CHANGELOG.md)
+                ;;
+              *)
+                exit 0
+                ;;
+            esac
+          done
+
+          echo "docs_only=true" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v7
         with:
           node-version: "22.12.0"
@@ -45,6 +110,7 @@ jobs:
   built-node:
     name: Built Node ${{ matrix.node }} on ${{ matrix.os }}
     needs: quality
+    if: needs.quality.outputs.docs_only != 'true'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 25
     strategy:
@@ -81,6 +147,7 @@ jobs:
   packed-consumer:
     name: Packed consumer — ${{ matrix.manager }} on ${{ matrix.os }}
     needs: quality
+    if: needs.quality.outputs.docs_only != 'true'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
@@ -134,3 +201,29 @@ jobs:
         env:
           MANTEEN_E2E_PM: ${{ matrix.manager }}
         run: node --test packages/cli/e2e/packed-consumer.node-e2e.mjs
+
+  # Branch protection needs one stable check whether the matrices ran or were
+  # intentionally skipped for a docs-only PR.
+  ci-gate:
+    name: CI gate
+    needs: [quality, built-node, packed-consumer]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify required CI results
+        env:
+          DOCS_ONLY: ${{ needs.quality.outputs.docs_only }}
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          BUILT_NODE_RESULT: ${{ needs.built-node.result }}
+          PACKED_CONSUMER_RESULT: ${{ needs.packed-consumer.result }}
+        shell: bash
+        run: |
+          if [[ "$QUALITY_RESULT" != "success" ]]; then
+            exit 1
+          fi
+
+          if [[ "$DOCS_ONLY" == "true" ]]; then
+            [[ "$BUILT_NODE_RESULT" == "skipped" && "$PACKED_CONSUMER_RESULT" == "skipped" ]]
+          else
+            [[ "$BUILT_NODE_RESULT" == "success" && "$PACKED_CONSUMER_RESULT" == "success" ]]
+          fi
