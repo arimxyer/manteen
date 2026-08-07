@@ -77,8 +77,9 @@ export function verificationExecutionCommand(
  *
  * Killing only npm/pnpm/etc. is insufficient: a child verifier can retain the
  * stdout/stderr pipes that tinyexec is awaiting, so the timeout itself hangs.
- * `persist` below gives POSIX children their own process group; Windows exposes
- * the equivalent tree operation through taskkill.
+ * `persist` below gives POSIX children their own process group. Windows must
+ * retain ordinary `.cmd` stream semantics and exposes the tree operation
+ * through taskkill without detaching the child.
  */
 function terminateProcessTree(child: ReturnType<typeof x>["process"]): void {
   const pid = child?.pid;
@@ -146,7 +147,7 @@ export function createVerificationRunner(write: VerificationOutput): Verificatio
       const execution = x(command.executable, command.args, {
         throwOnError: false,
         nodePath: false,
-        persist: true,
+        persist: process.platform !== "win32",
         nodeOptions: {
           cwd,
           env: verificationEnvironment(cwd),
