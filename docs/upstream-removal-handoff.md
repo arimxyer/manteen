@@ -1,8 +1,9 @@
 # Upstream removal handoff
 
-Status: **contract frozen; implementation not started.** This is the prospective client-only
-`manteen@0.4.0` lifecycle milestone. It changes neither `manteen-kit@0.2.0`, receipt version 3 nor
-the registry interchange format, and it authorizes no tag, npm publication or Pages deployment.
+Status: **implemented and locally accepted; hosted acceptance, merge and release remain open.**
+This is the prospective client-only `manteen@0.4.0` lifecycle milestone. It changes neither
+`manteen-kit@0.2.0`, receipt version 3 nor the registry interchange format, and it authorizes no
+tag, npm publication or Pages deployment.
 
 ## The problem
 
@@ -52,11 +53,13 @@ Candidate identity is the pair:
 ```
 
 The resolution set is exact: seed it with **every** `receipt.items[].id`, including an item whose
-`files` array is empty or whose only remaining provenance is theme/styles state, then resolve the
-complete current transitive `registryDependencies` closure from those roots after configured
-resolutions. A dependency newly introduced upstream is therefore in scope even when it has no
-receipt row. "Another current item" below means another member of this bounded set; the command
-does not pretend it has enumerated an entire registry universe.
+`files` array is empty or whose only remaining provenance is theme/styles state. Those receipt root
+ids are never rewritten by a name resolution—the candidate proof needs the same canonical id.
+Configured resolutions still apply while walking the complete current transitive
+`registryDependencies` closure from those roots. A dependency newly introduced upstream is
+therefore in scope even when it has no receipt row. "Another current item" below means another
+member of this bounded set; the command does not pretend it has enumerated an entire registry
+universe.
 
 All of the following must be true:
 
@@ -100,9 +103,10 @@ when present and its exact receipt file record. An absent base is already absent
 such for stale-plan preflight. Here `corrupt` means a **readable regular** base whose raw-byte hash
 does not equal the receipt's `baseSha256`; it may be removed as obsolete Manteen-owned state and its
 contents are never used to decide whether project source is adapted. Every existing source, base
-and receipt path must be a readable regular file. A symlink, directory, other non-regular type, or
-lstat/read failure refuses as `remove-path-unsupported`, because the byte journal cannot prove and
-restore that filesystem object exactly.
+and receipt path must be a readable regular file reached without a symlink or junction in any
+project-relative path component. A symlink, junction, directory, other non-regular type, or
+lstat/read failure refuses as `remove-path-unsupported`, because the byte journal cannot prove
+containment and restore that filesystem object exactly.
 
 ## Refusals
 
@@ -268,5 +272,40 @@ The safest implementation order is:
    public-consumer lifecycle proof pass.
 
 The kit remains `0.2.0`. No registry item or Pages deployment is required for the CLI capability.
-README, changelog and public CLI reference must describe the final implemented surface before a
-future tag; this handoff must retain contract-only status until source and built-Node evidence exist.
+README, changelog and public CLI reference describe the implemented-but-unreleased surface. A
+future tag still requires separate hosted matrix and fresh public-consumer lifecycle acceptance.
+
+## Local implementation receipt — 2026-08-07
+
+The implementation adds a narrow removal validator/planner, pure candidate discovery and receipt
+projection, a dedicated preflighted journal transaction, the CLI/text/JSON shell, public docs, and
+one self-contained built-Node lifecycle. The built lifecycle creates its registry and consumer in
+`mkdtemp()`: no probe writes into this repository's `node_modules`.
+
+One final local gate pass from the feature branch reported:
+
+- `bun run test`: 300 passed, 0 failed;
+- `bun run typecheck`: workspace guard clean, TypeScript clean, Astro 0 errors with two existing
+  deprecation hints;
+- `bun run lint`: 300 files checked, no fixes required;
+- `bun run guard`: all five guards clean, including 57 diagnostics emitted/documented and none
+  pending;
+- `bun run build:registry && bun --cwd=packages/cli run build`: 22 registry items conformed and the
+  flat Node 22.12 CLI bundle built; and
+- `node --test packages/cli/e2e/*.node-e2e.mjs`: 128 passed, 0 failed, one opt-in package-manager
+  smoke skipped.
+
+Independent review then found and closed three issues before commit: parent symlink/junction
+containment, relative wire-path rendering, and unrelated receipt-array reordering. The five new
+regressions are included in the 300-test result above. After rebuilding the shipped bundle, the
+dedicated built-Node removal lifecycle passed both of its tests again.
+
+The new built-Node test covers help/usage, an unavailable receipt root withholding every candidate,
+cross-owner reassignment refusal, literal POSIX selection and raw CRLF classification, selected
+preview, unchanged and locally-missing cleanup, adapted refusal plus exact
+`--discard-adapted`, zero-file/direct receipt retention, unrelated-byte preservation, JSON, and the
+observed state-versioning advisory.
+
+This is local product evidence for the built CLI, not hosted Windows/macOS/Linux evidence and not a
+public npm consumer receipt. No version was bumped, tag created, package published, Pages workflow
+run, or release claim made.

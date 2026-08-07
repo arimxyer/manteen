@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+- Add `manteen remove --upstream-removed` as a separate, explicit lifecycle command for ordinary
+  receipt-owned files their same current registry item no longer publishes. An unselected
+  `--dry-run` discovers proven candidates; real removal requires repeated exact POSIX `--file`
+  selections.
+- Classify pruning candidates against their pristine `baseSha256` as unchanged, adapted, or
+  already missing. Adapted source refuses unless the same exact selection also carries
+  `--discard-adapted`; there is no broad `--all`, `--yes`, or `--force` deletion path.
+- Remove selected project files, obsolete pristine bases, and their exact receipt records through
+  one rollback journal with the receipt written last. Resolution is fail-closed across every
+  receipt item and its current dependency closure, and never infers a rename, removes a package or
+  item, or rewrites theme/managed-styles artifacts.
+- Add deterministic text and JSON removal results, including candidate state, committed removals,
+  projected and observed receipt state, diagnostics, and rollback failures without embedding file
+  contents or expanded registry secrets. Built-Node acceptance covers literal POSIX selectors and
+  raw CRLF byte classification on the hosted operating-system matrix.
+
 ## 0.3.0
 
 - Bound each post-update verification check with a wall-clock ceiling, five minutes by default and

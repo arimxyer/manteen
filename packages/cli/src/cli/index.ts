@@ -9,7 +9,7 @@
  * `renderOutcome` were private to this module, which meant every W5 command
  * either copied them (`info` copied three verbatim) or asked for one to be
  * passed in (`diff` had to — this module has a shebang and RUNS a program on
- * import, so nothing may import it). They are now in a leaf module that all five
+ * import, so nothing may import it). They are now in a leaf module that all six
  * shells share. What stays here is argv, flags, and the exit code.
  *
  * Exit convention, extending the kit's (`packages/registry-kit/src/cli/index.ts`
@@ -39,11 +39,15 @@ import type { InitFlags } from "../commands/init";
 import { runInit } from "../commands/init";
 import type { ListFlags } from "../commands/list";
 import { runList } from "../commands/list";
+import type { RemoveFlags } from "../commands/remove";
+import { runRemove } from "../commands/remove";
 import type { UpdateFlags } from "../commands/update";
 import { runUpdate } from "../commands/update";
 import { blockingExitCode } from "../plan/diagnostics";
 import { plan } from "../plan/index";
 import type { ApplyOptions, ApplyOutcome, Plan, PlanOptions } from "../plan/types";
+import { applyRemoval } from "../removal/apply";
+import { planRemoval } from "../removal/plan";
 import { interactiveFromProcess } from "../ui";
 import {
   loadProjectConfig,
@@ -199,7 +203,7 @@ async function runAdd(refs: string[], flags: AddFlags, command: Command): Promis
 
 const program = new Command()
   .name("manteen")
-  .description("Install Mantine components from a registry into your project.")
+  .description("Install and maintain Mantine components from a registry.")
   // Commander's default is `-V, --version`. Left alone on purpose: `-v` is
   // reserved for `--verbose`, which phase 4 adds and which users type far more.
   .version(version)
@@ -271,7 +275,7 @@ program
   });
 
 /**
- * The four read-and-maintain commands.
+ * The five read-and-maintain commands.
  *
  * Registered AFTER `.exitOverride()` for the reason stated on it: a subcommand
  * copies the exit callback from its parent at CREATION time, so a command built
@@ -332,6 +336,29 @@ program
   .option("--pm <name>", "override package-manager detection (npm, pnpm, yarn, bun, deno)")
   .action(async (refs: string[], flags: UpdateFlags, command: Command) => {
     process.exitCode = await runUpdate(refs, flags, command);
+  });
+
+const collectFile = (value: string, previous: string[]): string[] => [...previous, value];
+
+program
+  .command("remove")
+  .description("remove exact receipt-owned files proven absent upstream")
+  .option("--cwd <dir>", "project directory containing manteen.json", process.cwd())
+  .option("--upstream-removed", "use the explicit upstream-file pruning mode")
+  .option(
+    "--file <path>",
+    "select one exact POSIX receipt destination (repeatable)",
+    collectFile,
+    [],
+  )
+  .option(
+    "--discard-adapted",
+    "also remove selected files whose bytes differ from pristine upstream",
+  )
+  .option("--dry-run", "discover or preflight selected removals; write nothing")
+  .option("--json", "emit candidates, outcome, diagnostics and notes as one JSON document")
+  .action(async (flags: RemoveFlags) => {
+    process.exitCode = await runRemove(flags, { plan: planRemoval, apply: applyRemoval });
   });
 
 /**

@@ -70,6 +70,13 @@ export type DiagnosticCode =
   | "merge-base-unreadable"
   | "update-conflict"
   | "verification-script-unavailable"
+  // ---- Wp explicit upstream-file removal ---------------------------------
+  | "remove-file-unowned"
+  | "remove-file-still-published"
+  | "remove-file-reassigned"
+  | "remove-file-artifact"
+  | "remove-adapted-file"
+  | "remove-path-unsupported"
   /**
    * §5a resolution 4: the version gate reads `@mantine/core` ONLY, so a
    * `@mantine/hooks@^9` sitting on a mismatched major would otherwise pass in
@@ -481,7 +488,9 @@ export interface ReceiptItem {
   wireType: string;
   /** Appeared as a root ref in some run. Sticky across refreshes
    *  (`prior.direct || incoming.direct`) because a transitive re-reach must not
-   *  demote a user's explicit install. A future `manteen remove` clears it. */
+   *  demote a user's explicit install. D42's file-pruning remove keeps it even
+   *  when `files` becomes empty; only a future item-uninstall contract may
+   *  clear it. */
   direct: boolean;
   /** Sorted by destination. The resolved theme destination NEVER appears here:
    *  a theme file is folded, not owned (D5). */

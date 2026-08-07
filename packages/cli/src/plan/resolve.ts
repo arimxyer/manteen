@@ -120,6 +120,16 @@ interface WalkNode {
   requestedBy: Set<CanonicalId | "<root>">;
 }
 
+export interface ResolveOptions {
+  /**
+   * Add/update keep D9's historical behavior of applying name resolutions to
+   * command-line roots. D42 seeds from exact receipt item ids instead: the
+   * same-id omission proof cannot be made if a root is silently rewritten.
+   * Transitive registryDependencies still use configured resolutions.
+   */
+  resolveRootRefs?: boolean;
+}
+
 /** One applied resolution, accumulated so D9's warning is emitted once. */
 interface AppliedResolution {
   name: string;
@@ -134,6 +144,7 @@ export async function resolve(
   config: LoadedConfig,
   refs: readonly string[],
   validator?: ItemValidator,
+  options: ResolveOptions = {},
 ): Promise<ResolvedGraph> {
   // biome-ignore lint/suspicious/noAssignInExpressions: lazy memoisation, so the two schema reads happen once per process rather than once per resolve().
   const validate = validator ?? (sharedValidator ??= createItemValidator());
@@ -258,7 +269,7 @@ export async function resolve(
       continue;
     }
 
-    const resolved = resolveRef(parsed, "<root>");
+    const resolved = options.resolveRootRefs === false ? parsed : resolveRef(parsed, "<root>");
     if ("invalid" in resolved) {
       diagnostics.push(resolved.invalid);
       continue;
