@@ -211,9 +211,11 @@ exit-1 results were the conflict refusal and the applied-but-unverified final up
 assertion wrapper exited 0 after proving them. No conflict markers or verification certificate
 were written.
 
-This closes distribution and lifecycle execution for the line-oriented merge contract. It does
-not widen the evidence boundary above or deploy the source catalog: public Pages still serves 14
-items while the checkout contains 22.
+This closes distribution and lifecycle execution for the line-oriented merge contract. That
+controlled receipt did not itself deploy the source catalog. The separate post-release Pages
+receipt subsequently deployed all 22 items from commit
+`8853a720352c8842ce6957a494f919ec7cccda67` in accepted run
+[`31198437310`](https://github.com/arimxyer/manteen/actions/runs/31198437310).
 
 ## AST investigation — 2026-08-06
 

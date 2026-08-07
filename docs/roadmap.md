@@ -20,16 +20,18 @@ and something a stranger can depend on, and how the remaining work is sequenced.
 Today: all six criteria are implemented through the public `manteen@0.3.0` client line. W6 `init`
 is complete through its built-Node acceptance tier, W7 closed with a green hosted runtime, OS and
 package-manager matrix, and W8 established provenance-bearing releases. The separately versioned
-`manteen-kit` remains public at `0.2.0`. The live accepted Pages deployment is the docs-site
-milestone at commit `8d2fa0128bbdee4ee895aad349c7da4ae492811b`, run
-`30648122312`; it serves the same 14-item catalog published for `0.2.0`.
+`manteen-kit` remains public at `0.2.0`. The accepted 22-item Pages content milestone is commit
+`8853a720352c8842ce6957a494f919ec7cccda67`, run
+[`31198437310`](https://github.com/arimxyer/manteen/actions/runs/31198437310); it serves the complete
+22-item catalog.
 
 The client-only `manteen@0.3.0` release now carries Wu's receipt v3, committed pristine bases and
 three-way updates; the apply-time state-versioning advisory; and Wv's opt-in post-update project
 verification. Merge commit `123d3c1a1ef047994326cdcb3ffba7cc07e3dea9`, the signed
 `manteen-v0.3.0` tag, green main/release workflows, npm publication with SLSA provenance, a fresh
 public npm-plus-HTTPS consumer, and controlled two-revision update acceptance are recorded in the
-[`0.3 release handoff`](v0.3-release-handoff.md). That release did not dispatch Pages.
+[`0.3 release handoff`](v0.3-release-handoff.md). The tagged package release itself did not
+dispatch Pages; the separately reviewed post-release registry/docs train subsequently did.
 
 ## Known gaps, by kind
 
@@ -68,11 +70,11 @@ boundary is in the [`0.3 release handoff`](v0.3-release-handoff.md).
 `SECURITY.md` and contributor ceremony remain deliberately deferred until the repository has
 outside contributors.
 
-**Content.** The source catalog now has 22 items; the separately deployed public Pages registry
-still has 14. The eight newer source items are not public registry evidence until that release
-train receives its own deployment and acceptance receipts. The initial six-item tranche and the
-Carousel/Dropzone extension stress cases compile, install and production-build in disposable
-consumers; their exact evidence and non-evidence are recorded in the
+**Content.** The source catalog and separately deployed public Pages registry now both have 22
+items. The eight newest item endpoints passed exact-byte public HTTP acceptance in Pages run
+`31198437310`. The initial six-item tranche and the Carousel/Dropzone extension stress cases
+compile, install and production-build in disposable consumers; their exact evidence and
+non-evidence are recorded in the
 [`Wc handoff`](wc-registry-content-handoff.md). The
 [`required-global-styles contract`](global-styles-handoff.md) is implemented, released and accepted
 through a fresh public npm-plus-HTTPS Vite consumer. A
@@ -262,10 +264,10 @@ published and resolved before the client tag was pushed. The exact hosted and np
 Future releases keep the same dependency-first rule without inventing a package release. When kit
 and client both change, publish and verify `manteen-kit` before tagging `manteen`. A client-only
 release first verifies that its declared public kit range resolves, then tags only `manteen`.
-Pages remains a separate accepted deployment boundary. The `0.3.0` client release does not
-dispatch it: this checkout also carries pending registry and docs-site work, so a dispatch would
-publish that broader train and needs its own review and receipts. Pages does not deploy on every
-`main` push because doing so could expose items that require an unpublished client contract. The
+Pages remains a separate accepted deployment boundary. The tagged `0.3.0` client release did not
+dispatch it; the post-release PR #11/PR #12 registry/docs train dispatched only after its own
+review and receipts. Pages does not deploy on every `main` push because doing so could expose
+items that require an unpublished client contract. The
 [`0.2 release handoff`](v0.2-release-handoff.md) records the first completed two-package use of
 that sequence, and the [`0.3 release handoff`](v0.3-release-handoff.md) records the completed
 client-only release.
