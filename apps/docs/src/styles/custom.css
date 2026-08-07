@@ -464,6 +464,11 @@
   text-decoration: none;
 }
 
+/* The House Theme preview's small metadata labels need AA contrast against its active panel. */
+.registry-card__preview dl dt {
+  color: color-mix(in srgb, var(--manteen-text-faint) 95%, var(--manteen-text-muted));
+}
+
 .registry-card__body {
   display: flex;
   min-height: 0;
