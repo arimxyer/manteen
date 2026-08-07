@@ -53,6 +53,13 @@ export interface MantineConfig {
   styles?: string;
   tsconfig?: string;
   resolutions?: Record<string, string>;
+  /** Project-owned package scripts run after a successful update transaction. */
+  verification?: {
+    /** Authored order is execution order. Names resolve against root package.json. */
+    update: string[];
+    /** Ceiling for ONE check. Absent means `DEFAULT_VERIFICATION_TIMEOUT_MS`. */
+    timeoutMs?: number;
+  };
 }
 
 /** A registry in normalized form. Every template field is REDACTED — `${VAR}` literal. */

@@ -232,22 +232,19 @@ describe("managed stylesheet composition", () => {
   });
 });
 
-describe("receipt v2", () => {
-  test("validates v1 against its frozen schema and migrates only in memory", () => {
+describe("receipt v3", () => {
+  test("refuses legacy receipts because v3 requires exact merge bases", () => {
     const v1 = `${JSON.stringify({ lockfileVersion: 1, items: [], theme: null }, null, 2)}\n`;
     const result = parseReceipt(v1, createReceiptValidator());
 
-    expect(result).toEqual({
-      ok: true,
-      receipt: { lockfileVersion: 2, items: [], theme: null, styles: null },
-    });
+    expect(result).toMatchObject({ ok: false, reason: "unsupported-version", sawVersion: 1 });
     expect(v1).toContain('"lockfileVersion": 1');
   });
 
-  test("validates a v2 style provenance record", () => {
+  test("validates a v3 style provenance record", () => {
     const result = parseReceipt(
       JSON.stringify({
-        lockfileVersion: 2,
+        lockfileVersion: 3,
         items: [],
         theme: null,
         styles: {

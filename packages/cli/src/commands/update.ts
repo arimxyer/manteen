@@ -10,31 +10,12 @@
  * receipt written last. A command that re-implemented writing would get none of
  * them, and would get none of them *silently*.
  *
- * ── The overwrite question is deliberately NOT special-cased ────────────────
- * Every file an update actually changes has disposition `overwrite` — that is
- * what "changed" means here — so `update` flows through W4's decision surface
- * exactly as `add` does: the grouped prompt, `--overwrite`, `--no-overwrite`,
- * `--yes`. Two reasons that is right rather than merely convenient:
- *
- *  - A locally modified file is indistinguishable, at the disposition level,
- *    from a file the registry changed. Updating either one replaces bytes on
- *    disk. `decide.ts`'s `hintFor` already tells the two apart in the prompt
- *    ("edited since" vs "item changed upstream") — its fourth case was written
- *    for precisely this command — so the user gets the distinction where it is
- *    actionable, per file, instead of a global flag that guesses for them.
- *  - `PlanOptions.overwrite` is one boolean for the whole run. There is no
- *    per-file channel, so "auto-overwrite the untouched ones, ask about the
- *    edited ones" cannot be expressed without bypassing the gate — and the
- *    bypass is exactly the thing that would silently discard someone's edit.
- *
- * CONSEQUENCE THE INTEGRATOR MUST SURFACE: a non-interactive `manteen update`
- * with neither `--overwrite` nor `--yes` refuses, essentially always, because
- * `checkDestinations` emits `destination-exists` at error severity for every
- * changed file — and `--dry-run` does not exempt it, since `dryRun` lives on
- * `ApplyOptions` and `plan()` never sees it, so a CI PREVIEW is unavailable
- * without `--overwrite` too. (Interactive is fine either way: the same gate
- * downgrades to `info` when there is a prompt to ask at.) That is §1's refusal
- * table working as specified, not a defect — but the help text has to say it.
+ * ── Ordinary source is a three-way update ───────────────────────────────────
+ * `plan()` receives `operation: "update"` and computes from the committed
+ * pristine base, the project file and current registry bytes. Conflict-free
+ * results apply without an overwrite prompt; conflicts refuse before apply.
+ * `--take-upstream` is the one explicit destructive spelling and is never
+ * inferred from `--yes` or interactivity.
  *
  * ── The theme ───────────────────────────────────────────────────────────────
  * SETTLED (roadmap, "Decisions taken"): update re-merges the theme DIRECTLY,
@@ -80,7 +61,10 @@
  *                                            cancelled, `outcome.ok` is false)
  *   applied + outcome.failure !== null    -> 1  (stale-plan, install-failed,
  *                                            write-failed, rollback-failed)
- *   applied + outcome.ok                  -> 0
+ *   applied + outcome.ok + verification
+ *             failed                      -> 1  (the coherent update remains applied)
+ *   applied + outcome.ok + verification
+ *             not failed                  -> 0
  *
  * `runAdd` in `cli/index.ts` is the reference for all five rows, including the
  * deliberate `force: false` on `blockingExitCode` — `plan.diagnostics` has
@@ -104,6 +88,7 @@ import {
   renderNotes,
   renderOutcome,
   renderThrown,
+  renderUpdateStateAdvisory,
   sortNotes,
 } from "../cli/render";
 import type { LoadedConfig } from "../config/types";
@@ -126,7 +111,14 @@ import { createReceiptReader, createReceiptValidator } from "../receipt/load";
 import { toReceiptPath } from "../receipt/path";
 import type { ReceiptReader, ReceiptValidator } from "../receipt/read";
 import { readReceipt } from "../receipt/read";
-import { interactiveFromProcess } from "../ui";
+import {
+  createVerificationPorts,
+  plannedVerificationOutcome,
+  type VerificationOutput,
+  type VerificationPorts,
+  verifyAppliedUpdate,
+} from "../verification/run";
+import type { VerificationOutcome } from "../verification/types";
 
 const EXIT_OK = 0;
 const EXIT_REFUSED = 1;
@@ -141,10 +133,10 @@ const PACKAGE_MANAGER_NAMES: string[] = [...new Set(packageManagers.map((pm) => 
  * `PlanOptions` plus the two flags that are `update`'s own.
  *
  * Extended rather than restated so the flag set cannot drift from what `plan()`
- * accepts: `force`, `overwrite`, `interactive` and `packageManager` are passed
- * through verbatim and mean exactly what they mean for `add`.
+ * accepts: force, interactivity and package-manager selection are passed
+ * through; overwrite/reset is deliberately update-specific.
  */
-export interface UpdateOptions extends PlanOptions {
+export type UpdateOptions = Omit<PlanOptions, "overwrite" | "operation" | "takeUpstream"> & {
   /**
    * `--dry-run`. Delegated to `ApplyOptions.dryRun` — D19's preview is a
    * property of the path this command reuses, not something re-implemented
@@ -160,7 +152,9 @@ export interface UpdateOptions extends PlanOptions {
    * otherwise unreachable by any command.
    */
   all?: boolean;
-}
+  /** Explicitly discard local adaptations for files still shipped upstream. */
+  takeUpstream?: boolean;
+};
 
 /**
  * Every I/O edge, injected — so the whole command is drivable in-process with
@@ -173,12 +167,8 @@ export interface UpdateOptions extends PlanOptions {
  */
 export interface UpdatePorts {
   plan: PlanFn;
-  /**
-   * `apply`'s third parameter is optional, so the real `apply` is assignable
-   * here. It is threaded rather than dropped so a test can inject phase 1's
-   * overwrite prompt — the decision `update` most needs to exercise — without
-   * a pseudo-terminal and without re-wrapping.
-   */
+  /** `apply`'s third parameter remains threaded for programmatic parity. Update
+   * reaches it only after source conflicts were resolved in plan. */
   apply: (plan: Plan, options: ApplyOptions, ports?: ApplyPorts) => Promise<ApplyOutcome>;
   applyPorts?: ApplyPorts;
   /** `createReceiptReader()` in production. */
@@ -188,16 +178,46 @@ export interface UpdatePorts {
   /** `hashFileBytes` in production; MUST throw for any failure that is not
    *  ENOENT (see `FileHasher`). */
   hash: FileHasher;
+  /** Post-apply only. It is intentionally not an ApplyPort. */
+  verification: VerificationPorts;
 }
 
-export function createUpdatePorts(): UpdatePorts {
+export function createUpdatePorts(
+  output: VerificationOutput = (chunk) => {
+    process.stderr.write(chunk);
+  },
+): UpdatePorts {
+  const read = createReceiptReader();
+  const validate = createReceiptValidator();
   return {
     plan,
     apply,
-    read: createReceiptReader(),
-    validate: createReceiptValidator(),
+    read,
+    validate,
     hash: hashFileBytes,
+    verification: {
+      ...createVerificationPorts(output, hashFileBytes),
+      readReceipt: read,
+      validateReceipt: validate,
+    },
   };
+}
+
+function unavailableVerification(
+  config: LoadedConfig,
+  options: UpdateOptions,
+  planned: Plan,
+): VerificationOutcome {
+  if (config.raw.verification === undefined) {
+    return { status: "not-configured", checks: [], failure: null };
+  }
+  if (options.verify === false) return { status: "skipped", checks: [], failure: null };
+  if (planned.verification === null) {
+    // Reachable only on a refused plan. An ok plan with configured verification
+    // must carry the exact definitions the runner will revalidate.
+    return { status: "planned", checks: [], failure: null };
+  }
+  return plannedVerificationOutcome(planned.verification);
 }
 
 /**
@@ -243,7 +263,7 @@ export async function update(
   // `installed.notes` carries `no-receipt` / `receipt-unreadable`. Both yield an
   // empty item list, so both fall out below as "no candidates" — which is the
   // point: an UNREADABLE receipt must never reach plan()/apply(). Planning zero
-  // refs under `--force` would push past `receipt-unreadable`, and phase 6 would
+  // refs under `--force` would push past `receipt-unreadable`, and phase 7 would
   // then merge from `null` and delete every ownership record in the file.
   const notes: InventoryNote[] = [...installed.notes];
   const skipped: UpdateSkip[] = [];
@@ -259,9 +279,11 @@ export async function update(
 
   const planned = await ports.plan(config, [...candidates], {
     force: options.force,
-    overwrite: options.overwrite,
     interactive: options.interactive,
     packageManager: options.packageManager,
+    operation: "update",
+    takeUpstream: options.takeUpstream,
+    verify: options.verify,
   });
 
   const verdict = classify(candidates, planned, config);
@@ -282,28 +304,40 @@ export async function update(
    * back `up-to-date`.
    *
    * Short-circuiting on "nothing changed" looks like a free optimisation and is
-   * not: an all-`identical` plan is exactly the run `apply/index.ts` phase 6
+   * not: an all-`identical` plan is exactly the run `apply/index.ts` phase 7
    * calls out as the most valuable one to record — a destination that already
    * holds our bytes but has no ownership record (a new transitive item, or a
    * project installed before receipts existed) gets claimed by that run and by
    * no other. apply is a no-op when there is genuinely nothing to do: identical
-   * files are never written, and phase 6 is gated on the receipt BYTES
+   * files are never written, and phase 7 is gated on the receipt BYTES
    * differing, so an up-to-date project ends with an untouched tree.
    */
   const outcome = await ports.apply(
     planned,
     {
-      interactive: options.interactive,
-      overwrite: options.overwrite,
+      // Source conflicts were decided in plan. `true` means "apply that exact
+      // conflict-free result", not "replace with pristine upstream".
+      interactive: false,
+      overwrite: true,
       dryRun: options.dryRun,
     },
     ports.applyPorts,
   );
 
+  let verification = unavailableVerification(config, options, planned);
+  if (verification.status === "planned" && planned.verification !== null) {
+    if (!outcome.ok) {
+      verification = { status: "skipped", checks: [], failure: null };
+    } else if (!outcome.dryRun) {
+      verification = await verifyAppliedUpdate(planned, planned.verification, ports.verification);
+    }
+  }
+
   return {
     kind: "applied",
     plan: planned,
     outcome,
+    verification,
     selected: verdict.selected,
     skipped: sortSkips(skipped),
     notes,
@@ -506,10 +540,9 @@ function classify(
   );
 
   /**
-   * `identical` is plan()'s verdict that the bytes on disk already equal what
-   * the registry serves — the only disposition that means "no change". Both
-   * `create` (the file is gone; update restores it) and `overwrite` (the file
-   * moved, on either side) are real work.
+   * `identical` means update proposes no destination write. `create` and
+   * `overwrite` are real work after the three-way planner has either chosen
+   * incoming bytes or produced a conflict-free merge.
    */
   const moved = (item: PlanItem): boolean =>
     themeContributors.has(item.id) || item.files.some((file) => file.disposition !== "identical");
@@ -525,12 +558,20 @@ function classify(
     }
     if (moved(item)) continue;
 
+    const localOnly = item.files.some(
+      (file) =>
+        file.priorOwner !== null &&
+        file.upstream.sha256 === file.priorOwner.baseSha256 &&
+        file.existing !== null &&
+        file.existing.sha256 !== file.priorOwner.baseSha256,
+    );
+
     skipped.push({
       id,
-      reason: "up-to-date",
-      // "its own files" rather than "nothing changed": a dependency of this item
-      // may well have moved, and `selected` is where that is said.
-      detail: `${id} already matches what its registry serves; none of its own files changed.`,
+      reason: localOnly ? "local-only" : "up-to-date",
+      detail: localOnly
+        ? `${id} has local adaptations and no upstream source change; update preserved the project bytes.`
+        : `${id} needs no source write; none of its own files changed.`,
     });
   }
 
@@ -636,9 +677,11 @@ function toUpdateJson(
   root: string,
   result: UpdateResult,
   ok: boolean,
+  fallbackVerification: VerificationOutcome,
 ): JsonEnvelope & Record<string, unknown> {
   const plan = result.kind === "nothing-to-do" ? null : result.plan;
   const outcome = result.kind === "applied" ? result.outcome : null;
+  const verification = result.kind === "applied" ? result.verification : fallbackVerification;
 
   return {
     command: "update",
@@ -683,6 +726,32 @@ function toUpdateJson(
       outcome?.failure == null
         ? null
         : { kind: outcome.failure.kind, message: outcome.failure.message },
+    updateState:
+      outcome === null
+        ? null
+        : {
+            changed: outcome.updateState.changed,
+            versioningRequired: outcome.updateState.changed,
+          },
+    verification: {
+      status: verification.status,
+      checks: verification.checks.map((check) => ({
+        script: check.script,
+        command: check.command,
+        result: check.result,
+        exitCode: check.exitCode,
+        signal: check.signal,
+      })),
+      failure:
+        verification.failure === null
+          ? null
+          : verification.failure.kind === "managed-byte-drift"
+            ? {
+                ...verification.failure,
+                paths: verification.failure.paths.map((path) => toReceiptPath(path, root)),
+              }
+            : verification.failure,
+    },
     diagnostics: plan?.diagnostics ?? [],
     notes: result.notes,
   };
@@ -697,10 +766,9 @@ export interface UpdateFlags {
   dryRun?: boolean;
   force?: boolean;
   json?: boolean;
-  /** `undefined` until commander says the user typed one of the two spellings;
-   *  `false` means `--no-overwrite`. See `overwriteFrom`. */
-  overwrite?: boolean;
-  yes?: boolean;
+  takeUpstream?: boolean;
+  /** Commander sets false only for --no-verify. */
+  verify?: boolean;
   /** D15's detection override. */
   pm?: string;
 }
@@ -720,7 +788,7 @@ export interface UpdateFlags {
 export async function runUpdate(
   refs: readonly string[],
   flags: UpdateFlags,
-  command: Pick<Command, "getOptionValueSource">,
+  _command: Pick<Command, "getOptionValueSource">,
   streams: Streams = PROCESS_STREAMS,
 ): Promise<number> {
   const loaded = loadProjectConfig(flags.cwd, streams.stderr);
@@ -743,9 +811,10 @@ export async function runUpdate(
     all: flags.all,
     dryRun: flags.dryRun,
     force: flags.force,
-    overwrite: overwriteFrom(flags, command),
-    interactive: interactiveFromProcess({ yes: Boolean(flags.yes) }),
+    interactive: false,
     packageManager: flags.pm as UpdateOptions["packageManager"],
+    takeUpstream: flags.takeUpstream,
+    verify: flags.verify,
   };
 
   // `update()` catches nothing on purpose (see the module docblock): the receipt
@@ -754,7 +823,7 @@ export async function runUpdate(
   // gives a throw out of `plan()`.
   let result: UpdateResult;
   try {
-    result = await update(config, refs, options);
+    result = await update(config, refs, options, createUpdatePorts(streams.stderr));
   } catch (error) {
     streams.stderr("error  update\n");
     streams.stderr(renderThrown(error));
@@ -762,9 +831,15 @@ export async function runUpdate(
   }
 
   const exit = updateExitCode(result);
+  const fallbackVerification: VerificationOutcome =
+    config.raw.verification === undefined
+      ? { status: "not-configured", checks: [], failure: null }
+      : { status: "skipped", checks: [], failure: null };
 
   if (flags.json === true) {
-    streams.stdout(renderJson(toUpdateJson(config.root, result, exit === EXIT_OK)));
+    streams.stdout(
+      renderJson(toUpdateJson(config.root, result, exit === EXIT_OK, fallbackVerification)),
+    );
     return exit;
   }
 
@@ -792,27 +867,12 @@ export async function runUpdate(
   );
   streams.stdout(renderSelected(result.selected));
   streams.stderr(renderApplyFailure(result.outcome, result.plan.root));
+  streams.stderr(renderUpdateStateAdvisory(result.outcome, result.plan));
+  if (result.outcome.ok) {
+    streams.stderr(renderVerification(result.verification, result.plan.root));
+  }
 
   return exit;
-}
-
-/**
- * Three states out of two flags, character for character `runAdd`'s.
- *
- * Commander presets `overwrite` to `true` when `--no-overwrite` is declared
- * alone, so the option's VALUE cannot distinguish "defaulted" from "typed" — the
- * source can, and it is the only reading that survives however commander orders
- * its defaults.
- *
- * D14: `--yes` implies `--overwrite`, but an explicit `--no-overwrite` wins.
- */
-function overwriteFrom(
-  flags: UpdateFlags,
-  command: Pick<Command, "getOptionValueSource">,
-): PlanOptions["overwrite"] {
-  const typed = command.getOptionValueSource("overwrite") === "cli";
-  if (typed) return flags.overwrite === false ? "no" : true;
-  return flags.yes ? true : undefined;
 }
 
 /**
@@ -832,5 +892,24 @@ export function updateExitCode(result: UpdateResult): number {
       : EXIT_REFUSED;
   }
   if (result.outcome.cancelled) return EXIT_CANCELLED;
-  return result.outcome.ok ? EXIT_OK : EXIT_REFUSED;
+  if (!result.outcome.ok) return EXIT_REFUSED;
+  return result.verification.status === "failed" ? EXIT_REFUSED : EXIT_OK;
+}
+
+export function renderVerification(verification: VerificationOutcome, root: string): string {
+  if (verification.status === "not-configured") return "";
+  if (verification.status === "skipped") return "skip  verification  --no-verify\n";
+
+  const lines = verification.checks.map(
+    (check) =>
+      `${verification.status === "planned" && check.result === "not-run" ? "planned" : check.result}  verification  ${check.command}`,
+  );
+  if (verification.failure !== null) {
+    lines.push(`error  verification  ${verification.failure.kind}`);
+    for (const line of verification.failure.message.split("\n")) lines.push(`  ${line}`);
+    if (verification.failure.kind === "managed-byte-drift") {
+      for (const path of verification.failure.paths) lines.push(`  ${toReceiptPath(path, root)}`);
+    }
+  }
+  return lines.length === 0 ? "" : `${lines.join("\n")}\n`;
 }

@@ -57,6 +57,30 @@
         "pattern": "^@[a-z0-9-]+/.+$",
         "description": "The winning item, fully qualified."
       }
+    },
+    "verification": {
+      "type": "object",
+      "description": "Project-owned package scripts that validate a completed Manteen operation. Verification runs outside Manteen's rollback journal.",
+      "required": ["update"],
+      "additionalProperties": false,
+      "properties": {
+        "update": {
+          "type": "array",
+          "description": "Ordered unique package.json script names run after every successful non-dry-run update.",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "description": "Wall-clock ceiling for ONE check, in milliseconds. Applies per check, not per run, so ordering never decides whether a suite fits. Defaults to 300000 (five minutes).",
+          "minimum": 1000
+        }
+      }
     }
   },
   "definitions": {

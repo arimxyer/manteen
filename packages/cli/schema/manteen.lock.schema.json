@@ -2,13 +2,13 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://manteen.dev/schema/manteen.lock.schema.json",
   "title": "manteen install receipt",
-  "description": "What manteen wrote, where, and on whose behalf. Version 2 adds ownership of the composed package stylesheet.",
+  "description": "What manteen accepted, its pristine upstream merge base, where it lives, and on whose behalf. Version 3 is the native three-way update contract.",
   "type": "object",
   "additionalProperties": false,
   "required": ["lockfileVersion", "items", "theme", "styles"],
   "properties": {
     "$schema": { "type": "string" },
-    "lockfileVersion": { "const": 2 },
+    "lockfileVersion": { "const": 3 },
     "items": {
       "type": "array",
       "items": { "$ref": "#/definitions/item" }
@@ -33,11 +33,12 @@
     "file": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["destination", "wireType", "sha256"],
+      "required": ["destination", "wireType", "installedSha256", "baseSha256"],
       "properties": {
         "destination": { "$ref": "#/definitions/receiptPath" },
         "wireType": { "type": "string", "minLength": 1 },
-        "sha256": { "$ref": "#/definitions/sha256" }
+        "installedSha256": { "$ref": "#/definitions/sha256" },
+        "baseSha256": { "$ref": "#/definitions/sha256" }
       }
     },
     "item": {

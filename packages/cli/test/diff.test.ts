@@ -43,6 +43,7 @@ import {
   reportDiff,
 } from "../src/commands/diff";
 import type { AliasBacking, AliasKey, LoadedConfig } from "../src/config/types";
+import { fromReceiptState } from "../src/inventory/installed";
 import type { DiffFile, DiffResult, FileChange } from "../src/inventory/types";
 import type {
   Diagnostic,
@@ -50,6 +51,7 @@ import type {
   PlanItem,
   PlannedFile,
   PlannedTheme,
+  PlanOptions,
   Receipt,
 } from "../src/plan/types";
 import { createReceiptReader, createReceiptValidator } from "../src/receipt/load";
@@ -186,7 +188,7 @@ function makeProject(options: FixtureOptions = {}): string {
   if (options.noReceipt === true) return root;
 
   const receipt: Receipt = {
-    lockfileVersion: 2,
+    lockfileVersion: 3,
     items: [
       {
         id: "@house/offline",
@@ -195,7 +197,12 @@ function makeProject(options: FixtureOptions = {}): string {
         wireType: "registry:ui",
         direct: true,
         files: [
-          { destination: `${UI}/offline.tsx`, wireType: "registry:ui", sha256: sha(OFFLINE) },
+          {
+            destination: `${UI}/offline.tsx`,
+            wireType: "registry:ui",
+            installedSha256: sha(OFFLINE),
+            baseSha256: sha(OFFLINE),
+          },
         ],
       },
       {
@@ -205,19 +212,41 @@ function makeProject(options: FixtureOptions = {}): string {
         wireType: "registry:ui",
         direct: true,
         files: [
-          { destination: `${UI}/both.tsx`, wireType: "registry:ui", sha256: sha(RECORDED_BOTH) },
-          { destination: `${UI}/dropped.tsx`, wireType: "registry:ui", sha256: sha(DROPPED) },
-          { destination: `${UI}/gone.tsx`, wireType: "registry:ui", sha256: sha(GONE) },
-          { destination: `${UI}/local.tsx`, wireType: "registry:ui", sha256: sha(RECORDED_LOCAL) },
+          {
+            destination: `${UI}/both.tsx`,
+            wireType: "registry:ui",
+            installedSha256: sha(RECORDED_BOTH),
+            baseSha256: sha(RECORDED_BOTH),
+          },
+          {
+            destination: `${UI}/dropped.tsx`,
+            wireType: "registry:ui",
+            installedSha256: sha(DROPPED),
+            baseSha256: sha(DROPPED),
+          },
+          {
+            destination: `${UI}/gone.tsx`,
+            wireType: "registry:ui",
+            installedSha256: sha(GONE),
+            baseSha256: sha(GONE),
+          },
+          {
+            destination: `${UI}/local.tsx`,
+            wireType: "registry:ui",
+            installedSha256: sha(RECORDED_LOCAL),
+            baseSha256: sha(RECORDED_LOCAL),
+          },
           {
             destination: `${UI}/unchanged.tsx`,
             wireType: "registry:ui",
-            sha256: sha(UNCHANGED),
+            installedSha256: sha(UNCHANGED),
+            baseSha256: sha(UNCHANGED),
           },
           {
             destination: `${UI}/upstream.tsx`,
             wireType: "registry:ui",
-            sha256: sha(RECORDED_UPSTREAM),
+            installedSha256: sha(RECORDED_UPSTREAM),
+            baseSha256: sha(RECORDED_UPSTREAM),
           },
         ],
       },
@@ -228,7 +257,12 @@ function makeProject(options: FixtureOptions = {}): string {
         wireType: "registry:ui",
         direct: true,
         files: [
-          { destination: `${UI}/stranger.tsx`, wireType: "registry:ui", sha256: sha(STRANGER) },
+          {
+            destination: `${UI}/stranger.tsx`,
+            wireType: "registry:ui",
+            installedSha256: sha(STRANGER),
+            baseSha256: sha(STRANGER),
+          },
         ],
       },
     ],
@@ -239,6 +273,27 @@ function makeProject(options: FixtureOptions = {}): string {
     },
     styles: null,
   };
+
+  for (const item of receipt.items) {
+    for (const file of item.files) {
+      const baseText = file.destination.endsWith("both.tsx")
+        ? RECORDED_BOTH
+        : file.destination.endsWith("dropped.tsx")
+          ? DROPPED
+          : file.destination.endsWith("gone.tsx")
+            ? GONE
+            : file.destination.endsWith("local.tsx")
+              ? RECORDED_LOCAL
+              : file.destination.endsWith("upstream.tsx")
+                ? RECORDED_UPSTREAM
+                : file.destination.endsWith("unchanged.tsx")
+                  ? UNCHANGED
+                  : file.destination.endsWith("offline.tsx")
+                    ? OFFLINE
+                    : STRANGER;
+      write(root, `.manteen/bases/${file.destination}.base`, baseText);
+    }
+  }
 
   write(root, "manteen.lock.json", `${JSON.stringify(receipt, null, 2)}\n`);
   return root;
@@ -314,6 +369,13 @@ function plannedFile(itemId: string, root: string, relativePath: string, content
     destination: resolve(root, ...relativePath.split("/")),
     content,
     sha256: sha(content),
+    upstream: { content, sha256: sha(content) },
+    base: {
+      destination: resolve(root, ".manteen", "bases", `${relativePath}.base`),
+      content,
+      sha256: sha(content),
+      existing: null,
+    },
     existing: null,
     disposition: "create",
     priorOwner: null,
@@ -327,29 +389,34 @@ interface StubOptions {
   theme?: PlannedTheme | null;
   diagnostics?: Diagnostic[];
   /** Records what `reportDiff` asked for. */
-  seen?: { refs: string[][] };
+  seen?: { refs: string[][]; options?: PlanOptions[] };
 }
 
 function stubPlan(options: StubOptions = {}): DiffPorts["plan"] {
-  return async (loaded, refs) => {
+  return async (loaded, refs, planOptions) => {
     options.seen?.refs.push([...refs]);
+    options.seen?.options?.push(planOptions);
     const items = options.items ?? [];
     // The REAL read, because `fromReceiptState` requires the `ok: true` arm as
     // proof the structural pass ran.
     const receipt = readReceipt(loaded.root, createReceiptReader(), createReceiptValidator());
     return {
       version: 1,
+      operation: "add",
       root: loaded.root,
       configPath: loaded.configPath,
       items,
       files: items.flatMap((item) => item.files),
+      removedBases: [],
       dependencies: [],
       packageManager: "npm",
       installCommand: null,
       theme: options.theme ?? null,
       styles: null,
+      verification: null,
       mantine: { state: "not-installed" },
       receipt,
+      stateIgnored: false,
       diagnostics: options.diagnostics ?? [],
       ok: true,
     } satisfies Plan;
@@ -444,6 +511,36 @@ function fileOf(result: DiffResult, id: string, receiptPath: string): DiffFile {
 
 // ---- tests ---------------------------------------------------------------------
 
+describe("base inventory reporting", () => {
+  test("user-created unusable paths degrade without hiding unrelated failures", () => {
+    const root = makeProject();
+    const receipt = readReceipt(root, createReceiptReader(), createReceiptValidator());
+
+    for (const code of ["EISDIR", "EACCES", "EPERM", "ENOTDIR", "ELOOP"]) {
+      const installed = fromReceiptState(receipt, root, (path) => {
+        if (path.includes(`${sep}.manteen${sep}`)) {
+          throw Object.assign(new Error(code), { code });
+        }
+        return null;
+      });
+      expect(
+        installed.items
+          .flatMap((item) => item.files)
+          .every((file) => file.baseCurrentSha256 === null),
+      ).toBe(true);
+    }
+
+    expect(() =>
+      fromReceiptState(receipt, root, (path) => {
+        if (path.includes(`${sep}.manteen${sep}`)) {
+          throw Object.assign(new Error("EIO"), { code: "EIO" });
+        }
+        return null;
+      }),
+    ).toThrow("EIO");
+  });
+});
+
 describe("the eight states", () => {
   let root: string;
   let diff: DiffResult;
@@ -515,38 +612,45 @@ describe("the eight states", () => {
 });
 
 describe("the patch", () => {
-  test("runs on disk -> upstream, so a local-only edit renders as a revert", async () => {
+  test("base -> local shows the adaptation and local -> result shows no reset", async () => {
     const root = makeProject();
     const diff = await result(root, [], { items: [widget(root)] });
-    const patch = fileOf(diff, "@house/widget", `${UI}/local.tsx`).patch ?? "";
+    const file = fileOf(diff, "@house/widget", `${UI}/local.tsx`);
+    const patch = file.patches.baseToLocal ?? "";
 
-    // The direction is load-bearing: only two of the three sides have content,
-    // so the patch can only ever be disk -> upstream. Reversing it would be a
-    // "fix" that makes every other state's patch wrong.
-    expect(patch).toContain(`-${EDITED_LOCAL.trimEnd()}`);
-    expect(patch).toContain(`+${RECORDED_LOCAL.trimEnd()}`);
+    expect(patch).toContain(`-${RECORDED_LOCAL.trimEnd()}`);
+    expect(patch).toContain(`+${EDITED_LOCAL.trimEnd()}`);
     expect(patch).toContain("--- ");
     // jsdiff's RCS `Index:` preamble is not part of a unified diff.
     expect(patch.startsWith("Index:")).toBe(false);
+    expect(file.patches.baseToIncoming).toBeNull();
+    expect(file.patches.localToResult).toBeNull();
+    expect(file.outcome).toBe("local-only");
   });
 
   test("an unchanged file gets no patch", async () => {
     const root = makeProject();
     const diff = await result(root, [], { items: [widget(root)] });
-    expect(fileOf(diff, "@house/widget", `${UI}/unchanged.tsx`).patch).toBeNull();
+    expect(fileOf(diff, "@house/widget", `${UI}/unchanged.tsx`).patches).toEqual({
+      baseToLocal: null,
+      baseToIncoming: null,
+      localToResult: null,
+    });
   });
 
   test("states with no upstream content get no patch", async () => {
     const root = makeProject();
     const diff = await result(root, [], { items: [widget(root)] });
-    expect(fileOf(diff, "@house/widget", `${UI}/dropped.tsx`).patch).toBeNull();
-    expect(fileOf(diff, "@house/offline", `${UI}/offline.tsx`).patch).toBeNull();
+    expect(fileOf(diff, "@house/widget", `${UI}/dropped.tsx`).patches.baseToIncoming).toBeNull();
+    expect(fileOf(diff, "@house/offline", `${UI}/offline.tsx`).patches.baseToIncoming).toBeNull();
   });
 
-  test("a missing file patches from empty, so update reads as a restore", async () => {
+  test("a missing local file has no proposed write patch", async () => {
     const root = makeProject();
     const diff = await result(root, [], { items: [widget(root)] });
-    expect(fileOf(diff, "@house/widget", `${UI}/gone.tsx`).patch).toContain(`+${GONE.trimEnd()}`);
+    const file = fileOf(diff, "@house/widget", `${UI}/gone.tsx`);
+    expect(file.outcome).toBe("missing-local");
+    expect(file.patches.localToResult).toBeNull();
   });
 
   test("--stat computes no patch at all", async () => {
@@ -559,7 +663,13 @@ describe("the patch", () => {
     );
     const diff = JSON.parse(out) as DiffResult;
     for (const item of diff.items) {
-      for (const file of item.files) expect(file.patch).toBeNull();
+      for (const file of item.files) {
+        expect(file.patches).toEqual({
+          baseToLocal: null,
+          baseToIncoming: null,
+          localToResult: null,
+        });
+      }
     }
     expect(diff.theme?.patch).toBeNull();
     // The classification is unaffected — only the rendering is.
@@ -603,6 +713,16 @@ describe("the theme", () => {
 });
 
 describe("selection", () => {
+  test("diff explicitly disables configured update verification", async () => {
+    const root = makeProject();
+    const seen = { refs: [] as string[][], options: [] as PlanOptions[] };
+
+    await result(root, [], { items: [widget(root)], seen });
+
+    expect(seen.options).toHaveLength(1);
+    expect(seen.options[0]).toMatchObject({ operation: "update", verify: false });
+  });
+
   test("no refs compares every installed item", async () => {
     const root = makeProject();
     const seen = { refs: [] as string[][] };
@@ -805,17 +925,21 @@ describe("buildDiff is pure with respect to the receipt", () => {
     const built = buildDiff({
       plan: {
         version: 1,
+        operation: "add",
         root,
         configPath: join(root, "manteen.json"),
         items: [],
         files: [],
+        removedBases: [],
         dependencies: [],
         packageManager: "npm",
         installCommand: null,
         theme: null,
         styles: null,
+        verification: null,
         mantine: { state: "not-installed" },
         receipt: { present: false, path: join(root, "manteen.lock.json") },
+        stateIgnored: false,
         diagnostics: [],
         ok: true,
       },

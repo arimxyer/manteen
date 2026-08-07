@@ -84,11 +84,11 @@ export function checkReceipt(input: ReceiptGateInput): Diagnostic[] {
 
     // 3. An ordinary reinstall.
     if (owner.itemId === file.itemId) {
-      if (onDisk !== null && onDisk !== owner.sha256) {
+      if (onDisk !== null && onDisk !== owner.installedSha256) {
         diagnostics.push(
           diag(
             "receipt-drift",
-            `${where} has changed since manteen wrote it for ${owner.itemId}. Reinstalling replaces your edits.`,
+            `${where} has changed since manteen last accepted it for ${owner.itemId}. It will not be treated as pristine.`,
             { items: [file.itemId], path: file.destination },
           ),
         );

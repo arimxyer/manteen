@@ -36,6 +36,7 @@ import type {
   ThemeSourceKind,
 } from "../plan/types";
 import type { MantineMeta } from "../plan/validate-item";
+import type { VerificationOutcome } from "../verification/types";
 
 /** Re-exported so a command needs one import for the inspect vocabulary. */
 export type { MantineMeta };
@@ -119,10 +120,9 @@ export interface InventoryNote {
  * is computed once here rather than twice in two commands.
  *
  * HASH DOMAINS, and getting this wrong passes every ASCII fixture:
- * `ReceiptFile.sha256` / `ReceiptTheme.sha256` hash the UTF-8 encoding of the
- * STRING manteen wrote, while `currentSha256` hashes RAW FILE BYTES. The two
- * compare equal only because `write-files.ts` writes with an explicit `"utf8"`
- * encoding, no BOM and no newline translation.
+ * Receipt file/theme hashes encode the STRING manteen accepted as UTF-8, while
+ * `currentSha256` hashes RAW FILE BYTES. The domains compare only because writes
+ * use explicit UTF-8 with no BOM or newline translation.
  */
 export interface HashPair {
   /** From the receipt. 64 lowercase hex characters, structurally validated. */
@@ -148,6 +148,14 @@ export interface InstalledFile extends HashPair {
    *  form — a receipt written on Windows and read on Linux must render alike. */
   receiptPath: ReceiptPath;
   wireType: string;
+  /** ABSOLUTE path to the exact pristine ancestor used by update. */
+  basePath: string;
+  /** Hash of the exact pristine ancestor recorded in the receipt. */
+  baseSha256: string;
+  /** Hash of the base bytes on disk now; null when the sidecar is missing OR
+   *  cannot be read. Both mean "no usable ancestor" to every consumer, and the
+   *  coded refusal for the second case belongs to `plan()`, not to a report. */
+  baseCurrentSha256: string | null;
 }
 
 export interface InstalledItem {
@@ -412,10 +420,11 @@ export type FileChange =
   | "local-only"
   /** disk === recorded, upstream !== recorded. Cleanly updatable. */
   | "upstream-only"
-  /** Both moved. `update` overwrites a local edit with a changed upstream — the
-   *  case that most needs to be shown before it is applied. */
+  /** Both moved. Default update either proposes a clean merge or refuses a
+   *  conflict; `DiffFile.outcome` says which. */
   | "both"
-  /** The file is gone from disk. `update` restores it. */
+  /** The file is gone from disk. Default update refuses; `--take-upstream`
+   *  restores it. */
   | "missing"
   /** The receipt records it and the item no longer ships it. `update` leaves it
    *  alone; nothing in v1 deletes a file manteen wrote. */
@@ -437,14 +446,28 @@ export interface DiffFile {
   currentSha256: string | null;
   /** `null` for `removed-upstream` and `unavailable`. */
   upstreamSha256: string | null;
+  /** Exact pristine ancestor hash from the v3 receipt. */
+  baseSha256: string | null;
+  /** Current sidecar hash, so corrupt/missing bases cannot produce a preview. */
+  baseCurrentSha256: string | null;
   change: FileChange;
-  /**
-   * A unified diff, or `null` when none was computed — `--stat`-style output,
-   * an unchanged file, or content that is not worth rendering as text. Building
-   * it is the command's job; the field is here so two commands cannot invent two
-   * spellings of the same thing.
-   */
-  patch: string | null;
+  /** What default update proposes for this destination. */
+  outcome:
+    | "unchanged"
+    | "local-only"
+    | "upstream-only"
+    | "merged"
+    | "conflict"
+    | "missing-local"
+    | "removed-upstream"
+    | "added-upstream"
+    | "unavailable";
+  /** The three independently meaningful comparisons. All are null under --stat. */
+  patches: {
+    baseToLocal: string | null;
+    baseToIncoming: string | null;
+    localToResult: string | null;
+  };
 }
 
 export interface DiffItem {
@@ -488,7 +511,9 @@ export type UpdateSkipReason =
   | "not-installed"
   /** Named on the command line and its namespace is not configured. */
   | "unknown-namespace"
-  /** Every file already matches what the registry serves. */
+  /** Local adaptations exist, but upstream did not move; update preserved them. */
+  | "local-only"
+  /** No file needs a write and no local-only adaptation needs calling out. */
   | "up-to-date"
   /** Its registry could not be reached. */
   | "unavailable";
@@ -527,6 +552,8 @@ export type UpdateResult =
       kind: "applied";
       plan: Plan;
       outcome: ApplyOutcome;
+      /** Post-apply project checks. Never part of ApplyOutcome or its journal. */
+      verification: VerificationOutcome;
       selected: CanonicalId[];
       skipped: UpdateSkip[];
       notes: InventoryNote[];

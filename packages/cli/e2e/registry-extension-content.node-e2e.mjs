@@ -124,7 +124,7 @@ test("compiled extension items install files, license, styles and receipt proven
   );
 
   const receipt = JSON.parse(readFileSync(join(PROJECT, "manteen.lock.json"), "utf8"));
-  assert.equal(receipt.lockfileVersion, 2);
+  assert.equal(receipt.lockfileVersion, 3);
   assert.deepEqual(receipt.styles.sources, [
     {
       itemId: "@house/cards-carousel",

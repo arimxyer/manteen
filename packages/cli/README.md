@@ -126,14 +126,61 @@ manteen list
 manteen info @house/data-table
 manteen diff
 manteen update
+manteen update --take-upstream # explicitly discard local source adaptations
+manteen update --no-verify     # skip configured project checks for this run
 ```
 
-Every install is recorded in `manteen.lock.json` — which item came from which registry
-and what was written where. Commit it: it is what stops a same-named component from a
-second registry silently replacing one you already installed.
+Every install is recorded in `manteen.lock.json`, with exact pristine upstream bases under
+`.manteen/bases/`. **Commit both — do not gitignore `.manteen/`.** They stop cross-registry
+replacement and let `update` merge current registry changes around project adaptations. Without a
+base, `update` refuses rather than guess which side of a difference is yours; recover with
+`manteen update --take-upstream`, which reinstalls upstream bytes and rewrites the base.
+Conflict-free changes apply without prompting; overlapping edits refuse without writing conflict
+markers. `--take-upstream` is the separate, destructive reset for files the registry still ships.
+After a successful command changes either part of that update state, Manteen prints
+`state-versioning-required` as a reminder. It does not inspect Git or claim the files are already
+tracked — but it does read your `.gitignore`, and if a rule there hides `.manteen/` the reminder is
+raised to a warning that names what breaks. The check runs one way only: a recognized rule is
+evidence of a problem, while no matching rule is not evidence the state is committed. That is why
+the reminder prints either way and nothing is ever gated on the answer.
+
+To have `update` check the resulting live project, opt into ordered `package.json` scripts in
+`manteen.json`:
+
+```jsonc
+{
+  // ...existing registries, aliases, theme, styles and tsconfig...
+  "verification": {
+    "update": ["typecheck", "test", "build"],
+    "timeoutMs": 300000
+  }
+}
+```
+
+These are script names, not shell command strings. Manteen uses the selected package manager,
+preserves the authored order, and stops at the first failure. Configured checks run after every
+successful non-dry update, including one whose component and state bytes were already current.
+`--dry-run` validates and shows the planned checks without running them; `--no-verify` skips their
+dynamic resolution and execution for that run.
+
+`timeoutMs` bounds **one check**, not the run, so ordering never decides whether a suite fits. It
+defaults to five minutes — enough for a cold production build on a project consuming a component
+registry, and short enough that a script which will never finish does not hold the command open
+indefinitely. A check that hits the ceiling is terminated and reported as `timed-out`, kept
+distinct from `script-failed` so a process Manteen cut short is never described as your test suite
+failing. Raise it if a check is legitimately slower.
+
+Verification is deliberately after the update transaction. If a check fails to start, exits
+non-zero, is terminated, or changes a Manteen-managed/control file, the command exits 1 and says
+that the source, pristine bases, and receipt remain applied. It does not claim to roll back caches,
+snapshots, generated files, or any other side effect of a project script. Child stdout and stderr
+are both streamed to the CLI's stderr, including under `--json`, so the JSON document on stdout
+stays parseable; no output transcript or time-specific verification certificate is written to the
+receipt. With no configured checks, text output stays silent about verification and JSON reports
+`status: "not-configured"` rather than implying a semantic pass.
 
 Items may also require package-level styles such as `@mantine/carousel/styles.css`. Manteen composes
-those imports into the configured `styles` file and records each item's contribution in receipt v2.
+those imports into the configured `styles` file and records each item's contribution in receipt v3.
 The file is Manteen-owned; put project overrides in the host stylesheet imported after it. Manteen
 does not rewrite that host stylesheet or a project's Tailwind/PostCSS plugin order.
 

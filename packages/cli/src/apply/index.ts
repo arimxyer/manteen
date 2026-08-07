@@ -10,7 +10,8 @@
  *   3 write files  ┐
  *   4 write theme  ├ one shared pre-image journal
  *   5 write styles ┤
- *   6 write receipt┘
+ *   6 write bases  ┤
+ *   7 write receipt┘
  *
  * Phase 4 is one `journal.write` of `plan.theme.text` and nothing more. It has
  * no `write-theme.ts` module because there is nothing for one to hold: D7 put
@@ -26,7 +27,7 @@
  *   receipt describing files that no longer exist, and a SIGKILL leaves one that
  *   under-claims. Under-claiming costs a redundant overwrite prompt; over-claiming
  *   authorizes a future run to silently replace content manteen never wrote.
- *   Every early exit in this function sits ABOVE phase 6 for that reason.
+ *   Every early exit in this function sits ABOVE phase 7 for that reason.
  *
  * Deps are not rolled back (D18). A package manager is not transactional, so
  * `removeDependency` after a partial install can remove something that was
@@ -44,6 +45,7 @@ import { clackOverwritePrompt, decideWrites, type OverwritePrompt } from "./deci
 import { installDeps } from "./install-deps";
 import { createJournal } from "./journal";
 import { preflight } from "./preflight";
+import { removeBases, writeBases } from "./write-bases";
 import { writeFiles } from "./write-files";
 import { writeStyles } from "./write-styles";
 import { writeTheme } from "./write-theme";
@@ -91,6 +93,7 @@ function emptyOutcome(plan: Plan, options: ApplyOptions): ApplyOutcome {
     theme: plan.theme === null ? null : { path: plan.theme.destination, written: false },
     styles: plan.styles === null ? null : { path: plan.styles.destination, written: false },
     receipt: { path: plan.receipt.path, written: false },
+    updateState: { changed: false },
     failure: null,
   };
 }
@@ -225,6 +228,7 @@ async function applyPlan(
   let themeWritten = false;
   let stylesWritten = false;
   let receiptWritten = false;
+  let updateStateChanged = false;
 
   try {
     // ---- phase 3: write files ----------------------------------------------
@@ -240,7 +244,15 @@ async function applyPlan(
     // ---- phase 5: write managed package styles -----------------------------
     stylesWritten = writeStyles(plan.styles, journal);
 
-    // ---- phase 6: write receipt --------------------------------------------
+    // ---- phase 6: write pristine upstream bases ----------------------------
+    // Bases and receipt share the component/theme/styles journal. A later
+    // receipt failure therefore cannot leave a new ancestor paired with an old
+    // ownership record (or vice versa).
+    const basesWritten = writeBases(plan.files, results, journal);
+    const basesRemoved = removeBases(plan.removedBases, journal);
+    updateStateChanged = basesWritten || basesRemoved;
+
+    // ---- phase 7: write receipt --------------------------------------------
     // An unreadable receipt forced past merges from `null`: the prior records are
     // discarded, which the receipt-unreadable diagnostic states before the user
     // forces.
@@ -261,6 +273,7 @@ async function applyPlan(
     if (text !== priorRaw) {
       journal.write(plan.receipt.path, text);
       receiptWritten = true;
+      updateStateChanged = true;
     }
   } catch (error) {
     const touched = journal.entries().map((entry) => entry.destination);
@@ -309,6 +322,7 @@ async function applyPlan(
     theme: plan.theme === null ? null : { path: plan.theme.destination, written: themeWritten },
     styles: plan.styles === null ? null : { path: plan.styles.destination, written: stylesWritten },
     receipt: { path: plan.receipt.path, written: receiptWritten },
+    updateState: { changed: updateStateChanged },
   };
 }
 

@@ -46,6 +46,8 @@ export const DIAGNOSTIC_CODES: Record<DiagnosticCode, DiagnosticSpec> = {
    *  is a `resolutions` entry, and it is printed paste-ready. */
   "receipt-collision": { severity: "error", forceable: false, exit: 1 },
   "target-escapes-root": { severity: "error", forceable: false, exit: 1 },
+  /** `.manteen/` is Manteen's transactional state tree, never registry output. */
+  "target-reserved": { severity: "error", forceable: false, exit: 1 },
   /** registry:style / base / theme / item at file level (D22). */
   "target-refused-type": { severity: "error", forceable: false, exit: 1 },
   /** No `content` on a wire file. There is no second channel to fetch bytes
@@ -83,6 +85,14 @@ export const DIAGNOSTIC_CODES: Record<DiagnosticCode, DiagnosticSpec> = {
    *  meaning of "force past" a file that would ship with nothing to resolve
    *  its syntax against. */
   "jsconfig-typescript-unsupported": { severity: "error", forceable: false, exit: 1 },
+  /** Update cannot trust a missing, unreadable, or hash-mismatched ancestor. */
+  "merge-base-unreadable": { severity: "error", forceable: false, exit: 1 },
+  /** Both local and upstream touched an overlapping region, or update found an
+   *  occupied destination with no prior ownership record. */
+  "update-conflict": { severity: "error", forceable: false, exit: 1 },
+  /** The project opted into update verification, but its root package.json
+   *  cannot supply one exact string definition for every configured script. */
+  "verification-script-unavailable": { severity: "error", forceable: false, exit: 1 },
 
   // ---- blocking, forceable --------------------------------------------------
   /** Ranges provably disjoint (`semver.intersects` false, D10). */
@@ -170,9 +180,8 @@ export const DIAGNOSTIC_CODES: Record<DiagnosticCode, DiagnosticSpec> = {
   // ---- informational --------------------------------------------------------
   "styles-api": { severity: "info", forceable: false, exit: 0 },
   /** Same item, but the file changed after manteen wrote it. Blocks nothing —
-   *  `destination-exists` already gates the overwrite. It exists so the prompt
-   *  can say "modified since manteen wrote it" instead of a bare "file
-   *  exists". */
+   *  add's `destination-exists` gates replacement, while update uses the
+   *  pristine base. It exists so either surface can attribute the local side. */
   "receipt-drift": { severity: "info", forceable: false, exit: 0 },
 };
 

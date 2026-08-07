@@ -295,6 +295,47 @@ export function renderOutcome(outcome: ApplyOutcome, root: string): string {
   return lines.length > 0 ? `${lines.join("\n")}\n` : "";
 }
 
+/**
+ * Required follow-up after a mutating run changed Manteen's update ancestry.
+ *
+ * This is intentionally an APPLY advisory rather than a plan diagnostic:
+ * `diff` constructs an update-shaped Plan but writes nothing, and only apply
+ * knows whether phase 1 accepted a file and phase 6/7 actually changed a base
+ * or receipt. Keeping it on stderr preserves the stdout report for pipelines.
+ *
+ * `info`, not `warn`, and the reason is its firing rate rather than its
+ * importance. D39 rules out inspecting Git, so this cannot know whether the
+ * project already versions both paths — which means it fires after essentially
+ * every successful `add` and every real `update`. A warning that is present on
+ * the whole happy path stops being read, and takes the genuinely conditional
+ * warnings beside it down too. The severity states what it is: a standing fact
+ * about how Manteen stores state, not a report that something is wrong.
+ */
+export function renderUpdateStateAdvisory(outcome: ApplyOutcome, plan: Plan): string {
+  if (!outcome.ok || outcome.dryRun || !outcome.updateState.changed) return "";
+  if (!plan.stateIgnored) {
+    return (
+      "info  state-versioning-required\n" +
+      "  This run changed Manteen's update state.\n" +
+      "  Version manteen.lock.json and .manteen/bases/ together; do not ignore .manteen/.\n" +
+      "  A clone missing either cannot safely merge local adaptations during update.\n"
+    );
+  }
+  // `warn`, not `info`, precisely because this half is CONDITIONAL — the reason
+  // the unignored case was demoted does not apply to a project that has already
+  // made the mistake. Naming the file and the effect rather than the fix: the
+  // rule may be deliberate, and Manteen is in no position to edit it.
+  return (
+    "warn  state-versioning-required\n" +
+    "  This run changed Manteen's update state, and .gitignore appears to ignore .manteen/.\n" +
+    "  The pristine bases under .manteen/bases/ are how update merges registry changes\n" +
+    "  around your local adaptations. Without them a fresh clone cannot update at all:\n" +
+    "  every run refuses with merge-base-unreadable until the bases are restored, and the\n" +
+    "  only way through is `manteen update --take-upstream`, which discards adaptations.\n" +
+    "  Un-ignore .manteen/ and commit it with manteen.lock.json.\n"
+  );
+}
+
 /** An apply failure, in `renderDiagnostic`'s head-then-indented shape. */
 export function renderApplyFailure(outcome: ApplyOutcome, root: string): string {
   const failure = outcome.failure;

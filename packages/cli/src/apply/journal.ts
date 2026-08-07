@@ -53,6 +53,8 @@ export interface Journal {
    * every drift comparison the receipt makes.
    */
   write(destination: string, content: string): void;
+  /** Journal and remove a Manteen-owned state file. Absence is a no-op. */
+  remove(destination: string): void;
   /** In write order. Read it BEFORE `unwind()`, which clears the log. */
   entries(): readonly JournalEntry[];
   /** LIFO restore. Safe to call once; the log is cleared so it cannot double-run. */
@@ -105,6 +107,13 @@ export function createJournal(): Journal {
       // did change is unrecoverable.
       entries.push({ destination, preImage });
       place(destination, content);
+    },
+
+    remove(destination) {
+      const preImage = readPreImage(destination);
+      if (preImage === null) return;
+      entries.push({ destination, preImage });
+      rmSync(destination);
     },
 
     entries() {

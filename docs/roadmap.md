@@ -22,14 +22,25 @@ through its built-Node acceptance tier, W7 closed with a green hosted runtime, O
 package-manager matrix, W8 established provenance-bearing releases, and `0.2.0` publicly carries
 the managed-styles and registry-content stress-case contract.
 
+The client manifest and changelog now identify a local `manteen@0.3.0` release candidate carrying
+the next three client contracts: Wu's receipt v3, committed pristine bases and three-way updates;
+the apply-time state-versioning advisory; and Wv's opt-in post-update project verification. This
+is preparation, not publication. No `manteen-v0.3.0` tag, hosted release run, OIDC/npm receipt or
+fresh public-consumer receipt exists yet; `manteen@0.2.0` remains the last recorded public proof.
+
 ## Known gaps, by kind
 
 **Client.** W4's apply surface, W5's command set, W6 `init`, and W7 portability hardening are
 complete. The findings and hosted closure receipt are recorded in
 [`w7-hardening-handoff.md`](w7-hardening-handoff.md).
 
-**Commands.** `init`, `add`, `list`, `info`, `diff` and `update` ship. `search` does not exist and
-is not currently assigned to a wave; whether it belongs in v1 remains undecided.
+**Commands.** `init`, `add`, `list`, `info`, `diff` and `update` ship. In the local `0.3.0` release
+candidate, `update` uses Wu's receipt-v3 three-way model; public `0.2.0` still carries the earlier
+update behavior. `search` does not exist and is not currently assigned to a wave; whether it
+belongs in v1 remains undecided. The release candidate also supports project-owned verification:
+configured `package.json` scripts run only after a coherent update has applied, and a failed check
+never pretends the update rolled back. Its frozen boundary and completed local source/built-Node
+receipt are in [`update-verification-handoff.md`](update-verification-handoff.md).
 
 **Portability.** The built tier passes on Linux Node 22.12, 24 and 26 plus macOS and Windows at the
 Node floor. Packed npm, pnpm, Yarn PnP and Bun consumers pass, including the native Windows
@@ -44,9 +55,11 @@ unit tests.
 
 **Distribution.** `manteen-kit@0.2.0` and `manteen@0.2.0` are public on npm as `latest`. Both were
 published from the tagged GitHub Actions OIDC workflow and expose npm publish plus SLSA provenance
-attestations. The initial trusted-release receipts are in the
-[`W8 release handoff`](w8-release-handoff.md); the current package, Pages and public-consumer
-receipts are in the [`0.2 release handoff`](v0.2-release-handoff.md).
+attestations. The client-only `0.3.0` release candidate keeps `manteen-kit@^0.2.0`; the kit has no
+version change and must not receive a `0.3.0` tag. The initial trusted-release receipts are in the
+[`W8 release handoff`](w8-release-handoff.md), the current public package, Pages and consumer
+receipts are in the [`0.2 release handoff`](v0.2-release-handoff.md), and the still-open `0.3`
+release boundary is in the [`0.3 release handoff`](v0.3-release-handoff.md).
 
 **Project hygiene.** The MIT license, Biome, Dependabot, editorconfig and rename are done.
 `SECURITY.md` and contributor ceremony remain deliberately deferred until the repository has
@@ -93,6 +106,8 @@ is a judgment call, which is exactly why they are separate runs.
 | W8 | [`Release`](w8-release-handoff.md) | complete: both `0.1.1` packages published through tagged OIDC with provenance | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
 | Wc | [`Registry content`](wc-registry-content-handoff.md) | ongoing: small curated tranches | Independent of all of the above; doubles as client stress-testing without turning fixtures into product evidence. |
 | Wt | [`Theme builder`](#wt--theme-builder-proposed) | proposed: one page, plan-first | Preview-then-install for the one registry item every consumer is expected to edit. Depends on nothing; blocked by nothing. |
+| Wu | [`Update merging`](update-merge-handoff.md) | complete in local `0.3.0` release candidate: receipt v3, exact bases, three-way plan, explicit reset, three-axis diff, built-Node acceptance; public release pending | Changes ordinary source maintenance from skip-or-replace to reproducible three-way merging without weakening the existing plan/apply transaction. |
+| Wv | [`Update verification`](update-verification-handoff.md) | complete in local `0.3.0` release candidate: post-apply orchestration, fail-fast project scripts, bounded drift detection, built-Node acceptance; public release pending | Lets a consumer define what “the merged component still works here” means without placing arbitrary scripts inside Manteen's rollback journal. |
 
 **Not workflow-shaped, do directly:** the hygiene set (LICENSE, linter, SECURITY, CONTRIBUTING,
 dependabot, README rename). Single-file, single-concern, no discovery — a workflow would be
@@ -141,6 +156,8 @@ Phase 3 ✔ ─> W4 apply surface ✔ ─┬─> W5 command set ✔ ──┐
                                  └─> W6 init ✔ ─────────┴─> W7 hardening ✔ ─> W8 release ✔
 Wc registry content ......... any time, independent
 Wt theme builder ............ any time, independent, not started
+Wu update merging ........... complete; included in local 0.3.0 release candidate
+Wv update verification ...... complete; included in local 0.3.0 release candidate
 hygiene ..................... done, direct
 ```
 
@@ -164,6 +181,19 @@ implementation, local acceptance, hosted CI, public deployment, browser acceptan
 registry-byte receipt are complete. Wc remains an independent, ongoing content stream rather than
 a release blocker; its next boundaries are further small curated tranches and broader
 framework-specific visual acceptance.
+
+Wu is also complete in the local `0.3.0` release candidate. It replaced ordinary update's inherited
+skip-or-replace behavior with an explicit add/update operation, exact committed bases,
+conflict-free three-way planning, `--take-upstream` as the named destructive reset, and a
+three-axis `diff`. Its local and built-Node closure receipt is in the
+[`update merge handoff`](update-merge-handoff.md); hosted and public release proof remains open.
+
+Wv is complete in the local `0.3.0` release candidate. Verification stays outside `apply()` and the journal,
+resolves ordered project script names during planning, runs them fail-fast only after a successful
+non-dry update, and detects changes to the exact Manteen-managed/control snapshot. A verification
+failure leaves the coherent update applied and exits 1; it is evidence about the consumer's
+configured checks, not a rollback or a universal runtime guarantee. Its handoff records the green
+source and real-Node acceptance receipt; hosted and public release proof remains open.
 
 ## On one large program workflow
 
@@ -193,9 +223,11 @@ made Phase 3 work depends on a human reading the probe.
   code already carries Windows-aware handling in places. W7's `windows-latest` built and packed
   jobs now pass, including the native `.cmd`/caret path. That is current positive evidence, while
   the best-effort policy keeps future platform drift from becoming an unsupported promise.
-- **`update` re-merges directly.** No confirmation diff. `mergeThemeSource` is idempotent and
-  keeps existing values on conflict, and the receipt records pre-update hashes, so the operation
-  is recoverable. `manteen diff` still ships for people who want to look first.
+- **`update` re-merges directly.** The original decision applied truthfully to the structured
+  theme fold but left ordinary component source on add's skip-or-replace surface. Wu supersedes
+  that half: ordinary tracked files use a durable pristine base and fail-closed three-way merge;
+  the theme keeps `mergeThemeSource`, and `manteen.css` remains generated. See
+  [`update-merge-handoff.md`](update-merge-handoff.md).
 
 ## Releasing
 
@@ -222,11 +254,16 @@ After that, `0.1.1` became the first trusted release, tagged one package at a ti
 published and resolved before the client tag was pushed. The exact hosted and npm receipts are in
 [`w8-release-handoff.md`](w8-release-handoff.md).
 
-Future contract-bearing releases keep that fail-stop order: publish and verify `manteen-kit`, then
-publish and verify `manteen`, then manually dispatch the Pages registry deployment. Pages does not
-deploy on every `main` push because doing so could expose items that require an unpublished client
-contract. The [`0.2 release handoff`](v0.2-release-handoff.md) records the first completed use of
-that sequence.
+Future releases keep the same dependency-first rule without inventing a package release. When kit
+and client both change, publish and verify `manteen-kit` before tagging `manteen`. A client-only
+release first verifies that its declared public kit range resolves, then tags only `manteen`.
+Pages remains a separate accepted deployment boundary. The `0.3.0` client release does not
+dispatch it: this checkout also carries pending registry and docs-site work, so a dispatch would
+publish that broader train and needs its own review and receipts. Pages does not deploy on every
+`main` push because doing so could expose items that require an unpublished client contract. The
+[`0.2 release handoff`](v0.2-release-handoff.md) records the first completed two-package use of
+that sequence, and the [`0.3 release handoff`](v0.3-release-handoff.md) records the current
+client-only candidate.
 
 The tradeoff: that first version has no provenance attestation, because provenance requires
 the OIDC path. Storing an `NPM_TOKEN` just for it would reintroduce the long-lived credential

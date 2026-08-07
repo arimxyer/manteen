@@ -55,7 +55,7 @@
     },
     "packages/cli": {
       "name": "manteen",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "bin": {
         "manteen": "dist/cli.mjs",
       },
@@ -66,8 +66,10 @@
         "diff": "^9",
         "get-tsconfig": "^4.14",
         "manteen-kit": "^0.2.0",
+        "node-diff3": "^3.2.1",
         "nypm": "^0.6.9",
         "semver": "^7.8.5",
+        "tinyexec": "^1.2.4",
         "ts-morph": "^28.0.0",
       },
       "devDependencies": {
@@ -1335,6 +1337,8 @@
     "neotraverse": ["neotraverse@1.0.1", "", {}, "sha512-WmmLty1YWwJl9yZi77v2dVIV6X2kuYV8YYBI/G3LWGKdGHmHUvL1z7FW0iDvEvGAwNEoc5x1tOOOyDnf5jJw/w=="],
 
     "nlcst-to-string": ["nlcst-to-string@4.0.0", "", { "dependencies": { "@types/nlcst": "^2.0.0" } }, "sha512-YKLBCcUYKAg0FNlOBT6aI91qFmSiFKiluk655WzPF+DDMA02qIyy8uiRqI8QXtcFpEvll12LpL5MXqEmAZ+dcA=="],
+
+    "node-diff3": ["node-diff3@3.2.1", "", {}, "sha512-eKZcJ8RtMQ3cIaA15EgmtwG927fYnRlhtdA4Q9HAcCpAZPQhhU2XptnTH9GeAkMiX2bAXxlJSAFa9shFbztPgw=="],
 
     "node-fetch-native": ["node-fetch-native@1.6.7", "", {}, "sha512-g9yhqoedzIUm0nTnTqAQvueMPVOuIY16bqgAJJC8XOOubYFNwz6IER9qs0Gq2Xd0+CecCKFjtdDTMA4u4xG06Q=="],
 

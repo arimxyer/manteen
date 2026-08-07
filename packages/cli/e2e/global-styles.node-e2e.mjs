@@ -111,7 +111,7 @@ writeFileSync(
 writeFileSync(STYLES, SCAFFOLD);
 writeFileSync(
   RECEIPT,
-  `${JSON.stringify({ lockfileVersion: 1, items: [], theme: null }, null, 2)}\n`,
+  `${JSON.stringify({ lockfileVersion: 3, items: [], theme: null, styles: null }, null, 2)}\n`,
 );
 
 function run(args) {
@@ -121,7 +121,7 @@ function run(args) {
   });
 }
 
-test("v1 stays byte-identical on read and a successful add writes v2 styles", () => {
+test("v3 stays byte-identical on read and a successful add records styles", () => {
   const before = readFileSync(RECEIPT, "utf8");
   const diff = run(["diff"]);
   assert.equal(diff.status, 0, diff.stderr);
@@ -135,7 +135,7 @@ test("v1 stays byte-identical on read and a successful add writes v2 styles", ()
   );
 
   const receipt = JSON.parse(readFileSync(RECEIPT, "utf8"));
-  assert.equal(receipt.lockfileVersion, 2);
+  assert.equal(receipt.lockfileVersion, 3);
   assert.equal(receipt.styles.destination, "src/manteen.css");
   assert.deepEqual(receipt.styles.sources, [
     {

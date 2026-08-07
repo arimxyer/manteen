@@ -461,6 +461,7 @@ test("a rolled-back run reports nothing as written", { skip: !CAN_DENY_WRITES },
 
   assert.equal(result.status, 1, result.all);
   assert.match(result.stderr, /write-failed/, result.all);
+  assert.doesNotMatch(result.stderr, /state-versioning-required/, result.all);
   // THE ASSERTION. Not "the right verb" — no file verb at all, because the
   // journal put every pre-image back and `WriteResult` has no value meaning
   // "attempted, then unwound". `skipped` was the rejected alternative: it is
@@ -490,6 +491,7 @@ test("a failed ROLLBACK reports nothing as written either", { skip: !CAN_DENY_WR
 
   assert.equal(result.status, 1, result.all);
   assert.match(result.stderr, /rollback-failed/, result.all);
+  assert.doesNotMatch(result.stderr, /state-versioning-required/, result.all);
 
   // The trap this case exists for. `journal.write` records its entry BEFORE
   // attempting the write, so a write that failed outright is still journalled
@@ -521,6 +523,7 @@ test("a failed install reports nothing as written", () => {
 
   assert.equal(result.status, 1, result.all);
   assert.match(result.stderr, /install-failed/, result.all);
+  assert.doesNotMatch(result.stderr, /state-versioning-required/, result.all);
   // Phase 2 sits above the journal, so not one destination was touched — which
   // is exactly what this failure's own message promises the user.
   assert.doesNotMatch(result.stdout, /written/, result.all);
@@ -639,6 +642,7 @@ test("cancelling exits with zero mutation — no deps, no files, no receipt", as
   assert.equal(outcome.dependencies.command, null, "phase 2 is below the cancel return");
   assert.equal(outcome.theme.written, false);
   assert.equal(outcome.receipt.written, false);
+  assert.equal(outcome.updateState.changed, false);
   assert.deepEqual(outcome.files, [], "no decisions ride out of a cancelled phase 1");
 
   assert.deepEqual(manifest(project), before, "cancel is zero-mutation, whole-tree");
@@ -658,6 +662,7 @@ test("selecting nothing is a complete answer, not a cancellation", async () => {
   // throw away the two files the user did ask for.
   assert.equal(outcome.cancelled, false);
   assert.equal(outcome.ok, true);
+  assert.equal(outcome.updateState.changed, true);
   assert.equal(read(project, EMPTY_STATE), USER_TEXT, "declined file untouched");
   assert.ok(existsSync(join(project, DATA_GRID)), "the non-conflicting files still landed");
   assert.ok(existsSync(join(project, USE_DATA_GRID)));
@@ -803,6 +808,7 @@ test("--dry-run does NOT ask — a preview that blocks is not a preview", async 
 
   assert.deepEqual(manifest(project), before, "a dry run mutates nothing");
   assert.equal(outcome.dependencies.command, null);
+  assert.equal(outcome.updateState.changed, false);
   assertNoInstallerRan(project);
 });
 

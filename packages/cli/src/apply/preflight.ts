@@ -21,18 +21,64 @@
  * is not valid UTF-8 — so it would ship green.
  */
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { lstatSync, readFileSync, statSync } from "node:fs";
+import { dirname } from "node:path";
 
 import { assertInsideRoot } from "../config/aliases";
 import type { ApplyFailure, Plan } from "../plan/types";
 
-/** sha256 of the raw bytes at `path`, or `null` when the file does not exist. */
+function notDirectory(path: string): NodeJS.ErrnoException {
+  const error = new Error(`ENOTDIR: not a directory, stat '${path}'`) as NodeJS.ErrnoException;
+  error.code = "ENOTDIR";
+  error.path = path;
+  error.syscall = "stat";
+  return error;
+}
+
+/**
+ * Prove that a missing leaf is reachable through directories.
+ *
+ * Windows reports `ENOENT` for a path below a parent that is actually a file,
+ * while POSIX reports `ENOTDIR`. Treating the Windows result as ordinary
+ * absence lets plan/preflight approve a path that apply cannot create. Walk to
+ * the nearest existing ancestor so both platforms preserve the same boundary:
+ * missing directories are creatable; a non-directory ancestor is not.
+ *
+ * `lstatSync` is deliberate. A dangling symlink is an existing obstruction,
+ * not another missing directory to walk past; `statSync` then proves that a
+ * live symlink or junction resolves to a directory.
+ */
+function assertReachableMissingPath(path: string): void {
+  let candidate = dirname(path);
+
+  for (;;) {
+    let entry: ReturnType<typeof lstatSync>;
+    try {
+      entry = lstatSync(candidate);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      const parent = dirname(candidate);
+      if (parent === candidate) throw error;
+      candidate = parent;
+      continue;
+    }
+
+    const resolved = entry.isSymbolicLink() ? statSync(candidate) : entry;
+    if (!resolved.isDirectory()) throw notDirectory(candidate);
+    return;
+  }
+}
+
+/** sha256 of the raw bytes at `path`, or `null` when the file can be created. */
 export function hashFileBytes(path: string): string | null {
   let bytes: Buffer;
   try {
     bytes = readFileSync(path);
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      assertReachableMissingPath(path);
+      return null;
+    }
     // EACCES / EISDIR are not absence. Returning `null` for them would let the
     // comparison below read "the file is gone" and the write phase then replace
     // something we were never able to inspect.
@@ -62,9 +108,14 @@ export function preflight(plan: Plan): ApplyFailure | null {
     // Re-proved here rather than trusted from resolve(): `target-escapes-root` is
     // the one refusal §1's table lists in BOTH plan and apply preflight.
     assertInsideRoot(file.destination, plan.root);
+    assertInsideRoot(file.base.destination, plan.root);
   }
   if (plan.theme !== null) assertInsideRoot(plan.theme.destination, plan.root);
   if (plan.styles !== null) assertInsideRoot(plan.styles.destination, plan.root);
+  if (plan.verification !== null) {
+    assertInsideRoot(plan.verification.packageJson.path, plan.root);
+  }
+  for (const base of plan.removedBases) assertInsideRoot(base.destination, plan.root);
   assertInsideRoot(plan.receipt.path, plan.root);
 
   const stale: string[] = [];
@@ -77,9 +128,16 @@ export function preflight(plan: Plan): ApplyFailure | null {
     reasons.push(reason);
   };
 
-  for (const file of plan.files) note(file.destination, file.existing?.sha256 ?? null);
+  for (const file of plan.files) {
+    note(file.destination, file.existing?.sha256 ?? null);
+    note(file.base.destination, file.base.existing?.sha256 ?? null);
+  }
+  for (const base of plan.removedBases) note(base.destination, base.existing?.sha256 ?? null);
   if (plan.theme !== null) note(plan.theme.destination, plan.theme.base?.sha256 ?? null);
   if (plan.styles !== null) note(plan.styles.destination, plan.styles.base?.sha256 ?? null);
+  if (plan.verification !== null) {
+    note(plan.verification.packageJson.path, plan.verification.packageJson.sha256);
+  }
 
   // The receipt's check is asymmetric and BOTH arms are required. `present:false`
   // asserts the file is still absent — if a concurrent run (or a pull, or a

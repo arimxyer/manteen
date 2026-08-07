@@ -380,7 +380,7 @@ test("a failed receipt write unwinds the folded theme", { skip: !CAN_DENY_WRITES
   // as phase 3". A theme written through a journal of its own would satisfy
   // every other assertion in this file — including the one below it — because a
   // separate journal still unwinds its own entry. Only a failure LATER than the
-  // theme write can tell the two apart: phase 6 throws, and the theme has to
+  // theme write can tell the two apart: phase 7 throws, and the theme has to
   // come back.
   //
   // Injected from the outside rather than with a mock: the project ROOT drops to
@@ -461,7 +461,7 @@ test("a failed theme write unwinds the component files with it", { skip: !CAN_DE
   // `src/components/ui/data-grid.tsx` was written by phase 3 and must be gone
   // again — that only happens if phase 4's failure unwound phase 4's journal,
   // which is to say: the same one. The theme must hold its original bytes, and
-  // the receipt — phase 6, which never ran — must not exist.
+  // the receipt — phase 7, which never ran — must not exist.
   assert.deepEqual(manifest(project), before, "phase 3's writes must unwind with phase 4's");
   assert.equal(read(project, THEME_REL), BASE_THEME, "the theme was never modified");
   assert.equal(existsSync(join(project, RECEIPT)), false, "the receipt is the last mutation");

@@ -36,9 +36,17 @@ npx manteen info @house/article-card
 npx manteen add @house/article-card
 ```
 
-The source is copied into your aliases and belongs to your project afterward. Manteen records the
-source URL, ownership, hashes, theme contribution, and package styles in `manteen.lock.json`.
-Commit that receipt with the installed source.
+:::caution[Release availability]
+The receipt-v3 storage and update workflow below are implemented in the current repository source
+but are not in the public `manteen@0.2.0` package installed by the command above. They will arrive
+in the next contract-bearing release.
+:::
+
+The source is copied into your aliases and belongs to your project afterward. In the current
+source, Manteen records the source URL, ownership, installed hash, pristine-base hash, theme
+contribution, and package styles in the receipt-v3 `manteen.lock.json`. The exact pristine source
+for each ordinary file lives under `.manteen/bases/`. Commit the receipt, installed source, and
+`.manteen/bases/` together so updates remain reproducible in every clone.
 
 ## Maintain installed source
 
@@ -48,8 +56,19 @@ npx manteen diff --stat
 npx manteen update @house/article-card
 ```
 
-`diff` compares local files with their recorded registry sources. `update` fetches the current
-item and routes it through the same collision, version, theme, style, and overwrite checks used by
-`add`.
+`diff` shows what changed from the pristine base to your local file, what changed upstream, and
+what the proposed result would change locally. By default, `update` performs that same three-way
+merge: non-overlapping local and upstream edits are preserved together.
+
+If both sides changed the same text incompatibly, Manteen refuses before modifying the project;
+`--force` does not clear the conflict and conflict markers are never written. After reviewing the
+diff, explicitly discard local edits and reset to upstream only when that is what you intend:
+
+```bash
+npx manteen update @house/article-card --take-upstream
+```
+
+That reset also rebuilds a missing or corrupt pristine base. Files removed upstream are reported
+and retained; Manteen does not infer deletions or renames.
 
 Next, learn how to [build your own registry](../registry-authors/).

@@ -2,6 +2,38 @@
 
 ## Unreleased
 
+- Bound each post-update verification check with a wall-clock ceiling, five minutes by default and
+  configurable as `verification.timeoutMs`. The ceiling is per check rather than per run, so
+  ordering never decides whether a suite fits, and a terminated check reports `timed-out` rather
+  than `script-failed`.
+- Raise `state-versioning-required` from `info` to `warn` when the project's own `.gitignore`
+  carries a recognized rule hiding `.manteen/`, naming the `merge-base-unreadable` refusal it
+  causes. The check is one-directional and gates nothing: no matching rule is not evidence the
+  state is committed, so the advisory still prints either way.
+
+## 0.3.0
+
+- Replace update's skip-or-overwrite behavior with exact three-way source merging backed by
+  committed pristine bases. Local-only adaptations are preserved, upstream-only changes apply,
+  clean two-sided changes merge, and overlapping changes refuse before mutation.
+- Add receipt v3 with separate accepted-result and pristine-base hashes under `.manteen/bases/`.
+  Receipt v1 and v2 state is rejected rather than migrated; upgrading an existing project requires
+  an explicit adoption or reset decision instead of an invented merge ancestor.
+- Replace update's overwrite/yes flags with the explicit destructive `--take-upstream` operation,
+  and render base-to-local, base-to-incoming, and local-to-result patches in `manteen diff`.
+- `manteen update --take-upstream` no longer refuses when a pristine base is missing or corrupt.
+  It reads no ancestor, so the explicit destructive reset repairs the sidecar too — previously
+  recovery required expressing that reset indirectly as `add --overwrite`.
+- `list` and `info` no longer fail when a base path is unreadable, and `diff`/`update`/`add` report
+  it as `merge-base-unreadable` rather than dying with an uncoded error.
+- Emit `state-versioning-required` only after a successful command changes the receipt or pristine
+  bases, reminding the consumer to version both without pretending to inspect Git.
+- Add opt-in post-update verification through ordered project-owned `package.json` scripts.
+  Checks run fail-fast after the coherent update transaction, keep child output off JSON stdout,
+  detect managed/control-byte drift, and report verification failure without claiming rollback.
+- Add `--no-verify` for an explicit per-run skip while keeping malformed configuration invalid and
+  `--dry-run` limited to validating and reporting the checks that would run.
+
 ## 0.2.0
 
 - Initialize and maintain one explicitly configured, Manteen-owned package stylesheet without
