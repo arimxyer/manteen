@@ -352,9 +352,10 @@ successfully at <https://github.com/arimxyer/manteen/actions/runs/31148992494> a
 <https://github.com/arimxyer/manteen/actions/runs/31149087619>; the latter published
 `manteen@0.3.0` with provenance.
 
-A fresh public npm-plus-HTTPS consumer resolved `manteen@0.3.0`, `manteen-kit@0.2.0` and the
-14-item public registry, then added `@house/empty-state` and ran configured `typecheck` plus `build`
-checks at exit 0. Its v3 source/base hash was
+A fresh public npm-plus-HTTPS consumer, run before the later 22-item Pages deployment, resolved
+`manteen@0.3.0`, `manteen-kit@0.2.0` and the 14-item registry then live. It added
+`@house/empty-state` and ran configured `typecheck` plus `build` checks at exit 0. Its v3
+source/base hash was
 `824cd4dab40597935615719f5392547d0ca2dde0437f6d871bca9134eaf6fcc4`, the pristine base was 979
 bytes, and the receipt carried no `verification` field. The exact setup and command sequence are
 recorded in [`v0.3-release-handoff.md`](v0.3-release-handoff.md).
@@ -364,4 +365,6 @@ correctly exited 1 with `kind: "applied"` and `script-failed`, retained coherent
 source/base/receipt state, wrote no verification certificate, and did not increment the prior pass
 count. The outer assertion wrapper exited 0 only after proving that expected CLI failure. These
 receipts close public distribution and both verification outcomes without claiming that
-unconfigured checks or other environments passed.
+unconfigured checks or other environments passed. The subsequent 22-item Pages receipt in
+[`v0.3-release-handoff.md`](v0.3-release-handoff.md) closes deployment without retroactively
+widening this dated consumer proof.

@@ -46,8 +46,8 @@ verbatim upstream notice once at `LICENSES/MANTINE-UI.txt`.
 | `cards-carousel` | `@mantine/carousel`, package CSS + image-backed interaction | Demo data became props and callbacks; a dark overlay makes the white labels contrast-safe. |
 | `dropzone-button` | `@mantine/dropzone`, package CSS + file input behavior | Accepted files and labels became inputs; the hidden input has an accessible name. |
 
-The catalog now contains 14 items: the existing five, eight adapted components/blocks, and the
-shared license item.
+That tranche brought the catalog to 14 items: the existing five, eight adapted
+components/blocks, and the shared license item.
 
 ## Findings
 
