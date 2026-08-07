@@ -1,4 +1,5 @@
 /** Post-apply verification. Deliberately outside apply() and its journal. */
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { delimiter, dirname, resolve as resolvePath } from "node:path";
 
@@ -72,16 +73,37 @@ export function verificationExecutionCommand(
 }
 
 /**
- * Whether a thrown spawn error is our own timeout rather than a real failure.
+ * End the package-manager process and every verifier it spawned.
  *
- * Matched on the pair — `AbortError` carrying a `TimeoutError` cause — because
- * `AbortError` alone is also what an externally-supplied signal produces, and
- * that is a cancellation, not a check that outlived its ceiling.
+ * Killing only npm/pnpm/etc. is insufficient: a child verifier can retain the
+ * stdout/stderr pipes that tinyexec is awaiting, so the timeout itself hangs.
+ * `persist` below gives POSIX children their own process group; Windows exposes
+ * the equivalent tree operation through taskkill.
  */
-function isTimeoutAbort(error: unknown): boolean {
-  if (!(error instanceof Error) || error.name !== "AbortError") return false;
-  const cause = (error as { cause?: unknown }).cause;
-  return cause instanceof Error && cause.name === "TimeoutError";
+function terminateProcessTree(child: ReturnType<typeof x>["process"]): void {
+  const pid = child?.pid;
+  if (pid === undefined) return;
+
+  if (process.platform === "win32") {
+    const killed = spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"], {
+      stdio: "ignore",
+      windowsHide: true,
+    });
+    if (killed.status === 0) return;
+  } else {
+    try {
+      process.kill(-pid, "SIGKILL");
+      return;
+    } catch {
+      // The group may already be gone; fall back to the direct child below.
+    }
+  }
+
+  try {
+    child?.kill("SIGKILL");
+  } catch {
+    // The process exited between the timeout firing and the fallback kill.
+  }
 }
 
 /** Both child streams use `write`; the CLI supplies its stderr channel. */
@@ -111,17 +133,20 @@ export function createVerificationRunner(write: VerificationOutput): Verificatio
     const useCorepack = !DIRECT_PACKAGE_MANAGERS.has(check.executable) && (await hasCorepack(cwd));
     const command = verificationExecutionCommand(check, useCorepack);
 
-    // Declared outside the `try` because the catch branch needs it too: a
-    // timeout throws, and the child it killed still carries the signal.
+    // Declared outside the `try` because the catch branch needs to distinguish
+    // a process that started from an executable that never did.
     let child: ReturnType<typeof x>["process"];
+    let timedOut = false;
+    let timeout: ReturnType<typeof setTimeout> | null = null;
     try {
       // `x` supplies the cross-platform normalizer used by nypm itself,
       // including Windows `.cmd` handling. PATH is explicitly based on the
-      // verified project root above; we still own streaming and result shape.
+      // verified project root above; we still own streaming, the process-tree
+      // timeout and the result shape.
       const execution = x(command.executable, command.args, {
         throwOnError: false,
         nodePath: false,
-        timeout: timeoutMs,
+        persist: true,
         nodeOptions: {
           cwd,
           env: verificationEnvironment(cwd),
@@ -131,28 +156,27 @@ export function createVerificationRunner(write: VerificationOutput): Verificatio
       child = execution.process;
       child?.stdout?.on("data", (chunk: Buffer | string) => write(chunk.toString()));
       child?.stderr?.on("data", (chunk: Buffer | string) => write(chunk.toString()));
+      timeout = setTimeout(() => {
+        timedOut = true;
+        terminateProcessTree(child);
+      }, timeoutMs);
       const result = await execution;
       return {
         started: true,
         exitCode: result.exitCode ?? null,
         signal: child?.signalCode ?? null,
-        timedOut: false,
+        timedOut,
       };
     } catch (error) {
-      // tinyexec implements `timeout` as an `AbortSignal.timeout()` on the
-      // spawn, and — unlike an ordinary abort, which it swallows — it RETHROWS
-      // when the abort reason is a timeout. So the timeout arrives here, in the
-      // same branch as "the executable does not exist", and the two must not be
-      // conflated: one means nothing ever ran, the other means something ran and
-      // was cut short. `started` is the field that distinguishes them, and it is
-      // true for a timeout.
-      if (isTimeoutAbort(error)) {
+      if (timedOut) {
         return { started: true, exitCode: null, signal: child?.signalCode ?? null, timedOut: true };
       }
       return {
         started: false,
         message: error instanceof Error ? error.message : String(error),
       };
+    } finally {
+      if (timeout !== null) clearTimeout(timeout);
     }
   };
 }
