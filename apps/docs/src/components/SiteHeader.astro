@@ -57,9 +57,8 @@ const links = [
   const canScroll = (overflow: string) => overflow === "auto" || overflow === "scroll";
 
   const refreshScrollEdges = (scroller: HTMLElement) => {
-    // `.manteen-table-scroll` only becomes a scroller below the grid breakpoint, and content can
-    // overhang a visible-overflow box too — fading an edge the reader cannot scroll would be a
-    // lie, so the axis has to be genuinely scrollable before the affordance is painted.
+    // A candidate can still be a visible-overflow box, so fading an edge the reader cannot scroll
+    // would be a lie. The axis has to be genuinely scrollable before the affordance is painted.
     const style = getComputedStyle(scroller);
     const moreX =
       canScroll(style.overflowX) &&

@@ -176,6 +176,7 @@
   --ec-brdWd: 1px;
   --ec-brdCol: var(--manteen-border);
   --ec-codeBg: var(--manteen-code-canvas);
+  --ec-gtrFg: var(--manteen-text-faint);
   --ec-uiFontFml: var(--__sl-font-mono);
   --ec-uiFontSize: 0.8rem;
   /* The title strip must clear the 2rem copy control it hosts: at 0.4rem the strip computed
@@ -844,6 +845,17 @@
    `overflow: auto` behind a CSS-module hash, so it can't be named by class from here; it's
    reached instead via the `data-viewport` + `data-preview-scheme` pair Playground.tsx sets on
    that one element (verified the only place both attributes are used together in the site). */
+.manteen-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.manteen-table-scroll table {
+  display: table;
+  overflow: visible;
+}
+
 .manteen-table-scroll,
 .expressive-code pre,
 [data-viewport][data-preview-scheme] {
@@ -880,8 +892,7 @@
   display: flex;
 }
 
-/* The table wrapper is only a scroller below the grid breakpoint (see the 40rem block), so it
-   gets its trailing gutter there. */
+/* The table wrapper gets its trailing gutter only below the grid breakpoint. */
 @media (max-width: 40rem) {
   .manteen-table-scroll {
     padding-inline-end: 0.25rem;
@@ -935,12 +946,6 @@
 
   .registry-embed {
     padding-top: 2.5rem;
-  }
-
-  .manteen-table-scroll {
-    max-width: 100%;
-    overflow-x: auto;
-    overscroll-behavior-inline: contain;
   }
 
   .manteen-table-scroll table {
