@@ -431,8 +431,13 @@ test("a non-interactive local-only update and dry-run both preserve the edit", (
   assert.match(readFileSync(target, "utf8"), /a local edit/, "a dry run must not write");
 });
 
-test("add commits an exact base and a clean two-sided update preserves both changes", () => {
+test("add commits an exact CRLF base and a clean two-sided update preserves both changes", () => {
   const moved = publish(BASE_FIXTURE, "base-clean-merge");
+  const itemDoc = join(WORK, "base-clean-merge", "empty-state.json");
+  const initialDoc = JSON.parse(readFileSync(itemDoc, "utf8"));
+  initialDoc.files[0].content = initialDoc.files[0].content.replace(/\r?\n/g, "\r\n");
+  writeFileSync(itemDoc, `${JSON.stringify(initialDoc, null, 2)}\n`);
+
   const project = makeProject({ registries: { "@base": moved } });
   assert.equal(run(project, ["add", ITEM]).status, 0);
 
@@ -446,14 +451,28 @@ test("add commits an exact base and a clean two-sided update preserves both chan
   assert.equal(firstReceipt.lockfileVersion, 3);
   assert.equal(firstFile.installedSha256, firstFile.baseSha256);
 
+  const installedNewline = installed.includes("\r\n") ? "\r\n" : "\n";
+  const localAnchor = `${installedNewline}${installedNewline}export function`;
+  assert.ok(installed.includes(localAnchor), "the local-edit fixture anchor must exist");
   writeFileSync(
     target,
-    installed.replace("\n\nexport function", "\n// local adaptation\n\nexport function"),
+    installed.replace(
+      localAnchor,
+      `${installedNewline}// local adaptation${installedNewline}${installedNewline}export function`,
+    ),
   );
 
-  const itemDoc = join(WORK, "base-clean-merge", "empty-state.json");
   const doc = JSON.parse(readFileSync(itemDoc, "utf8"));
-  doc.files[0].content = doc.files[0].content.replace("\n}\n", "\n  // upstream addition\n}\n");
+  const upstreamNewline = doc.files[0].content.includes("\r\n") ? "\r\n" : "\n";
+  const upstreamAnchor = `${upstreamNewline}}${upstreamNewline}`;
+  assert.ok(
+    doc.files[0].content.includes(upstreamAnchor),
+    "the upstream-edit fixture anchor must exist",
+  );
+  doc.files[0].content = doc.files[0].content.replace(
+    upstreamAnchor,
+    `${upstreamNewline}  // upstream addition${upstreamNewline}}${upstreamNewline}`,
+  );
   writeFileSync(itemDoc, `${JSON.stringify(doc, null, 2)}\n`);
 
   const updated = run(project, ["update"]);

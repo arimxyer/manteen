@@ -1,8 +1,9 @@
 import { afterAll, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { hashFileBytes } from "../src/apply/preflight";
 import { checkReservedTargets } from "../src/gates/reserved";
 import { mergeFile, splitExactLines } from "../src/plan/merge-file";
 import { manteenStateIsGitIgnored } from "../src/plan/state-ignored";
@@ -32,6 +33,48 @@ describe("exact three-way file merge", () => {
     expect(splitExactLines("a\r\nb\r\n")).toEqual(["a\r\n", "b\r\n"]);
     expect(splitExactLines("a\nb")).toEqual(["a\n", "b"]);
     expect(splitExactLines("")).toEqual([]);
+  });
+});
+
+describe("cross-platform missing-path hashing", () => {
+  const roots: string[] = [];
+  afterAll(() => {
+    for (const root of roots) rmSync(root, { recursive: true, force: true });
+  });
+
+  function root(): string {
+    const value = mkdtempSync(join(tmpdir(), "manteen-hash-path-"));
+    roots.push(value);
+    return value;
+  }
+
+  test("returns null when missing parent directories can be created", () => {
+    expect(hashFileBytes(join(root(), "missing", "nested", "base.tsx"))).toBeNull();
+  });
+
+  test("does not treat a file blocking the parent path as absence", () => {
+    const directory = root();
+    const blocker = join(directory, "blocked");
+    writeFileSync(blocker, "not a directory\n");
+
+    try {
+      hashFileBytes(join(blocker, "nested", "base.tsx"));
+      throw new Error("expected a blocked parent path to throw");
+    } catch (error) {
+      expect((error as NodeJS.ErrnoException).code).toBe("ENOTDIR");
+    }
+  });
+
+  test("does not treat a directory occupying the leaf as absence", () => {
+    const leaf = join(root(), "base.tsx");
+    mkdirSync(leaf);
+
+    try {
+      hashFileBytes(leaf);
+      throw new Error("expected a directory at the leaf to throw");
+    } catch (error) {
+      expect((error as NodeJS.ErrnoException).code).toBe("EISDIR");
+    }
   });
 });
 

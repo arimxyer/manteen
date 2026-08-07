@@ -21,18 +21,64 @@
  * is not valid UTF-8 — so it would ship green.
  */
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { lstatSync, readFileSync, statSync } from "node:fs";
+import { dirname } from "node:path";
 
 import { assertInsideRoot } from "../config/aliases";
 import type { ApplyFailure, Plan } from "../plan/types";
 
-/** sha256 of the raw bytes at `path`, or `null` when the file does not exist. */
+function notDirectory(path: string): NodeJS.ErrnoException {
+  const error = new Error(`ENOTDIR: not a directory, stat '${path}'`) as NodeJS.ErrnoException;
+  error.code = "ENOTDIR";
+  error.path = path;
+  error.syscall = "stat";
+  return error;
+}
+
+/**
+ * Prove that a missing leaf is reachable through directories.
+ *
+ * Windows reports `ENOENT` for a path below a parent that is actually a file,
+ * while POSIX reports `ENOTDIR`. Treating the Windows result as ordinary
+ * absence lets plan/preflight approve a path that apply cannot create. Walk to
+ * the nearest existing ancestor so both platforms preserve the same boundary:
+ * missing directories are creatable; a non-directory ancestor is not.
+ *
+ * `lstatSync` is deliberate. A dangling symlink is an existing obstruction,
+ * not another missing directory to walk past; `statSync` then proves that a
+ * live symlink or junction resolves to a directory.
+ */
+function assertReachableMissingPath(path: string): void {
+  let candidate = dirname(path);
+
+  for (;;) {
+    let entry: ReturnType<typeof lstatSync>;
+    try {
+      entry = lstatSync(candidate);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      const parent = dirname(candidate);
+      if (parent === candidate) throw error;
+      candidate = parent;
+      continue;
+    }
+
+    const resolved = entry.isSymbolicLink() ? statSync(candidate) : entry;
+    if (!resolved.isDirectory()) throw notDirectory(candidate);
+    return;
+  }
+}
+
+/** sha256 of the raw bytes at `path`, or `null` when the file can be created. */
 export function hashFileBytes(path: string): string | null {
   let bytes: Buffer;
   try {
     bytes = readFileSync(path);
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      assertReachableMissingPath(path);
+      return null;
+    }
     // EACCES / EISDIR are not absence. Returning `null` for them would let the
     // comparison below read "the file is gone" and the write phase then replace
     // something we were never able to inspect.
