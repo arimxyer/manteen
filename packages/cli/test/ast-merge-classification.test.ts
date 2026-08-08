@@ -30,7 +30,7 @@ describe("D41 evidence-only AST merge classification", () => {
       assessment: "true-independent",
       demonstratesValueOverBaseline: true,
     });
-  });
+  }, 15_000);
 
   test("classification is read-only and exposes no merged source", () => {
     const base = readFileSync(

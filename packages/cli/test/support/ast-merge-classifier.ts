@@ -161,8 +161,7 @@ function anchorsOf(source: SourceFile): Anchor[] {
   return anchors;
 }
 
-function parse(text: string, fileName: string): ParsedSource {
-  const project = new Project({ useInMemoryFileSystem: true, skipAddingFilesFromTsConfig: true });
+function parse(project: Project, text: string, fileName: string): ParsedSource {
   const source = project.createSourceFile(fileName, text, { scriptKind: ScriptKind.TSX });
   const compilerSource = source.compilerNode as typeof source.compilerNode & {
     parseDiagnostics?: readonly unknown[];
@@ -244,9 +243,10 @@ export function classifyAstMerge(input: AstClassificationInput): AstClassificati
     };
   }
 
-  const base = parse(input.base, "base.tsx");
-  const local = parse(input.local, "local.tsx");
-  const incoming = parse(input.incoming, "incoming.tsx");
+  const project = new Project({ useInMemoryFileSystem: true, skipAddingFilesFromTsConfig: true });
+  const base = parse(project, input.base, "base.tsx");
+  const local = parse(project, input.local, "local.tsx");
+  const incoming = parse(project, input.incoming, "incoming.tsx");
   const parseReasons: AstClassificationReason[] = [];
   if (base.parseUncertain) parseReasons.push({ code: "parse-uncertain" });
   if (local.parseUncertain) parseReasons.push({ code: "parse-uncertain", side: "local" });
