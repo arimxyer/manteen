@@ -35,12 +35,6 @@ suppresses them.
 
 ## Remove files omitted upstream
 
-:::caution[Implemented but not published]
-This command is implemented in repository source but is not present in the currently published
-`manteen@0.3.0` package. The documentation below describes that unreleased client surface; it does
-not announce a `0.4.0` release.
-:::
-
 First discover every ordinary receipt-owned file that its same current item no longer publishes:
 
 ```bash
@@ -99,8 +93,7 @@ diagnostics, notes, and failures as one document without embedding source or bas
 npx manteen init --help
 npx manteen add --help
 npx manteen diff --help
-# Repository source build only until a package release includes remove
-manteen remove --help
+npx manteen remove --help
 ```
 
 The CLI requires Node 22.12 or newer and runs with npm, pnpm, Yarn, or Bun projects. Windows is

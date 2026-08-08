@@ -37,7 +37,7 @@ npx manteen add @house/article-card
 ```
 
 :::caution[Receipt v3 compatibility break]
-Public `manteen@0.3.0` includes the receipt-v3 storage and update workflow below, and accepts only
+`manteen@0.3.0` and newer include the receipt-v3 storage and update workflow below, and accept only
 v3 state. A project with a v1/v2 receipt from `0.2.x` cannot perform an ordinary in-place update.
 
 Manual re-adoption is a destructive reset, not a migration. First commit or back up the whole
@@ -60,8 +60,8 @@ unclear, stay on `0.2.x`. See the
 for the compatibility and evidence boundary.
 :::
 
-The source is copied into your aliases and belongs to your project afterward. In `manteen@0.3.0`,
-Manteen records the source URL, ownership, installed hash, pristine-base hash, theme
+The source is copied into your aliases and belongs to your project afterward. In `manteen@0.3.0`
+and newer, Manteen records the source URL, ownership, installed hash, pristine-base hash, theme
 contribution, and package styles in the receipt-v3 `manteen.lock.json`. The exact pristine source
 for each ordinary file lives under `.manteen/bases/`. Commit the receipt, installed source, and
 `.manteen/bases/` together so updates remain reproducible in every clone.
@@ -89,25 +89,18 @@ npx manteen update @house/article-card --take-upstream
 That reset also rebuilds a missing or corrupt pristine base. Files removed upstream are reported
 and retained by `update`; Manteen does not infer deletions or renames.
 
-:::caution[Upstream removal is not in public 0.3.0]
-The repository's unreleased client implements the explicit removal workflow below, but the
-currently published `manteen@0.3.0` package does not contain it. This is not a `0.4.0` release
-announcement.
-:::
-
-In a source build containing that command (shown as `manteen` below), first discover every file
-proven absent from the same current registry item:
+First discover every file proven absent from the same current registry item:
 
 ```bash
-manteen remove --upstream-removed --dry-run
+npx manteen remove --upstream-removed --dry-run
 ```
 
 Then preview the exact POSIX receipt destination you intend to remove, and rerun without
 `--dry-run` only after reviewing it:
 
 ```bash
-manteen remove --upstream-removed --file src/components/ui/old.tsx --dry-run
-manteen remove --upstream-removed --file src/components/ui/old.tsx
+npx manteen remove --upstream-removed --file src/components/ui/old.tsx --dry-run
+npx manteen remove --upstream-removed --file src/components/ui/old.tsx
 ```
 
 If the local file differs from its pristine upstream base, the selection refuses as adapted.
@@ -115,7 +108,7 @@ Preserve the file, or repeat the same exact selection with the additional destru
 when discarding that adaptation is deliberate:
 
 ```bash
-manteen remove --upstream-removed \
+npx manteen remove --upstream-removed \
   --file src/components/ui/old.tsx \
   --discard-adapted
 ```

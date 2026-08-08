@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.4.0
+
 - Add `manteen remove --upstream-removed` as a separate, explicit lifecycle command for ordinary
   receipt-owned files their same current registry item no longer publishes. An unselected
   `--dry-run` discovers proven candidates; real removal requires repeated exact POSIX `--file`

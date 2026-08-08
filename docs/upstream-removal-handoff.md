@@ -1,9 +1,11 @@
 # Upstream removal handoff
 
-Status: **implemented and locally accepted; hosted acceptance, merge and release remain open.**
-This is the prospective client-only `manteen@0.4.0` lifecycle milestone. It changes neither
-`manteen-kit@0.2.0`, receipt version 3 nor the registry interchange format, and it authorizes no
-tag, npm publication or Pages deployment.
+Status: **implemented, independently reviewed, hosted-green and merged; the client-only `0.4.0`
+release remains open.** PR [#15](https://github.com/arimxyer/manteen/pull/15) merged as
+`2a4c94efdaf20e81676ce835e931f15bb7f6fdd3` after CI run
+[`31207003141`](https://github.com/arimxyer/manteen/actions/runs/31207003141) passed all 12 checks.
+The milestone changes neither `manteen-kit@0.2.0`, receipt version 3 nor the registry interchange
+format, and requires no Pages deployment.
 
 ## The problem
 
@@ -272,8 +274,9 @@ The safest implementation order is:
    public-consumer lifecycle proof pass.
 
 The kit remains `0.2.0`. No registry item or Pages deployment is required for the CLI capability.
-README, changelog and public CLI reference describe the implemented-but-unreleased surface. A
-future tag still requires separate hosted matrix and fresh public-consumer lifecycle acceptance.
+README, changelog and public CLI reference describe the `0.4.0` release-candidate surface. The tag
+still requires a separately reviewed release candidate and fresh public-consumer lifecycle
+acceptance.
 
 ## Local implementation receipt — 2026-08-07
 
