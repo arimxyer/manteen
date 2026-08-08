@@ -1,0 +1,87 @@
+/**
+ * Adapted from Mantine UI's CardsCarousel at
+ * ffbf61c559f374a7ea28fcf00355e84dcbe9a908. MIT licensed; see
+ * LICENSES/MANTINE-UI.txt after installation.
+ */
+
+import { Carousel } from "@mantine/carousel";
+import { Button, Paper, Text, Title, useMantineTheme } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
+
+import classes from "./cards-carousel.module.css";
+
+export interface CardsCarouselItem {
+  id: string;
+  image: string;
+  title: string;
+  category: string;
+  badge?: string;
+  href?: string;
+}
+
+export interface CardsCarouselProps {
+  items: readonly CardsCarouselItem[];
+  actionLabel?: string;
+  onSelect?: (item: CardsCarouselItem) => void;
+}
+
+interface CardProps {
+  item: CardsCarouselItem;
+  actionLabel: string;
+  onSelect?: (item: CardsCarouselItem) => void;
+}
+
+function CarouselItemCard({ item, actionLabel, onSelect }: CardProps) {
+  const action = item.href ? (
+    <Button component="a" href={item.href} variant="white" color="dark">
+      {actionLabel}
+    </Button>
+  ) : onSelect ? (
+    <Button variant="white" color="dark" onClick={() => onSelect(item)}>
+      {actionLabel}
+    </Button>
+  ) : null;
+
+  return (
+    <Paper
+      shadow="md"
+      p="xl"
+      radius="md"
+      style={{
+        backgroundImage: `linear-gradient(rgb(0 0 0 / 55%), rgb(0 0 0 / 55%)), url(${item.image})`,
+      }}
+      className={classes.card}
+    >
+      <div>
+        <Text className={classes.category} size="xs">
+          {item.category}
+        </Text>
+        <Title order={3} className={classes.title}>
+          {item.title}
+        </Title>
+      </div>
+      {action}
+    </Paper>
+  );
+}
+
+export function CardsCarousel({ items, actionLabel = "View", onSelect }: CardsCarouselProps) {
+  const theme = useMantineTheme();
+  const mobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
+
+  return (
+    <Carousel
+      slideSize={{ base: "100%", sm: "50%" }}
+      slideGap={2}
+      emblaOptions={{ align: "start", slidesToScroll: mobile ? 1 : 2 }}
+      nextControlProps={{ "aria-label": "Next slide" }}
+      previousControlProps={{ "aria-label": "Previous slide" }}
+    >
+      {items.map((item) => (
+        <Carousel.Slide key={item.id}>
+          <CarouselItemCard item={item} actionLabel={actionLabel} onSelect={onSelect} />
+        </Carousel.Slide>
+      ))}
+    </Carousel>
+  );
+}

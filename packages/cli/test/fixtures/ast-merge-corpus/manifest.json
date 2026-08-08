@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "sourcePath": "registry/mantine-ui/cards-carousel/cards-carousel.tsx",
+  "upstreamPairs": {
+    "slide-size": {
+      "baseRevision": "330968a9b2076efa47ee29d1a20a6cf6dd2684d7",
+      "incomingRevision": "689a314ae93f3d63973211574251f86ec87c6341",
+      "baseSha256": "3c2eb04a106df47783cd38b15d44a159f27ef8e22d382ad9b055b93766eab7e9",
+      "incomingSha256": "cb0755078f943eb24e2c55da3376c4630e48c902907473b72fd6e6cfd1df6ce9",
+      "baseFile": "revisions/cards-carousel-330968a.tsx.txt",
+      "incomingFile": "revisions/cards-carousel-689a314.tsx.txt",
+      "provenance": "real-repository-history"
+    },
+    "styles-api": {
+      "baseRevision": "689a314ae93f3d63973211574251f86ec87c6341",
+      "incomingRevision": "b11e3600dee6d4f72fc1404e644d3464b0e906cb",
+      "baseSha256": "cb0755078f943eb24e2c55da3376c4630e48c902907473b72fd6e6cfd1df6ce9",
+      "incomingSha256": "53622c3003649f20a349eac8397b46a33798fcc169fdd234a2be33b0d5311639",
+      "baseFile": "revisions/cards-carousel-689a314.tsx.txt",
+      "incomingFile": "revisions/cards-carousel-b11e360.tsx.txt",
+      "provenance": "real-repository-history"
+    }
+  },
+  "cases": [
+    {
+      "id": "adjacent-distinct-imports",
+      "upstreamPair": "slide-size",
+      "localFile": "locals/local-adjacent-import.tsx.txt",
+      "localProvenance": "synthetic-controlled-adaptation",
+      "localDescription": "Add ActionIcon to the existing @mantine/core import while upstream adds CarouselProps to the adjacent @mantine/carousel import.",
+      "reviewedGroundTruth": "independent",
+      "groundTruthReason": "The two exact edits belong to distinct, uniquely keyed import declarations."
+    },
+    {
+      "id": "disjoint-exported-declarations",
+      "upstreamPair": "slide-size",
+      "localFile": "locals/local-disjoint-declaration.tsx.txt",
+      "localProvenance": "synthetic-controlled-adaptation",
+      "localDescription": "Add a badge field to CardsCarouselItem while upstream changes CardsCarouselProps and CardsCarousel.",
+      "reviewedGroundTruth": "independent",
+      "groundTruthReason": "The local interface and all upstream declaration keys are distinct."
+    },
+    {
+      "id": "same-exported-declaration",
+      "upstreamPair": "slide-size",
+      "localFile": "locals/local-same-key.tsx.txt",
+      "localProvenance": "synthetic-controlled-adaptation",
+      "localDescription": "Add testId to CardsCarouselProps while upstream adds two props to that same interface.",
+      "reviewedGroundTruth": "must-refuse",
+      "groundTruthReason": "Both sides change InterfaceDeclaration:CardsCarouselProps."
+    },
+    {
+      "id": "declaration-kind-change",
+      "upstreamPair": "styles-api",
+      "localFile": "locals/local-rename-edit.tsx.txt",
+      "localProvenance": "synthetic-controlled-adaptation",
+      "localDescription": "Change slideGap inside the exported CardsCarousel function while upstream replaces that function declaration with an exported factory const.",
+      "reviewedGroundTruth": "must-refuse",
+      "groundTruthReason": "The exported name survives but its declaration kind and body ownership change."
+    },
+    {
+      "id": "unexported-rename-versus-edit",
+      "upstreamPair": "styles-api",
+      "localFile": "locals/local-delete-edit.tsx.txt",
+      "localProvenance": "synthetic-controlled-adaptation",
+      "localDescription": "Edit internal CardProps while upstream replaces it with CarouselItemCardProps.",
+      "reviewedGroundTruth": "must-refuse",
+      "groundTruthReason": "The conservative exported-name key set cannot prove an internal rename mapping."
+    },
+    {
+      "id": "local-parse-error",
+      "upstreamPair": "slide-size",
+      "localFile": "locals/local-parse-error.tsx.txt",
+      "localProvenance": "synthetic-controlled-adaptation",
+      "localDescription": "Break the local @mantine/carousel import syntax.",
+      "reviewedGroundTruth": "must-refuse",
+      "groundTruthReason": "A syntax-uncertain input cannot grant structural independence."
+    },
+    {
+      "id": "anonymous-default-addition",
+      "upstreamPair": "slide-size",
+      "localFile": "locals/local-anonymous-default.tsx.txt",
+      "localProvenance": "synthetic-controlled-adaptation",
+      "localDescription": "Add an anonymous default export after the existing source.",
+      "reviewedGroundTruth": "must-refuse",
+      "groundTruthReason": "The addition has no stable exported declaration key."
+    },
+    {
+      "id": "duplicate-import-key",
+      "upstreamPair": "slide-size",
+      "localFile": "locals/local-duplicate-import.tsx.txt",
+      "localProvenance": "synthetic-controlled-adaptation",
+      "localDescription": "Change and duplicate the @mantine/core import declaration.",
+      "reviewedGroundTruth": "must-refuse",
+      "groundTruthReason": "A module specifier occurring twice is not a unique structural anchor."
+    },
+    {
+      "id": "cross-file-local-adaptation",
+      "upstreamPair": "styles-api",
+      "localFile": "locals/local-cross-file.tsx.txt",
+      "localProvenance": "synthetic-controlled-adaptation",
+      "localDescription": "Represent one file from a controlled local adaptation that also changes a companion stylesheet.",
+      "crossFile": true,
+      "reviewedGroundTruth": "must-refuse",
+      "groundTruthReason": "One-file structural keys cannot prove independence for a multi-file local change."
+    }
+  ]
+}

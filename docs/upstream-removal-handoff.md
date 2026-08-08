@@ -1,11 +1,15 @@
 # Upstream removal handoff
 
-Status: **implemented, independently reviewed, hosted-green and merged; the client-only `0.4.0`
-release remains open.** PR [#15](https://github.com/arimxyer/manteen/pull/15) merged as
+Status: **complete and public in the client-only `manteen@0.4.0` release.** Implementation PR
+[#15](https://github.com/arimxyer/manteen/pull/15) merged as
 `2a4c94efdaf20e81676ce835e931f15bb7f6fdd3` after CI run
 [`31207003141`](https://github.com/arimxyer/manteen/actions/runs/31207003141) passed all 12 checks.
-The milestone changes neither `manteen-kit@0.2.0`, receipt version 3 nor the registry interchange
-format, and requires no Pages deployment.
+Release PR [#16](https://github.com/arimxyer/manteen/pull/16), merge
+`d93b24ac71942d939693994486db8b753d88e14b`, signed tag, trusted workflow, npm provenance and
+fresh public controlled-registry acceptance are recorded in the
+[`0.4 release handoff`](v0.4-release-handoff.md). The milestone changes neither
+`manteen-kit@0.2.0`, receipt version 3 nor the registry interchange format, and required no Pages
+deployment.
 
 ## The problem
 
@@ -273,10 +277,10 @@ The safest implementation order is:
 6. publish only through a separately reviewed client `0.4.0` tag if the hosted matrix and fresh
    public-consumer lifecycle proof pass.
 
-The kit remains `0.2.0`. No registry item or Pages deployment is required for the CLI capability.
-README, changelog and public CLI reference describe the `0.4.0` release-candidate surface. The tag
-still requires a separately reviewed release candidate and fresh public-consumer lifecycle
-acceptance.
+The kit remains `0.2.0`. No registry item or Pages deployment was required for the CLI capability.
+README, changelog and public CLI reference describe the public `0.4.0` surface. The separately
+reviewed release candidate and fresh public-consumer lifecycle acceptance are complete in the
+[`0.4 release handoff`](v0.4-release-handoff.md).
 
 ## Local implementation receipt — 2026-08-07
 

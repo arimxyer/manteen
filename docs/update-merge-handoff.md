@@ -251,3 +251,27 @@ D41 keeps the exact line-oriented merger for `0.3.0`, rejects AST-produced outpu
 conservative AST-assisted classification open. Revisit it only against a corpus containing real or
 controlled local adaptations and named old/new upstream revisions, with exact-output preservation,
 conflict reduction and lost-edit refusal measured separately.
+
+## Read-only classification follow-on — 2026-08-08
+
+After public `manteen@0.4.0` acceptance, the bounded follow-on was run and committed as
+[`ast-assisted-merge-spike.md`](ast-assisted-merge-spike.md) plus its
+[`machine report`](ast-assisted-merge-spike.json). It uses two named real upstream pairs for one
+historical registry TSX source and nine explicitly synthetic controlled local adaptations. The
+production `mergeFile()` result is the baseline for every case.
+
+The classifier emits no source. It parses read-only, records original-string line-token offsets,
+keys imports by module specifier and uniquely named exported top-level declarations by kind plus
+name, and labels only disjoint stable key sets as `independent-candidate`. Same-key, internal
+rename/delete, parse, anonymous/default, duplicate-key and cross-file cases refuse.
+
+Results: five baseline conflicts, two independent candidates, seven refusals, one reviewed
+independent conflict recovered, zero false-independent results and zero false refusals. The
+recovered case combines a real upstream change to the `@mantine/carousel` import with a controlled
+local change to the adjacent `@mantine/core` import: diff3 conflicts on the neighboring lines,
+while the keys are distinct.
+
+This satisfies the spike's narrow positive stopping condition, but it does not supersede D41. One
+source path and synthetic local sides prove neither a population conflict rate nor a safe merge
+output algorithm. Production update/diff remain byte-exact and line-oriented; any integration
+requires a separate contract and broader acceptance.
