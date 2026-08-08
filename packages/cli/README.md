@@ -145,9 +145,8 @@ raised to a warning that names what breaks. The check runs one way only: a recog
 evidence of a problem, while no matching rule is not evidence the state is committed. That is why
 the reminder prints either way and nothing is ever gated on the answer.
 
-The repository's unreleased client also implements explicit pruning for ordinary files that their
-same registry item no longer publishes. The public `manteen@0.3.0` package does **not** contain this
-command yet. In a source build that includes it, discover every proven candidate first:
+Manteen also implements explicit pruning for ordinary files that their same registry item no
+longer publishes. Discover every proven candidate first:
 
 ```bash
 manteen remove --upstream-removed --dry-run

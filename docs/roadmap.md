@@ -17,8 +17,9 @@ and something a stranger can depend on, and how the remaining work is sequenced.
 6. **Maintainable** — a linter, dependency automation, and a license file that matches what
    `package.json` claims.
 
-Today: all six criteria are implemented through the public `manteen@0.3.0` client line. W6 `init`
-is complete through its built-Node acceptance tier, W7 closed with a green hosted runtime, OS and
+Today: all six criteria are public through the `manteen@0.3.0` client line, while `main` carries
+the hosted-green client-only `0.4.0` release candidate for explicit upstream removal. W6 `init` is
+complete through its built-Node acceptance tier, W7 closed with a green hosted runtime, OS and
 package-manager matrix, and W8 established provenance-bearing releases. The separately versioned
 `manteen-kit` remains public at `0.2.0`. The accepted 22-item Pages content milestone is commit
 `8853a720352c8842ce6957a494f919ec7cccda67`, run
@@ -42,9 +43,10 @@ complete. The findings and hosted closure receipt are recorded in
 **Commands.** `init`, `add`, `list`, `info`, `diff` and `update` ship. In public `0.3.0`, `update`
 uses Wu's receipt-v3 three-way model. `search` does not exist and is not currently assigned to a
 wave; whether it belongs in v1 remains undecided. `remove` also does not ship in public `0.3.0`:
-its first, deliberately narrow mode is implemented and locally accepted as explicit upstream-file
-pruning in [`upstream-removal-handoff.md`](upstream-removal-handoff.md), with hosted acceptance,
-merge and a prospective client-only `0.4.0` release still open. The public release also supports project-owned
+its first, deliberately narrow mode is implemented, hosted-green and merged as explicit
+upstream-file pruning in [`upstream-removal-handoff.md`](upstream-removal-handoff.md). Only the
+prospective client-only `0.4.0` publication and fresh public-consumer acceptance remain. The public
+release also supports project-owned
 verification: configured `package.json` scripts run only after a coherent update has applied, and
 a failed check never pretends the update rolled back. Its frozen boundary, source/built-Node
 receipt and public-release acceptance are in
@@ -118,7 +120,7 @@ is a judgment call, which is exactly why they are separate runs.
 | Wt | [`Theme builder`](#wt--theme-builder-proposed) | proposed: one page, plan-first | Preview-then-install for the one registry item every consumer is expected to edit. Depends on nothing; blocked by nothing. |
 | Wu | [`Update merging`](update-merge-handoff.md) | complete and public in `0.3.0`: receipt v3, exact bases, three-way plan, explicit reset, three-axis diff, built-Node and controlled-revision acceptance | Changes ordinary source maintenance from skip-or-replace to reproducible three-way merging without weakening the existing plan/apply transaction. |
 | Wv | [`Update verification`](update-verification-handoff.md) | complete and public in `0.3.0`: post-apply orchestration, fail-fast bounded project scripts, drift detection, built-Node and fresh-consumer acceptance | Lets a consumer define what “the merged component still works here” means without placing arbitrary scripts inside Manteen's rollback journal. |
-| Wp | [`Upstream removal`](upstream-removal-handoff.md) | implemented and locally accepted; hosted acceptance/merge/release open | Adds explicit, exact-selected pruning for ordinary files proven absent upstream without turning update into implicit deletion or inferring renames. |
+| Wp | [`Upstream removal`](upstream-removal-handoff.md) | implemented, hosted-green and merged; client-only `0.4.0` publication open | Adds explicit, exact-selected pruning for ordinary files proven absent upstream without turning update into implicit deletion or inferring renames. |
 
 **Not workflow-shaped, do directly:** the hygiene set (LICENSE, linter, SECURITY, CONTRIBUTING,
 dependabot, README rename). Single-file, single-concern, no discovery — a workflow would be
@@ -169,7 +171,7 @@ Wc registry content ......... any time, independent
 Wt theme builder ............ any time, independent, not started
 Wu update merging ........... complete; public in client 0.3.0
 Wv update verification ...... complete; public in client 0.3.0
-Wp upstream removal ......... local acceptance complete; hosted/merge/release open
+Wp upstream removal ......... implementation/hosted/merge complete; client 0.4 release open
 hygiene ..................... done, direct
 ```
 
@@ -207,8 +209,8 @@ Manteen-managed/control snapshot. A verification failure leaves the coherent upd
 exits 1; it is evidence about the consumer's configured checks, not a rollback or a universal
 runtime guarantee. Its handoff records local, built-Node, hosted and public-consumer acceptance.
 
-Wp is the next client lifecycle milestone and is implemented with local source and built-Node
-acceptance, but is not yet merged or public. It introduces only
+Wp is the next client lifecycle release and is implemented with local source, built-Node and
+hosted acceptance, and is merged but not yet public. It introduces only
 `manteen remove --upstream-removed`: discovery through an unselected dry run, exact repeated file
 selection for a real transaction, a second opt-in before discarding adapted bytes, and one journal
 for source/base/receipt removal. D42 rejects `update --prune`, bulk confirmation flags, rename/AST
