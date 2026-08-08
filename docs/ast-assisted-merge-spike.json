@@ -1,0 +1,1151 @@
+{
+  "schemaVersion": 1,
+  "experiment": "read-only-ast-merge-classification",
+  "productionChanged": false,
+  "corpus": {
+    "sourcePaths": 1,
+    "realUpstreamPairs": 2,
+    "cases": 9,
+    "localAdaptations": "synthetic-controlled"
+  },
+  "summary": {
+    "baselineConflicts": 5,
+    "independentCandidates": 2,
+    "mustRefuse": 7,
+    "rescuedConflicts": 1,
+    "falseIndependent": 0,
+    "falseRefusal": 0,
+    "stoppingConditionSatisfied": true,
+    "conclusion": "narrow-classification-value-demonstrated",
+    "productionRecommendation": "retain-line-merge-no-integration"
+  },
+  "cases": [
+    {
+      "id": "adjacent-distinct-imports",
+      "upstreamPair": "slide-size",
+      "baseRevision": "330968a9b2076efa47ee29d1a20a6cf6dd2684d7",
+      "incomingRevision": "689a314ae93f3d63973211574251f86ec87c6341",
+      "baseSha256": "3c2eb04a106df47783cd38b15d44a159f27ef8e22d382ad9b055b93766eab7e9",
+      "incomingSha256": "cb0755078f943eb24e2c55da3376c4630e48c902907473b72fd6e6cfd1df6ce9",
+      "sourcePath": "registry/mantine-ui/cards-carousel/cards-carousel.tsx",
+      "upstreamProvenance": "real-repository-history",
+      "localProvenance": "synthetic-controlled-adaptation",
+      "localDescription": "Add ActionIcon to the existing @mantine/core import while upstream adds CarouselProps to the adjacent @mantine/carousel import.",
+      "reviewedGroundTruth": "independent",
+      "groundTruthReason": "The two exact edits belong to distinct, uniquely keyed import declarations.",
+      "baseline": {
+        "decision": "conflict",
+        "conflictCount": 1
+      },
+      "ast": {
+        "decision": "independent-candidate",
+        "local": {
+          "ranges": [
+            {
+              "baseStart": 211,
+              "baseEnd": 288,
+              "variantStart": 211,
+              "variantEnd": 300
+            }
+          ],
+          "keys": ["ImportDeclaration:@mantine/core"]
+        },
+        "incoming": {
+          "ranges": [
+            {
+              "baseStart": 165,
+              "baseEnd": 211,
+              "variantStart": 165,
+              "variantEnd": 231
+            },
+            {
+              "baseStart": 663,
+              "baseEnd": 663,
+              "variantStart": 683,
+              "variantEnd": 927
+            },
+            {
+              "baseStart": 1619,
+              "baseEnd": 1714,
+              "variantStart": 1883,
+              "variantEnd": 2016
+            },
+            {
+              "baseStart": 1847,
+              "baseEnd": 1893,
+              "variantStart": 2149,
+              "variantEnd": 2208
+            },
+            {
+              "baseStart": 1912,
+              "baseEnd": 1984,
+              "variantStart": 2227,
+              "variantEnd": 2319
+            }
+          ],
+          "keys": [
+            "FunctionDeclaration:CardsCarousel",
+            "ImportDeclaration:@mantine/carousel",
+            "InterfaceDeclaration:CardsCarouselProps"
+          ]
+        },
+        "reasons": []
+      },
+      "assessment": "true-independent",
+      "demonstratesValueOverBaseline": true
+    },
+    {
+      "id": "disjoint-exported-declarations",
+      "upstreamPair": "slide-size",
+      "baseRevision": "330968a9b2076efa47ee29d1a20a6cf6dd2684d7",
+      "incomingRevision": "689a314ae93f3d63973211574251f86ec87c6341",
+      "baseSha256": "3c2eb04a106df47783cd38b15d44a159f27ef8e22d382ad9b055b93766eab7e9",
+      "incomingSha256": "cb0755078f943eb24e2c55da3376c4630e48c902907473b72fd6e6cfd1df6ce9",
+      "sourcePath": "registry/mantine-ui/cards-carousel/cards-carousel.tsx",
+      "upstreamProvenance": "real-repository-history",
+      "localProvenance": "synthetic-controlled-adaptation",
+      "localDescription": "Add a badge field to CardsCarouselItem while upstream changes CardsCarouselProps and CardsCarousel.",
+      "reviewedGroundTruth": "independent",
+      "groundTruthReason": "The local interface and all upstream declaration keys are distinct.",
+      "baseline": {
+        "decision": "merged",
+        "conflictCount": 0
+      },
+      "ast": {
+        "decision": "independent-candidate",
+        "local": {
+          "ranges": [
+            {
+              "baseStart": 494,
+              "baseEnd": 494,
+              "variantStart": 494,
+              "variantEnd": 512
+            }
+          ],
+          "keys": ["InterfaceDeclaration:CardsCarouselItem"]
+        },
+        "incoming": {
+          "ranges": [
+            {
+              "baseStart": 165,
+              "baseEnd": 211,
+              "variantStart": 165,
+              "variantEnd": 231
+            },
+            {
+              "baseStart": 663,
+              "baseEnd": 663,
+              "variantStart": 683,
+              "variantEnd": 927
+            },
+            {
+              "baseStart": 1619,
+              "baseEnd": 1714,
+              "variantStart": 1883,
+              "variantEnd": 2016
+            },
+            {
+              "baseStart": 1847,
+              "baseEnd": 1893,
+              "variantStart": 2149,
+              "variantEnd": 2208
+            },
+            {
+              "baseStart": 1912,
+              "baseEnd": 1984,
+              "variantStart": 2227,
+              "variantEnd": 2319
+            }
+          ],
+          "keys": [
+            "FunctionDeclaration:CardsCarousel",
+            "ImportDeclaration:@mantine/carousel",
+            "InterfaceDeclaration:CardsCarouselProps"
+          ]
+        },
+        "reasons": []
+      },
+      "assessment": "true-independent",
+      "demonstratesValueOverBaseline": false
+    },
+    {
+      "id": "same-exported-declaration",
+      "upstreamPair": "slide-size",
+      "baseRevision": "330968a9b2076efa47ee29d1a20a6cf6dd2684d7",
+      "incomingRevision": "689a314ae93f3d63973211574251f86ec87c6341",
+      "baseSha256": "3c2eb04a106df47783cd38b15d44a159f27ef8e22d382ad9b055b93766eab7e9",
+      "incomingSha256": "cb0755078f943eb24e2c55da3376c4630e48c902907473b72fd6e6cfd1df6ce9",
+      "sourcePath": "registry/mantine-ui/cards-carousel/cards-carousel.tsx",
+      "upstreamProvenance": "real-repository-history",
+      "localProvenance": "synthetic-controlled-adaptation",
+      "localDescription": "Add testId to CardsCarouselProps while upstream adds two props to that same interface.",
+      "reviewedGroundTruth": "must-refuse",
+      "groundTruthReason": "Both sides change InterfaceDeclaration:CardsCarouselProps.",
+      "baseline": {
+        "decision": "conflict",
+        "conflictCount": 1
+      },
+      "ast": {
+        "decision": "must-refuse",
+        "local": {
+          "ranges": [
+            {
+              "baseStart": 663,
+              "baseEnd": 663,
+              "variantStart": 663,
+              "variantEnd": 682
+            }
+          ],
+          "keys": ["InterfaceDeclaration:CardsCarouselProps"]
+        },
+        "incoming": {
+          "ranges": [
+            {
+              "baseStart": 165,
+              "baseEnd": 211,
+              "variantStart": 165,
+              "variantEnd": 231
+            },
+            {
+              "baseStart": 663,
+              "baseEnd": 663,
+              "variantStart": 683,
+              "variantEnd": 927
+            },
+            {
+              "baseStart": 1619,
+              "baseEnd": 1714,
+              "variantStart": 1883,
+              "variantEnd": 2016
+            },
+            {
+              "baseStart": 1847,
+              "baseEnd": 1893,
+              "variantStart": 2149,
+              "variantEnd": 2208
+            },
+            {
+              "baseStart": 1912,
+              "baseEnd": 1984,
+              "variantStart": 2227,
+              "variantEnd": 2319
+            }
+          ],
+          "keys": [
+            "FunctionDeclaration:CardsCarousel",
+            "ImportDeclaration:@mantine/carousel",
+            "InterfaceDeclaration:CardsCarouselProps"
+          ]
+        },
+        "reasons": [
+          {
+            "code": "same-key-change",
+            "keys": ["InterfaceDeclaration:CardsCarouselProps"]
+          }
+        ]
+      },
+      "assessment": "correct-refusal",
+      "demonstratesValueOverBaseline": false
+    },
+    {
+      "id": "declaration-kind-change",
+      "upstreamPair": "styles-api",
+      "baseRevision": "689a314ae93f3d63973211574251f86ec87c6341",
+      "incomingRevision": "b11e3600dee6d4f72fc1404e644d3464b0e906cb",
+      "baseSha256": "cb0755078f943eb24e2c55da3376c4630e48c902907473b72fd6e6cfd1df6ce9",
+      "incomingSha256": "53622c3003649f20a349eac8397b46a33798fcc169fdd234a2be33b0d5311639",
+      "sourcePath": "registry/mantine-ui/cards-carousel/cards-carousel.tsx",
+      "upstreamProvenance": "real-repository-history",
+      "localProvenance": "synthetic-controlled-adaptation",
+      "localDescription": "Change slideGap inside the exported CardsCarousel function while upstream replaces that function declaration with an exported factory const.",
+      "reviewedGroundTruth": "must-refuse",
+      "groundTruthReason": "The exported name survives but its declaration kind and body ownership change.",
+      "baseline": {
+        "decision": "merged",
+        "conflictCount": 0
+      },
+      "ast": {
+        "decision": "must-refuse",
+        "local": {
+          "ranges": [
+            {
+              "baseStart": 2208,
+              "baseEnd": 2227,
+              "variantStart": 2208,
+              "variantEnd": 2227
+            }
+          ],
+          "keys": ["FunctionDeclaration:CardsCarousel"]
+        },
+        "incoming": {
+          "ranges": [
+            {
+              "baseStart": 231,
+              "baseEnd": 308,
+              "variantStart": 231,
+              "variantEnd": 453
+            },
+            {
+              "baseStart": 409,
+              "baseEnd": 409,
+              "variantStart": 554,
+              "variantEnd": 634
+            },
+            {
+              "baseStart": 534,
+              "baseEnd": 572,
+              "variantStart": 759,
+              "variantEnd": 895
+            },
+            {
+              "baseStart": 930,
+              "baseEnd": 952,
+              "variantStart": 1253,
+              "variantEnd": 1430
+            },
+            {
+              "baseStart": 1050,
+              "baseEnd": 1050,
+              "variantStart": 1528,
+              "variantEnd": 1610
+            },
+            {
+              "baseStart": 1053,
+              "baseEnd": 1125,
+              "variantStart": 1613,
+              "variantEnd": 1729
+            },
+            {
+              "baseStart": 1473,
+              "baseEnd": 1628,
+              "variantStart": 2077,
+              "variantEnd": 2273
+            },
+            {
+              "baseStart": 1646,
+              "baseEnd": 1700,
+              "variantStart": 2291,
+              "variantEnd": 2343
+            },
+            {
+              "baseStart": 1742,
+              "baseEnd": 1794,
+              "variantStart": 2385,
+              "variantEnd": 2435
+            },
+            {
+              "baseStart": 1883,
+              "baseEnd": 2016,
+              "variantStart": 2524,
+              "variantEnd": 3087
+            },
+            {
+              "baseStart": 2149,
+              "baseEnd": 2149,
+              "variantStart": 3220,
+              "variantEnd": 3236
+            },
+            {
+              "baseStart": 2439,
+              "baseEnd": 2439,
+              "variantStart": 3526,
+              "variantEnd": 3599
+            },
+            {
+              "baseStart": 2513,
+              "baseEnd": 2602,
+              "variantStart": 3673,
+              "variantEnd": 3874
+            },
+            {
+              "baseStart": 2659,
+              "baseEnd": 2659,
+              "variantStart": 3931,
+              "variantEnd": 4190
+            }
+          ],
+          "keys": ["ImportDeclaration:@mantine/core", "InterfaceDeclaration:CardsCarouselProps"]
+        },
+        "reasons": [
+          {
+            "code": "key-changed",
+            "side": "incoming",
+            "range": {
+              "baseStart": 409,
+              "baseEnd": 409,
+              "variantStart": 554,
+              "variantEnd": 634
+            },
+            "keys": [
+              "InterfaceDeclaration:CardsCarouselItem",
+              "TypeAliasDeclaration:CardsCarouselStylesNames"
+            ]
+          },
+          {
+            "code": "unmapped-change",
+            "side": "incoming",
+            "range": {
+              "baseStart": 930,
+              "baseEnd": 952,
+              "variantStart": 1253,
+              "variantEnd": 1430
+            }
+          },
+          {
+            "code": "unmapped-change",
+            "side": "incoming",
+            "range": {
+              "baseStart": 1050,
+              "baseEnd": 1050,
+              "variantStart": 1528,
+              "variantEnd": 1610
+            }
+          },
+          {
+            "code": "unmapped-change",
+            "side": "incoming",
+            "range": {
+              "baseStart": 1053,
+              "baseEnd": 1125,
+              "variantStart": 1613,
+              "variantEnd": 1729
+            }
+          },
+          {
+            "code": "unmapped-change",
+            "side": "incoming",
+            "range": {
+              "baseStart": 1473,
+              "baseEnd": 1628,
+              "variantStart": 2077,
+              "variantEnd": 2273
+            }
+          },
+          {
+            "code": "unmapped-change",
+            "side": "incoming",
+            "range": {
+              "baseStart": 1646,
+              "baseEnd": 1700,
+              "variantStart": 2291,
+              "variantEnd": 2343
+            }
+          },
+          {
+            "code": "unmapped-change",
+            "side": "incoming",
+            "range": {
+              "baseStart": 1742,
+              "baseEnd": 1794,
+              "variantStart": 2385,
+              "variantEnd": 2435
+            }
+          },
+          {
+            "code": "key-changed",
+            "side": "incoming",
+            "range": {
+              "baseStart": 1883,
+              "baseEnd": 2016,
+              "variantStart": 2524,
+              "variantEnd": 3087
+            },
+            "keys": ["FunctionDeclaration:CardsCarousel", "VariableStatement:CardsCarousel"]
+          },
+          {
+            "code": "key-changed",
+            "side": "incoming",
+            "range": {
+              "baseStart": 2149,
+              "baseEnd": 2149,
+              "variantStart": 3220,
+              "variantEnd": 3236
+            },
+            "keys": ["FunctionDeclaration:CardsCarousel", "VariableStatement:CardsCarousel"]
+          },
+          {
+            "code": "key-changed",
+            "side": "incoming",
+            "range": {
+              "baseStart": 2439,
+              "baseEnd": 2439,
+              "variantStart": 3526,
+              "variantEnd": 3599
+            },
+            "keys": ["FunctionDeclaration:CardsCarousel", "VariableStatement:CardsCarousel"]
+          },
+          {
+            "code": "key-changed",
+            "side": "incoming",
+            "range": {
+              "baseStart": 2513,
+              "baseEnd": 2602,
+              "variantStart": 3673,
+              "variantEnd": 3874
+            },
+            "keys": ["FunctionDeclaration:CardsCarousel", "VariableStatement:CardsCarousel"]
+          },
+          {
+            "code": "key-changed",
+            "side": "incoming",
+            "range": {
+              "baseStart": 2659,
+              "baseEnd": 2659,
+              "variantStart": 3931,
+              "variantEnd": 4190
+            },
+            "keys": [
+              "FunctionDeclaration:CardsCarousel",
+              "ModuleDeclaration:CardsCarousel",
+              "VariableStatement:CardsCarousel"
+            ]
+          }
+        ]
+      },
+      "assessment": "correct-refusal",
+      "demonstratesValueOverBaseline": false
+    },
+    {
+      "id": "unexported-rename-versus-edit",
+      "upstreamPair": "styles-api",
+      "baseRevision": "689a314ae93f3d63973211574251f86ec87c6341",
+      "incomingRevision": "b11e3600dee6d4f72fc1404e644d3464b0e906cb",
+      "baseSha256": "cb0755078f943eb24e2c55da3376c4630e48c902907473b72fd6e6cfd1df6ce9",
+      "incomingSha256": "53622c3003649f20a349eac8397b46a33798fcc169fdd234a2be33b0d5311639",
+      "sourcePath": "registry/mantine-ui/cards-carousel/cards-carousel.tsx",
+      "upstreamProvenance": "real-repository-history",
+      "localProvenance": "synthetic-controlled-adaptation",
+      "localDescription": "Edit internal CardProps while upstream replaces it with CarouselItemCardProps.",
+      "reviewedGroundTruth": "must-refuse",
+      "groundTruthReason": "The conservative exported-name key set cannot prove an internal rename mapping.",
+      "baseline": {
+        "decision": "conflict",
+        "conflictCount": 1
+      },
+      "ast": {
+        "decision": "must-refuse",
+        "local": {
+          "ranges": [
+            {
+              "baseStart": 952,
+              "baseEnd": 952,
+              "variantStart": 952,
+              "variantEnd": 971
+            }
+          ],
+          "keys": []
+        },
+        "incoming": {
+          "ranges": [
+            {
+              "baseStart": 231,
+              "baseEnd": 308,
+              "variantStart": 231,
+              "variantEnd": 453
+            },
+            {
+              "baseStart": 409,
+              "baseEnd": 409,
+              "variantStart": 554,
+              "variantEnd": 634
+            },
+            {
+              "baseStart": 534,
+              "baseEnd": 572,
+              "variantStart": 759,
+              "variantEnd": 895
+            },
+            {
+              "baseStart": 930,
+              "baseEnd": 952,
+              "variantStart": 1253,
+              "variantEnd": 1430
+            },
+            {
+              "baseStart": 1050,
+              "baseEnd": 1050,
+              "variantStart": 1528,
+              "variantEnd": 1610
+            },
+            {
+              "baseStart": 1053,
+              "baseEnd": 1125,
+              "variantStart": 1613,
+              "variantEnd": 1729
+            },
+            {
+              "baseStart": 1473,
+              "baseEnd": 1628,
+              "variantStart": 2077,
+              "variantEnd": 2273
+            },
+            {
+              "baseStart": 1646,
+              "baseEnd": 1700,
+              "variantStart": 2291,
+              "variantEnd": 2343
+            },
+            {
+              "baseStart": 1742,
+              "baseEnd": 1794,
+              "variantStart": 2385,
+              "variantEnd": 2435
+            },
+            {
+              "baseStart": 1883,
+              "baseEnd": 2016,
+              "variantStart": 2524,
+              "variantEnd": 3087
+            },
+            {
+              "baseStart": 2149,
+              "baseEnd": 2149,
+              "variantStart": 3220,
+              "variantEnd": 3236
+            },
+            {
+              "baseStart": 2439,
+              "baseEnd": 2439,
+              "variantStart": 3526,
+              "variantEnd": 3599
+            },
+            {
+              "baseStart": 2513,
+              "baseEnd": 2602,
+              "variantStart": 3673,
+              "variantEnd": 3874
+            },
+            {
+              "baseStart": 2659,
+              "baseEnd": 2659,
+              "variantStart": 3931,
+              "variantEnd": 4190
+            }
+          ],
+          "keys": ["ImportDeclaration:@mantine/core", "InterfaceDeclaration:CardsCarouselProps"]
+        },
+        "reasons": [
+          {
+            "code": "unmapped-change",
+            "side": "local",
+            "range": {
+              "baseStart": 952,
+              "baseEnd": 952,
+              "variantStart": 952,
+              "variantEnd": 971
+            }
+          },
+          {
+            "code": "key-changed",
+            "side": "incoming",
+            "range": {
+              "baseStart": 409,
+              "baseEnd": 409,
+              "variantStart": 554,
+              "variantEnd": 634
+            },
+            "keys": [
+              "InterfaceDeclaration:CardsCarouselItem",
+              "TypeAliasDeclaration:CardsCarouselStylesNames"
+            ]
+          },
+          {
+            "code": "unmapped-change",
+            "side": "incoming",
+            "range": {
+              "baseStart": 930,
+              "baseEnd": 952,
+              "variantStart": 1253,
+              "variantEnd": 1430
+            }
+          },
+          {
+            "code": "unmapped-change",
+            "side": "incoming",
+            "range": {
+              "baseStart": 1050,
+              "baseEnd": 1050,
+              "variantStart": 1528,
+              "variantEnd": 1610
+            }
+          },
+          {
+            "code": "unmapped-change",
+            "side": "incoming",
+            "range": {
+              "baseStart": 1053,
+              "baseEnd": 1125,
+              "variantStart": 1613,
+              "variantEnd": 1729
+            }
+          },
+          {
+            "code": "unmapped-change",
+            "side": "incoming",
+            "range": {
+              "baseStart": 1473,
+              "baseEnd": 1628,
+              "variantStart": 2077,
+              "variantEnd": 2273
+            }
+          },
+          {
+            "code": "unmapped-change",
+            "side": "incoming",
+            "range": {
+              "baseStart": 1646,
+              "baseEnd": 1700,
+              "variantStart": 2291,
+              "variantEnd": 2343
+            }
+          },
+          {
+            "code": "unmapped-change",
+            "side": "incoming",
+            "range": {
+              "baseStart": 1742,
+              "baseEnd": 1794,
+              "variantStart": 2385,
+              "variantEnd": 2435
+            }
+          },
+          {
+            "code": "key-changed",
+            "side": "incoming",
+            "range": {
+              "baseStart": 1883,
+              "baseEnd": 2016,
+              "variantStart": 2524,
+              "variantEnd": 3087
+            },
+            "keys": ["FunctionDeclaration:CardsCarousel", "VariableStatement:CardsCarousel"]
+          },
+          {
+            "code": "key-changed",
+            "side": "incoming",
+            "range": {
+              "baseStart": 2149,
+              "baseEnd": 2149,
+              "variantStart": 3220,
+              "variantEnd": 3236
+            },
+            "keys": ["FunctionDeclaration:CardsCarousel", "VariableStatement:CardsCarousel"]
+          },
+          {
+            "code": "key-changed",
+            "side": "incoming",
+            "range": {
+              "baseStart": 2439,
+              "baseEnd": 2439,
+              "variantStart": 3526,
+              "variantEnd": 3599
+            },
+            "keys": ["FunctionDeclaration:CardsCarousel", "VariableStatement:CardsCarousel"]
+          },
+          {
+            "code": "key-changed",
+            "side": "incoming",
+            "range": {
+              "baseStart": 2513,
+              "baseEnd": 2602,
+              "variantStart": 3673,
+              "variantEnd": 3874
+            },
+            "keys": ["FunctionDeclaration:CardsCarousel", "VariableStatement:CardsCarousel"]
+          },
+          {
+            "code": "key-changed",
+            "side": "incoming",
+            "range": {
+              "baseStart": 2659,
+              "baseEnd": 2659,
+              "variantStart": 3931,
+              "variantEnd": 4190
+            },
+            "keys": [
+              "FunctionDeclaration:CardsCarousel",
+              "ModuleDeclaration:CardsCarousel",
+              "VariableStatement:CardsCarousel"
+            ]
+          }
+        ]
+      },
+      "assessment": "correct-refusal",
+      "demonstratesValueOverBaseline": false
+    },
+    {
+      "id": "local-parse-error",
+      "upstreamPair": "slide-size",
+      "baseRevision": "330968a9b2076efa47ee29d1a20a6cf6dd2684d7",
+      "incomingRevision": "689a314ae93f3d63973211574251f86ec87c6341",
+      "baseSha256": "3c2eb04a106df47783cd38b15d44a159f27ef8e22d382ad9b055b93766eab7e9",
+      "incomingSha256": "cb0755078f943eb24e2c55da3376c4630e48c902907473b72fd6e6cfd1df6ce9",
+      "sourcePath": "registry/mantine-ui/cards-carousel/cards-carousel.tsx",
+      "upstreamProvenance": "real-repository-history",
+      "localProvenance": "synthetic-controlled-adaptation",
+      "localDescription": "Break the local @mantine/carousel import syntax.",
+      "reviewedGroundTruth": "must-refuse",
+      "groundTruthReason": "A syntax-uncertain input cannot grant structural independence.",
+      "baseline": {
+        "decision": "conflict",
+        "conflictCount": 1
+      },
+      "ast": {
+        "decision": "must-refuse",
+        "local": {
+          "ranges": [
+            {
+              "baseStart": 165,
+              "baseEnd": 211,
+              "variantStart": 165,
+              "variantEnd": 209
+            }
+          ],
+          "keys": []
+        },
+        "incoming": {
+          "ranges": [
+            {
+              "baseStart": 165,
+              "baseEnd": 211,
+              "variantStart": 165,
+              "variantEnd": 231
+            },
+            {
+              "baseStart": 663,
+              "baseEnd": 663,
+              "variantStart": 683,
+              "variantEnd": 927
+            },
+            {
+              "baseStart": 1619,
+              "baseEnd": 1714,
+              "variantStart": 1883,
+              "variantEnd": 2016
+            },
+            {
+              "baseStart": 1847,
+              "baseEnd": 1893,
+              "variantStart": 2149,
+              "variantEnd": 2208
+            },
+            {
+              "baseStart": 1912,
+              "baseEnd": 1984,
+              "variantStart": 2227,
+              "variantEnd": 2319
+            }
+          ],
+          "keys": []
+        },
+        "reasons": [
+          {
+            "code": "parse-uncertain",
+            "side": "local"
+          }
+        ]
+      },
+      "assessment": "correct-refusal",
+      "demonstratesValueOverBaseline": false
+    },
+    {
+      "id": "anonymous-default-addition",
+      "upstreamPair": "slide-size",
+      "baseRevision": "330968a9b2076efa47ee29d1a20a6cf6dd2684d7",
+      "incomingRevision": "689a314ae93f3d63973211574251f86ec87c6341",
+      "baseSha256": "3c2eb04a106df47783cd38b15d44a159f27ef8e22d382ad9b055b93766eab7e9",
+      "incomingSha256": "cb0755078f943eb24e2c55da3376c4630e48c902907473b72fd6e6cfd1df6ce9",
+      "sourcePath": "registry/mantine-ui/cards-carousel/cards-carousel.tsx",
+      "upstreamProvenance": "real-repository-history",
+      "localProvenance": "synthetic-controlled-adaptation",
+      "localDescription": "Add an anonymous default export after the existing source.",
+      "reviewedGroundTruth": "must-refuse",
+      "groundTruthReason": "The addition has no stable exported declaration key.",
+      "baseline": {
+        "decision": "merged",
+        "conflictCount": 0
+      },
+      "ast": {
+        "decision": "must-refuse",
+        "local": {
+          "ranges": [
+            {
+              "baseStart": 2326,
+              "baseEnd": 2326,
+              "variantStart": 2326,
+              "variantEnd": 2354
+            }
+          ],
+          "keys": []
+        },
+        "incoming": {
+          "ranges": [
+            {
+              "baseStart": 165,
+              "baseEnd": 211,
+              "variantStart": 165,
+              "variantEnd": 231
+            },
+            {
+              "baseStart": 663,
+              "baseEnd": 663,
+              "variantStart": 683,
+              "variantEnd": 927
+            },
+            {
+              "baseStart": 1619,
+              "baseEnd": 1714,
+              "variantStart": 1883,
+              "variantEnd": 2016
+            },
+            {
+              "baseStart": 1847,
+              "baseEnd": 1893,
+              "variantStart": 2149,
+              "variantEnd": 2208
+            },
+            {
+              "baseStart": 1912,
+              "baseEnd": 1984,
+              "variantStart": 2227,
+              "variantEnd": 2319
+            }
+          ],
+          "keys": [
+            "FunctionDeclaration:CardsCarousel",
+            "ImportDeclaration:@mantine/carousel",
+            "InterfaceDeclaration:CardsCarouselProps"
+          ]
+        },
+        "reasons": [
+          {
+            "code": "unmapped-change",
+            "side": "local",
+            "range": {
+              "baseStart": 2326,
+              "baseEnd": 2326,
+              "variantStart": 2326,
+              "variantEnd": 2354
+            }
+          }
+        ]
+      },
+      "assessment": "correct-refusal",
+      "demonstratesValueOverBaseline": false
+    },
+    {
+      "id": "duplicate-import-key",
+      "upstreamPair": "slide-size",
+      "baseRevision": "330968a9b2076efa47ee29d1a20a6cf6dd2684d7",
+      "incomingRevision": "689a314ae93f3d63973211574251f86ec87c6341",
+      "baseSha256": "3c2eb04a106df47783cd38b15d44a159f27ef8e22d382ad9b055b93766eab7e9",
+      "incomingSha256": "cb0755078f943eb24e2c55da3376c4630e48c902907473b72fd6e6cfd1df6ce9",
+      "sourcePath": "registry/mantine-ui/cards-carousel/cards-carousel.tsx",
+      "upstreamProvenance": "real-repository-history",
+      "localProvenance": "synthetic-controlled-adaptation",
+      "localDescription": "Change and duplicate the @mantine/core import declaration.",
+      "reviewedGroundTruth": "must-refuse",
+      "groundTruthReason": "A module specifier occurring twice is not a unique structural anchor.",
+      "baseline": {
+        "decision": "conflict",
+        "conflictCount": 1
+      },
+      "ast": {
+        "decision": "must-refuse",
+        "local": {
+          "ranges": [
+            {
+              "baseStart": 211,
+              "baseEnd": 288,
+              "variantStart": 211,
+              "variantEnd": 351
+            }
+          ],
+          "keys": []
+        },
+        "incoming": {
+          "ranges": [
+            {
+              "baseStart": 165,
+              "baseEnd": 211,
+              "variantStart": 165,
+              "variantEnd": 231
+            },
+            {
+              "baseStart": 663,
+              "baseEnd": 663,
+              "variantStart": 683,
+              "variantEnd": 927
+            },
+            {
+              "baseStart": 1619,
+              "baseEnd": 1714,
+              "variantStart": 1883,
+              "variantEnd": 2016
+            },
+            {
+              "baseStart": 1847,
+              "baseEnd": 1893,
+              "variantStart": 2149,
+              "variantEnd": 2208
+            },
+            {
+              "baseStart": 1912,
+              "baseEnd": 1984,
+              "variantStart": 2227,
+              "variantEnd": 2319
+            }
+          ],
+          "keys": [
+            "FunctionDeclaration:CardsCarousel",
+            "ImportDeclaration:@mantine/carousel",
+            "InterfaceDeclaration:CardsCarouselProps"
+          ]
+        },
+        "reasons": [
+          {
+            "code": "non-unique-key",
+            "side": "local",
+            "range": {
+              "baseStart": 211,
+              "baseEnd": 288,
+              "variantStart": 211,
+              "variantEnd": 351
+            },
+            "keys": ["ImportDeclaration:@mantine/core"]
+          }
+        ]
+      },
+      "assessment": "correct-refusal",
+      "demonstratesValueOverBaseline": false
+    },
+    {
+      "id": "cross-file-local-adaptation",
+      "upstreamPair": "styles-api",
+      "baseRevision": "689a314ae93f3d63973211574251f86ec87c6341",
+      "incomingRevision": "b11e3600dee6d4f72fc1404e644d3464b0e906cb",
+      "baseSha256": "cb0755078f943eb24e2c55da3376c4630e48c902907473b72fd6e6cfd1df6ce9",
+      "incomingSha256": "53622c3003649f20a349eac8397b46a33798fcc169fdd234a2be33b0d5311639",
+      "sourcePath": "registry/mantine-ui/cards-carousel/cards-carousel.tsx",
+      "upstreamProvenance": "real-repository-history",
+      "localProvenance": "synthetic-controlled-adaptation",
+      "localDescription": "Represent one file from a controlled local adaptation that also changes a companion stylesheet.",
+      "reviewedGroundTruth": "must-refuse",
+      "groundTruthReason": "One-file structural keys cannot prove independence for a multi-file local change.",
+      "baseline": {
+        "decision": "merged",
+        "conflictCount": 0
+      },
+      "ast": {
+        "decision": "must-refuse",
+        "local": {
+          "ranges": [
+            {
+              "baseStart": 514,
+              "baseEnd": 514,
+              "variantStart": 514,
+              "variantEnd": 532
+            }
+          ],
+          "keys": []
+        },
+        "incoming": {
+          "ranges": [
+            {
+              "baseStart": 231,
+              "baseEnd": 308,
+              "variantStart": 231,
+              "variantEnd": 453
+            },
+            {
+              "baseStart": 409,
+              "baseEnd": 409,
+              "variantStart": 554,
+              "variantEnd": 634
+            },
+            {
+              "baseStart": 534,
+              "baseEnd": 572,
+              "variantStart": 759,
+              "variantEnd": 895
+            },
+            {
+              "baseStart": 930,
+              "baseEnd": 952,
+              "variantStart": 1253,
+              "variantEnd": 1430
+            },
+            {
+              "baseStart": 1050,
+              "baseEnd": 1050,
+              "variantStart": 1528,
+              "variantEnd": 1610
+            },
+            {
+              "baseStart": 1053,
+              "baseEnd": 1125,
+              "variantStart": 1613,
+              "variantEnd": 1729
+            },
+            {
+              "baseStart": 1473,
+              "baseEnd": 1628,
+              "variantStart": 2077,
+              "variantEnd": 2273
+            },
+            {
+              "baseStart": 1646,
+              "baseEnd": 1700,
+              "variantStart": 2291,
+              "variantEnd": 2343
+            },
+            {
+              "baseStart": 1742,
+              "baseEnd": 1794,
+              "variantStart": 2385,
+              "variantEnd": 2435
+            },
+            {
+              "baseStart": 1883,
+              "baseEnd": 2016,
+              "variantStart": 2524,
+              "variantEnd": 3087
+            },
+            {
+              "baseStart": 2149,
+              "baseEnd": 2149,
+              "variantStart": 3220,
+              "variantEnd": 3236
+            },
+            {
+              "baseStart": 2439,
+              "baseEnd": 2439,
+              "variantStart": 3526,
+              "variantEnd": 3599
+            },
+            {
+              "baseStart": 2513,
+              "baseEnd": 2602,
+              "variantStart": 3673,
+              "variantEnd": 3874
+            },
+            {
+              "baseStart": 2659,
+              "baseEnd": 2659,
+              "variantStart": 3931,
+              "variantEnd": 4190
+            }
+          ],
+          "keys": []
+        },
+        "reasons": [
+          {
+            "code": "cross-file-change"
+          }
+        ]
+      },
+      "assessment": "correct-refusal",
+      "demonstratesValueOverBaseline": false
+    }
+  ]
+}

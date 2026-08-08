@@ -17,11 +17,11 @@ and something a stranger can depend on, and how the remaining work is sequenced.
 6. **Maintainable** — a linter, dependency automation, and a license file that matches what
    `package.json` claims.
 
-Today: all six criteria are public through the `manteen@0.3.0` client line, while `main` carries
-the hosted-green client-only `0.4.0` release candidate for explicit upstream removal. W6 `init` is
-complete through its built-Node acceptance tier, W7 closed with a green hosted runtime, OS and
-package-manager matrix, and W8 established provenance-bearing releases. The separately versioned
-`manteen-kit` remains public at `0.2.0`. The accepted 22-item Pages content milestone is commit
+Today: all six criteria are public through the `manteen@0.4.0` client line, including explicit
+upstream removal. W6 `init` is complete through its built-Node acceptance tier, W7 closed with a
+green hosted runtime, OS and package-manager matrix, and W8 established provenance-bearing
+releases. The separately versioned `manteen-kit` remains public at `0.2.0`. The accepted 22-item
+Pages content milestone is commit
 `8853a720352c8842ce6957a494f919ec7cccda67`, run
 [`31198437310`](https://github.com/arimxyer/manteen/actions/runs/31198437310); it serves the complete
 22-item catalog.
@@ -34,22 +34,25 @@ public npm-plus-HTTPS consumer, and controlled two-revision update acceptance ar
 [`0.3 release handoff`](v0.3-release-handoff.md). The tagged package release itself did not
 dispatch Pages; the separately reviewed post-release registry/docs train subsequently did.
 
+The client-only `manteen@0.4.0` release adds Wp's explicit upstream-file removal without changing
+receipt v3, the wire format, registry content, the kit or Pages. Its merge, signed tag, single
+trusted release run, npm integrity/provenance and fresh controlled public-consumer lifecycle are
+recorded in the [`0.4 release handoff`](v0.4-release-handoff.md).
+
 ## Known gaps, by kind
 
 **Client.** W4's apply surface, W5's command set, W6 `init`, and W7 portability hardening are
 complete. The findings and hosted closure receipt are recorded in
 [`w7-hardening-handoff.md`](w7-hardening-handoff.md).
 
-**Commands.** `init`, `add`, `list`, `info`, `diff` and `update` ship. In public `0.3.0`, `update`
-uses Wu's receipt-v3 three-way model. `search` does not exist and is not currently assigned to a
-wave; whether it belongs in v1 remains undecided. `remove` also does not ship in public `0.3.0`:
-its first, deliberately narrow mode is implemented, hosted-green and merged as explicit
-upstream-file pruning in [`upstream-removal-handoff.md`](upstream-removal-handoff.md). Only the
-prospective client-only `0.4.0` publication and fresh public-consumer acceptance remain. The public
-release also supports project-owned
-verification: configured `package.json` scripts run only after a coherent update has applied, and
-a failed check never pretends the update rolled back. Its frozen boundary, source/built-Node
-receipt and public-release acceptance are in
+**Commands.** `init`, `add`, `list`, `info`, `diff`, `update` and the narrow `remove` mode ship. In
+public `0.3.0` and later, `update` uses Wu's receipt-v3 three-way model. In public `0.4.0`,
+`remove --upstream-removed` adds explicit exact-selected upstream-file pruning; its contract and
+acceptance are in [`upstream-removal-handoff.md`](upstream-removal-handoff.md). `search` does not
+exist and is not currently assigned to a wave; whether it belongs in v1 remains undecided. The
+public release also supports project-owned verification: configured `package.json` scripts run
+only after a coherent update has applied, and a failed check never pretends the update rolled
+back. Its frozen boundary, source/built-Node receipt and public-release acceptance are in
 [`update-verification-handoff.md`](update-verification-handoff.md).
 
 **Portability.** The built tier passes on Linux Node 22.12, 24 and 26 plus macOS and Windows at the
@@ -63,13 +66,15 @@ was a working bypass that let TypeScript write into a JS project at exit 0). The
 in `plan()`, the bypass routes into the same refusal rather than around it, and both are covered by
 unit tests.
 
-**Distribution.** `manteen-kit@0.2.0` and `manteen@0.3.0` are public on npm as `latest`. Both lines
+**Distribution.** `manteen-kit@0.2.0` and `manteen@0.4.0` are public on npm as `latest`. Both lines
 were published from tagged GitHub Actions OIDC workflows and expose npm publish plus SLSA
-provenance attestations. The client-only `0.3.0` release keeps `manteen-kit@^0.2.0`; the kit had no
-version change and correctly received no `0.3.0` tag. The initial trusted-release receipts are in
+provenance attestations. The client-only `0.3.0` and `0.4.0` releases keep
+`manteen-kit@^0.2.0`; the kit had no version change and correctly received neither client tag. The
+initial trusted-release receipts are in
 the [`W8 release handoff`](w8-release-handoff.md), the public `0.2.0` package/Pages receipts are in
 the [`0.2 release handoff`](v0.2-release-handoff.md), and the completed client-only `0.3.0`
-boundary is in the [`0.3 release handoff`](v0.3-release-handoff.md).
+and `0.4.0` boundaries are in the [`0.3 release handoff`](v0.3-release-handoff.md) and
+[`0.4 release handoff`](v0.4-release-handoff.md).
 
 **Project hygiene.** The MIT license, Biome, Dependabot, editorconfig and rename are done.
 `SECURITY.md` and contributor ceremony remain deliberately deferred until the repository has
@@ -120,7 +125,7 @@ is a judgment call, which is exactly why they are separate runs.
 | Wt | [`Theme builder`](#wt--theme-builder-proposed) | proposed: one page, plan-first | Preview-then-install for the one registry item every consumer is expected to edit. Depends on nothing; blocked by nothing. |
 | Wu | [`Update merging`](update-merge-handoff.md) | complete and public in `0.3.0`: receipt v3, exact bases, three-way plan, explicit reset, three-axis diff, built-Node and controlled-revision acceptance | Changes ordinary source maintenance from skip-or-replace to reproducible three-way merging without weakening the existing plan/apply transaction. |
 | Wv | [`Update verification`](update-verification-handoff.md) | complete and public in `0.3.0`: post-apply orchestration, fail-fast bounded project scripts, drift detection, built-Node and fresh-consumer acceptance | Lets a consumer define what “the merged component still works here” means without placing arbitrary scripts inside Manteen's rollback journal. |
-| Wp | [`Upstream removal`](upstream-removal-handoff.md) | implemented, hosted-green and merged; client-only `0.4.0` publication open | Adds explicit, exact-selected pruning for ordinary files proven absent upstream without turning update into implicit deletion or inferring renames. |
+| Wp | [`Upstream removal`](upstream-removal-handoff.md) | complete and public in client `0.4.0`: explicit selection, adapted-file opt-in, one journal, built/hosted/public acceptance | Adds explicit, exact-selected pruning for ordinary files proven absent upstream without turning update into implicit deletion or inferring renames. |
 
 **Not workflow-shaped, do directly:** the hygiene set (LICENSE, linter, SECURITY, CONTRIBUTING,
 dependabot, README rename). Single-file, single-concern, no discovery — a workflow would be
@@ -171,7 +176,7 @@ Wc registry content ......... any time, independent
 Wt theme builder ............ any time, independent, not started
 Wu update merging ........... complete; public in client 0.3.0
 Wv update verification ...... complete; public in client 0.3.0
-Wp upstream removal ......... implementation/hosted/merge complete; client 0.4 release open
+Wp upstream removal ......... complete; public in client 0.4.0
 hygiene ..................... done, direct
 ```
 
@@ -209,14 +214,21 @@ Manteen-managed/control snapshot. A verification failure leaves the coherent upd
 exits 1; it is evidence about the consumer's configured checks, not a rollback or a universal
 runtime guarantee. Its handoff records local, built-Node, hosted and public-consumer acceptance.
 
-Wp is the next client lifecycle release and is implemented with local source, built-Node and
-hosted acceptance, and is merged but not yet public. It introduces only
+Wp is complete and public in client `0.4.0`, with local source, built-Node, hosted matrix and fresh
+public-consumer acceptance. It introduces only
 `manteen remove --upstream-removed`: discovery through an unselected dry run, exact repeated file
 selection for a real transaction, a second opt-in before discarding adapted bytes, and one journal
 for source/base/receipt removal. D42 rejects `update --prune`, bulk confirmation flags, rename/AST
 inference, theme/styles/dependency cleanup and implicit item uninstall. Its exact refusals,
 transaction and evidence boundary are in the
 [`upstream removal handoff`](upstream-removal-handoff.md).
+
+The post-release read-only AST classification spike is complete in
+[`ast-assisted-merge-spike.md`](ast-assisted-merge-spike.md). It demonstrates one narrow
+structurally independent case that line diff3 reports as a conflict, with zero false-independent
+results in its nine-case controlled corpus. It does not change D41 or production merging; the
+corpus has one real source path and synthetic local adaptations, so it supports neither an AST
+output algorithm nor a population conflict-rate claim.
 
 ## On one large program workflow
 
@@ -286,7 +298,8 @@ review and receipts. Pages does not deploy on every `main` push because doing so
 items that require an unpublished client contract. The
 [`0.2 release handoff`](v0.2-release-handoff.md) records the first completed two-package use of
 that sequence, and the [`0.3 release handoff`](v0.3-release-handoff.md) records the completed
-client-only release.
+client-only receipt-v3 release. The [`0.4 release handoff`](v0.4-release-handoff.md) records the
+completed client-only upstream-removal release.
 
 The tradeoff: that first version has no provenance attestation, because provenance requires
 the OIDC path. Storing an `NPM_TOKEN` just for it would reintroduce the long-lived credential
