@@ -1,5 +1,7 @@
-/** Exact, line-oriented three-way merge for ordinary registry files. Pure. */
+/** Exact three-way merge: line diff3 first, then D41's TS fallback. Pure. */
 import { diff3Merge } from "node-diff3";
+
+import { isTypeScriptMergeSource, mergeTypeScriptExactly } from "./merge-typescript";
 
 export interface FileMergeConflict {
   localStart: number;
@@ -19,7 +21,12 @@ export function splitExactLines(text: string): string[] {
   return text.match(/[^\r\n]*(?:\r\n|\n|\r)|[^\r\n]+$/g) ?? [];
 }
 
-export function mergeFile(local: string, base: string, incoming: string): FileMergeResult {
+export function mergeFile(
+  local: string,
+  base: string,
+  incoming: string,
+  sourcePath?: string,
+): FileMergeResult {
   const regions = diff3Merge(
     splitExactLines(local),
     splitExactLines(base),
@@ -46,5 +53,15 @@ export function mergeFile(local: string, base: string, incoming: string): FileMe
     });
   }
 
-  return conflicts.length === 0 ? { ok: true, content: merged.join("") } : { ok: false, conflicts };
+  if (conflicts.length === 0) return { ok: true, content: merged.join("") };
+
+  // D41: AST identity is a conflict-only fallback for registry TypeScript.
+  // It may return only exact source slices after reconstructing both complete
+  // sides. Any uncertainty preserves the original diff3 conflict metadata.
+  if (sourcePath !== undefined && isTypeScriptMergeSource(sourcePath)) {
+    const exact = mergeTypeScriptExactly({ sourcePath, base, local, incoming });
+    if (exact.ok) return { ok: true, content: exact.content };
+  }
+
+  return { ok: false, conflicts };
 }

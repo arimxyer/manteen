@@ -167,10 +167,12 @@ function run(project, args) {
   });
   return {
     status: result.status,
+    signal: result.signal,
+    error: result.error,
     stdout: result.stdout ?? "",
     stderr: result.stderr ?? "",
     get all() {
-      return `${this.stdout}${this.stderr}`;
+      return `${this.stdout}${this.stderr}${this.signal === null ? "" : `signal: ${this.signal}\n`}${this.error === undefined ? "" : `${this.error.stack ?? this.error.message}\n`}`;
     },
   };
 }
@@ -489,6 +491,58 @@ test("add commits an exact CRLF base and a clean two-sided update preserves both
   const receipt = JSON.parse(readFileSync(join(project, "manteen.lock.json"), "utf8"));
   const file = receipt.items[0].files[0];
   assert.notEqual(file.installedSha256, file.baseSha256);
+});
+
+test("diff and update automatically rescue distinct adjacent TypeScript declarations", () => {
+  const moved = publish(BASE_FIXTURE, "base-ast-fallback");
+  const itemDoc = join(WORK, "base-ast-fallback", "empty-state.json");
+  const initial = JSON.parse(readFileSync(itemDoc, "utf8"));
+  const source = initial.files.find((file) => file.path.endsWith("empty-state.tsx"));
+  assert.ok(source, "empty-state source fixture missing");
+  source.content =
+    "export interface LocalOptions { enabled: boolean }\n" +
+    "export interface IncomingOptions { count: number }\n" +
+    source.content;
+  writeFileSync(itemDoc, `${JSON.stringify(initial, null, 2)}\n`);
+
+  const project = makeProject({ registries: { "@base": moved } });
+  assert.equal(run(project, ["add", ITEM]).status, 0);
+  const target = join(project, DESTINATION);
+  const basePath = join(project, ".manteen", "bases", `${DESTINATION}.base`);
+  const base = readFileSync(target, "utf8");
+  const local = base.replace(
+    "LocalOptions { enabled: boolean }",
+    "LocalOptions { enabled: boolean; label?: string }",
+  );
+  writeFileSync(target, local);
+
+  const current = JSON.parse(readFileSync(itemDoc, "utf8"));
+  const currentSource = current.files.find((file) => file.path.endsWith("empty-state.tsx"));
+  assert.ok(currentSource, "current empty-state source fixture missing");
+  currentSource.content = currentSource.content.replace(
+    "IncomingOptions { count: number }",
+    "IncomingOptions { count: number; size?: number }",
+  );
+  writeFileSync(itemDoc, `${JSON.stringify(current, null, 2)}\n`);
+
+  const compared = json(run(project, ["diff", "--json"]));
+  const comparedFile = compared.items
+    .find((item) => item.id === ITEM)
+    ?.files.find((file) => file.receiptPath.endsWith("/empty-state.tsx"));
+  assert.equal(comparedFile?.change, "both");
+  assert.equal(comparedFile?.outcome, "merged");
+  assert.match(comparedFile?.patches.localToResult ?? "", /size\?: number/);
+
+  const updated = run(project, ["update"]);
+  assert.equal(updated.status, 0, updated.all);
+  const merged = readFileSync(target, "utf8");
+  assert.match(merged, /label\?: string/, merged);
+  assert.match(merged, /size\?: number/, merged);
+  assert.doesNotMatch(merged, /<<<<<<<|=======|>>>>>>>/);
+
+  const pristine = readFileSync(basePath, "utf8");
+  assert.doesNotMatch(pristine, /label\?: string/);
+  assert.match(pristine, /size\?: number/);
 });
 
 test("an overlapping update refuses without markers and --take-upstream is explicit reset", () => {

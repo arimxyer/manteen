@@ -672,7 +672,7 @@ function propose(input: RowInput): Proposal {
     return { outcome: "upstream-only", base, local, incoming, result: incoming };
   }
 
-  const merged = mergeFile(local, base, input.upstream.upstream.content);
+  const merged = mergeFile(local, base, input.upstream.upstream.content, input.upstream.sourcePath);
   return merged.ok
     ? { outcome: "merged", base, local, incoming, result: merged.content }
     : { outcome: "conflict", base, local, incoming, result: null };

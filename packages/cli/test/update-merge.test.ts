@@ -34,6 +34,42 @@ describe("exact three-way file merge", () => {
     expect(splitExactLines("a\nb")).toEqual(["a\n", "b"]);
     expect(splitExactLines("")).toEqual([]);
   });
+
+  test("automatically falls back for distinct adjacent TypeScript anchors", () => {
+    const base = 'import { A } from "a";\nimport { B } from "b";\n';
+    const local = 'import { A, LocalA } from "a";\nimport { B } from "b";\n';
+    const incoming = 'import { A } from "a";\nimport { B, IncomingB } from "b";\n';
+
+    expect(mergeFile(local, base, incoming).ok).toBe(false);
+    expect(mergeFile(local, base, incoming, "component.tsx")).toEqual({
+      ok: true,
+      content: 'import { A, LocalA } from "a";\nimport { B, IncomingB } from "b";\n',
+    });
+  });
+
+  test("does not use the fallback for non-TypeScript or same-key edits", () => {
+    const base = "export const value = 1;\n";
+    const local = "export const value = 2;\n";
+    const incoming = "export const value = 3;\n";
+    const originalConflict = mergeFile(local, base, incoming);
+
+    expect(originalConflict.ok).toBe(false);
+    expect(mergeFile(local, base, incoming, "component.css")).toEqual(originalConflict);
+    expect(mergeFile(local, base, incoming, "component.ts")).toEqual(originalConflict);
+  });
+
+  test("returns a clean diff3 result before consulting TypeScript syntax", () => {
+    const base =
+      "export const broken = ;\nexport const middleA = 1;\nexport const middleB = 1;\nexport const other = 1;\n";
+    const local = base.replace("broken = ;", "broken = local;");
+    const incoming = base.replace("other = 1", "other = 2");
+
+    expect(mergeFile(local, base, incoming, "intentionally-invalid.ts")).toEqual({
+      ok: true,
+      content:
+        "export const broken = local;\nexport const middleA = 1;\nexport const middleB = 1;\nexport const other = 2;\n",
+    });
+  });
 });
 
 describe("cross-platform missing-path hashing", () => {

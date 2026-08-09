@@ -691,7 +691,7 @@ function planUpdatedFile(input: {
     } else if (onDisk === common.upstream.sha256) {
       content = local.text;
     } else {
-      const merged = mergeFile(local.text, baseText, common.upstream.content);
+      const merged = mergeFile(local.text, baseText, common.upstream.content, common.sourcePath);
       if (merged.ok) content = merged.content;
       else {
         const regions = merged.conflicts

@@ -78,6 +78,11 @@ npx manteen update @house/article-card
 what the proposed result would change locally. By default, `update` performs that same three-way
 merge: non-overlapping local and upstream edits are preserved together.
 
+Line diff3 remains the first merge path. If it conflicts on a `.ts` or `.tsx` file, Manteen
+automatically tries one conservative AST-assisted fallback for changes to distinct stable imports
+or exported top-level declarations. The AST only identifies exact source ranges; it never
+reformats output. Ambiguous or same-declaration changes remain conflicts.
+
 If both sides changed the same text incompatibly, Manteen refuses before modifying the project;
 `--force` does not clear the conflict and conflict markers are never written. After reviewing the
 diff, explicitly discard local edits and reset to upstream only when that is what you intend:
