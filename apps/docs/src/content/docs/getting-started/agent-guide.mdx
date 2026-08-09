@@ -12,13 +12,15 @@ survive local adaptation. An agent should be able to discover what exists, expla
 apply exactly the plan a person reviewed.
 
 :::caution[Check the installed surface]
-The currently published client at this contract freeze is
-<code>{`manteen@${manifest.releases.publishedClientAtContractFreeze}`}</code>. The complete machine
-envelope is the <code>{manifest.releases.machineInterfaceMilestone}</code> milestone; offline
-status, plan expectations, and packaged-skill commands are the
-<code>{manifest.releases.agentWorkflowMilestone}</code> milestone. Those releases and this documentation are
-not publication receipts. Inspect `manteen --version` and command `--help`; never invent a command
-or flag that the installed binary does not expose.
+This contract was frozen while
+<code>{`manteen@${manifest.releases.publishedClientAtContractFreeze}`}</code> was public. The
+agent-native authoring and workflow surfaces described here are now public in
+<code>manteen-kit@0.2.1</code> and
+<code>{`manteen@${manifest.releases.agentWorkflowMilestone}`}</code>; the machine-envelope work was
+an internal <code>{manifest.releases.machineInterfaceMilestone}</code> milestone, not a separate
+package release. Documentation still is not proof of what a project has installed. Inspect
+`manteen --version` and command `--help`; never invent a command or flag that the installed binary
+does not expose.
 :::
 
 ## The operating model
