@@ -22,11 +22,12 @@ upstream removal and D41's conservative AST-assisted fallback after a remaining 
 conflict. The client-only release did not change the kit or registry contract. W6 `init` is
 complete through its built-Node acceptance tier, W7 closed with a
 green hosted runtime, OS and package-manager matrix, and W8 established provenance-bearing
-releases. The separately versioned `manteen-kit` remains public at `0.2.0`. The accepted 22-item
-Pages content milestone is commit
-`8853a720352c8842ce6957a494f919ec7cccda67`, run
-[`31198437310`](https://github.com/arimxyer/manteen/actions/runs/31198437310); it serves the complete
-22-item catalog.
+releases. The separately versioned `manteen-kit` remains public at `0.2.0`. The latest accepted
+Pages deployment is commit `f412f02c13707ad1481f3a48d20eda204db702cd`, run
+[`31329326083`](https://github.com/arimxyer/manteen/actions/runs/31329326083); it serves the current
+client documentation and the unchanged complete 22-item catalog. The catalog-content milestone
+itself remains commit `8853a720352c8842ce6957a494f919ec7cccda67`, run
+[`31198437310`](https://github.com/arimxyer/manteen/actions/runs/31198437310).
 
 The client-only `manteen@0.3.0` release now carries Wu's receipt v3, committed pristine bases and
 three-way updates; the apply-time state-versioning advisory; and Wv's opt-in post-update project
@@ -43,7 +44,8 @@ recorded in the [`0.4 release handoff`](v0.4-release-handoff.md).
 
 The client-only `manteen@0.5.0` release adds only D41's automatic conservative AST-assisted
 fallback after remaining `.ts`/`.tsx` line-diff3 conflicts. Its signed tag, single trusted release
-run, npm provenance and accepted/refused controlled public-consumer boundaries are recorded in the
+run, npm provenance, accepted/refused controlled public-consumer boundaries and separate Pages
+acceptance are recorded in the
 [`0.5 release handoff`](v0.5-release-handoff.md).
 
 ## Known gaps, by kind
@@ -93,8 +95,9 @@ the [`0.2 release handoff`](v0.2-release-handoff.md), and the completed client-o
 outside contributors.
 
 **Content.** The source catalog and separately deployed public Pages registry now both have 22
-items. The eight newest item endpoints passed exact-byte public HTTP acceptance in Pages run
-`31198437310`. The initial six-item tranche and the Carousel/Dropzone extension stress cases
+items. All 22 item endpoints and the index passed exact-byte public HTTP acceptance in Pages run
+`31329326083`; the eight-item content tranche originally closed in run `31198437310`. The initial
+six-item tranche and the Carousel/Dropzone extension stress cases
 compile, install and production-build in disposable consumers; their exact evidence and
 non-evidence are recorded in the
 [`Wc handoff`](wc-registry-content-handoff.md). The
