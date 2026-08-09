@@ -21,18 +21,18 @@ Today: all six criteria are public through `manteen-kit@0.2.1` and `manteen@0.7.
 agent-native authoring, machine-command, SDK, verification, and guidance surfaces. W6 `init` is
 complete through its built-Node acceptance tier, W7 closed with a green hosted runtime, OS and
 package-manager matrix, and W8 established provenance-bearing releases. The latest accepted
-Pages deployment is commit `f412f02c13707ad1481f3a48d20eda204db702cd`, run
-[`31329326083`](https://github.com/arimxyer/manteen/actions/runs/31329326083); it serves the current
-client documentation and the unchanged complete 22-item catalog. The catalog-content milestone
-itself remains commit `8853a720352c8842ce6957a494f919ec7cccda67`, run
+Pages deployment is commit `8533400e7035d6fff624ebfe72374a82428a64ac`, run
+[`31338680074`](https://github.com/arimxyer/manteen/actions/runs/31338680074); it serves the public
+Agent Guide, both LLM context files, and the unchanged complete 22-item catalog. The
+catalog-content milestone itself remains commit `8853a720352c8842ce6957a494f919ec7cccda67`, run
 [`31198437310`](https://github.com/arimxyer/manteen/actions/runs/31198437310).
 
 The agent-native release is public at `manteen-kit@0.2.1` and `manteen@0.7.0`. It adds
 transactional generated registry ownership, one stable JSON command envelope, complete display
 metadata, an opaque SDK facade, offline status, expected-plan digests, deterministic discovery
 filters, transaction-bound verification for add/update/remove, and packaged agent guidance. The
-signed OIDC releases, npm integrity/provenance, fresh public consumers, and hosted portability
-matrix are accepted; Pages remains a separate deployment gate. Its frozen contract is
+signed OIDC releases, npm integrity/provenance, fresh public consumers, hosted portability matrix,
+and Pages deployment are accepted. Its frozen contract is
 [`agent-native-build-plan.md`](agent-native-build-plan.md), and its receipts are in the
 [`agent-native release handoff`](agent-native-release-handoff.md).
 
@@ -104,7 +104,7 @@ outside contributors.
 
 **Content.** The source catalog and separately deployed public Pages registry now both have 22
 items. All 22 item endpoints and the index passed exact-byte public HTTP acceptance in Pages run
-`31329326083`; the eight-item content tranche originally closed in run `31198437310`. The initial
+`31338680074`; the eight-item content tranche originally closed in run `31198437310`. The initial
 six-item tranche and the Carousel/Dropzone extension stress cases
 compile, install and production-build in disposable consumers; their exact evidence and
 non-evidence are recorded in the
@@ -150,7 +150,7 @@ is a judgment call, which is exactly why they are separate runs.
 | Wv | [`Update verification`](update-verification-handoff.md) | complete and public in `0.3.0`: post-apply orchestration, fail-fast bounded project scripts, drift detection, built-Node and fresh-consumer acceptance | Lets a consumer define what “the merged component still works here” means without placing arbitrary scripts inside Manteen's rollback journal. |
 | Wp | [`Upstream removal`](upstream-removal-handoff.md) | complete and public in client `0.4.0`: explicit selection, adapted-file opt-in, one journal, built/hosted/public acceptance | Adds explicit, exact-selected pruning for ordinary files proven absent upstream without turning update into implicit deletion or inferring renames. |
 | Wa | [`AST-assisted fallback`](ast-merge-integration-decision.md) | complete and public in client `0.5.0`: exact source splicing, built/hosted/public accepted-and-refused acceptance | Reduces a narrow class of adjacent TypeScript line conflicts without allowing an AST printer or ambiguous structural mapping to emit bytes. |
-| Wn | [`Agent-native interface`](agent-native-build-plan.md) | kit `0.2.1` and client `0.7.0` released and publicly accepted; Pages acceptance pending | Makes discovery, planning, refusal, mutation, verification, and guidance safe to drive without an interactive human loop. |
+| Wn | [`Agent-native interface`](agent-native-build-plan.md) | complete and public: kit `0.2.1`, client `0.7.0`, hosted portability, npm consumers, and Pages accepted | Makes discovery, planning, refusal, mutation, verification, and guidance safe to drive without an interactive human loop. |
 
 **Not workflow-shaped, do directly:** the hygiene set (LICENSE, linter, SECURITY, CONTRIBUTING,
 dependabot, README rename). Single-file, single-concern, no discovery — a workflow would be
@@ -203,7 +203,7 @@ Wu update merging ........... complete; public in client 0.3.0
 Wv update verification ...... complete; public in client 0.3.0
 Wp upstream removal ......... complete; public in client 0.4.0
 Wa AST-assisted fallback .... complete; public in client 0.5.0
-Wn agent-native interface ... implemented locally; publication and Pages pending approval
+Wn agent-native interface ... complete; public in kit 0.2.1, client 0.7.0 and Pages
 hygiene ..................... done, direct
 ```
 

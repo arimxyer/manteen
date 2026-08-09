@@ -1,7 +1,7 @@
 # Agent-native release handoff
 
-Status: package release and public-consumer acceptance complete on 2026-08-09; Pages deployment
-pending as the final separate gate.
+Status: complete and public on 2026-08-09: hosted portability, both package releases, fresh npm
+consumers, Agent Guide/LLM surfaces, and the unchanged registry contract are accepted.
 
 ## Candidate boundary
 
@@ -114,13 +114,30 @@ with truthful zero exit and `mutated: false`. The package exported `createMantee
 and parsed the command-envelope schema, and exposed the canonical skill plus its manifest and
 three references. The dry-run manifest named all five packaged skill files and their hashes.
 
-These are public npm distribution/import/CLI receipts. They do not yet prove the new documentation
-or generated registry over public HTTPS; Pages remains deliberately undispatched until this
-receipt-only documentation change is reviewed and merged.
+These are public npm distribution/import/CLI receipts. Pages acceptance below independently owns
+the public documentation and generated-registry boundary.
 
-## Remaining Pages gate
+## Pages acceptance
 
-Dispatch Pages from the accepted receipt commit, then verify the Agent Guide, `llms.txt`,
-`llms-full.txt`, the unchanged 22-item registry contract, and sampled public registry bytes. Do not
-describe that public HTTPS boundary as complete until the hosted deployment and direct HTTP probes
-pass.
+The first post-release Pages deployment exposed a documentation-quality defect during direct HTTP
+acceptance: the public Agent Guide still foregrounded the historical `manteen@0.5.0`
+contract-freeze baseline without plainly saying `0.7.0` was now released. PR
+[#24](https://github.com/arimxyer/manteen/pull/24) corrected only the Agent Guide and
+`llms-full.txt`, preserving the instruction to inspect the installed binary.
+
+The final manual Pages
+[run 31338680074](https://github.com/arimxyer/manteen/actions/runs/31338680074) built and deployed
+commit `8533400e7035d6fff624ebfe72374a82428a64ac`. Direct cache-busted public HTTP probes then proved:
+
+- the [Agent Guide](https://arimxyer.github.io/manteen/getting-started/agent-guide/) returned 200,
+  carried the `0.2.1`/`0.7.0` release boundary, named `0.6.0` as an internal milestone rather than a
+  package, and exposed the documented status/guide commands;
+- [`llms.txt`](https://arimxyer.github.io/manteen/llms.txt) and
+  [`llms-full.txt`](https://arimxyer.github.io/manteen/llms-full.txt) returned 200 with byte-for-byte
+  equality to the committed files; and
+- the public registry index still contained 22 items, and `registry.json` plus all 22 item JSON
+  endpoints were byte-for-byte equal to the generated deployment artifact.
+
+The dot-prefixed generated-output ownership marker is author-side state, not a public `/r`
+interchange endpoint. It was deliberately excluded from the 23-file public contract comparison.
+The final public responses reported `Last-Modified: Sun, 09 Aug 2026 22:10:05 GMT`.
