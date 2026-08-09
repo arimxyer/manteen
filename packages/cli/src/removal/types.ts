@@ -1,5 +1,6 @@
 import type { InventoryNote } from "../inventory/types";
 import type { CanonicalId, Diagnostic, Receipt, ReceiptPath } from "../plan/types";
+import type { PlannedVerification, VerificationOutcome } from "../verification/types";
 
 /** D42's removal-only refusal codes. They remain separate until CLI integration. */
 export type RemovalDiagnosticCode =
@@ -48,6 +49,8 @@ export interface RemovalCommandOptions {
   dryRun: boolean;
   files: readonly string[];
   discardAdapted: boolean;
+  /** False only for --no-verify. */
+  verify?: boolean;
 }
 
 export type RemovalUsageIssueKind =
@@ -125,6 +128,7 @@ export interface RemovalPlan {
   diagnostics: readonly RemovalPlanDiagnostic[];
   notes: readonly InventoryNote[];
   stateIgnored: boolean;
+  verification?: PlannedVerification | null;
 }
 
 export interface CommittedRemoval extends RemovalSelection {
@@ -133,7 +137,7 @@ export interface CommittedRemoval extends RemovalSelection {
 }
 
 export interface RemovalFailure {
-  kind: "stale-plan" | "write-failed" | "rollback-failed";
+  kind: "stale-plan" | "write-failed" | "verification-failed" | "rollback-failed";
   message: string;
   paths?: ReceiptPath[];
 }
@@ -145,6 +149,7 @@ export interface RemovalApplyOutcome {
   receipt: { path: string; written: boolean };
   updateState: { changed: true; versioningRequired: true } | null;
   failure: RemovalFailure | null;
+  verification?: VerificationOutcome;
 }
 
 export interface RemovalReceiptProjectionSuccess {

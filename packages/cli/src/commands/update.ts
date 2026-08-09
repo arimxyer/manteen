@@ -61,8 +61,8 @@
  *                                            cancelled, `outcome.ok` is false)
  *   applied + outcome.failure !== null    -> 1  (stale-plan, install-failed,
  *                                            write-failed, rollback-failed)
- *   applied + outcome.ok + verification
- *             failed                      -> 1  (the coherent update remains applied)
+ *   applied + outcome.failure caused by
+ *             failed verification         -> 1  (the file transaction is restored)
  *   applied + outcome.ok + verification
  *             not failed                  -> 0
  *
@@ -95,7 +95,8 @@ import type { LoadedConfig } from "../config/types";
 import type { FileHasher } from "../inventory/installed";
 import { fromReceiptState, itemsById } from "../inventory/installed";
 import type { Installed, InventoryNote, UpdateResult, UpdateSkip } from "../inventory/types";
-import { blockingExitCode } from "../plan/diagnostics";
+import { blockingExitCode, diag, sortDiagnostics } from "../plan/diagnostics";
+import { digestPlan, planDigestMatches } from "../plan/digest";
 import { plan } from "../plan/index";
 import { parseRef } from "../plan/ref";
 import type {
@@ -154,6 +155,8 @@ export type UpdateOptions = Omit<PlanOptions, "overwrite" | "operation" | "takeU
   all?: boolean;
   /** Explicitly discard local adaptations for files still shipped upstream. */
   takeUpstream?: boolean;
+  /** Refuse before apply unless the fresh read-only preview has this digest. */
+  expectPlan?: string;
 };
 
 /**
@@ -208,7 +211,7 @@ function unavailableVerification(
   options: UpdateOptions,
   planned: Plan,
 ): VerificationOutcome {
-  if (config.raw.verification === undefined) {
+  if (config.raw.verification?.update === undefined) {
     return { status: "not-configured", checks: [], failure: null };
   }
   if (options.verify === false) return { status: "skipped", checks: [], failure: null };
@@ -286,6 +289,37 @@ export async function update(
     verify: options.verify,
   });
 
+  const planDigest = digestPlan(planned, {
+    refs: candidates,
+    all: options.all,
+    force: options.force,
+    packageManager: options.packageManager,
+    takeUpstream: options.takeUpstream,
+    verify: options.verify,
+  });
+  planned.planDigest = planDigest;
+  if (!planDigestMatches(planDigest, options.expectPlan)) {
+    const expected = options.expectPlan?.toLowerCase() ?? "";
+    const mismatch = diag(
+      "plan-mismatch",
+      `The fresh update plan is ${planDigest}, not the explicitly authorised ${expected}. Re-run --dry-run --json and review the new plan before applying it.`,
+    );
+    const refusedPlan: Plan = {
+      ...planned,
+      diagnostics: sortDiagnostics([...planned.diagnostics, mismatch]),
+      ok: false,
+    };
+    const verdict = classify(candidates, refusedPlan, config);
+    skipped.push(...verdict.skipped);
+    return {
+      kind: "refused",
+      plan: refusedPlan,
+      selected: verdict.selected,
+      skipped: sortSkips(skipped),
+      notes,
+    };
+  }
+
   const verdict = classify(candidates, planned, config);
   skipped.push(...verdict.skipped);
 
@@ -325,7 +359,9 @@ export async function update(
   );
 
   let verification = unavailableVerification(config, options, planned);
-  if (verification.status === "planned" && planned.verification !== null) {
+  if (outcome.verification !== undefined) {
+    verification = outcome.verification;
+  } else if (verification.status === "planned" && planned.verification !== null) {
     if (!outcome.ok) {
       verification = { status: "skipped", checks: [], failure: null };
     } else if (!outcome.dryRun) {
@@ -682,12 +718,14 @@ function toUpdateJson(
   const plan = result.kind === "nothing-to-do" ? null : result.plan;
   const outcome = result.kind === "applied" ? result.outcome : null;
   const verification = result.kind === "applied" ? result.verification : fallbackVerification;
+  const planDigest = plan?.planDigest ?? null;
 
   return {
     command: "update",
     root,
     ok,
     kind: result.kind,
+    planDigest,
     selected: [...result.selected],
     skipped: result.skipped,
     cancelled: outcome?.cancelled ?? false,
@@ -767,6 +805,7 @@ export interface UpdateFlags {
   force?: boolean;
   json?: boolean;
   takeUpstream?: boolean;
+  expectPlan?: string;
   /** Commander sets false only for --no-verify. */
   verify?: boolean;
   /** D15's detection override. */
@@ -814,6 +853,7 @@ export async function runUpdate(
     interactive: false,
     packageManager: flags.pm as UpdateOptions["packageManager"],
     takeUpstream: flags.takeUpstream,
+    expectPlan: flags.expectPlan,
     verify: flags.verify,
   };
 

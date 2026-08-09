@@ -624,6 +624,8 @@ export function toItemDetail(item: ValidatedItem, redactedUrl: string): ItemDeta
   if (item.meta.requires !== undefined) meta.requires = item.meta.requires;
   if (item.meta.provider !== undefined) meta.provider = item.meta.provider;
   if (item.meta.stylesApi !== undefined) meta.stylesApi = item.meta.stylesApi;
+  if (item.meta.props !== undefined) meta.props = item.meta.props;
+  if (item.meta.usage !== undefined) meta.usage = item.meta.usage;
   if (item.meta.themeFragment !== undefined) {
     meta.themeFragment = {
       path: item.meta.themeFragment.path,
@@ -635,6 +637,7 @@ export function toItemDetail(item: ValidatedItem, redactedUrl: string): ItemDeta
     name: item.name,
     wireType: item.wireType,
     redactedUrl,
+    ...(item.docs === undefined ? {} : { docs: item.docs }),
     files,
     dependencies: item.dependencies,
     devDependencies: item.devDependencies,

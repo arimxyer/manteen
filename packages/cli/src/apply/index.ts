@@ -41,10 +41,17 @@
 
 import type { ApplyFn, ApplyOptions, ApplyOutcome, Plan, WriteResult } from "../plan/types";
 import { mergeReceipt, serializeReceipt } from "../receipt/write";
+import {
+  createVerificationPorts,
+  plannedVerificationOutcome,
+  verificationManagedPaths,
+  verifyAppliedMutation,
+} from "../verification/run";
+import type { PlannedVerification, VerificationOutcome } from "../verification/types";
 import { clackOverwritePrompt, decideWrites, type OverwritePrompt } from "./decide";
 import { installDeps } from "./install-deps";
 import { createJournal } from "./journal";
-import { preflight } from "./preflight";
+import { hashFileBytes, preflight } from "./preflight";
 import { removeBases, writeBases } from "./write-bases";
 import { writeFiles } from "./write-files";
 import { writeStyles } from "./write-styles";
@@ -76,9 +83,25 @@ export interface ApplyPorts {
    * under real node without a pseudo-terminal.
    */
   prompt: OverwritePrompt;
+  /** Runs after the receipt write while every Manteen pre-image is still held. */
+  verify?(plan: Plan, verification: PlannedVerification): Promise<VerificationOutcome>;
 }
 
-const CLACK_PORTS: ApplyPorts = { prompt: clackOverwritePrompt };
+function defaultVerification(
+  plan: Plan,
+  verification: PlannedVerification,
+): Promise<VerificationOutcome> {
+  return verifyAppliedMutation(
+    plan,
+    verification,
+    createVerificationPorts((chunk) => process.stderr.write(chunk), hashFileBytes),
+  );
+}
+
+const CLACK_PORTS: ApplyPorts = {
+  prompt: clackOverwritePrompt,
+  verify: defaultVerification,
+};
 
 function emptyOutcome(plan: Plan, options: ApplyOptions): ApplyOutcome {
   return {
@@ -94,6 +117,9 @@ function emptyOutcome(plan: Plan, options: ApplyOptions): ApplyOutcome {
     styles: plan.styles === null ? null : { path: plan.styles.destination, written: false },
     receipt: { path: plan.receipt.path, written: false },
     updateState: { changed: false },
+    ...(plan.verification === null
+      ? {}
+      : { verification: plannedVerificationOutcome(plan.verification) }),
     failure: null,
   };
 }
@@ -229,6 +255,8 @@ async function applyPlan(
   let stylesWritten = false;
   let receiptWritten = false;
   let updateStateChanged = false;
+  let verification: VerificationOutcome | undefined =
+    plan.verification === null ? undefined : plannedVerificationOutcome(plan.verification);
 
   try {
     // ---- phase 3: write files ----------------------------------------------
@@ -263,7 +291,8 @@ async function applyPlan(
     // `overwrite` may never have been written. Recording its sha256 would claim
     // content we did not write and authorize a future silent overwrite of a file
     // that is entirely the user's.
-    const text = serializeReceipt(mergeReceipt(prior, plan, results, themeWritten, stylesWritten));
+    const completedReceipt = mergeReceipt(prior, plan, results, themeWritten, stylesWritten);
+    const text = serializeReceipt(completedReceipt);
 
     // Gated on bytes and on NOTHING else. Not on "any file was written", not on
     // plan.theme.changed: a project installed before receipts existed reports
@@ -274,6 +303,22 @@ async function applyPlan(
       journal.write(plan.receipt.path, text);
       receiptWritten = true;
       updateStateChanged = true;
+    }
+
+    // ---- phase 8: project verification -----------------------------------
+    // Still inside this try and before the journal is released. A failed check
+    // throws into the same unwind path as any write failure, restoring every
+    // Manteen-managed pre-image captured above.
+    if (plan.verification !== null) {
+      for (const path of verificationManagedPaths(plan, completedReceipt)) {
+        journal.capture?.(path);
+      }
+      verification = await (ports.verify ?? defaultVerification)(plan, plan.verification);
+      if (verification.status === "failed") {
+        throw new Error(
+          `Project verification failed: ${verification.failure?.message ?? "unknown verification failure"}`,
+        );
+      }
     }
   } catch (error) {
     const touched = journal.entries().map((entry) => entry.destination);
@@ -287,6 +332,7 @@ async function applyPlan(
         // genuinely UNKNOWN, and the enum has no word for it. `unwound.unrestored`
         // below says which ones, in the channel that can also say what to do.
         dependencies,
+        ...(verification === undefined ? {} : { verification }),
         failure: {
           kind: "rollback-failed",
           message:
@@ -302,6 +348,7 @@ async function applyPlan(
       // Every pre-image is back on disk, so nothing this run decided to write
       // survives it. `touched` below still names what was attempted.
       dependencies,
+      ...(verification === undefined ? {} : { verification }),
       failure: {
         kind: "write-failed",
         message: `${detail}\nEvery file written by this run was restored to its previous contents.`,
@@ -323,6 +370,7 @@ async function applyPlan(
     styles: plan.styles === null ? null : { path: plan.styles.destination, written: stylesWritten },
     receipt: { path: plan.receipt.path, written: receiptWritten },
     updateState: { changed: updateStateChanged },
+    ...(verification === undefined ? {} : { verification }),
   };
 }
 

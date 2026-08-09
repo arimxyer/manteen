@@ -35,5 +35,15 @@
       }
     },
     "notes": { "type": "array", "items": { "type": "string" } }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["ok"],
+        "properties": { "ok": { "const": true } }
+      },
+      "then": { "properties": { "exitCode": { "type": "integer", "const": 0 } } },
+      "else": { "properties": { "exitCode": { "type": "integer", "minimum": 1 } } }
+    }
+  ]
 }

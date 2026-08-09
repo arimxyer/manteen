@@ -1,0 +1,4 @@
+interface:
+  display_name: "Manteen"
+  short_description: "Install and author Mantine registry components"
+  default_prompt: "Use $manteen to inspect or safely change this Mantine component registry project."

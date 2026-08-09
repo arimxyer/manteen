@@ -53,10 +53,12 @@ export interface MantineConfig {
   styles?: string;
   tsconfig?: string;
   resolutions?: Record<string, string>;
-  /** Project-owned package scripts run after a successful update transaction. */
+  /** Project-owned package scripts run after the named successful transaction. */
   verification?: {
     /** Authored order is execution order. Names resolve against root package.json. */
-    update: string[];
+    add?: string[];
+    update?: string[];
+    remove?: string[];
     /** Ceiling for ONE check. Absent means `DEFAULT_VERIFICATION_TIMEOUT_MS`. */
     timeoutMs?: number;
   };

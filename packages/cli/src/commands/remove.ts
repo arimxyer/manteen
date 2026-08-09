@@ -23,6 +23,8 @@ import {
 } from "../cli/render";
 import type { LoadedConfig } from "../config/types";
 import type { InventoryNote } from "../inventory/types";
+import { diag, sortDiagnostics } from "../plan/diagnostics";
+import { digestRemovalPlan, planDigestMatches } from "../plan/digest";
 import { classifyRemovalUsage } from "../removal/discovery";
 import type {
   CommittedRemoval,
@@ -33,6 +35,7 @@ import type {
   RemovalPlanDiagnostic,
   RemoveCandidate,
 } from "../removal/types";
+import { renderVerification } from "./update";
 
 const EXIT_OK = 0;
 const EXIT_REFUSED = 1;
@@ -46,6 +49,9 @@ export interface RemoveFlags {
   file?: readonly string[];
   discardAdapted?: boolean;
   json?: boolean;
+  expectPlan?: string;
+  /** Commander sets false only for --no-verify. */
+  verify?: boolean;
 }
 
 export interface RemoveCommandPorts {
@@ -59,6 +65,7 @@ function commandOptions(flags: RemoveFlags): RemovalCommandOptions {
     dryRun: flags.dryRun === true,
     files: [...(flags.file ?? [])],
     discardAdapted: flags.discardAdapted === true,
+    ...(flags.verify === undefined ? {} : { verify: flags.verify }),
   };
 }
 
@@ -126,6 +133,7 @@ function renderRemovalFailure(failure: RemovalFailure | null): string {
 interface RemoveJsonDocument extends JsonEnvelope {
   command: "remove";
   mode: "upstream-removed";
+  planDigest: string;
   dryRun: boolean;
   candidates: RemoveCandidate[];
   removals: CommittedRemoval[];
@@ -134,10 +142,12 @@ interface RemoveJsonDocument extends JsonEnvelope {
   failure: RemovalFailure | null;
   diagnostics: RemovalPlanDiagnostic[];
   notes: InventoryNote[];
+  verification: RemovalApplyOutcome["verification"] | null;
 }
 
 function removeJson(
   plan: RemovalPlan,
+  planDigest: string,
   dryRun: boolean,
   outcome: RemovalApplyOutcome | null,
   ok: boolean,
@@ -148,6 +158,7 @@ function removeJson(
     root: plan.root,
     ok,
     mode: "upstream-removed",
+    planDigest,
     dryRun,
     candidates: [...plan.candidates],
     removals: outcome?.ok === true && !dryRun ? outcome.removals : [],
@@ -158,6 +169,7 @@ function removeJson(
     },
     updateState: observedStateChange ? { changed: true, versioningRequired: true } : null,
     failure: outcome?.failure ?? null,
+    verification: outcome?.verification ?? null,
     diagnostics: [...plan.diagnostics],
     notes: sortNotes(plan.notes),
   };
@@ -200,6 +212,22 @@ export async function runRemove(
     return EXIT_REFUSED;
   }
 
+  const planDigest = digestRemovalPlan(planned, {
+    refs: options.files,
+    overwrite: options.discardAdapted,
+  });
+  if (!planDigestMatches(planDigest, flags.expectPlan)) {
+    const mismatch = diag(
+      "plan-mismatch",
+      `The fresh removal plan is ${planDigest}, not the explicitly authorised ${flags.expectPlan?.toLowerCase() ?? ""}. Re-run --dry-run --json and review the new plan before applying it.`,
+    );
+    planned = {
+      ...planned,
+      diagnostics: sortDiagnostics([...planned.diagnostics, mismatch]),
+      ok: false,
+    };
+  }
+
   const diagnostics = planned.diagnostics;
   const blocked = !planned.ok || hasBlockingDiagnostic(diagnostics);
   let outcome: RemovalApplyOutcome | null = null;
@@ -215,7 +243,7 @@ export async function runRemove(
 
   const ok = !blocked && outcome?.ok === true;
   if (flags.json === true) {
-    streams.stdout(removeJson(planned, planned.dryRun, outcome, ok));
+    streams.stdout(removeJson(planned, planDigest, planned.dryRun, outcome, ok));
     return ok ? EXIT_OK : EXIT_REFUSED;
   }
 
@@ -235,6 +263,9 @@ export async function runRemove(
   if (outcome !== null) {
     if (outcome.ok && planned.dryRun) streams.stdout("Dry run — nothing was written.\n");
     streams.stderr(renderRemovalFailure(outcome.failure));
+    if (outcome.verification !== undefined) {
+      streams.stderr(renderVerification(outcome.verification, planned.root));
+    }
     if (outcome.ok && !planned.dryRun && outcome.updateState?.changed === true) {
       streams.stderr(renderStateVersioningAdvisory(planned.stateIgnored));
     }

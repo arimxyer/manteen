@@ -101,7 +101,13 @@ function run(root, args) {
 
 function json(result) {
   assert.equal(result.stderr, "", result.all);
-  return JSON.parse(result.stdout);
+  const document = JSON.parse(result.stdout);
+  return new Proxy(document, {
+    get(target, property, receiver) {
+      if (Reflect.has(target, property)) return Reflect.get(target, property, receiver);
+      return target.payload?.[property];
+    },
+  });
 }
 
 function manifest(root) {
@@ -281,12 +287,19 @@ for (const [name, make] of [
     const preview = json(previewResult);
     assert.equal(preview.command, "init");
     assert.ok(preview.plan.files.length > 0, previewResult.stdout);
+    assert.match(preview.planDigest, /^[0-9a-f]{64}$/);
     assert.deepEqual(manifest(fixture.root), before, "dry-run changed the fixture tree");
 
-    const appliedResult = run(fixture.root, ["--yes", "--json"]);
+    const appliedResult = run(fixture.root, [
+      "--yes",
+      "--expect-plan",
+      preview.planDigest,
+      "--json",
+    ]);
     assert.equal(appliedResult.status, 0, appliedResult.all);
     const applied = json(appliedResult);
     assert.equal(applied.ok, true);
+    assert.equal(applied.planDigest, preview.planDigest);
     assert.equal(applied.complete, fixture.complete);
     if (!fixture.complete) {
       assert.ok(applied.instructions.some((entry) => entry.code === "tailwind-postcss"));

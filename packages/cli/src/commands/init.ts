@@ -23,7 +23,8 @@ import type {
   InitPlanPorts,
 } from "../init/types";
 import { INIT_FRAMEWORK_FLAGS } from "../init/types";
-import { blockingExitCode } from "../plan/diagnostics";
+import { blockingExitCode, diag, sortDiagnostics } from "../plan/diagnostics";
+import { digestInitPlan, planDigestMatches } from "../plan/digest";
 import { interactiveFromProcess } from "../ui";
 
 const EXIT_OK = 0;
@@ -39,6 +40,7 @@ export interface InitFlags {
   json?: boolean;
   pm?: string;
   framework?: string;
+  expectPlan?: string;
 }
 
 export interface InitCommandPorts {
@@ -114,7 +116,7 @@ function jsonInstruction(instruction: InitInstruction, root: string) {
   };
 }
 
-function jsonDocument(plan: InitPlan, outcome: InitApplyOutcome | null) {
+function jsonDocument(plan: InitPlan, outcome: InitApplyOutcome | null, planDigest: string) {
   return {
     command: "init" as const,
     root: plan.root,
@@ -122,6 +124,7 @@ function jsonDocument(plan: InitPlan, outcome: InitApplyOutcome | null) {
     complete: outcome?.complete ?? false,
     framework: plan.framework.kind,
     dryRun: outcome?.dryRun ?? false,
+    planDigest,
     plan: {
       version: plan.version,
       files: plan.files.map((file) => ({
@@ -209,9 +212,28 @@ export async function runInit(
   }
 
   if (!flags.json) renderDiagnostics(plan.diagnostics, plan.root, streams.stderr);
+  const planDigest = digestInitPlan(plan, {
+    force: flags.force,
+    packageManager: flags.pm,
+  });
   if (!plan.ok) {
-    if (flags.json) streams.stdout(renderJson(jsonDocument(plan, null)));
+    if (flags.json) streams.stdout(renderJson(jsonDocument(plan, null, planDigest)));
     return blockingExitCode(plan.diagnostics, false) === 2 ? EXIT_USAGE : EXIT_REFUSED;
+  }
+
+  if (!planDigestMatches(planDigest, flags.expectPlan)) {
+    const mismatch = diag(
+      "plan-mismatch",
+      `The fresh init plan is ${planDigest}, not the explicitly authorised ${flags.expectPlan?.toLowerCase() ?? ""}. Re-run --dry-run --json and review the new plan before applying it.`,
+    );
+    const refused = {
+      ...plan,
+      diagnostics: sortDiagnostics([...plan.diagnostics, mismatch]),
+      ok: false,
+    };
+    if (flags.json) streams.stdout(renderJson(jsonDocument(refused, null, planDigest)));
+    else renderDiagnostics([mismatch], plan.root, streams.stderr);
+    return EXIT_REFUSED;
   }
 
   let outcome: InitApplyOutcome;
@@ -224,7 +246,7 @@ export async function runInit(
   }
 
   if (flags.json) {
-    streams.stdout(renderJson(jsonDocument(plan, outcome)));
+    streams.stdout(renderJson(jsonDocument(plan, outcome, planDigest)));
   } else {
     streams.stdout(flags.dryRun ? renderInitPlan(plan) : renderInitOutcome(outcome, plan.root));
     streams.stdout(renderInstructions(outcome.instructions, plan.root));

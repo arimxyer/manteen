@@ -4,6 +4,7 @@
  * Reads disk/network; never writes.
  */
 
+import { detectPackageManager } from "nypm";
 import { loadEnv } from "../config/load";
 import type { LoadedConfig } from "../config/types";
 import { checkCollisions } from "../gates/collision";
@@ -24,6 +25,7 @@ import { RECEIPT_VERSION } from "../plan/types";
 import { createReceiptReader, createReceiptValidator } from "../receipt/load";
 import { basePathFor, fromReceiptPath, isManteenStatePath, toReceiptPath } from "../receipt/path";
 import { readReceipt, receiptPathFor } from "../receipt/read";
+import { planVerification } from "../verification/plan";
 import { discoverUpstreamRemovals } from "./discovery";
 import { projectRemovalReceipt, serializeProjectedRemovalReceipt } from "./receipt-projection";
 import { snapshotRemovalPath } from "./snapshot";
@@ -175,10 +177,42 @@ export async function planRemoval(
     };
   });
 
-  const diagnostics = sortDiagnostics(discovery.diagnostics as readonly Diagnostic[]);
+  const operationScripts =
+    options.verify === false ? null : (config.raw.verification?.remove ?? null);
+  let verification: RemovalPlan["verification"] = null;
+  const verificationDiagnostics: Diagnostic[] = [];
+  if (operationScripts !== null) {
+    const manager = await detectPackageManager(root, {
+      includeParentDirs: false,
+      ignoreArgv: true,
+    });
+    if (manager == null) {
+      verificationDiagnostics.push(
+        diag(
+          "no-package-manager",
+          `Remove verification is configured, and no package manager could be detected in ${root}. Declare package.json.packageManager or use --no-verify.`,
+        ),
+      );
+    } else {
+      const result = planVerification(
+        "remove",
+        root,
+        operationScripts,
+        manager.name,
+        undefined,
+        config.raw.verification?.timeoutMs,
+      );
+      verification = result.verification;
+      verificationDiagnostics.push(...result.diagnostics);
+    }
+  }
+  const diagnostics = sortDiagnostics([
+    ...(discovery.diagnostics as readonly Diagnostic[]),
+    ...verificationDiagnostics,
+  ]);
   return {
     root,
-    ok: discovery.ok,
+    ok: discovery.ok && !diagnostics.some((diagnostic) => diagnostic.severity === "error"),
     dryRun: options.dryRun,
     candidates: discovery.candidates,
     removals,
@@ -195,6 +229,7 @@ export async function planRemoval(
     diagnostics,
     notes,
     stateIgnored,
+    verification,
   };
 }
 

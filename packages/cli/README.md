@@ -122,7 +122,9 @@ visible. The same live registry has been production-built as both `@alpha` and `
 The remaining commands keep and inspect what was installed:
 
 ```bash
+manteen status --json
 manteen list
+manteen list --query table --type registry:component --installed
 manteen info @house/data-table
 manteen diff
 manteen update
@@ -130,6 +132,17 @@ manteen update --take-upstream # explicitly discard local source adaptations
 manteen update --no-verify     # skip configured project checks for this run
 manteen remove --upstream-removed --dry-run
 ```
+
+For automation, every recognized `--json` invocation writes exactly one versioned envelope to
+stdout with `schemaVersion`, `command`, `root`, `ok`, `exitCode`, `mutated`, `payload`,
+`diagnostics`, `errors`, and `notes`. `ok` is exactly `exitCode === 0`; stderr remains available
+for verifier output. JSON mode disables prompting but grants no overwrite or discard authority.
+Blocking diagnostics include a typed rerun argument array, a configuration patch, or a bounded
+manual action and rationale.
+
+Mutating dry runs return a source-free `planDigest`. Apply the exact reviewed plan by repeating the
+same refs and flags with `--expect-plan <sha256>`; a changed source, destination, preimage,
+verification definition, or relevant option produces a non-forceable zero-write refusal.
 
 Every install is recorded in `manteen.lock.json`, with exact pristine upstream bases under
 `.manteen/bases/`. **Commit both — do not gitignore `.manteen/`.** They stop cross-registry
@@ -181,24 +194,26 @@ state, preflight, write, or rollback failures exit 1. There are no prompts and n
 or `--force` escape hatches. Use `--json` for the same candidate, selection, receipt, transaction,
 diagnostic, and failure facts as one document.
 
-To have `update` check the resulting live project, opt into ordered `package.json` scripts in
+To have a mutation check the resulting live project, opt into ordered `package.json` scripts in
 `manteen.json`:
 
 ```jsonc
 {
   // ...existing registries, aliases, theme, styles and tsconfig...
   "verification": {
+    "add": ["typecheck"],
     "update": ["typecheck", "test", "build"],
+    "remove": ["typecheck", "test"],
     "timeoutMs": 300000
   }
 }
 ```
 
 These are script names, not shell command strings. Manteen uses the selected package manager,
-preserves the authored order, and stops at the first failure. Configured checks run after every
-successful non-dry update, including one whose component and state bytes were already current.
-`--dry-run` validates and shows the planned checks without running them; `--no-verify` skips their
-dynamic resolution and execution for that run.
+preserves the authored order, and stops at the first failure. Configured checks run after writes
+for the matching non-dry add, update, or remove operation. `--dry-run` validates and shows the
+planned checks without running them; `--no-verify` skips their dynamic resolution and execution
+for that run.
 
 `timeoutMs` bounds **one check**, not the run, so ordering never decides whether a suite fits. It
 defaults to five minutes — enough for a cold production build on a project consuming a component
@@ -207,14 +222,36 @@ indefinitely. A check that hits the ceiling is terminated and reported as `timed
 distinct from `script-failed` so a process Manteen cut short is never described as your test suite
 failing. Raise it if a check is legitimately slower.
 
-Verification is deliberately after the update transaction. If a check fails to start, exits
-non-zero, is terminated, or changes a Manteen-managed/control file, the command exits 1 and says
-that the source, pristine bases, and receipt remain applied. It does not claim to roll back caches,
-snapshots, generated files, or any other side effect of a project script. Child stdout and stderr
-are both streamed to the CLI's stderr, including under `--json`, so the JSON document on stdout
-stays parseable; no output transcript or time-specific verification certificate is written to the
-receipt. With no configured checks, text output stays silent about verification and JSON reports
-`status: "not-configured"` rather than implying a semantic pass.
+Verification runs after writes but before the mutation journal is released. If a check fails to
+start, exits non-zero, is terminated, or changes a Manteen-managed/control file, the command exits
+1 and restores the source, pristine bases, receipt, config, and other captured control preimages.
+It does not claim to roll back caches, snapshots, generated files, dependency installations, or
+any other unowned side effect of a project script. Child stdout and stderr are both streamed to the
+CLI's stderr, including under `--json`, so the JSON document on stdout stays parseable; no output
+transcript or time-specific verification certificate is written to the receipt. With no configured
+checks, text output stays silent about verification and JSON reports `status: "not-configured"`
+rather than implying a semantic pass.
+
+## Agent use and SDK
+
+The npm package includes a canonical `manteen` skill. Read it without project configuration or
+install an owned project copy explicitly:
+
+```bash
+manteen agent guide --json
+manteen agent install --dry-run --json
+manteen agent install --json
+```
+
+The default target is `.agents/skills/manteen`. User-level Codex, Claude, universal, and custom
+targets are explicit. An unowned destination refuses; an adapted owned copy requires both
+`--update` and `--take-packaged` before its changes are discarded. `init` never installs a skill or
+edits agent instructions implicitly.
+
+Programmatic consumers should use `createManteenClient()` from `manteen`. It exposes supported
+read operations plus non-interactive plan/apply methods whose handles are frozen, content-free,
+root-bound, and unforgeable. The existing lower-level exports remain available but are not the
+stable agent façade.
 
 Items may also require package-level styles such as `@mantine/carousel/styles.css`. Manteen composes
 those imports into the configured `styles` file and records each item's contribution in receipt v3.

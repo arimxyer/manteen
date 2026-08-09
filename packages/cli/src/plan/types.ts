@@ -70,6 +70,7 @@ export type DiagnosticCode =
   | "merge-base-unreadable"
   | "update-conflict"
   | "verification-script-unavailable"
+  | "plan-mismatch"
   // ---- Wp explicit upstream-file removal ---------------------------------
   | "remove-file-unowned"
   | "remove-file-still-published"
@@ -328,6 +329,8 @@ export interface PlanItem {
 
 export interface Plan {
   version: 1;
+  /** Canonical mutation-authority digest when the command layer requested one. */
+  planDigest?: string;
   /** The write semantics used to construct every `PlannedFile`. */
   operation: "add" | "update";
   root: string; // absolute project root = dirname(manteen.json)
@@ -434,6 +437,10 @@ export interface ApplyOutcome {
    *  sidecar. False for previews and every unsuccessful outcome. Callers use
    *  this observed fact to remind users to version the two together. */
   updateState: { changed: boolean };
+  /** Present when this operation configured project verification. Verification
+   *  runs before the write journal is released, so a failed result accompanies
+   *  a rolled-back apply failure. */
+  verification?: import("../verification/types").VerificationOutcome;
   failure: ApplyFailure | null;
 }
 

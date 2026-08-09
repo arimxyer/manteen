@@ -1,4 +1,4 @@
-/** Read-only planning for project-owned post-update package scripts. */
+/** Read-only planning for project-owned post-mutation package scripts. */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -17,6 +17,8 @@ export interface VerificationPlanResult {
 export interface VerificationPlanPorts {
   read(path: string): Buffer;
 }
+
+export type VerificationOperation = "add" | "update" | "remove";
 
 /**
  * Five minutes, per check rather than per run.
@@ -72,7 +74,8 @@ function plannedCheck(
  * uniqueness were already proven by the consumer schema; this proves the
  * project can supply the named commands.
  */
-export function planUpdateVerification(
+export function planVerification(
+  operation: VerificationOperation,
   root: string,
   scripts: readonly string[],
   packageManager: PackageManagerName,
@@ -88,7 +91,7 @@ export function planUpdateVerification(
       verification: null,
       diagnostics: [
         unavailable(
-          `Update verification is configured, but ${path} could not be read: ${error instanceof Error ? error.message : String(error)}`,
+          `${operationLabel(operation)} verification is configured, but ${path} could not be read: ${error instanceof Error ? error.message : String(error)}`,
           path,
         ),
       ],
@@ -101,7 +104,7 @@ export function planUpdateVerification(
       verification: null,
       diagnostics: [
         unavailable(
-          `Update verification is configured, but ${path} is not a JSON object with usable scripts.`,
+          `${operationLabel(operation)} verification is configured, but ${path} is not a JSON object with usable scripts.`,
           path,
         ),
       ],
@@ -121,7 +124,7 @@ export function planUpdateVerification(
     if (typeof definition !== "string") {
       diagnostics.push(
         unavailable(
-          `${path} does not define verification script ${JSON.stringify(script)} as a string in scripts. Add it or run update with --no-verify.`,
+          `${path} does not define verification script ${JSON.stringify(script)} as a string in scripts. Add it or run ${operation} with --no-verify.`,
           path,
         ),
       );
@@ -144,4 +147,19 @@ export function planUpdateVerification(
     },
     diagnostics: [],
   };
+}
+
+function operationLabel(operation: VerificationOperation): string {
+  return `${operation[0]?.toUpperCase() ?? ""}${operation.slice(1)}`;
+}
+
+/** Compatibility spelling retained for existing programmatic callers. */
+export function planUpdateVerification(
+  root: string,
+  scripts: readonly string[],
+  packageManager: PackageManagerName,
+  ports: VerificationPlanPorts = FILE_PORTS,
+  timeoutMs: number = DEFAULT_VERIFICATION_TIMEOUT_MS,
+): VerificationPlanResult {
+  return planVerification("update", root, scripts, packageManager, ports, timeoutMs);
 }

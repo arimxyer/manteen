@@ -3,8 +3,14 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
+import Ajv2020 from "ajv/dist/2020.js";
+
 const CLI = resolve(import.meta.dirname, "../src/cli/index.ts");
 const CATALOG = resolve(import.meta.dirname, "../fixtures/base/manteen.registry.json");
+const COMMAND_SCHEMA = JSON.parse(
+  readFileSync(resolve(import.meta.dirname, "../schema/manteen-kit-command.schema.json"), "utf8"),
+);
+const validateCommand = new Ajv2020({ allErrors: true, strict: true }).compile(COMMAND_SCHEMA);
 const roots: string[] = [];
 
 function temporaryRoot(): string {
@@ -22,7 +28,9 @@ function run(args: string[]) {
 }
 
 function document(result: ReturnType<typeof run>): Record<string, unknown> {
-  return JSON.parse(result.stdout.toString()) as Record<string, unknown>;
+  const parsed = JSON.parse(result.stdout.toString()) as Record<string, unknown>;
+  expect(validateCommand(parsed), JSON.stringify(validateCommand.errors)).toBe(true);
+  return parsed;
 }
 
 afterEach(() => {

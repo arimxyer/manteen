@@ -112,6 +112,14 @@ export interface ListPorts {
  */
 export interface ListOptions {
   registries?: readonly string[];
+  /** Case-insensitive substring match over the canonical id and the index's
+   * sanitized name, title and description. Empty strings do not filter. */
+  query?: string;
+  /** Exact wire item types. Multiple values are OR-ed; an empty array does not
+   * filter. Authored order is irrelevant and never reorders the listing. */
+  types?: readonly string[];
+  /** Keep only rows that have a receipt entry. */
+  installed?: boolean;
 }
 
 // ---- the join ---------------------------------------------------------------
@@ -138,7 +146,7 @@ export async function buildList(
   const installed = readInstalled(config.root, ports.installed);
   const byId = itemsById(installed);
 
-  const groups: ListGroup[] = available.registries.map((listing) => ({
+  const unfilteredGroups: ListGroup[] = available.registries.map((listing) => ({
     registry: listing.registry,
     redactedUrl: listing.redactedUrl,
     title: listing.title,
@@ -159,14 +167,52 @@ export async function buildList(
   }));
 
   return {
-    groups,
+    groups: filterGroups(unfilteredGroups, options),
     // Sorted through `cli/render.ts`'s `sortNotes`, which is `available.ts`'s
     // own (registry, code, message) comparator exported once. Merging three
     // sources under a different key would silently reorder the notes
     // `readAvailable` already sorted, and a note would then read in a different
     // place depending on which command printed it.
-    notes: sortNotes([...installed.notes, ...available.notes, ...missingFromIndex(groups, byId)]),
+    notes: sortNotes([
+      ...installed.notes,
+      ...available.notes,
+      // Compare the receipt with the complete fetched indexes. A presentation
+      // filter must never turn a merely hidden row into a false not-in-index
+      // warning.
+      ...missingFromIndex(unfilteredGroups, byId),
+    ]),
   };
+}
+
+/**
+ * Apply presentation filters without changing registry order, row order, or
+ * group membership. Keeping an empty group is intentional: the renderer can
+ * then distinguish "this registry matched no rows" from "this registry could
+ * not be inspected", the latter of which is represented by a note and no
+ * group.
+ */
+function filterGroups(groups: readonly ListGroup[], options: ListOptions): ListGroup[] {
+  const query = options.query?.toLowerCase() ?? "";
+  const types = new Set(options.types ?? []);
+  const filterByType = types.size > 0;
+  const installedOnly = options.installed === true;
+
+  if (query === "" && !filterByType && !installedOnly) return [...groups];
+
+  return groups.map((group) => ({
+    ...group,
+    rows: group.rows.filter((row) => {
+      if (installedOnly && row.installed === null) return false;
+      if (filterByType && (row.item.type === null || !types.has(row.item.type))) return false;
+      return query === "" || queryMatches(row.item, query);
+    }),
+  }));
+}
+
+function queryMatches(item: AvailableItem, lowerQuery: string): boolean {
+  return [item.id, item.name, item.title, item.description].some((value) =>
+    (value ?? "").toLowerCase().includes(lowerQuery),
+  );
 }
 
 /** See `ListOptions`. `[]` and `undefined` mean the same thing to a user and
@@ -501,6 +547,10 @@ export interface ListFlags {
   /** As commander supplies it — `--cwd`, defaulted to `process.cwd()`. */
   cwd: string;
   json?: boolean;
+  query?: string;
+  /** Commander's accumulated values for repeatable `--type <type>`. */
+  type?: string[];
+  installed?: boolean;
 }
 
 /**
@@ -564,6 +614,9 @@ export async function runList(
   try {
     result = await buildList(config, ports, {
       registries: namespaces.map(normalizeNamespace),
+      query: flags.query,
+      types: flags.type,
+      installed: flags.installed,
     });
   } catch (error) {
     // The `FileHasher` contract's escape hatch — EACCES or EISDIR at a recorded

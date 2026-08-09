@@ -24,6 +24,7 @@ export { apply } from "./apply/index";
  * not a formatting library.
  */
 export { PROCESS_STREAMS, renderDiagnostic } from "./cli/render";
+export * from "./client/index";
 /**
  * W5's four commands, as their PURE CORES only.
  *

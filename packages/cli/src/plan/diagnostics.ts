@@ -93,6 +93,9 @@ export const DIAGNOSTIC_CODES: Record<DiagnosticCode, DiagnosticSpec> = {
   /** The project opted into update verification, but its root package.json
    *  cannot supply one exact string definition for every configured script. */
   "verification-script-unavailable": { severity: "error", forceable: false, exit: 1 },
+  /** An automation caller pinned a different read-only preview. Never forceable:
+   *  the explicit digest is the caller's mutation authority. */
+  "plan-mismatch": { severity: "error", forceable: false, exit: 1 },
   // D42. Exact, non-forceable file-pruning authority and filesystem boundary.
   "remove-file-unowned": { severity: "error", forceable: false, exit: 1 },
   "remove-file-still-published": { severity: "error", forceable: false, exit: 1 },

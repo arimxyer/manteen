@@ -55,7 +55,7 @@
     },
     "packages/cli": {
       "name": "manteen",
-      "version": "0.5.0",
+      "version": "0.7.0",
       "bin": {
         "manteen": "dist/cli.mjs",
       },
@@ -65,7 +65,7 @@
         "commander": "^15",
         "diff": "^9",
         "get-tsconfig": "^4.14",
-        "manteen-kit": "^0.2.0",
+        "manteen-kit": "^0.2.1",
         "node-diff3": "^3.2.1",
         "nypm": "^0.6.9",
         "semver": "^7.8.5",

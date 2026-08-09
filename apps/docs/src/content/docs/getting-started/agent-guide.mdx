@@ -1,0 +1,114 @@
+---
+title: Agent guide
+description: Use Manteen safely and predictably from a coding agent or automation harness.
+sidebar:
+  order: 2
+---
+
+import { MANTEEN_AGENT_MANIFEST as manifest } from "../../../../../../packages/cli/src/agent/manifest";
+
+Manteen is designed around inspectable plans, stable machine output, and source ownership that can
+survive local adaptation. An agent should be able to discover what exists, explain a refusal, and
+apply exactly the plan a person reviewed.
+
+:::caution[Check the installed surface]
+The currently published client at this contract freeze is
+<code>{`manteen@${manifest.releases.publishedClientAtContractFreeze}`}</code>. The complete machine
+envelope is the <code>{manifest.releases.machineInterfaceMilestone}</code> milestone; offline
+status, plan expectations, and packaged-skill commands are the
+<code>{manifest.releases.agentWorkflowMilestone}</code> milestone. Those releases and this documentation are
+not publication receipts. Inspect `manteen --version` and command `--help`; never invent a command
+or flag that the installed binary does not expose.
+:::
+
+## The operating model
+
+1. Establish the project root and read its `AGENTS.md` or equivalent instructions.
+2. Inspect `manteen --version`, then prefer `manteen status --json` when available.
+3. Use `list`, `info`, and `diff` to understand registry and installed state before changing it.
+4. Run every mutation with `--dry-run --json` first.
+5. If the preview returns a `planDigest`, retain the exact refs, root, flags, and digest. Apply with
+   the same command plus `--expect-plan <digest>`.
+6. Treat destructive flags as separate user decisions, not retry strategies.
+7. Parse stdout as one JSON document. Keep stderr separate.
+
+JSON mode disables prompting; it does not grant overwrite or discard authority. A missing choice
+is supposed to remain a structured refusal.
+
+## Agent-oriented command surface
+
+<table>
+  <thead>
+    <tr><th>Command</th><th>Mode</th><th>Purpose</th><th>Agent contract</th></tr>
+  </thead>
+  <tbody>
+    {manifest.commands.map((command) => (
+      <tr>
+        <td><code>manteen {command.name}</code></td>
+        <td>{command.mode}</td>
+        <td>{command.purpose}</td>
+        <td>{command.agentContract}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
+`agentContract` is the milestone where the stable agent-facing behavior is defined, not the first
+version in which the human command name existed.
+
+## Safe install and update loop
+
+```bash
+manteen info @house/article-card --json
+manteen add @house/article-card --dry-run --json
+manteen add @house/article-card --expect-plan <sha256> --json
+
+manteen diff @house/article-card --json
+manteen update @house/article-card --dry-run --json
+manteen update @house/article-card --expect-plan <sha256> --json
+```
+
+An ordinary update performs a three-way merge around local source adaptations. `--take-upstream`
+means discard those adaptations. `--overwrite`, `--discard-adapted`, `--no-verify`, and
+`--take-packaged` likewise represent concrete consequences and should appear only after that
+consequence is chosen.
+
+Do not edit `manteen.lock.json` or `.manteen/bases/` by hand. Commit installed source, the receipt,
+and pristine bases together.
+
+## Machine responses
+
+The client schema version is <code>{manifest.machineInterface.schemaVersion}</code>. Every recognized
+`--json` invocation emits one envelope with:
+
+```text
+schemaVersion, command, root, ok, exitCode, mutated,
+payload, diagnostics, errors, notes
+```
+
+<code>{manifest.machineInterface.invariant}</code>. A successful offline status can still report
+`healthy: false`; that is an assessment, not a command failure. Blocking diagnostics include a
+typed rerun argv array, a configuration patch, or a bounded manual action/rationale.
+
+Never expose an expanded environment placeholder from a registry URL. Only redacted URLs are safe
+in output, receipts, diagnostics, or plan digests.
+
+## Install the packaged skill
+
+When the local version provides agent commands:
+
+```bash
+manteen agent guide --json
+manteen agent install --dry-run --json
+manteen agent install --json
+```
+
+The default project target is <code>{manifest.skill.defaultProjectTarget}</code>. Explicit universal-user,
+Codex-user, Claude-project, Claude-user, and custom targets are available. An unowned or locally
+modified installation is refused. `--update` updates an owned copy; `--take-packaged` explicitly
+discards its adaptation.
+
+`manteen init` never installs the skill or edits project agent instructions implicitly.
+
+For compact machine discovery, see [`llms.txt`](/manteen/llms.txt). For the complete static guide,
+see [`llms-full.txt`](/manteen/llms-full.txt).

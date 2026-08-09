@@ -12,6 +12,7 @@
  *
  *   requires                      fails CLOSED — a blocking `meta-invalid-requires`
  *   provider/stylesApi/themeFragment  fail OPEN — `meta-degraded`, field dropped
+ *   docs/props/usage                  fail OPEN — `meta-degraded`, field dropped
  *   unknown keys                  ignored, so a newer kit does not break an older CLI
  *
  * NOT a pure module: it reads its schema off disk, exactly as the kit's
@@ -57,6 +58,25 @@ const REFUSED_ITEM_TYPES = new Set(["registry:font"]);
 const META_KEYS = ["requires", "provider", "stylesApi", "themeFragment"] as const;
 type MetaKey = (typeof META_KEYS)[number];
 
+/** One author-documented public prop. Display metadata only: none of these
+ * fields participates in planning or installation. */
+export interface MantineProp {
+  name: string;
+  type: string;
+  required?: boolean;
+  default?: string;
+  description?: string;
+}
+
+/** Exported component or hook name -> its author-documented public props. */
+export type MantineProps = Record<string, MantineProp[]>;
+
+/** A copy-ready example inlined by manteen-kit and never installed as a file. */
+export interface MantineUsage {
+  path: string;
+  content: string;
+}
+
 /** A wire file that has cleared validation: `content` is present and non-empty. */
 export interface WireFile {
   path: string;
@@ -73,12 +93,16 @@ export interface MantineMeta {
   requires?: string;
   provider?: string;
   stylesApi?: Record<string, string[]>;
+  props?: MantineProps;
+  usage?: MantineUsage;
   themeFragment?: { path: string; content: string };
 }
 
 export interface ValidatedItem {
   name: string;
   wireType: string;
+  /** Optional markdown from the wire item's top-level `docs` field. */
+  docs?: string;
   files: WireFile[];
   dependencies: string[];
   devDependencies: string[];
@@ -135,7 +159,14 @@ export function createItemValidator(): ItemValidator {
   return (doc, context) => {
     const diagnostics: Diagnostic[] = [];
 
-    const wireErrors = validateWire(doc);
+    // `docs` is optional display metadata. The vendored interchange schema
+    // types it as a string, which would otherwise turn a malformed value into a
+    // fatal `wire-invalid` and make perfectly usable file bytes uninstallable.
+    // Validate the install contract against a shallow copy with only that bad
+    // display field removed; never mutate the caller's document.
+    const wireCandidate = withoutMalformedDocs(doc, context, diagnostics);
+
+    const wireErrors = validateWire(wireCandidate);
     if (wireErrors) {
       diagnostics.push(
         diag(
@@ -150,7 +181,7 @@ export function createItemValidator(): ItemValidator {
     // Justified by the validation above: the interchange schema requires `name`
     // and `type`, constrains `type` to its enum, and types every optional field
     // this shape reads.
-    const wire = doc as WireDoc;
+    const wire = wireCandidate as WireDoc;
 
     if (REFUSED_ITEM_TYPES.has(wire.type)) {
       diagnostics.push(
@@ -208,6 +239,7 @@ export function createItemValidator(): ItemValidator {
       item: {
         name: wire.name,
         wireType: wire.type,
+        ...(wire.docs === undefined ? {} : { docs: wire.docs }),
         files,
         dependencies: wire.dependencies ?? [],
         devDependencies: wire.devDependencies ?? [],
@@ -223,12 +255,32 @@ export function createItemValidator(): ItemValidator {
 interface WireDoc {
   name: string;
   type: string;
+  docs?: string;
   dependencies?: string[];
   devDependencies?: string[];
   registryDependencies?: string[];
   css?: unknown;
   files?: { path: string; type: string; target?: string; content?: unknown }[];
   meta?: unknown;
+}
+
+function withoutMalformedDocs(
+  doc: unknown,
+  context: ValidateContext,
+  diagnostics: Diagnostic[],
+): unknown {
+  if (!isPlainObject(doc) || doc.docs === undefined || typeof doc.docs === "string") return doc;
+
+  diagnostics.push(
+    diag(
+      "meta-degraded",
+      `${context.id} has malformed docs metadata; docs was dropped while the installable item was kept.`,
+      { items: [context.id] },
+    ),
+  );
+  const copy = { ...doc };
+  delete copy.docs;
+  return copy;
 }
 
 /**
@@ -386,7 +438,11 @@ function readMeta(
     return {};
   }
 
-  if (validateMeta(mantine)) return pick(mantine, new Set());
+  if (validateMeta(mantine)) {
+    const meta = pick(mantine, new Set());
+    readDisplayMeta(mantine, meta, new Set(), context, diagnostics);
+    return meta;
+  }
 
   const byKey = new Map<string, string[]>();
   for (const error of validateMeta.errors ?? []) {
@@ -428,7 +484,83 @@ function readMeta(
     );
   }
 
-  return pick(mantine, new Set(byKey.keys()));
+  const rejected = new Set(byKey.keys());
+  const meta = pick(mantine, rejected);
+  readDisplayMeta(mantine, meta, rejected, context, diagnostics);
+  return meta;
+}
+
+/** Validate the two display-only extensions that the intentionally-open
+ * meta.mantine schema cannot type for an older client. A malformed value drops
+ * the whole field: a partial prop table is more misleading than no table. */
+function readDisplayMeta(
+  mantine: Record<string, unknown>,
+  meta: MantineMeta,
+  rejected: ReadonlySet<string>,
+  context: ValidateContext,
+  diagnostics: Diagnostic[],
+): void {
+  if (mantine.props !== undefined && !rejected.has("props")) {
+    if (isMantineProps(mantine.props)) meta.props = mantine.props;
+    else {
+      diagnostics.push(
+        diag(
+          "meta-degraded",
+          `${context.id} has malformed meta.mantine.props; the prop documentation was dropped.`,
+          { items: [context.id] },
+        ),
+      );
+    }
+  }
+
+  if (mantine.usage !== undefined && !rejected.has("usage")) {
+    if (isMantineUsage(mantine.usage)) meta.usage = mantine.usage;
+    else {
+      diagnostics.push(
+        diag(
+          "meta-degraded",
+          `${context.id} has malformed meta.mantine.usage; the usage example was dropped.`,
+          { items: [context.id] },
+        ),
+      );
+    }
+  }
+}
+
+function isMantineProps(value: unknown): value is MantineProps {
+  if (!isPlainObject(value)) return false;
+  return Object.entries(value).every(
+    ([component, props]) =>
+      component.length > 0 && Array.isArray(props) && props.every((prop) => isMantineProp(prop)),
+  );
+}
+
+function isMantineProp(value: unknown): value is MantineProp {
+  if (!isPlainObject(value)) return false;
+  const keys = Object.keys(value);
+  if (keys.some((key) => !PROP_KEYS.has(key))) return false;
+  if (typeof value.name !== "string" || value.name.length === 0) return false;
+  if (typeof value.type !== "string" || value.type.length === 0) return false;
+  if (value.required !== undefined && typeof value.required !== "boolean") return false;
+  if (value.default !== undefined && typeof value.default !== "string") return false;
+  return value.description === undefined || typeof value.description === "string";
+}
+
+const PROP_KEYS: ReadonlySet<string> = new Set([
+  "name",
+  "type",
+  "required",
+  "default",
+  "description",
+]);
+
+function isMantineUsage(value: unknown): value is MantineUsage {
+  return (
+    isPlainObject(value) &&
+    typeof value.path === "string" &&
+    value.path.length > 0 &&
+    typeof value.content === "string"
+  );
 }
 
 /**

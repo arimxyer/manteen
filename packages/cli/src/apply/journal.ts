@@ -53,6 +53,8 @@ export interface Journal {
    * every drift comparison the receipt makes.
    */
   write(destination: string, content: string): void;
+  /** Capture bytes without changing them so a later verifier mutation can be unwound. */
+  capture?(destination: string): void;
   /** Journal and remove a Manteen-owned state file. Absence is a no-op. */
   remove(destination: string): void;
   /** In write order. Read it BEFORE `unwind()`, which clears the log. */
@@ -99,6 +101,10 @@ export function createJournal(): Journal {
   }
 
   return {
+    capture(destination) {
+      entries.push({ destination, preImage: readPreImage(destination) });
+    },
+
     write(destination, content) {
       const preImage = readPreImage(destination);
       mkdirSync(dirname(destination), { recursive: true });
