@@ -12,7 +12,7 @@
   `agent install` commands. Add the public Agent Guide, `llms.txt`, `llms-full.txt`, and repository
   `AGENTS.md`.
 
-## 0.6.0
+### Machine-interface milestone (originally planned as 0.6.0)
 
 - Normalize every recognized `--json` invocation into the versioned ten-field command envelope,
   including configuration, usage, unexpected-error, success, and refusal paths. JSON mode never

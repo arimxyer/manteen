@@ -1,7 +1,7 @@
 # Agent-native release handoff
 
-Status: local release candidate complete; publication and deployment are not authorized or
-performed.
+Status: local release candidate complete; publication and deployment authorized on 2026-08-09,
+but not yet performed.
 
 ## Candidate boundary
 
@@ -10,10 +10,9 @@ performed.
 - Client, SDK, skill, and docs implementation: `7909cbf` (`feat(cli): make Manteen agent-native`)
 - Package candidates: `manteen-kit@0.2.1` followed by `manteen@0.7.0`
 
-The `0.6.0` changelog section records the machine-interface milestone that is included in the
-`0.7.0` candidate. There is no separately verified `manteen@0.6.0` commit or tarball in this
-handoff. If public release history must include `0.6.0`, construct and verify a bounded snapshot;
-do not tag the `0.7.0` bytes as `0.6.0`.
+The machine-interface work was originally planned as `0.6.0`, but it is an internal contract
+milestone included in the `0.7.0` candidate rather than a separate package release. There is no
+`manteen@0.6.0` commit, tarball, tag, or publication in this release sequence.
 
 ## What is implemented
 
@@ -69,15 +68,15 @@ contains both new command/output schemas.
 
 ## Explicit release gate
 
-No signed tag, npm publish, GitHub release workflow, Pages deployment, or hosted/public consumer
-verification was performed. The existing public package and Pages state was not used as evidence
-for this candidate.
+At this checkpoint, no signed tag, npm publish, GitHub release workflow, Pages deployment, or
+hosted/public consumer verification had been performed. The existing public package and Pages
+state was not used as evidence for this candidate.
 
 If release is approved:
 
 1. Re-run the release guard and the built/packed lanes from a clean candidate checkout.
-2. Decide whether the machine milestone needs a separately constructed `0.6.0` release; the
-   prepared path publishes only the fully verified `0.7.0` candidate.
+2. Keep the machine milestone inside the fully verified `0.7.0` candidate; do not construct or
+   publish a separate `0.6.0` package.
 3. Sign and push `manteen-kit-v0.2.1`; verify the trusted OIDC run, npm integrity, provenance, and a
    fresh public kit consumer.
 4. Sign and push `manteen-v0.7.0`; independently verify npm metadata/integrity/provenance and a
