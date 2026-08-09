@@ -308,6 +308,18 @@ describe("post-apply verification", () => {
       executable: "corepack",
       args: ["pnpm", "run", "verify"],
     });
+    expect(verificationExecutionCommand(npm, true, "win32")).toEqual({
+      executable: "npm.cmd",
+      args: ["run", "verify"],
+    });
+    expect(verificationExecutionCommand(pnpm, false, "win32")).toEqual({
+      executable: "pnpm.cmd",
+      args: ["run", "verify"],
+    });
+    expect(verificationExecutionCommand(pnpm, true, "win32")).toEqual({
+      executable: "corepack.cmd",
+      args: ["pnpm", "run", "verify"],
+    });
   });
 
   test("builds local-bin PATH from the verified project root, not the CLI process cwd", () => {

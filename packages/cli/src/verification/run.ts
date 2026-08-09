@@ -35,6 +35,7 @@ export interface VerificationExecutionCommand {
 }
 
 const DIRECT_PACKAGE_MANAGERS = new Set(["npm", "bun", "deno", "aube", "nub"]);
+const WINDOWS_COMMAND_SHIMS = new Set(["corepack", "npm", "pnpm", "yarn", "yarnpkg"]);
 
 /**
  * tinyexec normally enriches PATH from the CLI process cwd. Verification can
@@ -65,11 +66,24 @@ export function verificationEnvironment(
 export function verificationExecutionCommand(
   check: PlannedVerification["checks"][number],
   corepackAvailable: boolean,
+  platform: NodeJS.Platform = process.platform,
 ): VerificationExecutionCommand {
-  if (corepackAvailable && !DIRECT_PACKAGE_MANAGERS.has(check.executable)) {
-    return { executable: "corepack", args: [check.executable, ...check.args] };
-  }
-  return { executable: check.executable, args: check.args };
+  const executable =
+    corepackAvailable && !DIRECT_PACKAGE_MANAGERS.has(check.executable)
+      ? "corepack"
+      : check.executable;
+  const args = executable === "corepack" ? [check.executable, ...check.args] : check.args;
+
+  // Node's Windows installation exposes npm/Corepack (and their delegated
+  // managers) as `.cmd` shims. tinyexec handles an explicit `.cmd` command,
+  // but `spawnSync("npm")` does not add PATHEXT and fails with ENOENT.
+  return {
+    executable:
+      platform === "win32" && WINDOWS_COMMAND_SHIMS.has(executable)
+        ? `${executable}.cmd`
+        : executable,
+    args,
+  };
 }
 
 /**
