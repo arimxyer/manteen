@@ -1,7 +1,7 @@
 # Agent-native release handoff
 
-Status: local release candidate complete; publication and deployment authorized on 2026-08-09,
-but not yet performed.
+Status: package release and public-consumer acceptance complete on 2026-08-09; Pages deployment
+pending as the final separate gate.
 
 ## Candidate boundary
 
@@ -66,22 +66,61 @@ The client tarball contains the command-envelope schema and all five skill files
 `agents/openai.yaml`, and the authoring, consumer, and JSON-contract references. The kit tarball
 contains both new command/output schemas.
 
-## Explicit release gate
+## Hosted integration and portability
 
-At this checkpoint, no signed tag, npm publish, GitHub release workflow, Pages deployment, or
-hosted/public consumer verification had been performed. The existing public package and Pages
-state was not used as evidence for this candidate.
+PR [#22](https://github.com/arimxyer/manteen/pull/22) merged at
+`70bfc61944dfae0ec9b6cc8dbaacc6f8d6fa2a4c`. Its final CI
+[run 31337452928](https://github.com/arimxyer/manteen/actions/runs/31337452928) passed all 11 jobs:
+the source/type/lint/guard gate; built Node 22.12, 24, and 26 on Linux; Node 22.12 on macOS and
+Windows; packed npm, pnpm, Yarn PnP, and Bun consumers on Linux; and the native packed npm consumer
+on Windows.
 
-If release is approved:
+The matrix exposed a real Windows-only synchronous verification defect before merge: Node could
+neither resolve `npm` as a batch shim nor execute `npm.cmd` directly. A temporary isolated Windows
+workflow proved the final `cross-spawn` path in
+[run 31337140090](https://github.com/arimxyer/manteen/actions/runs/31337140090): the exact
+npm-backed removal/rollback regression passed first, followed by the complete Windows built-Node
+tier. The temporary branch was deleted and the historical workflow returned to its prior
+manually-disabled state after that receipt.
 
-1. Re-run the release guard and the built/packed lanes from a clean candidate checkout.
-2. Keep the machine milestone inside the fully verified `0.7.0` candidate; do not construct or
-   publish a separate `0.6.0` package.
-3. Sign and push `manteen-kit-v0.2.1`; verify the trusted OIDC run, npm integrity, provenance, and a
-   fresh public kit consumer.
-4. Sign and push `manteen-v0.7.0`; independently verify npm metadata/integrity/provenance and a
-   fresh public consumer using the public kit.
-5. Review and dispatch Pages separately, then verify the Agent Guide, `llms.txt`, `llms-full.txt`,
-   unchanged 22-item registry contract, and sampled public bytes.
-6. Run or wait for the hosted Node/package-manager/OS matrix before describing portability beyond
-   the local Linux/npm evidence in this handoff.
+## Trusted package releases
+
+Both signed tags point at the accepted merge commit and were published through the pinned,
+credential-free OIDC workflow:
+
+| Package | Signed tag / release workflow | Public npm receipt |
+|---|---|---|
+| `manteen-kit@0.2.1` | `manteen-kit-v0.2.1`; [31337787210](https://github.com/arimxyer/manteen/actions/runs/31337787210) | Published `2026-08-09T21:51:50.183Z`; SHA-1 `5d2c362285eec541239488191eb24ac65cf1ef71`; integrity `sha512-Md8D4oPWUXc4MHJLOzF/VcdpPWoLZHSYnBodr4obELeY1NUZ1psNrpbA5BjN+s+MDcLIkq4ysenZ9GjttkBiwQ==` |
+| `manteen@0.7.0` | `manteen-v0.7.0`; [31338005306](https://github.com/arimxyer/manteen/actions/runs/31338005306) | Published `2026-08-09T21:57:20.266Z`; SHA-1 `37e7a6a00f1d1e27e9c1c3db859ede7a0c0ccd32`; integrity `sha512-0MDIyWxdRYwg2pPe27M1cWDxPuCSCxrk+TQNUpy1D379AwbTnLr2qXyv//Uwe4rQABkUrVCgxfu5+C4OrRU4aQ==` |
+
+npm exposes two attestations for each version: its publish predicate and SLSA provenance v1. The
+SLSA statements name the matching tag, `https://github.com/arimxyer/manteen`, and
+`.github/workflows/release.yml`; their subjects match the public SHA-512 integrity bytes.
+
+No `manteen@0.6.0` tag or package was created. The public client declares and freshly resolves
+`manteen-kit@^0.2.1`.
+
+## Fresh public-consumer acceptance
+
+A fresh npm consumer installed only public `manteen-kit@0.2.1`. Under real Node it imported
+`compileRegistry`, `planRegistryWrite`, and `writeRegistry`; resolved and parsed the published
+command/output schemas; ran the shipped `manteen-kit` binary; and reported the exact public npm
+tarball in `npm ls`.
+
+A second fresh npm consumer installed only public `manteen@0.7.0`, which resolved public
+`manteen-kit@0.2.1`. The shipped binary reported `0.7.0`; pre-init `status --json`,
+`agent guide --json`, and `agent install --dry-run --json` each returned the exact ten-key envelope
+with truthful zero exit and `mutated: false`. The package exported `createManteenClient`, resolved
+and parsed the command-envelope schema, and exposed the canonical skill plus its manifest and
+three references. The dry-run manifest named all five packaged skill files and their hashes.
+
+These are public npm distribution/import/CLI receipts. They do not yet prove the new documentation
+or generated registry over public HTTPS; Pages remains deliberately undispatched until this
+receipt-only documentation change is reviewed and merged.
+
+## Remaining Pages gate
+
+Dispatch Pages from the accepted receipt commit, then verify the Agent Guide, `llms.txt`,
+`llms-full.txt`, the unchanged 22-item registry contract, and sampled public registry bytes. Do not
+describe that public HTTPS boundary as complete until the hosted deployment and direct HTTP probes
+pass.
