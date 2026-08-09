@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { BUILD_USAGE, build } from "./build";
+import { kitEnvelope, writeJson } from "./json";
 import { MERGE_USAGE, mergeTheme } from "./merge-theme";
 
 const USAGE = `manteen-kit — tooling for Mantine component registries
@@ -22,6 +23,7 @@ Run a command with --help for its options.
  * the code instead of exiting on it.
  */
 function run(command: string | undefined, rest: string[]): number {
+  const json = command === "--json" || rest.includes("--json");
   switch (command) {
     case "build":
       return build(rest);
@@ -30,11 +32,24 @@ function run(command: string | undefined, rest: string[]): number {
     case "-h":
     case "--help":
     case undefined:
-      process.stdout.write(USAGE);
+      if (json) writeJson(kitEnvelope("help", 0, false, { usage: USAGE }));
+      else process.stdout.write(USAGE);
       return command === undefined ? 2 : 0;
     default:
-      process.stderr.write(`Unknown command: ${command}\n\n${USAGE}`);
-      process.stderr.write(`\n${BUILD_USAGE}\n${MERGE_USAGE}`);
+      if (json) {
+        writeJson(
+          kitEnvelope("unknown", 2, false, null, [
+            {
+              code: "unknown-command",
+              message: `Unknown command: ${command}`,
+              details: { usage: USAGE },
+            },
+          ]),
+        );
+      } else {
+        process.stderr.write(`Unknown command: ${command}\n\n${USAGE}`);
+        process.stderr.write(`\n${BUILD_USAGE}\n${MERGE_USAGE}`);
+      }
       return 2;
   }
 }

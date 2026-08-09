@@ -1,6 +1,6 @@
 {
   "name": "manteen-kit",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Author Mantine component registries in Mantine's vocabulary and compile them to an interchange format any registry client can read.",
   "type": "module",
   "license": "MIT",
@@ -12,7 +12,9 @@
       "types": "./dist/index.d.mts",
       "default": "./dist/index.mjs"
     },
-    "./schema": "./schema/manteen.registry.schema.json"
+    "./schema": "./schema/manteen.registry.schema.json",
+    "./schema/command": "./schema/manteen-kit-command.schema.json",
+    "./schema/output": "./schema/manteen-kit-output.schema.json"
   },
   "files": [
     "dist",

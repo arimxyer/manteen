@@ -80,7 +80,7 @@
     },
     "packages/registry-kit": {
       "name": "manteen-kit",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "bin": {
         "manteen-kit": "dist/cli.mjs",
       },
