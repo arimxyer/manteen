@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { delimiter, dirname, resolve as resolvePath } from "node:path";
 
+import crossSpawn from "cross-spawn";
 import { x } from "tinyexec";
 
 import type { FileHasher } from "../inventory/installed";
@@ -487,7 +488,7 @@ export function verifyAppliedMutationSync(
     const check = verification.checks[index] as PlannedVerification["checks"][number];
     const observed = checks[index] as VerificationCheckOutcome;
     const command = verificationExecutionCommand(check, false);
-    const result = spawnSync(command.executable, command.args, {
+    const result = crossSpawn.sync(command.executable, command.args, {
       cwd: plan.root,
       env: verificationEnvironment(plan.root),
       encoding: "utf8",
@@ -514,7 +515,7 @@ export function verifyAppliedMutationSync(
         message: `Verification script ${JSON.stringify(check.script)} did not finish within ${verification.timeoutMs}ms and was terminated.`,
       });
     }
-    if (result.error !== undefined) {
+    if (result.error != null) {
       observed.result = "failed";
       return failed(checks, {
         kind: "spawn-failed",
