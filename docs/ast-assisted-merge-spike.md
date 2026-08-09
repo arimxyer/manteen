@@ -1,9 +1,7 @@
 # AST-assisted merge classification spike
 
-Status: **complete as an evidence-only precursor.** This experiment added no CLI flag, public API,
-AST printer or merge output. The later exact-splice integration is separately frozen, accepted and
-public in client `0.5.0`; see
-[`ast-merge-integration-decision.md`](ast-merge-integration-decision.md).
+Status: **complete as an evidence-only spike.** Production update and diff still use D41's exact
+line-oriented merge. This experiment adds no CLI flag, public API, AST printer or merge output.
 
 ## Question and stopping condition
 
@@ -76,8 +74,7 @@ corpus has one source path and synthetic local sides. It also does not show that
 candidate can be combined while preserving comments, byte order, CRLF/BOM state, TypeScript
 semantics or cross-file intent.
 
-The spike's recommendation at this evidence boundary was therefore
-`retain-line-merge-no-integration`; D41 remained unchanged at that point. The later integration
-proposal supplied a separate exact-output contract, broader history/adversarial coverage, and
-source, built-Node, hosted and controlled public-consumer proof before shipping in `0.5.0`. That
-later result does not widen what this smaller spike itself proved.
+The production recommendation is therefore `retain-line-merge-no-integration`.
+D41 remains unchanged. A later integration proposal would need a separate contract for turning a
+candidate into exact preserved output, more source paths and independently authored local examples,
+plus built-Node and public-consumer proof before it could affect update behavior.
