@@ -17,10 +17,10 @@ and something a stranger can depend on, and how the remaining work is sequenced.
 6. **Maintainable** — a linter, dependency automation, and a license file that matches what
    `package.json` claims.
 
-Today: all six criteria are public through the `manteen@0.4.0` client line, including explicit
-upstream removal. `main` also carries the hosted-green AST fallback implementation, and the
-client-only `0.5.0` release candidate is locally accepted without changing the kit or registry
-contract. W6 `init` is complete through its built-Node acceptance tier, W7 closed with a
+Today: all six criteria are public through the `manteen@0.5.0` client line, including explicit
+upstream removal and D41's conservative AST-assisted fallback after a remaining TypeScript diff3
+conflict. The client-only release did not change the kit or registry contract. W6 `init` is
+complete through its built-Node acceptance tier, W7 closed with a
 green hosted runtime, OS and package-manager matrix, and W8 established provenance-bearing
 releases. The separately versioned `manteen-kit` remains public at `0.2.0`. The accepted 22-item
 Pages content milestone is commit
@@ -41,9 +41,9 @@ receipt v3, the wire format, registry content, the kit or Pages. Its merge, sign
 trusted release run, npm integrity/provenance and fresh controlled public-consumer lifecycle are
 recorded in the [`0.4 release handoff`](v0.4-release-handoff.md).
 
-The prospective client-only `manteen@0.5.0` release adds only D41's automatic conservative
-AST-assisted fallback after remaining `.ts`/`.tsx` line-diff3 conflicts. Its candidate and later
-publication boundaries are recorded separately in the
+The client-only `manteen@0.5.0` release adds only D41's automatic conservative AST-assisted
+fallback after remaining `.ts`/`.tsx` line-diff3 conflicts. Its signed tag, single trusted release
+run, npm provenance and accepted/refused controlled public-consumer boundaries are recorded in the
 [`0.5 release handoff`](v0.5-release-handoff.md).
 
 ## Known gaps, by kind
@@ -53,10 +53,10 @@ complete. The findings and hosted closure receipt are recorded in
 [`w7-hardening-handoff.md`](w7-hardening-handoff.md).
 
 **Commands.** `init`, `add`, `list`, `info`, `diff`, `update` and the narrow `remove` mode ship. In
-public `0.3.0` and later, `update` uses Wu's receipt-v3 three-way model. In public `0.4.0`,
+public `0.3.0` and later, `update` uses Wu's receipt-v3 three-way model. In public `0.4.0` and later,
 `remove --upstream-removed` adds explicit exact-selected upstream-file pruning; its contract and
-acceptance are in [`upstream-removal-handoff.md`](upstream-removal-handoff.md). The unreleased
-`0.5.0` candidate adds the conservative TypeScript fallback shared by `diff` and `update`, with its
+acceptance are in [`upstream-removal-handoff.md`](upstream-removal-handoff.md). Public `0.5.0`
+adds the conservative TypeScript fallback shared by `diff` and `update`, with its
 exact-byte/refusal contract in [`ast-merge-integration-decision.md`](ast-merge-integration-decision.md).
 `search` does not
 exist and is not currently assigned to a wave; whether it belongs in v1 remains undecided. The
@@ -76,16 +76,16 @@ was a working bypass that let TypeScript write into a JS project at exit 0). The
 in `plan()`, the bypass routes into the same refusal rather than around it, and both are covered by
 unit tests.
 
-**Distribution.** `manteen-kit@0.2.0` and `manteen@0.4.0` are public on npm as `latest`. Both lines
+**Distribution.** `manteen-kit@0.2.0` and `manteen@0.5.0` are public on npm as `latest`. Both lines
 were published from tagged GitHub Actions OIDC workflows and expose npm publish plus SLSA
-provenance attestations. The client-only `0.3.0` and `0.4.0` releases keep
-`manteen-kit@^0.2.0`; the kit had no version change and correctly received neither client tag. The
-unreleased client-only `0.5.0` candidate keeps that same kit range. The
+provenance attestations. The client-only `0.3.0`, `0.4.0` and `0.5.0` releases keep
+`manteen-kit@^0.2.0`; the kit had no version change and correctly received no tag for those
+client-only releases. The
 initial trusted-release receipts are in
 the [`W8 release handoff`](w8-release-handoff.md), the public `0.2.0` package/Pages receipts are in
-the [`0.2 release handoff`](v0.2-release-handoff.md), and the completed client-only `0.3.0`
-and `0.4.0` boundaries are in the [`0.3 release handoff`](v0.3-release-handoff.md) and
-[`0.4 release handoff`](v0.4-release-handoff.md); the prospective `0.5.0` boundary is in the
+the [`0.2 release handoff`](v0.2-release-handoff.md), and the completed client-only `0.3.0`,
+`0.4.0` and `0.5.0` boundaries are in the [`0.3 release handoff`](v0.3-release-handoff.md),
+[`0.4 release handoff`](v0.4-release-handoff.md) and
 [`0.5 release handoff`](v0.5-release-handoff.md).
 
 **Project hygiene.** The MIT license, Biome, Dependabot, editorconfig and rename are done.
@@ -138,7 +138,7 @@ is a judgment call, which is exactly why they are separate runs.
 | Wu | [`Update merging`](update-merge-handoff.md) | complete and public in `0.3.0`: receipt v3, exact bases, three-way plan, explicit reset, three-axis diff, built-Node and controlled-revision acceptance | Changes ordinary source maintenance from skip-or-replace to reproducible three-way merging without weakening the existing plan/apply transaction. |
 | Wv | [`Update verification`](update-verification-handoff.md) | complete and public in `0.3.0`: post-apply orchestration, fail-fast bounded project scripts, drift detection, built-Node and fresh-consumer acceptance | Lets a consumer define what “the merged component still works here” means without placing arbitrary scripts inside Manteen's rollback journal. |
 | Wp | [`Upstream removal`](upstream-removal-handoff.md) | complete and public in client `0.4.0`: explicit selection, adapted-file opt-in, one journal, built/hosted/public acceptance | Adds explicit, exact-selected pruning for ordinary files proven absent upstream without turning update into implicit deletion or inferring renames. |
-| Wa | [`AST-assisted fallback`](ast-merge-integration-decision.md) | implementation merged and hosted-green; client-only `0.5.0` release candidate locally accepted | Reduces a narrow class of adjacent TypeScript line conflicts without allowing an AST printer or ambiguous structural mapping to emit bytes. |
+| Wa | [`AST-assisted fallback`](ast-merge-integration-decision.md) | complete and public in client `0.5.0`: exact source splicing, built/hosted/public accepted-and-refused acceptance | Reduces a narrow class of adjacent TypeScript line conflicts without allowing an AST printer or ambiguous structural mapping to emit bytes. |
 
 **Not workflow-shaped, do directly:** the hygiene set (LICENSE, linter, SECURITY, CONTRIBUTING,
 dependabot, README rename). Single-file, single-concern, no discovery — a workflow would be
@@ -190,7 +190,7 @@ Wt theme builder ............ any time, independent, not started
 Wu update merging ........... complete; public in client 0.3.0
 Wv update verification ...... complete; public in client 0.3.0
 Wp upstream removal ......... complete; public in client 0.4.0
-Wa AST-assisted fallback .... implementation merged; client 0.5 candidate locally accepted
+Wa AST-assisted fallback .... complete; public in client 0.5.0
 hygiene ..................... done, direct
 ```
 
@@ -247,7 +247,7 @@ output algorithm nor a population conflict-rate claim.
 The broader [`AST integration decision`](ast-merge-integration-decision.md) is also complete.
 Exact whole-anchor source splicing passed its history, adversarial, symmetry, byte-preservation and
 runtime gates, and rescued five constructed adjacent-anchor conflict shapes without an AST printer.
-It is merged and prepared for the unreleased client-only `0.5.0` candidate, only as an automatic
+It is public in the client-only `0.5.0` release, only as an automatic
 `.ts`/`.tsx` fallback after line diff3 conflicts. `diff` and `update` share the same merge path;
 clean diff3 results return before
 parsing, conservative refusal preserves the original conflict, and exact source slices remain the

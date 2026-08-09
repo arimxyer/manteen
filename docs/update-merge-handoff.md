@@ -285,10 +285,11 @@ cases, dedicated ambiguity and exact-byte tests, symmetry, and preloaded runtime
 reconstruction produced zero unsafe authorizations and rescued five distinct constructed
 adjacent-anchor conflict shapes; the real-history rescue remains one event on one path.
 
-The positive narrow design is merged and prepared in the unreleased client-only `0.5.0` candidate:
-line diff3 remains the first path,
+The positive narrow design is public in the client-only `0.5.0` release: line diff3 remains the
+first path,
 and exact whole-anchor source splicing runs automatically only for its remaining `.ts`/`.tsx`
 conflicts. No AST printer emits bytes, every accepted side reconstructs exactly, ambiguity still
 refuses, and a result remains "conflict-free" rather than semantically safe. `diff` and `update`
-share that path, and source plus built-Node acceptance prove they reach the same result. Public
-`manteen@0.4.0` behavior remains unchanged until a trusted `0.5.0` release publishes this candidate.
+share that path, and source plus built-Node acceptance prove they reach the same result. The signed
+tag, single trusted workflow, npm provenance and controlled exact-public-package accepted/refused
+receipt are recorded in [`v0.5-release-handoff.md`](v0.5-release-handoff.md).

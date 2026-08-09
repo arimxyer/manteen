@@ -1,7 +1,7 @@
 # AST-assisted merge integration decision
 
-Status: **merged; prepared for the unreleased client-only `manteen@0.5.0` candidate.** The exact
-source-splice merger is now an automatic
+Status: **complete and public in the client-only `manteen@0.5.0` release.** The exact source-splice
+merger is now an automatic
 TypeScript-only fallback after the existing line diff3 merger reports a conflict. It is shared by
 `diff` and `update`; there is no flag and clean line merges pay no AST cost. This does not support
 an AST printer, an AST-first merger, or a semantic-safety claim.
@@ -127,6 +127,10 @@ No parser package was added.
 Feature PR [#18](https://github.com/arimxyer/manteen/pull/18) merged as
 `7b2abd2f8206bc958def5aaf2f703d972988af66` after its single hosted CI run
 [`31327258396`](https://github.com/arimxyer/manteen/actions/runs/31327258396) passed the complete
-source, Node/OS, packed-consumer and stable-gate matrix. That is implementation evidence, not a
-release receipt. Public `manteen@0.4.0` remains line-diff3-only until the separately reviewed
-`0.5.0` tag and trusted publication exist.
+source, Node/OS, packed-consumer and stable-gate matrix. Release PR
+[#19](https://github.com/arimxyer/manteen/pull/19) then merged the `0.5.0` candidate as
+`15aec98d07799481ccc8427b11c10d3059ff0b6d`; signed tag `manteen-v0.5.0` triggered the single
+trusted release run [`31328655679`](https://github.com/arimxyer/manteen/actions/runs/31328655679).
+npm integrity/provenance and the exact public package passed a fresh controlled accepted merge and
+same-key zero-mutation refusal. The full publication receipt is in
+[`v0.5-release-handoff.md`](v0.5-release-handoff.md).
