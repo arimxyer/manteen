@@ -16,7 +16,8 @@ export type AstClassificationReasonCode =
   | "unmapped-change"
   | "non-unique-key"
   | "key-changed"
-  | "same-key-change";
+  | "same-key-change"
+  | "reconstruction-mismatch";
 
 export interface ExactChangeRange {
   baseStart: number;
@@ -52,14 +53,18 @@ export interface AstClassificationInput {
   crossFile?: boolean;
 }
 
-interface Anchor {
+export interface AstMergeAnchor {
   key: string;
   start: number;
   end: number;
+  /** End of the first syntax token, useful for controlled in-anchor mutations. */
+  firstTokenEnd: number;
+  /** Start of the last syntax token, useful for controlled in-anchor mutations. */
+  lastTokenStart: number;
 }
 
 interface ParsedSource {
-  anchors: Anchor[];
+  anchors: AstMergeAnchor[];
   keyCounts: Map<string, number>;
   parseUncertain: boolean;
 }
@@ -138,14 +143,27 @@ function declarationKind(node: Node): string {
   return "UnsupportedDeclaration";
 }
 
-function anchorsOf(source: SourceFile): Anchor[] {
-  const anchors: Anchor[] = [];
+function anchorsOf(source: SourceFile): AstMergeAnchor[] {
+  const anchors: AstMergeAnchor[] = [];
   for (const statement of source.getStatements()) {
+    const statementStart = statement.getStart();
+    const firstSyntaxChild = statement
+      .getChildren()
+      .find((child) => child.getStart() >= statementStart);
+    const firstTokenEnd = firstSyntaxChild?.getEnd() ?? statementStart;
+    const lastSyntaxChild = statement
+      .getChildren()
+      .slice()
+      .reverse()
+      .find((child) => child.getEnd() <= statement.getEnd());
+    const lastTokenStart = lastSyntaxChild?.getStart() ?? statement.getEnd();
     if (Node.isImportDeclaration(statement)) {
       anchors.push({
         key: `ImportDeclaration:${statement.getModuleSpecifierValue()}`,
         start: statement.getStart(),
         end: statement.getEnd(),
+        firstTokenEnd,
+        lastTokenStart,
       });
       continue;
     }
@@ -156,6 +174,8 @@ function anchorsOf(source: SourceFile): Anchor[] {
       key: `${declarationKind(statement)}:${name}`,
       start: statement.getStart(),
       end: statement.getEnd(),
+      firstTokenEnd,
+      lastTokenStart,
     });
   }
   return anchors;
@@ -174,6 +194,8 @@ function parse(project: Project, text: string, fileName: string): ParsedSource {
     ...anchor,
     start: anchor.start + sourceOffset,
     end: anchor.end + sourceOffset,
+    firstTokenEnd: anchor.firstTokenEnd + sourceOffset,
+    lastTokenStart: anchor.lastTokenStart + sourceOffset,
   }));
   const keyCounts = new Map<string, number>();
   for (const anchor of anchors) keyCounts.set(anchor.key, (keyCounts.get(anchor.key) ?? 0) + 1);
@@ -184,11 +206,40 @@ function parse(project: Project, text: string, fileName: string): ParsedSource {
   };
 }
 
-function anchorsForRange(anchors: Anchor[], start: number, end: number): Anchor[] {
+function anchorsForRange(anchors: AstMergeAnchor[], start: number, end: number): AstMergeAnchor[] {
   if (start === end) {
     return anchors.filter((anchor) => start >= anchor.start && start <= anchor.end);
   }
   return anchors.filter((anchor) => start < anchor.end && end > anchor.start);
+}
+
+export interface AstMergeSourceInspection {
+  anchors: AstMergeAnchor[];
+  parseUncertain: boolean;
+  duplicateKeys: string[];
+}
+
+/** Read-only source inventory for the larger integration-decision experiment. */
+export function inspectAstMergeSource(text: string): AstMergeSourceInspection {
+  const [inspection] = inspectAstMergeSources([text]);
+  if (inspection === undefined) throw new Error("source inspection missing");
+  return inspection;
+}
+
+/** Inspect several related sources in one in-memory project. */
+export function inspectAstMergeSources(texts: string[]): AstMergeSourceInspection[] {
+  const project = new Project({ useInMemoryFileSystem: true, skipAddingFilesFromTsConfig: true });
+  return texts.map((text, index) => {
+    const parsed = parse(project, text, `source-${index}.tsx`);
+    return {
+      anchors: parsed.anchors,
+      parseUncertain: parsed.parseUncertain,
+      duplicateKeys: [...parsed.keyCounts.entries()]
+        .filter(([, count]) => count !== 1)
+        .map(([key]) => key)
+        .sort(),
+    };
+  });
 }
 
 function analyzeSide(

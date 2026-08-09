@@ -275,3 +275,19 @@ This satisfies the spike's narrow positive stopping condition, but it does not s
 source path and synthetic local sides prove neither a population conflict rate nor a safe merge
 output algorithm. Production update/diff remain byte-exact and line-oriented; any integration
 requires a separate contract and broader acceptance.
+
+## Exact-splice integration decision — 2026-08-08
+
+The separate [`AST integration decision`](ast-merge-integration-decision.md) supplies that
+contract and broader acceptance. It evaluates all 25 eligible
+historical TS/TSX file events across 17 paths, 76 constructed disjoint boundary cases, 24 same-key
+cases, dedicated ambiguity and exact-byte tests, symmetry, and preloaded runtime. Exact source
+reconstruction produced zero unsafe authorizations and rescued five distinct constructed
+adjacent-anchor conflict shapes; the real-history rescue remains one event on one path.
+
+The positive narrow design is now implemented but unreleased: line diff3 remains the first path,
+and exact whole-anchor source splicing runs automatically only for its remaining `.ts`/`.tsx`
+conflicts. No AST printer emits bytes, every accepted side reconstructs exactly, ambiguity still
+refuses, and a result remains "conflict-free" rather than semantically safe. `diff` and `update`
+share that path, and source plus built-Node acceptance prove they reach the same result. Public
+`manteen@0.4.0` behavior remains unchanged until a later release publishes this candidate.

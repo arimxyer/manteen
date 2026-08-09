@@ -230,6 +230,14 @@ results in its nine-case controlled corpus. It does not change D41 or production
 corpus has one real source path and synthetic local adaptations, so it supports neither an AST
 output algorithm nor a population conflict-rate claim.
 
+The broader [`AST integration decision`](ast-merge-integration-decision.md) is also complete.
+Exact whole-anchor source splicing passed its history, adversarial, symmetry, byte-preservation and
+runtime gates, and rescued five constructed adjacent-anchor conflict shapes without an AST printer.
+It is now implemented, but not released, only as an automatic `.ts`/`.tsx` fallback after line
+diff3 conflicts. `diff` and `update` share the same merge path; clean diff3 results return before
+parsing, conservative refusal preserves the original conflict, and exact source slices remain the
+only emitted bytes. Source, plan/diff and packaged-Node acceptance are recorded in the decision.
+
 ## On one large program workflow
 
 `workflow()` can invoke other workflows inline, one level deep, so a program workflow *can*

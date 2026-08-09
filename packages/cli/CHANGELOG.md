@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add an automatic, conservative AST-assisted fallback for `.ts` and `.tsx` files when the
+  existing line diff3 merger reports a conflict. It combines only disjoint changes to stable,
+  uniquely identified imports or exported top-level declarations, using exact original source
+  slices rather than an AST printer.
+- Keep the fallback shared by `diff` and `update`, with no new flag. Clean line merges return
+  before parsing; same-key edits, renames, additions/deletions, parse uncertainty, unowned trivia,
+  and other ambiguous shapes preserve the original conflict and its ranges.
+
 ## 0.4.0
 
 - Add `manteen remove --upstream-removed` as a separate, explicit lifecycle command for ordinary

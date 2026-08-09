@@ -611,6 +611,37 @@ describe("the eight states", () => {
   });
 });
 
+describe("automatic TypeScript conflict fallback", () => {
+  test("diff proposes the same exact AST-assisted result as update", async () => {
+    const base = 'import { A } from "a";\nimport { B } from "b";\n';
+    const local = 'import { A, LocalA } from "a";\nimport { B } from "b";\n';
+    const incoming = 'import { A } from "a";\nimport { B, IncomingB } from "b";\n';
+    const root = makeProject();
+    write(root, `${UI}/both.tsx`, local);
+    write(root, `.manteen/bases/${UI}/both.tsx.base`, base);
+
+    const receipt = JSON.parse(readFileSync(join(root, "manteen.lock.json"), "utf8")) as Receipt;
+    const receiptFile = receipt.items
+      .find((item) => item.id === "@house/widget")
+      ?.files.find((file) => file.destination === `${UI}/both.tsx`);
+    if (receiptFile === undefined) throw new Error("both.tsx receipt fixture missing");
+    receiptFile.installedSha256 = sha(base);
+    receiptFile.baseSha256 = sha(base);
+    write(root, "manteen.lock.json", `${JSON.stringify(receipt, null, 2)}\n`);
+
+    const current = widget(root);
+    const plannedIndex = current.files.findIndex((file) => file.destination.endsWith("both.tsx"));
+    if (plannedIndex < 0) throw new Error("both.tsx plan fixture missing");
+    current.files[plannedIndex] = plannedFile("@house/widget", root, `${UI}/both.tsx`, incoming);
+
+    const diff = await result(root, [], { items: [current] });
+    const file = fileOf(diff, "@house/widget", `${UI}/both.tsx`);
+    expect(file.change).toBe("both");
+    expect(file.outcome).toBe("merged");
+    expect(file.patches.localToResult).toContain("IncomingB");
+  });
+});
+
 describe("the patch", () => {
   test("base -> local shows the adaptation and local -> result shows no reset", async () => {
     const root = makeProject();

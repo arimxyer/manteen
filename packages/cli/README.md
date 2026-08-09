@@ -137,7 +137,11 @@ replacement and let `update` merge current registry changes around project adapt
 base, `update` refuses rather than guess which side of a difference is yours; recover with
 `manteen update --take-upstream`, which reinstalls upstream bytes and rewrites the base.
 Conflict-free changes apply without prompting; overlapping edits refuse without writing conflict
-markers. `--take-upstream` is the separate, destructive reset for files the registry still ships.
+markers. For `.ts` and `.tsx` only, a remaining line-level conflict automatically receives one
+conservative AST-assisted attempt: Manteen combines distinct stable imports or exported top-level
+declarations only when both complete sides reconstruct byte-for-byte from their original source.
+It never prints or reformats the AST, and ambiguity leaves the original conflict unchanged.
+`--take-upstream` is the separate, destructive reset for files the registry still ships.
 After a successful command changes either part of that update state, Manteen prints
 `state-versioning-required` as a reminder. It does not inspect Git or claim the files are already
 tracked — but it does read your `.gitignore`, and if a rule there hides `.manteen/` the reminder is

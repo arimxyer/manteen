@@ -25,13 +25,21 @@ The commands do not share one generic overwrite policy:
 
 - `init` and `add` support `--dry-run`; `add` uses `--overwrite` or `--no-overwrite` for existing
   destinations, and `--yes` implies overwrite.
-- `update` performs a three-way source merge by default. `--take-upstream` is its explicit
-  destructive reset; it does not accept overwrite or yes flags.
+- `update` performs a three-way source merge by default. Line diff3 runs first; a remaining
+  `.ts`/`.tsx` conflict automatically receives a conservative AST-assisted exact-source fallback.
+  `--take-upstream` is the explicit destructive reset; update has no overwrite or yes flags.
 - `remove --upstream-removed` requires exact file selection for every real transaction and has no
   prompt, `--all`, `--yes`, or `--force` path.
 
 Where a command exposes `--force`, it only downgrades diagnostics documented as forceable and never
 suppresses them.
+
+The TypeScript fallback is shared by `diff` and `update` and has no flag. It identifies stable
+unique imports and exported top-level declarations, then combines only disjoint changes by copying
+their exact original source ranges. It never prints or formats an AST. Same-key edits, renames,
+additions/deletions, parse uncertainty, unowned trivia, or any other ambiguous mapping preserve the
+original line conflict. A successful result is conflict-free text, not proof of semantic safety;
+use configured update verification for project-owned behavioral checks.
 
 ## Remove files omitted upstream
 
