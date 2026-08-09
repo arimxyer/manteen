@@ -6,7 +6,8 @@
  * convention and the shipped runtime identical on every operating system.
  */
 import { spawnSync } from "node:child_process";
-import { readdirSync } from "node:fs";
+import { readdirSync, realpathSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 const packageRoot = resolve(import.meta.dirname, "..");
@@ -20,7 +21,22 @@ if (files.length === 0) {
   console.error(`No *.node-e2e.mjs files found in ${e2eDir}`);
   process.exitCode = 1;
 } else {
-  const result = spawnSync(process.execPath, ["--test", ...files], { stdio: "inherit" });
+  // macOS exposes its temporary directory below `/var`, an OS-owned symlink to
+  // `/private/var`. Give fixtures the canonical root so they do not trip the
+  // production output-link refusal before the command under test can run.
+  const environment =
+    process.platform === "win32"
+      ? process.env
+      : {
+          ...process.env,
+          TEMP: realpathSync(tmpdir()),
+          TMP: realpathSync(tmpdir()),
+          TMPDIR: realpathSync(tmpdir()),
+        };
+  const result = spawnSync(process.execPath, ["--test", ...files], {
+    env: environment,
+    stdio: "inherit",
+  });
   if (result.error) throw result.error;
 
   if (result.signal !== null) {
