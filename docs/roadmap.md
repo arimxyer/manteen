@@ -35,7 +35,8 @@ registry ownership, one stable JSON command envelope, complete display metadata,
 facade, offline status, expected-plan digests, deterministic discovery filters, transaction-bound
 verification for add/update/remove, and packaged agent guidance. Its frozen contract is
 [`agent-native-build-plan.md`](agent-native-build-plan.md); publication and Pages remain separate
-approval gates.
+approval gates. The local receipts and ordered release checkpoint are in the
+[`agent-native release handoff`](agent-native-release-handoff.md).
 
 The client-only `manteen@0.3.0` release now carries Wu's receipt v3, committed pristine bases and
 three-way updates; the apply-time state-versioning advisory; and Wv's opt-in post-update project
