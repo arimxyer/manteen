@@ -230,7 +230,9 @@ export async function runAgentGuide(
 ): Promise<number> {
   try {
     const source = skillSource();
-    const skill = readFileSync(resolve(source, "SKILL.md"), "utf8");
+    // Git may materialize the packaged Markdown with CRLF on Windows. The
+    // guide is machine output, so keep it byte-stable across checkout policy.
+    const skill = readFileSync(resolve(source, "SKILL.md"), "utf8").replaceAll("\r\n", "\n");
     if (flags.json) {
       streams.stdout(
         renderJson({

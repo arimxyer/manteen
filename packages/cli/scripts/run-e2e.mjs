@@ -33,7 +33,10 @@ if (files.length === 0) {
           TMP: realpathSync(tmpdir()),
           TMPDIR: realpathSync(tmpdir()),
         };
-  const result = spawnSync(process.execPath, ["--test", ...files], {
+  // These files create isolated registries and package-manager children. Run
+  // them one at a time so Windows does not turn concurrent shim spawns into a
+  // product-level `spawn-failed` result.
+  const result = spawnSync(process.execPath, ["--test", "--test-concurrency=1", ...files], {
     env: environment,
     stdio: "inherit",
   });

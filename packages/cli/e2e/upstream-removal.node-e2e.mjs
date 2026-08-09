@@ -497,7 +497,7 @@ test("configured removal verification failure restores selected source, base, an
   assert.equal(result.status, 1, result.all);
   const document = json(result, { allowVerifierOutput: true });
   assert.equal(document.verification.status, "failed");
-  assert.equal(document.verification.failure.kind, "script-failed");
+  assert.equal(document.verification.failure.kind, "script-failed", result.all);
   assert.equal(document.failure.kind, "verification-failed");
   assert.equal(document.mutated, false);
   assert.equal(existsSync(join(root, ".verify-remove-ran")), true);
