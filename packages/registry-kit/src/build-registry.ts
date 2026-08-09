@@ -11,7 +11,7 @@
  * The wire vocabulary appears in exactly two places in this repo: ITEM_TYPE and
  * FILE_TYPE below.
  */
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 import Ajv, { type ValidateFunction } from "ajv";
@@ -75,6 +75,9 @@ export interface CompileResult {
   items: WireItem[];
   index: Record<string, unknown>;
   failures: { item: string; messages: string[] }[];
+  /** Absolute catalog path. Output safety uses it to refuse the catalog directory
+   * and its ancestors without changing the long-standing compile/write call shape. */
+  catalogPath?: string;
 }
 
 /** Mantine vocabulary -> wire vocabulary. */
@@ -226,19 +229,17 @@ export function compileRegistry(catalogPath: string): CompileResult {
     else items.push(wire);
   }
 
-  return { source, items, index: buildIndex(source), failures };
+  return { source, items, index: buildIndex(source), failures, catalogPath: resolve(catalogPath) };
 }
 
-export function writeRegistry(result: CompileResult, outDir: string): void {
-  rmSync(outDir, { recursive: true, force: true });
-  mkdirSync(outDir, { recursive: true });
-
-  for (const item of result.items) {
-    writeFileSync(
-      join(outDir, `${item.name as string}.json`),
-      `${JSON.stringify(item, null, 2)}\n`,
-    );
-  }
-
-  writeFileSync(join(outDir, "registry.json"), `${JSON.stringify(result.index, null, 2)}\n`);
-}
+export {
+  planRegistryWrite,
+  type RegistryOutputDiagnostic,
+  RegistryOutputError,
+  type RegistryOutputMarker,
+  type RegistryWriteOptions,
+  type RegistryWriteOutcome,
+  type RegistryWritePlan,
+  recoverRegistryWrite,
+  writeRegistry,
+} from "./registry-output";

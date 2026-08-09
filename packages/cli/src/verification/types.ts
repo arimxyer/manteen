@@ -70,7 +70,7 @@ export type VerificationFailure =
       paths: string[];
     };
 
-/** Separate from ApplyOutcome: these scripts run only after apply's journal closes. */
+/** Returned by the transaction while its rollback journal is still live. */
 export interface VerificationOutcome {
   status: VerificationStatus;
   checks: VerificationCheckOutcome[];

@@ -121,7 +121,7 @@ function writeCurrentWitness(registry, { reassignCrlf = false } = {}) {
   ]);
 }
 
-function makeProject(name) {
+function makeProject(name, { scripts = {}, verification } = {}) {
   const candidate = join(WORK, name);
   mkdirSync(candidate, { recursive: true });
   const root = realpathSync(candidate);
@@ -138,6 +138,7 @@ function makeProject(name) {
         private: true,
         type: "module",
         packageManager: "npm@10.9.2",
+        scripts,
       },
       null,
       2,
@@ -152,6 +153,7 @@ function makeProject(name) {
       {
         registries: { "@proof": `${registryBase}/{name}.json` },
         aliases: ALIASES,
+        ...(verification === undefined ? {} : { verification }),
       },
       null,
       2,
@@ -177,10 +179,17 @@ function run(root, args) {
   };
 }
 
-function json(result) {
-  assert.notEqual(result.status, 2, `usage/config failure, not a JSON result: ${result.all}`);
-  assert.equal(result.stderr, "", `--json must keep stderr empty: ${result.stderr}`);
-  return JSON.parse(result.stdout);
+function json(result, { allowVerifierOutput = false } = {}) {
+  if (!allowVerifierOutput) {
+    assert.equal(result.stderr, "", `--json must keep stderr empty: ${result.stderr}`);
+  }
+  const document = JSON.parse(result.stdout);
+  return new Proxy(document, {
+    get(target, property, receiver) {
+      if (Reflect.has(target, property)) return Reflect.get(target, property, receiver);
+      return target.payload?.[property];
+    },
+  });
 }
 
 function absolute(root, receiptPath) {
@@ -384,6 +393,7 @@ test("built removal lifecycle fails closed, then removes exact selected source/b
   assert.equal(previewDocument.receipt.written, false);
   assert.deepEqual(previewDocument.removals, []);
   assert.equal(previewDocument.updateState, null);
+  assert.match(previewDocument.planDigest, /^[0-9a-f]{64}$/);
   assert.equal(existsSync(crlfSource), true);
   assert.equal(existsSync(crlfBase), true);
 
@@ -392,10 +402,13 @@ test("built removal lifecycle fails closed, then removes exact selected source/b
     CRLF_DESTINATION,
     "--file",
     MISSING_DESTINATION,
+    "--expect-plan",
+    previewDocument.planDigest,
     "--json",
   ]);
   assert.equal(applied.status, 0, applied.all);
   const appliedDocument = json(applied);
+  assert.equal(appliedDocument.planDigest, previewDocument.planDigest);
   assert.deepEqual(removalOf(appliedDocument, CRLF_DESTINATION), {
     itemId: OWNER,
     destination: CRLF_DESTINATION,
@@ -458,4 +471,35 @@ test("built removal lifecycle fails closed, then removes exact selected source/b
   );
   assert.deepEqual(readFileSync(witnessSource), witnessSourceBefore, "unselected source changed");
   assert.deepEqual(readFileSync(witnessBase), witnessBaseBefore, "unselected base changed");
+});
+
+test("configured removal verification failure restores selected source, base, and receipt", () => {
+  const { root, registry } = makeProject("verification", {
+    scripts: { "verify:remove": "node verify-remove.mjs" },
+    verification: { remove: ["verify:remove"] },
+  });
+  write(
+    join(root, "verify-remove.mjs"),
+    'import { writeFileSync } from "node:fs";\nwriteFileSync(".verify-remove-ran", "yes\\n");\nprocess.exitCode = 4;\n',
+  );
+  const installed = run(root, ["add", OWNER, WITNESS]);
+  assert.equal(installed.status, 0, installed.all);
+  writeCurrentOwner(registry);
+  writeCurrentWitness(registry);
+  const before = snapshotManaged(root);
+
+  const preview = removal(root, ["--dry-run", "--file", CRLF_DESTINATION, "--json"]);
+  assert.equal(preview.status, 0, preview.all);
+  const digest = json(preview).planDigest;
+  assert.match(digest, /^[0-9a-f]{64}$/);
+
+  const result = removal(root, ["--file", CRLF_DESTINATION, "--expect-plan", digest, "--json"]);
+  assert.equal(result.status, 1, result.all);
+  const document = json(result, { allowVerifierOutput: true });
+  assert.equal(document.verification.status, "failed");
+  assert.equal(document.verification.failure.kind, "script-failed", result.all);
+  assert.equal(document.failure.kind, "verification-failed");
+  assert.equal(document.mutated, false);
+  assert.equal(existsSync(join(root, ".verify-remove-ran")), true);
+  assert.deepEqual(snapshotManaged(root), before);
 });

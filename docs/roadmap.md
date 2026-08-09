@@ -29,6 +29,15 @@ client documentation and the unchanged complete 22-item catalog. The catalog-con
 itself remains commit `8853a720352c8842ce6957a494f919ec7cccda67`, run
 [`31198437310`](https://github.com/arimxyer/manteen/actions/runs/31198437310).
 
+The agent-native release candidate is implemented locally at `manteen-kit@0.2.1` and
+`manteen@0.7.0`; neither version is described here as public. It adds transactional generated
+registry ownership, one stable JSON command envelope, complete display metadata, an opaque SDK
+facade, offline status, expected-plan digests, deterministic discovery filters, transaction-bound
+verification for add/update/remove, and packaged agent guidance. Its frozen contract is
+[`agent-native-build-plan.md`](agent-native-build-plan.md); publication and Pages remain separate
+approval gates. The local receipts and ordered release checkpoint are in the
+[`agent-native release handoff`](agent-native-release-handoff.md).
+
 The client-only `manteen@0.3.0` release now carries Wu's receipt v3, committed pristine bases and
 three-way updates; the apply-time state-versioning advisory; and Wv's opt-in post-update project
 verification. Merge commit `123d3c1a1ef047994326cdcb3ffba7cc07e3dea9`, the signed
@@ -142,6 +151,7 @@ is a judgment call, which is exactly why they are separate runs.
 | Wv | [`Update verification`](update-verification-handoff.md) | complete and public in `0.3.0`: post-apply orchestration, fail-fast bounded project scripts, drift detection, built-Node and fresh-consumer acceptance | Lets a consumer define what “the merged component still works here” means without placing arbitrary scripts inside Manteen's rollback journal. |
 | Wp | [`Upstream removal`](upstream-removal-handoff.md) | complete and public in client `0.4.0`: explicit selection, adapted-file opt-in, one journal, built/hosted/public acceptance | Adds explicit, exact-selected pruning for ordinary files proven absent upstream without turning update into implicit deletion or inferring renames. |
 | Wa | [`AST-assisted fallback`](ast-merge-integration-decision.md) | complete and public in client `0.5.0`: exact source splicing, built/hosted/public accepted-and-refused acceptance | Reduces a narrow class of adjacent TypeScript line conflicts without allowing an AST printer or ambiguous structural mapping to emit bytes. |
+| Wn | [`Agent-native interface`](agent-native-build-plan.md) | implemented locally for kit `0.2.1` and client `0.7.0`; release acceptance pending | Makes discovery, planning, refusal, mutation, verification, and guidance safe to drive without an interactive human loop. |
 
 **Not workflow-shaped, do directly:** the hygiene set (LICENSE, linter, SECURITY, CONTRIBUTING,
 dependabot, README rename). Single-file, single-concern, no discovery — a workflow would be
@@ -194,6 +204,7 @@ Wu update merging ........... complete; public in client 0.3.0
 Wv update verification ...... complete; public in client 0.3.0
 Wp upstream removal ......... complete; public in client 0.4.0
 Wa AST-assisted fallback .... complete; public in client 0.5.0
+Wn agent-native interface ... implemented locally; publication and Pages pending approval
 hygiene ..................... done, direct
 ```
 
@@ -230,6 +241,12 @@ only after a successful non-dry update, and detects changes to the exact
 Manteen-managed/control snapshot. A verification failure leaves the coherent update applied and
 exits 1; it is evidence about the consumer's configured checks, not a rollback or a universal
 runtime guarantee. Its handoff records local, built-Node, hosted and public-consumer acceptance.
+
+Wn deliberately supersedes that transaction boundary in the local `0.7.0` candidate: configured
+checks are now operation-specific for add, update, and remove and run before the owning journal is
+released. A failure restores captured Manteen-managed and control preimages while making no claim
+about dependency-manager or arbitrary verifier side effects. The paragraph above remains the
+truthful historical contract for the public `0.3.0` through `0.5.0` client line.
 
 Wp is complete and public in client `0.4.0`, with local source, built-Node, hosted matrix and fresh
 public-consumer acceptance. It introduces only

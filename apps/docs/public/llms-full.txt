@@ -1,0 +1,98 @@
+# Manteen agent context
+
+Manteen has two packages:
+
+- `manteen` consumes registries and installs maintainable source into a Mantine application.
+- `manteen-kit` validates an author catalog and compiles static shadcn-compatible registry JSON.
+
+Documentation: https://arimxyer.github.io/manteen/
+
+## Availability boundary
+
+At the agent contract freeze, the published client is 0.5.0. Init, add, list, info, diff, update,
+and exact upstream-removed file removal exist there. The schema-v1 machine contract is the 0.6.0
+milestone. Offline status, plan expectations, generalized verification, deterministic list filters,
+and packaged agent guide/install commands are the 0.7.0 milestone. A milestone document is not a
+release receipt. Always inspect the installed version and relevant `--help` output.
+
+## Consumer workflow
+
+Run from the application root or pass `--cwd`.
+
+1. Read repository agent instructions.
+2. Run `manteen --version` and, when available, `manteen status --json`.
+3. Discover with `manteen list --json` and inspect an item with `manteen info <ref> --json`.
+4. Preview `init`, `add`, `update`, and `remove` with `--dry-run --json`.
+5. If the preview returns `planDigest`, keep the same root, refs, flags, and verification definition;
+   apply with `--expect-plan <digest>`.
+6. Use `manteen diff --json` before updates. Ordinary update preserves non-overlapping local and
+   upstream edits with a three-way merge.
+7. Treat `--overwrite`, `--take-upstream`, `--discard-adapted`, `--no-verify`, `--force`, and
+   `--take-packaged` as distinct decisions. Never add them as generic retries.
+
+`status` is offline. Missing or invalid setup is a successful assessment with `healthy: false`;
+only inability to inspect the target is a command failure.
+
+Files removed upstream are retained until exact selection. Discover with:
+
+    manteen remove --upstream-removed --dry-run --json
+
+Then preview the exact returned receipt destination with repeated `--file`. An adapted file requires
+the explicit `--discard-adapted` consequence. Removal does not uninstall dependencies, themes,
+styles, or an entire item.
+
+The receipt and `.manteen/bases/` preserve exact pristine source for three-way updates. Do not edit
+either by hand. Commit them with installed source.
+
+## JSON contract
+
+Every recognized client `--json` invocation writes exactly one document to stdout and never
+prompts. Schema version 1 fields are:
+
+    schemaVersion, command, root, ok, exitCode, mutated,
+    payload, diagnostics, errors, notes
+
+`ok` is exactly `exitCode === 0`. `mutated` says whether durable project bytes remain changed on
+exit. JSON mode is non-interactive, not consent. Blocking diagnostics provide a typed rerun argv
+array, a JSON config patch, or a bounded manual action/rationale. Execute argv arrays directly;
+never turn them into shell strings.
+
+Exit 0 means the command contract completed, even when an assessment is unhealthy or manual work
+remains. Exit 1 is an operational refusal/failure. Exit 2 is usage or configuration. Exit 130 is an
+interactive cancellation and is not produced by JSON prompting.
+
+Keep stderr separate from the stdout JSON document. Never log or persist an expanded `${VAR}` from
+a registry URL. Only redacted URLs may appear in output, receipts, diagnostics, and plan digests.
+
+## Registry author workflow
+
+Author `manteen.registry.json` in Mantine vocabulary. Declare source files, package dependencies,
+package CSS, registry dependencies, Mantine gates, provider needs, and theme fragments. `docs`,
+`props`, `usage`, and `stylesApi` are author assertions; verify them against public behavior.
+Private CSS-module names are not Styles API selectors.
+
+When supported, validate without writing:
+
+    manteen-kit build --check --json
+
+Build to a static directory only after review:
+
+    manteen-kit build manteen.registry.json public/r --json
+
+Generated output includes `.manteen-kit-output.json` with deterministic relative file hashes. The
+writer stages and validates complete output before transactional replacement. It refuses unsafe
+destinations, links, unknown entries, invalid ownership, and unexpected drift. `--overwrite-output`
+only permits replacement of drifted files already proven generated and owned; it grants no broader
+deletion authority.
+
+Publicly verify both `registry.json` and at least one item URL. A local build proves schema and local
+output conformance, not hosted availability or release publication.
+
+## Packaged skill
+
+When supported, `manteen agent guide --json` reads packaged guidance without project configuration.
+`manteen agent install` defaults to `.agents/skills/manteen`; explicit universal-user, Codex-user,
+Claude-project, Claude-user, and custom targets are available. Preview with `--dry-run --json`.
+Existing unowned or modified copies are preserved. `--update` updates an owned copy and
+`--take-packaged` explicitly discards a local adaptation. Init never installs the skill or edits
+agent instructions automatically.

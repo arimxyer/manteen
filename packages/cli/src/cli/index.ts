@@ -31,6 +31,12 @@ import { Command, CommanderError } from "commander";
 import { packageManagers } from "nypm";
 
 import { apply } from "../apply/index";
+import {
+  type AgentGuideFlags,
+  type AgentInstallFlags,
+  runAgentGuide,
+  runAgentInstall,
+} from "../commands/agent";
 import type { DiffFlags } from "../commands/diff";
 import { runDiff } from "../commands/diff";
 import type { InfoFlags } from "../commands/info";
@@ -41,20 +47,26 @@ import type { ListFlags } from "../commands/list";
 import { runList } from "../commands/list";
 import type { RemoveFlags } from "../commands/remove";
 import { runRemove } from "../commands/remove";
+import type { StatusFlags } from "../commands/status";
+import { runStatus } from "../commands/status";
 import type { UpdateFlags } from "../commands/update";
-import { runUpdate } from "../commands/update";
-import { blockingExitCode } from "../plan/diagnostics";
+import { renderVerification, runUpdate } from "../commands/update";
+import { blockingExitCode, diag, sortDiagnostics } from "../plan/diagnostics";
+import { digestPlan, planDigestMatches } from "../plan/digest";
 import { plan } from "../plan/index";
 import type { ApplyOptions, ApplyOutcome, Plan, PlanOptions } from "../plan/types";
 import { applyRemoval } from "../removal/apply";
 import { planRemoval } from "../removal/plan";
 import { interactiveFromProcess } from "../ui";
+import { beginMachineSession } from "./machine";
 import {
+  display,
   loadProjectConfig,
   PROCESS_STREAMS,
   renderApplyFailure,
   renderDiagnostics,
   renderDryRun,
+  renderJson,
   renderOutcome,
   renderThrown,
   renderUpdateStateAdvisory,
@@ -88,18 +100,95 @@ interface AddFlags {
    *  `false` means `--no-overwrite`. See the `getOptionValueSource` note below. */
   overwrite?: boolean;
   yes?: boolean;
+  json?: boolean;
+  expectPlan?: string;
+  /** Commander sets false only for --no-verify. */
+  verify?: boolean;
   /** D15's detection override. The `no-package-manager` refusal names this flag,
    *  so it has to exist — an error that points at a flag you cannot pass is worse
    *  than no advice at all. */
   pm?: string;
 }
 
+function renderAddJson(
+  refs: readonly string[],
+  planned: Plan,
+  outcome: ApplyOutcome | null,
+  dryRun: boolean,
+  ok: boolean,
+): string {
+  return renderJson({
+    command: "add" as const,
+    root: planned.root,
+    ok,
+    planDigest: planned.planDigest ?? null,
+    refs: [...refs],
+    dryRun,
+    cancelled: outcome?.cancelled ?? false,
+    files:
+      outcome === null || dryRun
+        ? planned.files.map((file) => ({
+            destination: display(file.destination, planned.root),
+            disposition: file.disposition,
+          }))
+        : outcome.files.map((file) => ({
+            destination: display(file.destination, planned.root),
+            result: file.result,
+          })),
+    theme:
+      planned.theme === null
+        ? null
+        : {
+            destination: display(planned.theme.destination, planned.root),
+            changed: planned.theme.changed,
+            written: outcome?.theme?.written ?? false,
+          },
+    styles:
+      planned.styles === null
+        ? null
+        : {
+            destination: display(planned.styles.destination, planned.root),
+            changed: planned.styles.changed,
+            written: outcome?.styles?.written ?? false,
+          },
+    dependencies:
+      outcome === null
+        ? planned.dependencies.map((dependency) => ({
+            name: dependency.name,
+            range: dependency.range,
+            dev: dependency.dev,
+          }))
+        : outcome.dependencies,
+    receipt:
+      outcome === null
+        ? { written: false }
+        : {
+            path: display(outcome.receipt.path, planned.root),
+            written: outcome.receipt.written,
+          },
+    failure:
+      outcome?.failure === null || outcome?.failure === undefined
+        ? null
+        : { kind: outcome.failure.kind, message: outcome.failure.message },
+    verification: outcome?.verification ?? null,
+    updateState:
+      outcome === null
+        ? null
+        : {
+            changed: outcome.updateState.changed,
+            versioningRequired: outcome.updateState.changed,
+          },
+    diagnostics: planned.diagnostics,
+    notes: [],
+  });
+}
+
 async function runAdd(refs: string[], flags: AddFlags, command: Command): Promise<number> {
   if (refs.length === 0) {
-    process.stderr.write(
+    PROCESS_STREAMS.stderr(
       "manteen add: name at least one item, e.g. `manteen add @house/data-table`.\n\n",
     );
-    process.stderr.write(command.helpInformation());
+    PROCESS_STREAMS.stderr(command.helpInformation());
     return EXIT_USAGE;
   }
 
@@ -123,7 +212,7 @@ async function runAdd(refs: string[], flags: AddFlags, command: Command): Promis
       ? true
       : undefined;
 
-  const interactive = interactiveFromProcess({ yes: Boolean(flags.yes) });
+  const interactive = interactiveFromProcess({ yes: Boolean(flags.yes || flags.json) });
 
   // `loadProjectConfig` is the shared implementation of the exit-2 boundary:
   // `loadConfig` reports authored problems by RETURNING (there can be several at
@@ -140,7 +229,7 @@ async function runAdd(refs: string[], flags: AddFlags, command: Command): Promis
   // command string — `addDependencyCommand(undefined, …)` returns "add --dev x",
   // a command with no binary in front of it.
   if (flags.pm !== undefined && !PACKAGE_MANAGER_NAMES.includes(flags.pm)) {
-    process.stderr.write(
+    PROCESS_STREAMS.stderr(
       `manteen add: --pm ${flags.pm} is not a package manager manteen knows. ` +
         `Expected one of: ${PACKAGE_MANAGER_NAMES.join(", ")}.\n`,
     );
@@ -152,18 +241,41 @@ async function runAdd(refs: string[], flags: AddFlags, command: Command): Promis
     overwrite,
     interactive,
     packageManager: flags.pm as PlanOptions["packageManager"],
+    verify: flags.verify,
   };
 
   let planned: Plan;
   try {
     planned = await plan(config, refs, planOptions);
   } catch (error) {
-    process.stderr.write("error  plan\n");
-    process.stderr.write(renderThrown(error));
+    PROCESS_STREAMS.stderr("error  plan\n");
+    PROCESS_STREAMS.stderr(renderThrown(error));
     return EXIT_REFUSED;
   }
 
-  renderDiagnostics(planned.diagnostics, planned.root, PROCESS_STREAMS.stderr);
+  const planDigest = digestPlan(planned, {
+    refs,
+    force: flags.force,
+    overwrite,
+    packageManager: flags.pm,
+    verify: flags.verify,
+  });
+  planned.planDigest = planDigest;
+  if (!planDigestMatches(planDigest, flags.expectPlan)) {
+    planned = {
+      ...planned,
+      ok: false,
+      diagnostics: sortDiagnostics([
+        ...planned.diagnostics,
+        diag(
+          "plan-mismatch",
+          `The fresh add plan is ${planDigest}, not the explicitly authorised ${flags.expectPlan?.toLowerCase() ?? ""}. Re-run --dry-run --json and review the new plan before applying it.`,
+        ),
+      ]),
+    };
+  }
+
+  if (!flags.json) renderDiagnostics(planned.diagnostics, planned.root, PROCESS_STREAMS.stderr);
 
   // `plan.ok` already has --force folded in; apply() reads it and never
   // re-derives a verdict, so neither does the shell. The exit CODE is a separate
@@ -171,8 +283,12 @@ async function runAdd(refs: string[], flags: AddFlags, command: Command): Promis
   // because it names the thing the user has to fix first. `force: false` here is
   // correct rather than a dropped flag — `plan.diagnostics` has already been
   // downgraded by the aggregator, so re-applying it would forgive a second time.
-  if (!planned.ok)
-    return blockingExitCode(planned.diagnostics, false) === 2 ? EXIT_USAGE : EXIT_REFUSED;
+  if (!planned.ok) {
+    const exit = blockingExitCode(planned.diagnostics, false) === 2 ? EXIT_USAGE : EXIT_REFUSED;
+    if (flags.json)
+      PROCESS_STREAMS.stdout(renderAddJson(refs, planned, null, Boolean(flags.dryRun), false));
+    return exit;
+  }
 
   const applyOptions: ApplyOptions = { interactive, overwrite, dryRun: flags.dryRun };
 
@@ -180,21 +296,38 @@ async function runAdd(refs: string[], flags: AddFlags, command: Command): Promis
   try {
     outcome = await apply(planned, applyOptions);
   } catch (error) {
-    process.stderr.write("error  apply\n");
-    process.stderr.write(renderThrown(error));
+    PROCESS_STREAMS.stderr("error  apply\n");
+    PROCESS_STREAMS.stderr(renderThrown(error));
     return EXIT_REFUSED;
   }
 
-  if (outcome.cancelled) return EXIT_CANCELLED;
+  if (outcome.cancelled) {
+    if (flags.json)
+      PROCESS_STREAMS.stdout(renderAddJson(refs, planned, outcome, Boolean(flags.dryRun), false));
+    return EXIT_CANCELLED;
+  }
 
   // Branch on the flag WE passed in, not on `outcome.dryRun`. That field is
   // apply()'s echo of the same value, and if it is ever left unset a dry run
   // silently renders `WriteResult`s for writes that never happened — output
   // that reads as a real install.
-  process.stdout.write(flags.dryRun ? renderDryRun(planned) : renderOutcome(outcome, planned.root));
+  if (flags.json) {
+    PROCESS_STREAMS.stdout(
+      renderAddJson(refs, planned, outcome, Boolean(flags.dryRun), outcome.ok),
+    );
+  } else {
+    PROCESS_STREAMS.stdout(
+      flags.dryRun ? renderDryRun(planned) : renderOutcome(outcome, planned.root),
+    );
+  }
 
-  process.stderr.write(renderApplyFailure(outcome, planned.root));
-  process.stderr.write(renderUpdateStateAdvisory(outcome, planned));
+  if (!flags.json) {
+    PROCESS_STREAMS.stderr(renderApplyFailure(outcome, planned.root));
+    PROCESS_STREAMS.stderr(renderUpdateStateAdvisory(outcome, planned));
+    if (outcome.verification !== undefined) {
+      PROCESS_STREAMS.stderr(renderVerification(outcome.verification, planned.root));
+    }
+  }
 
   return outcome.ok ? EXIT_OK : EXIT_REFUSED;
 }
@@ -213,6 +346,12 @@ const program = new Command()
   // `add` command is built leaves `add`'s own usage errors exiting commander's
   // default 1 instead of our 2.
   .exitOverride();
+
+const machineSession = beginMachineSession(process.argv);
+program.configureOutput({
+  writeOut: PROCESS_STREAMS.stdout,
+  writeErr: PROCESS_STREAMS.stderr,
+});
 
 /**
  * `add`'s non-interactive overwrite boundary. Update computes a three-way
@@ -249,6 +388,7 @@ program
   .option("--force", "downgrade forceable refusals to warnings; never silences them")
   .option("-y, --yes", "apply without the all-or-nothing confirmation")
   .option("--json", "emit the plan, outcome, diagnostics and required work as one JSON document")
+  .option("--expect-plan <sha256>", "apply only the exact previously reviewed plan")
   .option(
     "--framework <name>",
     "select vite, next-app, next-pages, next-hybrid, react-router or manual",
@@ -268,6 +408,9 @@ program
   .option("--overwrite", "replace existing files without asking")
   .option("--no-overwrite", "keep existing files without asking")
   .option("-y, --yes", "assume yes at every prompt; implies --overwrite")
+  .option("--json", "emit the plan, outcome, diagnostics and notes as one JSON document")
+  .option("--expect-plan <sha256>", "apply only the exact previously reviewed plan")
+  .option("--no-verify", "skip configured post-add package scripts")
   .option("--pm <name>", "override package-manager detection (npm, pnpm, yarn, bun, deno)")
   .addHelpText("after", NON_INTERACTIVE_HELP)
   .action(async (refs: string[], flags: AddFlags, command: Command) => {
@@ -291,12 +434,17 @@ program
  * and hand the exit code to `process.exitCode`.
  */
 
+const collectValue = (value: string, previous: string[]): string[] => [...previous, value];
+
 program
   .command("list")
   .description("list what the configured registries offer, and what is installed")
   .argument("[namespaces...]", "limit the listing to these registries, e.g. @house")
   .option("--cwd <dir>", "project directory containing manteen.json", process.cwd())
   .option("--json", "emit the listing and its notes as one JSON document")
+  .option("--query <text>", "filter ids, names, titles and descriptions")
+  .option("--type <type>", "filter by exact registry type (repeatable)", collectValue, [])
+  .option("--installed", "show only installed items")
   .action(async (namespaces: string[], flags: ListFlags) => {
     process.exitCode = await runList(namespaces, flags);
   });
@@ -307,6 +455,8 @@ program
   .argument("<ref>", "a qualified item name, e.g. @house/data-table")
   .option("--cwd <dir>", "project directory containing manteen.json", process.cwd())
   .option("--json", "emit the report as one JSON document")
+  .option("--props", "include the complete prop reference in text output")
+  .option("--usage", "include complete usage examples in text output")
   .action(async (ref: string, flags: InfoFlags) => {
     process.exitCode = await runInfo(ref, flags);
   });
@@ -332,13 +482,12 @@ program
   .option("--force", "downgrade forceable refusals to warnings; never silences them")
   .option("--json", "emit the result as one JSON document")
   .option("--take-upstream", "discard local adaptations and restore current upstream files")
+  .option("--expect-plan <sha256>", "apply only the exact previously reviewed plan")
   .option("--no-verify", "skip configured post-update package scripts")
   .option("--pm <name>", "override package-manager detection (npm, pnpm, yarn, bun, deno)")
   .action(async (refs: string[], flags: UpdateFlags, command: Command) => {
     process.exitCode = await runUpdate(refs, flags, command);
   });
-
-const collectFile = (value: string, previous: string[]): string[] => [...previous, value];
 
 program
   .command("remove")
@@ -348,7 +497,7 @@ program
   .option(
     "--file <path>",
     "select one exact POSIX receipt destination (repeatable)",
-    collectFile,
+    collectValue,
     [],
   )
   .option(
@@ -357,8 +506,49 @@ program
   )
   .option("--dry-run", "discover or preflight selected removals; write nothing")
   .option("--json", "emit candidates, outcome, diagnostics and notes as one JSON document")
+  .option("--expect-plan <sha256>", "apply only the exact previously reviewed plan")
+  .option("--no-verify", "skip configured post-remove package scripts")
   .action(async (flags: RemoveFlags) => {
     process.exitCode = await runRemove(flags, { plan: planRemoval, apply: applyRemoval });
+  });
+
+program
+  .command("status")
+  .description("assess local project and receipt health without registry access")
+  .option("--cwd <dir>", "project directory to inspect", process.cwd())
+  .option("--json", "emit the offline assessment as one JSON document")
+  .action(async (flags: StatusFlags) => {
+    process.exitCode = await runStatus(flags);
+  });
+
+const agentCommand = program
+  .command("agent")
+  .description("show or install packaged agent guidance");
+
+agentCommand
+  .command("guide")
+  .description("print the packaged Manteen agent guide")
+  .option("--json", "emit the guide and manifest as one JSON document")
+  .action(async (flags: AgentGuideFlags) => {
+    process.exitCode = await runAgentGuide(flags);
+  });
+
+agentCommand
+  .command("install")
+  .description("safely install or update the packaged Manteen skill")
+  .option("--cwd <dir>", "project directory for project-relative targets", process.cwd())
+  .option(
+    "--target <target>",
+    "project, universal-user, codex-user, claude-project, claude-user, or custom",
+    "project",
+  )
+  .option("--path <dir>", "custom destination (requires --target custom)")
+  .option("--dry-run", "plan installation without writing")
+  .option("--json", "emit the installation result as one JSON document")
+  .option("--update", "update an existing Manteen-owned skill")
+  .option("--take-packaged", "discard local skill adaptations during an explicit update")
+  .action(async (flags: AgentInstallFlags) => {
+    process.exitCode = await runAgentInstall(flags);
   });
 
 /**
@@ -368,12 +558,23 @@ program
  * names the bad command and raises — and `exitOverride` turns both that and the
  * bare-invocation help into a throw we map to 2, which is the kit's convention.
  */
+let executableExit = EXIT_OK;
 try {
   await program.parseAsync(process.argv);
+  executableExit = typeof process.exitCode === "number" ? process.exitCode : EXIT_OK;
 } catch (error) {
   if (error instanceof CommanderError) {
     // `--help` and `--version` also throw under exitOverride, with exitCode 0.
-    process.exit(error.exitCode === 0 ? EXIT_OK : EXIT_USAGE);
+    executableExit = error.exitCode === 0 ? EXIT_OK : EXIT_USAGE;
+    process.exitCode = executableExit;
+  } else if (machineSession !== null) {
+    PROCESS_STREAMS.stderr("error  unexpected\n");
+    PROCESS_STREAMS.stderr(renderThrown(error));
+    executableExit = EXIT_REFUSED;
+    process.exitCode = executableExit;
+  } else {
+    throw error;
   }
-  throw error;
 }
+
+machineSession?.finish(executableExit);

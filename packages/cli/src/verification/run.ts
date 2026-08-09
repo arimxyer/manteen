@@ -1,8 +1,9 @@
-/** Post-apply verification. Deliberately outside apply() and its journal. */
+/** Planned project verification shared by add, update, and remove transactions. */
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { delimiter, dirname, resolve as resolvePath } from "node:path";
 
+import crossSpawn from "cross-spawn";
 import { x } from "tinyexec";
 
 import type { FileHasher } from "../inventory/installed";
@@ -35,6 +36,7 @@ export interface VerificationExecutionCommand {
 }
 
 const DIRECT_PACKAGE_MANAGERS = new Set(["npm", "bun", "deno", "aube", "nub"]);
+const WINDOWS_COMMAND_SHIMS = new Set(["corepack", "npm", "pnpm", "yarn", "yarnpkg"]);
 
 /**
  * tinyexec normally enriches PATH from the CLI process cwd. Verification can
@@ -65,11 +67,24 @@ export function verificationEnvironment(
 export function verificationExecutionCommand(
   check: PlannedVerification["checks"][number],
   corepackAvailable: boolean,
+  platform: NodeJS.Platform = process.platform,
 ): VerificationExecutionCommand {
-  if (corepackAvailable && !DIRECT_PACKAGE_MANAGERS.has(check.executable)) {
-    return { executable: "corepack", args: [check.executable, ...check.args] };
-  }
-  return { executable: check.executable, args: check.args };
+  const executable =
+    corepackAvailable && !DIRECT_PACKAGE_MANAGERS.has(check.executable)
+      ? "corepack"
+      : check.executable;
+  const args = executable === "corepack" ? [check.executable, ...check.args] : check.args;
+
+  // Node's Windows installation exposes npm/Corepack (and their delegated
+  // managers) as `.cmd` shims. tinyexec handles an explicit `.cmd` command,
+  // but `spawnSync("npm")` does not add PATHEXT and fails with ENOENT.
+  return {
+    executable:
+      platform === "win32" && WINDOWS_COMMAND_SHIMS.has(executable)
+        ? `${executable}.cmd`
+        : executable,
+    args,
+  };
 }
 
 /**
@@ -236,7 +251,7 @@ function revalidateDefinitions(verification: PlannedVerification): VerificationF
       script: null,
       message:
         `${verification.packageJson.path} could not be re-read as a package.json object after apply. ` +
-        "The update was applied, but no verification script ran and Manteen did not roll it back.",
+        "No verification script ran; the caller must treat the mutation as failed.",
     };
   }
 
@@ -246,8 +261,8 @@ function revalidateDefinitions(verification: PlannedVerification): VerificationF
       kind: "definition-stale",
       script: check.script,
       message:
-        `Package script ${JSON.stringify(check.script)} changed after the update plan was computed. ` +
-        "The update was applied, but the changed command was not executed and Manteen did not roll it back.",
+        `Package script ${JSON.stringify(check.script)} changed after the mutation plan was computed. ` +
+        "The changed command was not executed; the caller must treat the mutation as failed.",
     };
   }
   return null;
@@ -257,7 +272,7 @@ function absoluteReceiptPath(root: string, relative: string): string {
   return resolvePath(root, ...relative.split("/"));
 }
 
-function managedPaths(plan: Plan, receipt: Receipt): string[] {
+export function verificationManagedPaths(plan: Plan, receipt: Receipt): string[] {
   const paths = new Set<string>([
     plan.receipt.path,
     plan.configPath,
@@ -296,7 +311,7 @@ function snapshot(paths: readonly string[], hash: FileHasher): SnapshotResult {
           paths: [path],
           message:
             `Verification could not snapshot ${path}: ${error instanceof Error ? error.message : String(error)}. ` +
-            "The update was already applied; no verification rollback was attempted.",
+            "The managed/control preimage could not be established.",
         },
       };
     }
@@ -325,8 +340,8 @@ function drifted(before: ReadonlyMap<string, string | null>, hash: FileHasher): 
       kind: "managed-byte-drift",
       paths,
       message:
-        "A verification script changed Manteen-managed or control bytes after the update was applied. " +
-        "The changes were detected but not rolled back; caches, lockfiles, and other project paths were not inspected.",
+        "A verification script changed Manteen-managed or control bytes after the mutation was applied. " +
+        "The changes were detected; caches, lockfiles, and other project paths were not inspected.",
     },
   };
 }
@@ -340,8 +355,8 @@ function receiptForSnapshot(plan: Plan, ports: VerificationPorts): Receipt | Ver
       kind: "managed-byte-drift",
       paths: [plan.receipt.path],
       message:
-        `The completed update receipt could not be re-read before verification: ${error instanceof Error ? error.message : String(error)}. ` +
-        "No project script ran, and the already-applied update was not rolled back.",
+        `The completed mutation receipt could not be re-read before verification: ${error instanceof Error ? error.message : String(error)}. ` +
+        "No project script ran.",
     };
   }
   if (state.present && state.ok) return state.receipt;
@@ -349,8 +364,7 @@ function receiptForSnapshot(plan: Plan, ports: VerificationPorts): Receipt | Ver
     kind: "managed-byte-drift",
     paths: [plan.receipt.path],
     message:
-      "The completed update receipt could not be re-read before verification. No project script ran, " +
-      "and the already-applied update was not rolled back.",
+      "The completed mutation receipt could not be re-read before verification. No project script ran.",
   };
 }
 
@@ -367,7 +381,7 @@ export async function verifyAppliedUpdate(
   const receipt = receiptForSnapshot(plan, ports);
   if ("kind" in receipt) return failed(checks, receipt);
 
-  const before = snapshot(managedPaths(plan, receipt), ports.hash);
+  const before = snapshot(verificationManagedPaths(plan, receipt), ports.hash);
   if (!before.ok) return failed(checks, before.failure);
 
   for (let index = 0; index < verification.checks.length; index += 1) {
@@ -394,7 +408,7 @@ export async function verifyAppliedUpdate(
         script: check.script,
         message:
           `Verification script ${JSON.stringify(check.script)} could not start: ${processResult.message}. ` +
-          "The update was applied and Manteen did not roll it back.",
+          "The mutation is rejected so its transaction can restore captured preimages.",
       });
     }
 
@@ -423,7 +437,7 @@ export async function verifyAppliedUpdate(
         timeoutMs: verification.timeoutMs,
         message:
           `Verification script ${JSON.stringify(check.script)} did not finish within ${verification.timeoutMs}ms and was terminated. ` +
-          "The update was applied and Manteen did not roll it back. " +
+          "The mutation is rejected so its transaction can restore captured preimages. " +
           'Raise "verification".timeoutMs in manteen.json if this check is legitimately slower.',
       });
     }
@@ -439,10 +453,87 @@ export async function verifyAppliedUpdate(
           (processResult.signal !== null
             ? ` with signal ${processResult.signal}`
             : ` with exit code ${processResult.exitCode ?? "unknown"}`) +
-          ". The update was applied and Manteen did not roll it back.",
+          ". The mutation is rejected so its transaction can restore captured preimages.",
       });
     }
   }
 
+  return { status: "passed", checks, failure: null };
+}
+
+/** Operation-neutral spelling for new add/remove integrations. */
+export const verifyAppliedMutation = verifyAppliedUpdate;
+
+/**
+ * Synchronous transaction hook for the removal journal. It uses the same
+ * definition and managed-byte checks as the async runner, but `spawnSync`
+ * keeps the journal live without widening the long-standing synchronous
+ * programmatic removal API.
+ */
+export function verifyAppliedMutationSync(
+  plan: Plan,
+  verification: PlannedVerification,
+  ports: Pick<VerificationPorts, "readReceipt" | "validateReceipt" | "hash">,
+  write: VerificationOutput = (chunk) => process.stderr.write(chunk),
+): VerificationOutcome {
+  const checks = notRun(verification);
+  const stale = revalidateDefinitions(verification);
+  if (stale !== null) return failed(checks, stale);
+  const receipt = receiptForSnapshot(plan, ports as VerificationPorts);
+  if ("kind" in receipt) return failed(checks, receipt);
+  const before = snapshot(verificationManagedPaths(plan, receipt), ports.hash);
+  if (!before.ok) return failed(checks, before.failure);
+
+  for (let index = 0; index < verification.checks.length; index += 1) {
+    const check = verification.checks[index] as PlannedVerification["checks"][number];
+    const observed = checks[index] as VerificationCheckOutcome;
+    const command = verificationExecutionCommand(check, false);
+    const result = crossSpawn.sync(command.executable, command.args, {
+      cwd: plan.root,
+      env: verificationEnvironment(plan.root),
+      encoding: "utf8",
+      timeout: verification.timeoutMs,
+      windowsHide: true,
+    });
+    if (result.stdout) write(result.stdout);
+    if (result.stderr) write(result.stderr);
+    observed.exitCode = result.status;
+    observed.signal = result.signal;
+
+    const after = drifted(before.hashes, ports.hash);
+    if (!after.ok) {
+      observed.result = "failed";
+      return failed(checks, after.failure);
+    }
+    const timedOut = (result.error as NodeJS.ErrnoException | undefined)?.code === "ETIMEDOUT";
+    if (timedOut) {
+      observed.result = "failed";
+      return failed(checks, {
+        kind: "timed-out",
+        script: check.script,
+        timeoutMs: verification.timeoutMs,
+        message: `Verification script ${JSON.stringify(check.script)} did not finish within ${verification.timeoutMs}ms and was terminated.`,
+      });
+    }
+    if (result.error != null) {
+      observed.result = "failed";
+      return failed(checks, {
+        kind: "spawn-failed",
+        script: check.script,
+        message: `Verification script ${JSON.stringify(check.script)} could not start: ${result.error.message}.`,
+      });
+    }
+    if (result.status !== 0 || result.signal !== null) {
+      observed.result = "failed";
+      return failed(checks, {
+        kind: "script-failed",
+        script: check.script,
+        exitCode: result.status,
+        signal: result.signal,
+        message: `Verification script ${JSON.stringify(check.script)} failed.`,
+      });
+    }
+    observed.result = "passed";
+  }
   return { status: "passed", checks, failure: null };
 }

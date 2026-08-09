@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, dirname, join } from "node:path";
-
+import { apply } from "../src/apply/index";
 import { hashFileBytes, preflight } from "../src/apply/preflight";
 import { renderVerification, update } from "../src/commands/update";
 import { loadConfig } from "../src/config/load";
@@ -12,7 +12,7 @@ import { isBlocking } from "../src/plan/diagnostics";
 import type { ApplyOutcome, Plan, Receipt } from "../src/plan/types";
 import { createReceiptReader, createReceiptValidator } from "../src/receipt/load";
 import { basePathFor } from "../src/receipt/path";
-import { planUpdateVerification } from "../src/verification/plan";
+import { planUpdateVerification, planVerification } from "../src/verification/plan";
 import {
   verificationEnvironment,
   verificationExecutionCommand,
@@ -65,19 +65,35 @@ describe("verification config schema", () => {
   });
 
   test.each([
-    ["missing update", {}],
+    ["missing operation", {}],
     ["empty list", { update: [] }],
     ["duplicate names", { update: ["test", "test"] }],
     ["empty name", { update: [""] }],
     ["whitespace-only name", { update: ["   "] }],
     ["non-array update", { update: "test" }],
-    ["unknown field", { update: ["test"], add: ["test"] }],
+    ["unknown field", { update: ["test"], deploy: ["test"] }],
   ])("rejects %s", (_label, verification) => {
     expect(validate({ ...BASE_CONFIG, verification })).not.toBeNull();
+  });
+
+  test("accepts independent add and remove script lists", () => {
+    expect(
+      validate({
+        ...BASE_CONFIG,
+        verification: { add: ["check:add"], remove: ["check:remove"] },
+      }),
+    ).toBeNull();
   });
 });
 
 describe("verification planning", () => {
+  test("operation-neutral planner preserves the operation in remediation", () => {
+    const root = mkdtempSync(join(tmpdir(), "manteen-verification-remove-"));
+    roots.push(root);
+    write(join(root, "package.json"), '{"scripts":{}}\n');
+    const result = planVerification("remove", root, ["missing"], "npm");
+    expect(result.diagnostics[0]?.message).toContain("run remove with --no-verify");
+  });
   test("preserves authored order, exact definitions, and the whole package.json pre-image", () => {
     const root = mkdtempSync(join(tmpdir(), "manteen-verification-plan-"));
     roots.push(root);
@@ -243,6 +259,37 @@ function ports(run: (request: VerificationProcessRequest) => Promise<Verificatio
 }
 
 describe("post-apply verification", () => {
+  test("apply keeps verification inside the write journal and restores captured controls", async () => {
+    const fixture = verificationFixture(["verify"]);
+    const configBefore = readFileSync(fixture.plan.configPath, "utf8");
+    const outcome = await apply(
+      fixture.plan,
+      { interactive: false, overwrite: true },
+      {
+        prompt: async () => ({ cancelled: false, overwrite: [] }),
+        verify: async () => {
+          write(fixture.plan.configPath, '{"changed":true}\n');
+          return {
+            status: "failed",
+            checks: [],
+            failure: {
+              kind: "script-failed",
+              script: "verify",
+              exitCode: 1,
+              signal: null,
+              message: "injected verification failure",
+            },
+          };
+        },
+      },
+    );
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.verification?.status).toBe("failed");
+    expect(outcome.failure?.kind).toBe("write-failed");
+    expect(readFileSync(fixture.plan.configPath, "utf8")).toBe(configBefore);
+  });
+
   test("matches nypm's optional Corepack execution policy", () => {
     const fixture = verificationFixture(["verify"]);
     const [npm] = fixture.verification.checks;
@@ -259,6 +306,18 @@ describe("post-apply verification", () => {
     });
     expect(verificationExecutionCommand(pnpm, true)).toEqual({
       executable: "corepack",
+      args: ["pnpm", "run", "verify"],
+    });
+    expect(verificationExecutionCommand(npm, true, "win32")).toEqual({
+      executable: "npm.cmd",
+      args: ["run", "verify"],
+    });
+    expect(verificationExecutionCommand(pnpm, false, "win32")).toEqual({
+      executable: "pnpm.cmd",
+      args: ["run", "verify"],
+    });
+    expect(verificationExecutionCommand(pnpm, true, "win32")).toEqual({
+      executable: "corepack.cmd",
       args: ["pnpm", "run", "verify"],
     });
   });

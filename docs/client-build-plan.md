@@ -246,6 +246,7 @@ ok = diagnostics.every(d =>
 | `meta-invalid-requires`, `bare-dep-unresolvable` | error | no | plan | 1 |
 | `no-package-manager` | error | no | plan | 2 |
 | `destination-exists` + non-interactive + neither `--overwrite`/`--no-overwrite` | error | via `--overwrite` | plan | 1 |
+| `plan-mismatch` (fresh plan digest differs from explicit `--expect-plan`) | error | **no** | command plan boundary, before apply | 1 |
 | `init-framework-unrecognized`, `init-framework-ambiguous`, `init-framework-mismatch`, `init-config-conflict` | error | no | init plan | 2 |
 | `init-source-unsupported`, `init-postcss-unsupported`, `init-path-escapes-root` | error | no | init plan | 1 |
 | `css-unsupported`, `css-dependency-missing` | error | no | plan | 1 |

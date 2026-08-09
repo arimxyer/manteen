@@ -2,10 +2,18 @@
 
 ## Unreleased
 
+## 0.2.1
+
 - Authoring format: optional `props` — an author-documented prop surface keyed by exported
   component or hook name — and `usage` — a path to a copy-ready example module, inlined into
   the compiled item like `themeFragment` and never listed in `files`. Both ride under
   `meta.mantine` and are carried verbatim; the kit never infers documentation from source.
+- Build registry output through a validated sibling stage and deterministic ownership marker.
+  Unsafe paths, links, unknown files, and generated-file drift refuse; `--overwrite-output`
+  authorizes only drifted marker-owned output.
+- Add read-only `build --check`, structured JSON command output, and published command/output
+  schemas. The programmatic API now exposes a read-only output planner and structured outcome.
+- Fix `merge-theme --write --json` so JSON rendering no longer suppresses the requested write.
 
 ## 0.2.0
 

@@ -60,20 +60,21 @@
     },
     "verification": {
       "type": "object",
-      "description": "Project-owned package scripts that validate a completed Manteen operation. Verification runs outside Manteen's rollback journal.",
-      "required": ["update"],
+      "description": "Project-owned package scripts that validate a Manteen mutation. Authored definitions are fixed during planning and revalidated before execution.",
+      "anyOf": [{ "required": ["add"] }, { "required": ["update"] }, { "required": ["remove"] }],
       "additionalProperties": false,
       "properties": {
+        "add": {
+          "$ref": "#/definitions/verificationScripts",
+          "description": "Ordered unique package.json script names run after a successful add."
+        },
         "update": {
-          "type": "array",
-          "description": "Ordered unique package.json script names run after every successful non-dry-run update.",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": {
-            "type": "string",
-            "minLength": 1,
-            "pattern": "\\S"
-          }
+          "$ref": "#/definitions/verificationScripts",
+          "description": "Ordered unique package.json script names run after a successful update."
+        },
+        "remove": {
+          "$ref": "#/definitions/verificationScripts",
+          "description": "Ordered unique package.json script names run after a successful removal."
         },
         "timeoutMs": {
           "type": "integer",
@@ -84,6 +85,16 @@
     }
   },
   "definitions": {
+    "verificationScripts": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      }
+    },
     "registrySource": {
       "description": "Either the item URL template on its own, or an object when the registry also publishes an index or needs headers or query parameters.",
       "oneOf": [

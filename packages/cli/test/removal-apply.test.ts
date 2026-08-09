@@ -233,6 +233,41 @@ describe("upstream-removal apply", () => {
     expect(existsSync(state.base)).toBe(false);
   });
 
+  test("verification failure restores removal and receipt pre-images", () => {
+    const state = fixture();
+    const before = [bytes(state.source), bytes(state.base), bytes(state.receipt)];
+    state.plan.receipt.projectedText = `${JSON.stringify({
+      lockfileVersion: 3,
+      items: [],
+      theme: null,
+      styles: null,
+    })}\n`;
+    state.plan.verification = {
+      packageManager: "npm",
+      packageJson: { path: join(state.plan.root, "package.json"), sha256: "0".repeat(64) },
+      checks: [],
+      timeoutMs: 1000,
+    };
+    const outcome = applyRemoval(state.plan, {
+      ...createRemovalApplyPorts(),
+      verify: () => ({
+        status: "failed",
+        checks: [],
+        failure: {
+          kind: "script-failed",
+          script: "check",
+          exitCode: 1,
+          signal: null,
+          message: "injected verification failure",
+        },
+      }),
+    });
+
+    expect(outcome.failure?.kind).toBe("verification-failed");
+    expect(outcome.verification?.status).toBe("failed");
+    expect([bytes(state.source), bytes(state.base), bytes(state.receipt)]).toEqual(before);
+  });
+
   test("a refused plan never preflights or opens a journal", () => {
     const state = fixture();
     state.plan.ok = false;

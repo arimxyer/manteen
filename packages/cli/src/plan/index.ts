@@ -42,7 +42,7 @@ import { indexSourceFor } from "../inventory/available";
 import { createReceiptReader, createReceiptValidator } from "../receipt/load";
 import { basePathFor, toReceiptPath } from "../receipt/path";
 import { buildIndex, ownerOf, readReceipt } from "../receipt/read";
-import { planUpdateVerification } from "../verification/plan";
+import { planVerification } from "../verification/plan";
 import { diag } from "./diagnostics";
 import { createHttpLoader, type IndexResolver, type IndexSource, isHttpUrl } from "./loader-http";
 import { createFileLoader, isFileUrl } from "./loader-local";
@@ -248,9 +248,7 @@ async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptio
   // Config shape was proven at load. `--no-verify` skips the dynamic half:
   // package.json is not read and missing script definitions cannot refuse.
   const verificationScripts =
-    operation === "update" && options.verify !== false
-      ? (config.raw.verification?.update ?? null)
-      : null;
+    options.verify !== false ? (config.raw.verification?.[operation] ?? null) : null;
 
   // ---- package manager (D15, D16) -------------------------------------------
   const detected =
@@ -277,7 +275,7 @@ async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptio
         // as the empty string. The message names it instead.
         deps.length > 0
           ? `${deps.length} npm dependenc${deps.length === 1 ? "y" : "ies"} would have to be installed, and no package manager could be detected in ${root}. nypm reads package.json's \`packageManager\` field and known lock files; declare one, or pass --pm.`
-          : `Update verification is configured, and no package manager could be detected in ${root}. nypm reads package.json's \`packageManager\` field and known lock files; declare one, pass --pm, or use --no-verify.`,
+          : `${operation === "add" ? "Add" : "Update"} verification is configured, and no package manager could be detected in ${root}. nypm reads package.json's \`packageManager\` field and known lock files; declare one, pass --pm, or use --no-verify.`,
       ),
     );
   }
@@ -287,7 +285,8 @@ async function planImpl(config: LoadedConfig, refs: string[], options: PlanOptio
   const verificationResult =
     verificationScripts === null || detected === undefined
       ? { verification: null, diagnostics: [] }
-      : planUpdateVerification(
+      : planVerification(
+          operation,
           root,
           verificationScripts,
           detected,

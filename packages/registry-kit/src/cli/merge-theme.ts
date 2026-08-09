@@ -1,6 +1,8 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 
 import { mergeThemeSource } from "../merge-theme";
+import { kitEnvelope, writeJson } from "./json";
 
 export const MERGE_USAGE = `manteen-kit merge-theme <base.ts> <fragment.ts> [options]
 
@@ -45,15 +47,39 @@ function parseArgs(argv: string[]): Args | null {
   return { base: positional[0]!, incoming: positional[1]!, write, prefer, json };
 }
 
+function writeAtomic(path: string, content: string): void {
+  mkdirSync(dirname(path), { recursive: true });
+  const temporary = `${path}.manteen-kit-tmp`;
+  writeFileSync(temporary, content, { flag: "wx" });
+  // A failed rename leaves the temporary file as recovery evidence rather than
+  // deleting bytes we cannot prove were never observed.
+  renameSync(temporary, path);
+}
+
 export function mergeTheme(argv: string[]): number {
   const args = parseArgs(argv);
   if (!args) {
-    process.stdout.write(MERGE_USAGE);
+    if (argv.includes("--json")) {
+      writeJson(
+        kitEnvelope("merge-theme", 2, false, null, [
+          {
+            code: "invalid-arguments",
+            message: "Invalid merge-theme arguments.",
+            details: { usage: MERGE_USAGE },
+          },
+        ]),
+      );
+    } else process.stdout.write(MERGE_USAGE);
     return 2;
   }
 
   if (!existsSync(args.incoming)) {
-    process.stderr.write(`Fragment not found: ${args.incoming}\n`);
+    const message = `Fragment not found: ${args.incoming}`;
+    if (args.json) {
+      writeJson(
+        kitEnvelope("merge-theme", 2, false, null, [{ code: "fragment-not-found", message }]),
+      );
+    } else process.stderr.write(`${message}\n`);
     return 2;
   }
 
@@ -61,12 +87,21 @@ export function mergeTheme(argv: string[]): number {
 
   // No base theme yet: a fragment is a valid standalone theme, so install it as-is.
   if (!existsSync(args.base)) {
-    if (args.write) writeFileSync(args.base, incomingText);
-    process.stdout.write(
-      args.json
-        ? `${JSON.stringify({ created: true, added: [], conflicts: [], importsAdded: [] }, null, 2)}\n`
-        : `${args.write ? "Created" : "Would create"} ${args.base} from ${args.incoming}.\n`,
-    );
+    try {
+      if (args.write) writeAtomic(args.base, incomingText);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (args.json)
+        writeJson(kitEnvelope("merge-theme", 2, false, null, [{ code: "write-failed", message }]));
+      else process.stderr.write(`${message}\n`);
+      return 2;
+    }
+    const payload = { created: true, changed: true, added: [], conflicts: [], importsAdded: [] };
+    if (args.json) writeJson(kitEnvelope("merge-theme", 0, args.write, payload));
+    else
+      process.stdout.write(
+        `${args.write ? "Created" : "Would create"} ${args.base} from ${args.incoming}.\n`,
+      );
     return 0;
   }
 
@@ -76,22 +111,34 @@ export function mergeTheme(argv: string[]): number {
       prefer: args.prefer,
     });
   } catch (error) {
-    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+    const message = error instanceof Error ? error.message : String(error);
+    if (args.json)
+      writeJson(kitEnvelope("merge-theme", 2, false, null, [{ code: "merge-failed", message }]));
+    else process.stderr.write(`${message}\n`);
     return 2;
   }
 
+  if (args.write && result.changed) {
+    try {
+      writeAtomic(args.base, result.text);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (args.json)
+        writeJson(kitEnvelope("merge-theme", 2, false, null, [{ code: "write-failed", message }]));
+      else process.stderr.write(`${message}\n`);
+      return 2;
+    }
+  }
+
   if (args.json) {
-    process.stdout.write(
-      `${JSON.stringify(
-        {
-          changed: result.changed,
-          added: result.added,
-          importsAdded: result.importsAdded,
-          conflicts: result.conflicts,
-        },
-        null,
-        2,
-      )}\n`,
+    const exitCode = result.conflicts.length > 0 ? 1 : 0;
+    writeJson(
+      kitEnvelope("merge-theme", exitCode, args.write && result.changed, {
+        changed: result.changed,
+        added: result.added,
+        importsAdded: result.importsAdded,
+        conflicts: result.conflicts,
+      }),
     );
   } else {
     if (!result.changed) {
@@ -113,7 +160,6 @@ export function mergeTheme(argv: string[]): number {
 
     if (args.write) {
       if (result.changed) {
-        writeFileSync(args.base, result.text);
         process.stdout.write(`\nWrote ${args.base}\n`);
       }
     } else if (result.changed) {

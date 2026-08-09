@@ -1,24 +1,26 @@
 {
   "name": "manteen",
-  "version": "0.5.0",
+  "version": "0.7.0",
   "description": "Install Mantine components from a registry into your project. The consumer side of manteen-kit.",
   "type": "module",
   "license": "MIT",
   "bin": {
     "manteen": "dist/cli.mjs"
   },
-  "//exports": "schema/ holds three documents — the consumer config, the meta.mantine subschema and the install receipt — so the `./schema/*` pattern is needed alongside the bare `./schema`, which stays as the one a user puts in their $schema field. The comment lives out here because an `exports` object may not mix keys that start with `.` and keys that do not; a `//` key inside it is ERR_INVALID_PACKAGE_CONFIG.",
+  "//exports": "schema/ holds the consumer config, meta.mantine, receipt, and command-envelope documents, so the `./schema/*` pattern is needed alongside the bare `./schema`, which stays as the one a user puts in their $schema field. The comment lives out here because an `exports` object may not mix keys that start with `.` and keys that do not; a `//` key inside it is ERR_INVALID_PACKAGE_CONFIG.",
   "exports": {
     ".": {
       "types": "./dist/index.d.mts",
       "default": "./dist/index.mjs"
     },
     "./schema": "./schema/manteen.schema.json",
-    "./schema/*": "./schema/*"
+    "./schema/*": "./schema/*",
+    "./skill": "./skill/manteen/SKILL.md"
   },
   "files": [
     "dist",
     "schema",
+    "skill",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
@@ -47,9 +49,10 @@
     "@clack/prompts": "^1.7",
     "ajv": "^8",
     "commander": "^15",
+    "cross-spawn": "^7.0.6",
     "diff": "^9",
     "get-tsconfig": "^4.14",
-    "manteen-kit": "^0.2.0",
+    "manteen-kit": "^0.2.1",
     "node-diff3": "^3.2.1",
     "nypm": "^0.6.9",
     "semver": "^7.8.5",
@@ -58,6 +61,7 @@
   },
   "devDependencies": {
     "@types/bun": "^1.3.14",
+    "@types/cross-spawn": "^6.0.6",
     "@types/semver": "^7.7.1",
     "tsdown": "^0.22.14"
   },

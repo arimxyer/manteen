@@ -108,7 +108,13 @@ const ALIASES = {
 
 /** A consumer project. Scaffolding copied from `first-slice.node-e2e.mjs`,
  *  including the two D15/D17 hermeticity measures documented there. */
-function makeProject({ registries = { "@base": BASE }, aliases = ALIASES, theme } = {}) {
+function makeProject({
+  registries = { "@base": BASE },
+  aliases = ALIASES,
+  theme,
+  scripts = {},
+  verification,
+} = {}) {
   // macOS exposes tmpdir through `/var` while getcwd(3), and therefore the CLI,
   // reports the canonical `/private/var` path. Keep the fixture on that same
   // absolute-path boundary instead of comparing two spellings of one directory.
@@ -123,6 +129,7 @@ function makeProject({ registries = { "@base": BASE }, aliases = ALIASES, theme 
         version: "0.0.0",
         private: true,
         type: "module",
+        scripts,
         // D15: nypm returns `undefined` — not a throw — with no lockfile and no
         // `packageManager` field, and plan() turns that into a
         // `no-package-manager` refusal at exit 2.
@@ -150,7 +157,16 @@ function makeProject({ registries = { "@base": BASE }, aliases = ALIASES, theme 
     // `theme` omitted rather than written as `undefined`: the config schema has
     // `additionalProperties: false` and a present-but-null key is a config error,
     // not an absent one.
-    `${JSON.stringify({ registries, aliases, ...(theme === undefined ? {} : { theme }) }, null, 2)}\n`,
+    `${JSON.stringify(
+      {
+        registries,
+        aliases,
+        ...(theme === undefined ? {} : { theme }),
+        ...(verification === undefined ? {} : { verification }),
+      },
+      null,
+      2,
+    )}\n`,
   );
 
   return dir;
@@ -180,8 +196,13 @@ function run(project, args) {
 /** stdout, parsed. Asserts the `--json` contract in the act of using it: the
  *  document is on STDOUT ALONE and is the whole of it. */
 function json(result) {
-  assert.equal(result.status === 2, false, `config failure, not a document: ${result.all}`);
-  return JSON.parse(result.stdout);
+  const document = JSON.parse(result.stdout);
+  return new Proxy(document, {
+    get(target, property, receiver) {
+      if (Reflect.has(target, property)) return Reflect.get(target, property, receiver);
+      return target.payload?.[property];
+    },
+  });
 }
 
 const ITEM = "@base/empty-state";
@@ -238,7 +259,7 @@ test("`no receipt yet` is one note, worded once, and root-relative in all four",
 
 // ---- the shared --json envelope ---------------------------------------------
 
-test("every --json document carries the same three envelope keys on stdout alone", () => {
+test("every --json document carries the versioned ten-key envelope on stdout alone", () => {
   const project = makeProject();
   run(project, ["add", ITEM]);
 
@@ -251,20 +272,201 @@ test("every --json document carries the same three envelope keys on stdout alone
     const result = run(project, args);
     const doc = json(result);
 
+    assert.deepEqual(Object.keys(doc), [
+      "schemaVersion",
+      "command",
+      "root",
+      "ok",
+      "exitCode",
+      "mutated",
+      "payload",
+      "diagnostics",
+      "errors",
+      "notes",
+    ]);
+    assert.equal(doc.schemaVersion, 1);
     assert.equal(doc.command, command, `${command}: wrong discriminator`);
     assert.equal(typeof doc.root, "string", `${command}: no root`);
     assert.equal(doc.root, project, `${command}: root must be the absolute project root`);
     assert.equal(typeof doc.ok, "boolean", `${command}: no ok`);
     assert.equal(doc.ok, result.status === 0, `${command}: ok must equal exit === 0`);
+    assert.equal(doc.exitCode, result.status, `${command}: exitCode must equal process status`);
+    assert.equal(typeof doc.mutated, "boolean", `${command}: mutated must be boolean`);
+    assert.ok(doc.payload && typeof doc.payload === "object", `${command}: no payload`);
+    assert.ok(Array.isArray(doc.diagnostics), `${command}: diagnostics must be present`);
+    assert.ok(Array.isArray(doc.errors), `${command}: errors must be present`);
 
     // Notes travel INSIDE the document, never on the other stream — otherwise a
     // consumer parsing stdout silently sees a partial answer.
     assert.ok(Array.isArray(doc.notes), `${command}: notes must always be present`);
     assert.equal(result.stderr, "", `${command}: --json must leave stderr empty`);
     if (command === "update") {
-      assert.deepEqual(doc.updateState, { changed: false, versioningRequired: false });
+      assert.deepEqual(doc.payload.updateState, { changed: false, versioningRequired: false });
     }
   }
+});
+
+test("add JSON is non-interactive, truthful about mutation, and gives typed remediation", () => {
+  const project = makeProject();
+  const added = run(project, ["add", ITEM, "--json"]);
+  assert.equal(added.status, 0, added.all);
+  assert.equal(added.stderr, "", added.stderr);
+  const addedDocument = json(added);
+  assert.equal(addedDocument.command, "add");
+  assert.equal(addedDocument.ok, true);
+  assert.equal(addedDocument.exitCode, 0);
+  assert.equal(addedDocument.mutated, true);
+  assert.deepEqual(addedDocument.payload.refs, [ITEM]);
+
+  const target = join(project, DESTINATION);
+  writeFileSync(target, `${readFileSync(target, "utf8")}\n// local adaptation\n`);
+  const refused = run(project, ["add", ITEM, "--json"]);
+  assert.equal(refused.status, 1, refused.all);
+  assert.equal(refused.stderr, "", refused.stderr);
+  const refusedDocument = json(refused);
+  assert.equal(refusedDocument.ok, false);
+  assert.equal(refusedDocument.mutated, false);
+  const collision = refusedDocument.diagnostics.find(
+    (diagnostic) => diagnostic.code === "destination-exists",
+  );
+  assert.ok(collision, refused.stdout);
+  assert.ok(collision.actions.some((action) => action.kind === "rerun"));
+  assert.ok(collision.actions.every((action) => action.argv[0] === "manteen"));
+});
+
+test("JSON usage and configuration failures are one complete stdout document", () => {
+  const project = mkdtempSync(join(tmpdir(), "manteen-json-failure-"));
+
+  const usage = run(project, ["info", "--json"]);
+  assert.equal(usage.status, 2, usage.all);
+  assert.equal(usage.stderr, "", usage.stderr);
+  const usageDocument = json(usage);
+  assert.equal(usageDocument.ok, false);
+  assert.equal(usageDocument.exitCode, 2);
+  assert.equal(usageDocument.payload, null);
+  assert.ok(usageDocument.errors[0]?.manualRationale);
+
+  const config = run(project, ["list", "--json"]);
+  assert.equal(config.status, 2, config.all);
+  assert.equal(config.stderr, "", config.stderr);
+  const configDocument = json(config);
+  assert.equal(configDocument.ok, false);
+  assert.equal(configDocument.exitCode, 2);
+  assert.equal(configDocument.errors[0]?.code, "config");
+  assert.match(configDocument.errors[0]?.message ?? "", /No manteen\.json/);
+});
+
+test("offline status and packaged agent guidance work before project initialization", () => {
+  const project = join(WORK, "agent-uninitialized");
+  mkdirSync(project);
+
+  const status = run(project, ["status", "--json"]);
+  assert.equal(status.status, 0, status.all);
+  assert.equal(status.stderr, "", status.stderr);
+  const statusDocument = json(status);
+  assert.deepEqual(Object.keys(statusDocument), [
+    "schemaVersion",
+    "command",
+    "root",
+    "ok",
+    "exitCode",
+    "mutated",
+    "payload",
+    "diagnostics",
+    "errors",
+    "notes",
+  ]);
+  assert.equal(statusDocument.command, "status");
+  assert.equal(statusDocument.ok, true);
+  assert.equal(statusDocument.payload.healthy, false);
+  assert.equal(statusDocument.payload.initialized, false);
+
+  const guide = run(project, ["agent", "guide", "--json"]);
+  assert.equal(guide.status, 0, guide.all);
+  assert.equal(guide.stderr, "", guide.stderr);
+  const guideDocument = json(guide);
+  assert.equal(guideDocument.command, "agent guide");
+  assert.equal(guideDocument.root, null);
+  assert.equal(guideDocument.payload.manifest.skill.name, "manteen");
+  assert.match(guideDocument.payload.skill, /^---\nname: manteen\n/);
+});
+
+test("built agent install is dry-run safe and writes an owned packaged skill", () => {
+  const project = join(WORK, "agent-install");
+  mkdirSync(project);
+
+  const preview = run(project, [
+    "agent",
+    "install",
+    "--target",
+    "custom",
+    "--path",
+    "skill",
+    "--dry-run",
+    "--json",
+  ]);
+  assert.equal(preview.status, 0, preview.all);
+  assert.equal(json(preview).payload.mutated, false);
+  assert.equal(existsSync(join(project, "skill")), false);
+
+  const installed = run(project, [
+    "agent",
+    "install",
+    "--target",
+    "custom",
+    "--path",
+    "skill",
+    "--json",
+  ]);
+  assert.equal(installed.status, 0, installed.all);
+  const document = json(installed);
+  assert.equal(document.mutated, true);
+  assert.equal(document.payload.action, "install");
+  assert.ok(existsSync(join(project, "skill", ".manteen-skill.json")));
+  assert.ok(existsSync(join(project, "skill", "references", "json-contract.md")));
+});
+
+test("add couples a reviewed dry-run to apply with planDigest", () => {
+  const project = makeProject();
+  const preview = run(project, ["add", ITEM, "--dry-run", "--json"]);
+  assert.equal(preview.status, 0, preview.all);
+  const digest = json(preview).payload.planDigest;
+  assert.match(digest, /^[0-9a-f]{64}$/);
+
+  const applied = run(project, ["add", ITEM, "--expect-plan", digest, "--json"]);
+  assert.equal(applied.status, 0, applied.all);
+  assert.equal(json(applied).payload.planDigest, digest);
+  assert.ok(existsSync(join(project, DESTINATION)));
+
+  const refusedProject = makeProject();
+  const refused = run(refusedProject, ["add", ITEM, "--expect-plan", "0".repeat(64), "--json"]);
+  assert.equal(refused.status, 1, refused.all);
+  const refusal = json(refused);
+  assert.equal(refusal.mutated, false);
+  assert.ok(refusal.diagnostics.some((diagnostic) => diagnostic.code === "plan-mismatch"));
+  assert.equal(existsSync(join(refusedProject, DESTINATION)), false);
+});
+
+test("configured add verification failure restores every managed byte", () => {
+  const project = makeProject({
+    scripts: { "verify:add": "node verify-add.mjs" },
+    verification: { add: ["verify:add"] },
+  });
+  writeFileSync(
+    join(project, "verify-add.mjs"),
+    'import { writeFileSync } from "node:fs";\nwriteFileSync(".verify-add-ran", "yes\\n");\nprocess.exitCode = 3;\n',
+  );
+
+  const result = run(project, ["add", ITEM, "--json"]);
+  assert.equal(result.status, 1, result.all);
+  const document = json(result);
+  assert.equal(document.payload.verification.status, "failed");
+  assert.equal(document.payload.verification.failure.kind, "script-failed");
+  assert.equal(document.mutated, false);
+  assert.equal(existsSync(join(project, ".verify-add-ran")), true);
+  assert.equal(existsSync(join(project, DESTINATION)), false);
+  assert.equal(existsSync(join(project, "manteen.lock.json")), false);
+  assert.equal(existsSync(join(project, ".manteen", "bases", `${DESTINATION}.base`)), false);
 });
 
 // ---- list -------------------------------------------------------------------
@@ -278,7 +480,7 @@ test("list marks an installed item, and its JSON says so with a root-relative pa
   assert.match(text.stdout, /installed\s+empty-state/, text.stdout);
 
   const doc = json(run(project, ["list", "--json"]));
-  const [registry] = doc.registries;
+  const [registry] = doc.payload.registries;
   assert.equal(registry.namespace, "@base");
   const item = registry.items.find((entry) => entry.id === ITEM);
   assert.ok(item, `${ITEM} missing from the listing: ${text.stdout}`);
@@ -359,7 +561,7 @@ test("diff reports a local edit as local-only, with a patch, and still exits 0",
   assert.equal(stat.stdout.includes("@@"), false, "--stat must compute no patch");
 
   const doc = json(run(project, ["diff", "--json"]));
-  const [item] = doc.items;
+  const [item] = doc.payload.items;
   assert.equal(item.id, ITEM);
   assert.equal(item.files[0].change, "local-only");
   assert.match(
@@ -526,7 +728,7 @@ test("diff and update automatically rescue distinct adjacent TypeScript declarat
   writeFileSync(itemDoc, `${JSON.stringify(current, null, 2)}\n`);
 
   const compared = json(run(project, ["diff", "--json"]));
-  const comparedFile = compared.items
+  const comparedFile = compared.payload.items
     .find((item) => item.id === ITEM)
     ?.files.find((file) => file.receiptPath.endsWith("/empty-state.tsx"));
   assert.equal(comparedFile?.change, "both");
@@ -665,7 +867,10 @@ test("a state-changing JSON update reports required versioning on stdout alone",
   const result = run(project, ["update", "--json"]);
   assert.equal(result.status, 0, result.all);
   assert.equal(result.stderr, "", result.stderr);
-  assert.deepEqual(json(result).updateState, { changed: true, versioningRequired: true });
+  assert.deepEqual(json(result).payload.updateState, {
+    changed: true,
+    versioningRequired: true,
+  });
 });
 
 /**
@@ -752,7 +957,7 @@ test("diff and update both refuse to invent text for invalid UTF-8 project bytes
 
   const compared = run(project, ["diff", "--json"]);
   assert.equal(compared.status, 0, compared.all);
-  assert.equal(json(compared).items[0].files[0].outcome, "conflict");
+  assert.equal(json(compared).payload.items[0].files[0].outcome, "conflict");
 
   const refused = run(project, ["update"]);
   assert.equal(refused.status, 1, refused.all);
@@ -936,8 +1141,8 @@ test("diff and update carry the folded theme, and update re-merges it directly",
   assert.match(dirty.stdout, /local-only\s+src\/lib\/theme\.ts/, dirty.stdout);
 
   const doc = json(run(project, ["diff", "--json"]));
-  assert.equal(doc.theme.receiptPath, "src/lib/theme.ts");
-  assert.equal(doc.theme.change, "local-only");
+  assert.equal(doc.payload.theme.receiptPath, "src/lib/theme.ts");
+  assert.equal(doc.payload.theme.change, "local-only");
 
   const updated = run(project, ["update"]);
   assert.equal(updated.status, 0, updated.all);

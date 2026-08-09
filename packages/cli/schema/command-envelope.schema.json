@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arimxyer.github.io/manteen/schema/command-envelope.schema.json",
+  "title": "Manteen command envelope",
+  "description": "The stable machine-readable result emitted by every recognized manteen command in --json mode.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "command",
+    "root",
+    "ok",
+    "exitCode",
+    "mutated",
+    "payload",
+    "diagnostics",
+    "errors",
+    "notes"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "command": { "type": "string", "minLength": 1 },
+    "root": { "oneOf": [{ "type": "string" }, { "type": "null" }] },
+    "ok": { "type": "boolean" },
+    "exitCode": { "type": "integer", "minimum": 0, "maximum": 255 },
+    "mutated": { "type": "boolean" },
+    "payload": {
+      "oneOf": [
+        { "type": "object" },
+        { "type": "array" },
+        { "type": "string" },
+        { "type": "number" },
+        { "type": "boolean" },
+        { "type": "null" }
+      ]
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/diagnostic" }
+    },
+    "errors": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/error" }
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["ok"],
+        "properties": { "ok": { "const": true } }
+      },
+      "then": { "properties": { "exitCode": { "type": "integer", "const": 0 } } },
+      "else": { "properties": { "exitCode": { "type": "integer", "minimum": 1 } } }
+    }
+  ],
+  "$defs": {
+    "action": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "argv"],
+          "properties": {
+            "kind": { "const": "rerun" },
+            "argv": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "patch"],
+          "properties": {
+            "kind": { "const": "configPatch" },
+            "patch": { "type": "object" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "instruction"],
+          "properties": {
+            "kind": { "const": "manual" },
+            "instruction": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "remediation": {
+      "type": "object",
+      "properties": {
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/action" }
+        },
+        "manualRationale": { "type": "string", "minLength": 1 }
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "forceable"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "severity": { "enum": ["error", "warn", "info"] },
+        "message": { "type": "string" },
+        "forceable": { "type": "boolean" },
+        "items": { "type": "array", "items": { "type": "string" } },
+        "path": { "type": "string" },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/action" }
+        },
+        "manualRationale": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "severity": { "const": "error" } } },
+          "then": {
+            "anyOf": [
+              { "required": ["actions"], "properties": { "actions": true } },
+              {
+                "required": ["manualRationale"],
+                "properties": { "manualRationale": true }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "message": { "type": "string" },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/action" }
+        },
+        "manualRationale": { "type": "string", "minLength": 1 }
+      },
+      "anyOf": [
+        { "required": ["actions"], "properties": { "actions": true } },
+        {
+          "required": ["manualRationale"],
+          "properties": { "manualRationale": true }
+        }
+      ]
+    }
+  }
+}

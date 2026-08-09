@@ -48,6 +48,7 @@ import { CONFIG_FILENAME, loadConfig } from "../config/load";
 import type { ConfigError, LoadedConfig } from "../config/types";
 import type { InventoryNote } from "../inventory/types";
 import type { ApplyOutcome, Diagnostic, Plan } from "../plan/types";
+import { machineStderr, machineStdout } from "./machine";
 
 // ---- streams ----------------------------------------------------------------
 
@@ -69,8 +70,8 @@ export interface Streams {
  * still touches nothing.
  */
 export const PROCESS_STREAMS: Streams = {
-  stdout: (text) => void process.stdout.write(text),
-  stderr: (text) => void process.stderr.write(text),
+  stdout: machineStdout,
+  stderr: machineStderr,
 };
 
 // ---- paths ------------------------------------------------------------------
@@ -387,7 +388,7 @@ export function renderApplyFailure(outcome: ApplyOutcome, root: string): string 
  * `not-installed` indistinguishable from a refusal.
  */
 export interface JsonEnvelope {
-  command: "init" | "list" | "info" | "diff" | "update" | "remove";
+  command: "init" | "add" | "list" | "info" | "diff" | "update" | "remove" | "status" | "agent";
   root: string;
   ok: boolean;
 }

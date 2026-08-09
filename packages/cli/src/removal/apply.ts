@@ -1,10 +1,19 @@
 /** D42's dedicated, dependency-free upstream-file removal transaction. */
 import { createHash } from "node:crypto";
+import { resolve } from "node:path";
 
 import { createJournal, type Journal } from "../apply/journal";
+import { hashFileBytes } from "../apply/preflight";
 import { assertInsideRoot } from "../config/aliases";
+import type { Plan, Receipt } from "../plan/types";
 import { basePathFor, fromReceiptPath, toReceiptPath } from "../receipt/path";
 import { receiptPathFor } from "../receipt/read";
+import {
+  createVerificationPorts,
+  verificationManagedPaths,
+  verifyAppliedMutationSync,
+} from "../verification/run";
+import type { PlannedVerification, VerificationOutcome } from "../verification/types";
 import { snapshotRemovalPath } from "./snapshot";
 import type {
   RemovalApplyOutcome,
@@ -17,12 +26,31 @@ import type {
 export interface RemovalApplyPorts {
   inspect(path: string, root: string): RemovalPathSnapshot;
   createJournal(): Journal;
+  verify?(plan: RemovalPlan, verification: PlannedVerification): VerificationOutcome;
 }
 
 const DEFAULT_PORTS: RemovalApplyPorts = {
   inspect: snapshotRemovalPath,
   createJournal,
+  verify: defaultRemovalVerification,
 };
+
+function verificationPlan(plan: RemovalPlan): Plan {
+  return {
+    root: plan.root,
+    configPath: resolve(plan.root, "manteen.json"),
+    receipt: { present: false, path: plan.receipt.path },
+    verification: plan.verification ?? null,
+  } as Plan;
+}
+
+function defaultRemovalVerification(
+  plan: RemovalPlan,
+  verification: PlannedVerification,
+): VerificationOutcome {
+  const ports = createVerificationPorts((chunk) => process.stderr.write(chunk), hashFileBytes);
+  return verifyAppliedMutationSync(verificationPlan(plan), verification, ports);
+}
 
 export function createRemovalApplyPorts(): RemovalApplyPorts {
   return { ...DEFAULT_PORTS };
@@ -207,7 +235,7 @@ export function applyRemoval(
     });
   }
 
-  return {
+  const success = (verification?: VerificationOutcome): RemovalApplyOutcome => ({
     ok: true,
     dryRun: false,
     removals: plan.removals.map((removal) => ({
@@ -219,5 +247,61 @@ export function applyRemoval(
     receipt: { path: plan.receipt.path, written: true },
     updateState: { changed: true, versioningRequired: true },
     failure: null,
-  };
+    ...(verification === undefined ? {} : { verification }),
+  });
+
+  if (plan.verification !== null && plan.verification !== undefined) {
+    const verify = ports.verify ?? defaultRemovalVerification;
+    let verification: VerificationOutcome;
+    try {
+      const projected = JSON.parse(plan.receipt.projectedText) as Receipt;
+      for (const path of verificationManagedPaths(verificationPlan(plan), projected)) {
+        journal.capture?.(path);
+      }
+      verification = verify(plan, plan.verification);
+    } catch (error) {
+      const unwound = journal.unwind();
+      const detail = error instanceof Error ? error.message : String(error);
+      return emptyOutcome(plan, false, {
+        kind: unwound.ok ? "verification-failed" : "rollback-failed",
+        message: unwound.ok
+          ? `${detail}\nEvery Manteen-managed pre-image captured for this removal was restored.`
+          : `${detail}\nThe rollback then failed: ${unwound.detail ?? "no detail"}`,
+        ...(unwound.ok
+          ? {}
+          : {
+              paths: [...unwound.unrestored]
+                .map((path) => toReceiptPath(path, plan.root))
+                .sort(compare),
+            }),
+      });
+    }
+    if (verification.status !== "failed") return success(verification);
+    const unwound = journal.unwind();
+    if (!unwound.ok) {
+      return {
+        ...emptyOutcome(plan, false, {
+          kind: "rollback-failed",
+          message:
+            `${verification.failure?.message ?? "Project verification failed."}\n` +
+            `The rollback then failed: ${unwound.detail ?? "no detail"}`,
+          paths: [...unwound.unrestored]
+            .map((path) => toReceiptPath(path, plan.root))
+            .sort(compare),
+        }),
+        verification,
+      };
+    }
+    return {
+      ...emptyOutcome(plan, false, {
+        kind: "verification-failed",
+        message:
+          `${verification.failure?.message ?? "Project verification failed."}\n` +
+          "Every Manteen-managed pre-image captured for this removal was restored.",
+      }),
+      verification,
+    };
+  }
+
+  return success();
 }

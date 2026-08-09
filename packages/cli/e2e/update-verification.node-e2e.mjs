@@ -1,11 +1,11 @@
 /**
  * Post-update verification, end to end under real Node against the built CLI.
  *
- * The important seam in this file is not merely "a package script ran". Update
- * has already committed source, pristine bases and the receipt before the
- * consumer-owned process begins. These tests therefore assert both facts on
- * every failure path: verification failed (or never ran), and the live tree is
- * in exactly the state the contract promises.
+ * The important seam in this file is not merely "a package script ran". The
+ * consumer-owned process begins after source, pristine bases and receipt are
+ * written but before the shared rollback journal is released. These tests
+ * therefore assert both facts on every failure path: verification failed (or
+ * never ran), and every captured managed/control preimage was restored.
  *
  * Run after both packages have been built:
  *   node --test packages/cli/e2e/update-verification.node-e2e.mjs
@@ -156,8 +156,13 @@ function run(project, args) {
 /** Parse stdout alone. Child output is allowed on stderr but may never append a
  * byte before or after this JSON document. */
 function json(result) {
-  assert.notEqual(result.status, 2, `configuration failed before JSON output: ${result.all}`);
-  return JSON.parse(result.stdout);
+  const document = JSON.parse(result.stdout);
+  return new Proxy(document, {
+    get(target, property, receiver) {
+      if (Reflect.has(target, property)) return Reflect.get(target, property, receiver);
+      return target.payload?.[property];
+    },
+  });
 }
 
 function install(project, extra = []) {
@@ -202,6 +207,24 @@ function assertAppliedTree(project, expected) {
   return receipt;
 }
 
+function snapshotManagedTree(project) {
+  return {
+    source: readFileSync(join(project, DESTINATION)),
+    base: readFileSync(join(project, BASE_PATH)),
+    receipt: readFileSync(join(project, RECEIPT_PATH)),
+    packageJson: readFileSync(join(project, "package.json")),
+    config: readFileSync(join(project, "manteen.json")),
+  };
+}
+
+function assertManagedTree(project, expected) {
+  assert.deepEqual(readFileSync(join(project, DESTINATION)), expected.source);
+  assert.deepEqual(readFileSync(join(project, BASE_PATH)), expected.base);
+  assert.deepEqual(readFileSync(join(project, RECEIPT_PATH)), expected.receipt);
+  assert.deepEqual(readFileSync(join(project, "package.json")), expected.packageJson);
+  assert.deepEqual(readFileSync(join(project, "manteen.json")), expected.config);
+}
+
 test("a configured passing check verifies the applied update and may create an ordinary artifact", () => {
   const registry = publish("passing");
   const project = makeProject({
@@ -220,10 +243,16 @@ test("a configured passing check verifies the applied update and may create an o
   install(project);
   const incoming = moveUpstream(registry, "passing verification upstream");
 
-  const result = run(project, ["update", "--json"]);
+  const preview = run(project, ["update", "--dry-run", "--json"]);
+  assert.equal(preview.status, 0, preview.all);
+  const digest = json(preview).planDigest;
+  assert.match(digest, /^[0-9a-f]{64}$/);
+
+  const result = run(project, ["update", "--expect-plan", digest, "--json"]);
   assert.equal(result.status, 0, result.all);
   const doc = json(result);
   assert.equal(doc.ok, true);
+  assert.equal(doc.planDigest, digest);
   assert.equal(doc.verification.status, "passed");
   assert.deepEqual(
     doc.verification.checks.map(({ script, result: checkResult }) => [script, checkResult]),
@@ -233,7 +262,7 @@ test("a configured passing check verifies the applied update and may create an o
   assertAppliedTree(project, incoming);
 });
 
-test("verification is fail-fast and failure leaves source, base and receipt applied", () => {
+test("verification is fail-fast and failure restores source, base, receipt and controls", () => {
   const registry = publish("fail-fast");
   const project = makeProject({
     registry,
@@ -261,7 +290,8 @@ test("verification is fail-fast and failure leaves source, base and receipt appl
     `,
   );
   install(project);
-  const incoming = moveUpstream(registry, "failed verification upstream");
+  const before = snapshotManagedTree(project);
+  moveUpstream(registry, "failed verification upstream");
 
   const result = run(project, ["update", "--json"]);
   assert.equal(result.status, 1, result.all);
@@ -271,8 +301,9 @@ test("verification is fail-fast and failure leaves source, base and receipt appl
   assert.equal(doc.verification.status, "failed");
   assert.equal(doc.verification.failure.kind, "script-failed");
   assert.equal(doc.verification.failure.exitCode, 7);
-  assert.match(doc.verification.failure.message, /update was applied/i);
-  assert.match(doc.verification.failure.message, /did not roll it back/i);
+  assert.match(doc.verification.failure.message, /restore captured preimages/i);
+  assert.match(doc.failure.message, /restored to its previous contents/i);
+  assert.equal(doc.mutated, false);
   assert.deepEqual(
     doc.verification.checks.map(({ script, result: checkResult }) => [script, checkResult]),
     [
@@ -282,7 +313,7 @@ test("verification is fail-fast and failure leaves source, base and receipt appl
   );
   assert.equal(existsSync(join(project, ".verify-first")), true);
   assert.equal(existsSync(join(project, ".verify-later")), false, "later script was not skipped");
-  assertAppliedTree(project, incoming);
+  assertManagedTree(project, before);
 });
 
 /**
@@ -325,7 +356,8 @@ test("a check that never finishes is terminated and reported as a timeout", () =
     `,
   );
   install(project);
-  const incoming = moveUpstream(registry, "timed out verification upstream");
+  const before = snapshotManagedTree(project);
+  moveUpstream(registry, "timed out verification upstream");
 
   const result = run(project, ["update", "--json"]);
   assert.equal(result.status, 1, result.all);
@@ -337,9 +369,10 @@ test("a check that never finishes is terminated and reported as a timeout", () =
   assert.equal(doc.verification.failure.script, "verify:hang");
   assert.equal(doc.verification.failure.timeoutMs, 1000);
   assert.match(doc.verification.failure.message, /did not finish within 1000ms/);
-  assert.match(doc.verification.failure.message, /update was applied/i);
-  assert.match(doc.verification.failure.message, /did not roll it back/i);
+  assert.match(doc.verification.failure.message, /restore captured preimages/i);
   assert.match(doc.verification.failure.message, /timeoutMs/, "the message names the way out");
+  assert.match(doc.failure.message, /restored to its previous contents/i);
+  assert.equal(doc.mutated, false);
   assert.deepEqual(
     doc.verification.checks.map(({ script, result: checkResult }) => [script, checkResult]),
     [
@@ -348,7 +381,7 @@ test("a check that never finishes is terminated and reported as a timeout", () =
     ],
   );
   assert.equal(existsSync(join(project, ".verify-later")), false, "fail-fast still holds");
-  assertAppliedTree(project, incoming);
+  assertManagedTree(project, before);
 });
 
 test("--no-verify bypasses dynamic missing-script refusal and reports skipped", () => {
@@ -376,8 +409,11 @@ test("--no-verify does not bypass malformed verification configuration", () => {
   const result = run(project, ["update", "--no-verify", "--json"]);
 
   assert.equal(result.status, 2, result.all);
-  assert.equal(result.stdout, "", "configuration errors precede the JSON command envelope");
-  assert.match(result.stderr, /verification\/update/i, result.stderr);
+  assert.equal(result.stderr, "", "configuration failures belong inside the JSON envelope");
+  const document = json(result);
+  assert.equal(document.ok, false);
+  assert.equal(document.exitCode, 2);
+  assert.match(document.errors[0]?.message ?? "", /verification\/update/i);
 });
 
 test("diff ignores update verification and never resolves a missing script", () => {
@@ -581,13 +617,13 @@ test("an applied package-script change makes the planned definition stale", () =
   });
   writeFileSync(itemPath, `${JSON.stringify(item, null, 2)}\n`);
   install(project, ["--overwrite"]);
+  const before = snapshotManagedTree(project);
 
   const changedPackage = JSON.parse(item.files.at(-1).content);
   changedPackage.scripts["verify:stale"] = "node stale-replacement.mjs";
   item.files.at(-1).content = `${JSON.stringify(changedPackage, null, 2)}\n`;
   item.files[0].content = `${item.files[0].content}\n// definition stale upstream\n`;
   writeFileSync(itemPath, `${JSON.stringify(item, null, 2)}\n`);
-  const incoming = item.files[0].content;
 
   const result = run(project, ["update", "--json"]);
   assert.equal(result.status, 1, result.all);
@@ -597,11 +633,8 @@ test("an applied package-script change makes the planned definition stale", () =
   assert.equal(doc.verification.failure.kind, "definition-stale");
   assert.equal(existsSync(join(project, ".stale-original-ran")), false);
   assert.equal(existsSync(join(project, ".stale-replacement-ran")), false);
-  assert.equal(
-    JSON.parse(readFileSync(join(project, "package.json"), "utf8")).scripts["verify:stale"],
-    "node stale-replacement.mjs",
-  );
-  assertAppliedTree(project, incoming);
+  assert.equal(doc.mutated, false);
+  assertManagedTree(project, before);
 });
 
 test("a zero-exit script that changes a managed component fails verification as byte drift", () => {
@@ -621,6 +654,7 @@ test("a zero-exit script that changes a managed component fails verification as 
   );
   install(project);
   const pristine = readFileSync(join(project, DESTINATION), "utf8");
+  const before = snapshotManagedTree(project);
 
   const result = run(project, ["update", "--json"]);
   assert.equal(result.status, 1, result.all);
@@ -630,17 +664,7 @@ test("a zero-exit script that changes a managed component fails verification as 
   assert.equal(doc.verification.failure.kind, "managed-byte-drift");
   assert.match(JSON.stringify(doc.verification.failure), /src\/components\/ui\/empty-state\.tsx/);
   assert.equal(doc.verification.checks[0].result, "failed");
-
-  const drifted = readFileSync(join(project, DESTINATION), "utf8");
-  assert.equal(
-    drifted,
-    `${pristine}// verifier drift\n`,
-    "script side effect must not be rolled back",
-  );
-  const receipt = JSON.parse(readFileSync(join(project, RECEIPT_PATH), "utf8"));
-  assert.notEqual(
-    receipt.items[0].files[0].installedSha256,
-    sha256(Buffer.from(drifted)),
-    "receipt must not silently adopt post-verification drift",
-  );
+  assert.equal(readFileSync(join(project, DESTINATION), "utf8"), pristine);
+  assert.equal(doc.mutated, false);
+  assertManagedTree(project, before);
 });

@@ -557,7 +557,14 @@ const MAX_LINE = 200;
  * keeps them verbatim — a consumer of JSON wants what the registry actually
  * said.
  */
-export function renderInfo(report: InfoReport): string {
+export interface InfoRenderOptions {
+  /** Expand author-documented prop tables. JSON always includes them. */
+  props?: boolean;
+  /** Expand the copy-ready usage source. JSON always includes it. */
+  usage?: boolean;
+}
+
+export function renderInfo(report: InfoReport, options: InfoRenderOptions = {}): string {
   const out: string[] = [];
   const { detail, available, installed } = report;
 
@@ -571,6 +578,7 @@ export function renderInfo(report: InfoReport): string {
 
   if (available?.title) out.push("", `  ${clean(available.title)}`);
   if (available?.description) out.push(`  ${clean(available.description)}`);
+  if (detail?.docs) out.push(...section("documentation", [clean(detail.docs)]));
 
   // The DOCUMENT's name, not the reference's, and only when they differ — that
   // divergence is exactly what `name-mismatch` is about, and the diagnostic on
@@ -586,6 +594,8 @@ export function renderInfo(report: InfoReport): string {
     out.push(...section("devDependencies", detail.devDependencies.map(clean)));
     out.push(...section("registryDependencies", detail.registryDependencies.map(clean)));
     out.push(...section("css imports", detail.cssImports.map(clean)));
+    if (options.props) out.push(...section("props", propRows(detail)));
+    if (options.usage) out.push(...section("usage", usageRows(detail)));
   }
 
   out.push(...section("installed", installedRows(report)));
@@ -623,7 +633,48 @@ function metaRows(detail: ItemDetail): string[] {
       rows.push(`${index === 0 ? "stylesApi  " : "           "}${clean(key)}: ${selectors}`);
     }
   }
+  if (meta.props !== undefined) {
+    const components = Object.keys(meta.props).sort(byCodeUnit);
+    const count = components.reduce(
+      (total, component) => total + (meta.props?.[component]?.length ?? 0),
+      0,
+    );
+    rows.push(
+      `props      ${count} documented across ${components.length} export${components.length === 1 ? "" : "s"} (use --props to expand)`,
+    );
+  }
+  if (meta.usage !== undefined) {
+    rows.push(
+      `usage      ${clean(meta.usage.path)}  ${bytes(Buffer.byteLength(meta.usage.content, "utf8"))} (use --usage to expand)`,
+    );
+  }
   return rows;
+}
+
+function propRows(detail: ItemDetail): string[] {
+  const props = detail.meta.props;
+  if (props === undefined) return [];
+
+  const rows: string[] = [];
+  for (const component of Object.keys(props).sort(byCodeUnit)) {
+    rows.push(clean(component));
+    for (const prop of props[component] ?? []) {
+      const qualifiers = [
+        prop.required === true ? "required" : null,
+        prop.default === undefined ? null : `default ${prop.default}`,
+      ].filter((value): value is string => value !== null);
+      const suffix = qualifiers.length === 0 ? "" : `  (${qualifiers.map(clean).join(", ")})`;
+      rows.push(`  ${clean(prop.name)}: ${clean(prop.type)}${suffix}`);
+      if (prop.description !== undefined) rows.push(`    ${clean(prop.description)}`);
+    }
+  }
+  return rows;
+}
+
+function usageRows(detail: ItemDetail): string[] {
+  const usage = detail.meta.usage;
+  if (usage === undefined) return [];
+  return [clean(usage.path), ...usage.content.split(/\r?\n/).map((line) => clean(line))];
 }
 
 function fileRows(report: InfoReport): string[] {
@@ -690,6 +741,7 @@ export function renderInfoJson(report: InfoReport): string {
           name: report.detail.name,
           wireType: report.detail.wireType,
           redactedUrl: report.detail.redactedUrl,
+          ...(report.detail.docs === undefined ? {} : { docs: report.detail.docs }),
           dependencies: report.detail.dependencies,
           devDependencies: report.detail.devDependencies,
           registryDependencies: report.detail.registryDependencies,
@@ -746,6 +798,10 @@ export interface InfoFlags {
   cwd: string;
   /** `--json`. */
   json?: boolean;
+  /** `--props`. Text-only expansion; JSON is always complete. */
+  props?: boolean;
+  /** `--usage`. Text-only expansion; JSON is always complete. */
+  usage?: boolean;
 }
 
 /**
@@ -812,7 +868,7 @@ export async function runInfo(
 
   renderDiagnostics(report.diagnostics, report.root, streams.stderr);
   streams.stderr(renderNotes(report.notes));
-  streams.stdout(renderInfo(report));
+  streams.stdout(renderInfo(report, flags));
 
   return blockingExitCode(report.diagnostics, false);
 }

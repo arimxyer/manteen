@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arimxyer.github.io/manteen/schema/manteen-kit-output.schema.json",
+  "title": "manteen-kit generated output ownership marker",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "namespace", "packageVersion", "files"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "namespace": { "type": "string", "pattern": "^@[a-z0-9][a-z0-9-]*$" },
+    "packageVersion": { "type": "string", "minLength": 1 },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": { "type": "string", "pattern": "^(registry|[a-z0-9][a-z0-9-]*)\\.json$" },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        }
+      }
+    }
+  }
+}

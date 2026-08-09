@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+## 0.7.0
+
+- Add offline `status`, deterministic `list --query` / `--type` / `--installed` discovery, and
+  `planDigest` / `--expect-plan` coupling for `init`, `add`, `update`, and explicit removal.
+- Generalize configured verification across add, update, and remove, with `--no-verify` and
+  failure inside the mutation journal so Manteen-managed and control preimages are restored.
+- Package a canonical Manteen skill and manifest, plus safe `agent guide` and ownership-aware
+  `agent install` commands. Add the public Agent Guide, `llms.txt`, `llms-full.txt`, and repository
+  `AGENTS.md`.
+
+### Machine-interface milestone (originally planned as 0.6.0)
+
+- Normalize every recognized `--json` invocation into the versioned ten-field command envelope,
+  including configuration, usage, unexpected-error, success, and refusal paths. JSON mode never
+  prompts and blocking diagnostics carry typed remediation or a manual rationale.
+- Add machine output for `add`; retain registry `docs`, `props`, and `usage`; expose complete item
+  metadata through `info`; and add deterministic text expansion flags.
+- Add the stable `createManteenClient()` façade with read operations and opaque, root-bound
+  plan/apply handles, while retaining the existing low-level exports.
+- Require `manteen-kit@^0.2.1` and publish the command-envelope schema.
+
 ## 0.5.0
 
 - Add an automatic, conservative AST-assisted fallback for `.ts` and `.tsx` files when the

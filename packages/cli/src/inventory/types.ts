@@ -35,11 +35,11 @@ import type {
   ReceiptUnreadable,
   ThemeSourceKind,
 } from "../plan/types";
-import type { MantineMeta } from "../plan/validate-item";
+import type { MantineMeta, MantineProps, MantineUsage } from "../plan/validate-item";
 import type { VerificationOutcome } from "../verification/types";
 
 /** Re-exported so a command needs one import for the inspect vocabulary. */
-export type { MantineMeta };
+export type { MantineMeta, MantineProp, MantineProps, MantineUsage } from "../plan/validate-item";
 
 // ---- notes ------------------------------------------------------------------
 
@@ -328,6 +328,8 @@ export interface DetailMeta {
   requires?: string;
   provider?: string;
   stylesApi?: Record<string, string[]>;
+  props?: MantineProps;
+  usage?: MantineUsage;
   themeFragment?: { path: string; bytes: number };
 }
 
@@ -351,6 +353,9 @@ export interface ItemDetail {
   wireType: string;
   /** REDACTED. */
   redactedUrl: string;
+  /** Optional markdown authored for this item. Verbatim in JSON; terminal
+   * renderers sanitize and bound it before display. */
+  docs?: string;
   files: DetailFile[];
   dependencies: string[];
   devDependencies: string[];
