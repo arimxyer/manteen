@@ -486,7 +486,8 @@ export function verifyAppliedMutationSync(
   for (let index = 0; index < verification.checks.length; index += 1) {
     const check = verification.checks[index] as PlannedVerification["checks"][number];
     const observed = checks[index] as VerificationCheckOutcome;
-    const result = spawnSync(check.executable, check.args, {
+    const command = verificationExecutionCommand(check, false);
+    const result = spawnSync(command.executable, command.args, {
       cwd: plan.root,
       env: verificationEnvironment(plan.root),
       encoding: "utf8",
