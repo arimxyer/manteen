@@ -1,6 +1,7 @@
 # AST-assisted merge integration decision
 
-Status: **implemented; unreleased.** The exact source-splice merger is now an automatic
+Status: **merged; prepared for the unreleased client-only `manteen@0.5.0` candidate.** The exact
+source-splice merger is now an automatic
 TypeScript-only fallback after the existing line diff3 merger reports a conflict. It is shared by
 `diff` and `update`; there is no flag and clean line merges pay no AST cost. This does not support
 an AST printer, an AST-first merger, or a semantic-safety claim.
@@ -123,5 +124,9 @@ new pristine base contains upstream alone. The production build moved the merge-
 507.13 kB to 517.08 kB raw and from 150.18 kB to 152.85 kB gzip: +9.95 kB raw / +2.67 kB gzip.
 No parser package was added.
 
-This branch is not a release receipt. Public `manteen@0.4.0` remains line-diff3-only until this
-candidate is reviewed, merged and published separately.
+Feature PR [#18](https://github.com/arimxyer/manteen/pull/18) merged as
+`7b2abd2f8206bc958def5aaf2f703d972988af66` after its single hosted CI run
+[`31327258396`](https://github.com/arimxyer/manteen/actions/runs/31327258396) passed the complete
+source, Node/OS, packed-consumer and stable-gate matrix. That is implementation evidence, not a
+release receipt. Public `manteen@0.4.0` remains line-diff3-only until the separately reviewed
+`0.5.0` tag and trusted publication exist.

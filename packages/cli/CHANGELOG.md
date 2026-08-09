@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.5.0
+
 - Add an automatic, conservative AST-assisted fallback for `.ts` and `.tsx` files when the
   existing line diff3 merger reports a conflict. It combines only disjoint changes to stable,
   uniquely identified imports or exported top-level declarations, using exact original source
