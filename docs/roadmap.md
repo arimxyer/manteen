@@ -17,13 +17,14 @@ and something a stranger can depend on, and how the remaining work is sequenced.
 6. **Maintainable** — a linter, dependency automation, and a license file that matches what
    `package.json` claims.
 
-Today: all six criteria are public through `manteen-kit@0.2.1` and `manteen@0.7.0`, including the
+Today: all six criteria are public through `manteen-kit@0.2.1` and `manteen@0.8.0`, including the
 agent-native authoring, machine-command, SDK, verification, and guidance surfaces. W6 `init` is
 complete through its built-Node acceptance tier, W7 closed with a green hosted runtime, OS and
 package-manager matrix, and W8 established provenance-bearing releases. The latest accepted
-Pages deployment is commit `8533400e7035d6fff624ebfe72374a82428a64ac`, run
-[`31338680074`](https://github.com/arimxyer/manteen/actions/runs/31338680074); it serves the public
-Agent Guide, both LLM context files, and the unchanged complete 22-item catalog. The
+Pages deployment is commit `a695c0052c2429adba79be540646b25b4ca19bc6`, run
+[`31421895691`](https://github.com/arimxyer/manteen/actions/runs/31421895691); it serves the public
+Agent Guide, both LLM context files, and the complete 22-item catalog with corrected consumer usage
+metadata. The
 catalog-content milestone itself remains commit `8853a720352c8842ce6957a494f919ec7cccda67`, run
 [`31198437310`](https://github.com/arimxyer/manteen/actions/runs/31198437310).
 
@@ -36,14 +37,15 @@ and Pages deployment are accepted. Its frozen contract is
 [`agent-native-build-plan.md`](agent-native-build-plan.md), and its receipts are in the
 [`agent-native release handoff`](agent-native-release-handoff.md).
 
-The current `manteen@0.8.0` release candidate amends discovery so queried rows are explainably,
+The public `manteen@0.8.0` release amends discovery so queried rows are explainably,
 deterministically relevance-ranked within stable registry groups; it also makes init refusal
 dry-run reporting truthful, accepts bounded named Vite `App` exports, and clarifies that offline
 status health is not application build proof. A follow-up keeps dependency subprocess output out of
 machine stdout and narrowly completes absent canonical registry/theme config without overwriting
 authored values. Successful adds now also distinguish registry installation from application
-integration without guessing an application placement. Publication and deployment remain separate
-work.
+integration without guessing an application placement. Its signed tag, hosted matrix, npm
+provenance, isolated public agent acceptance, and separately deployed registry/docs correction are
+recorded in the [`0.8 release handoff`](v0.8-release-handoff.md).
 
 The client-only `manteen@0.3.0` release now carries Wu's receipt v3, committed pristine bases and
 three-way updates; the apply-time state-versioning advisory; and Wv's opt-in post-update project
@@ -94,9 +96,9 @@ was a working bypass that let TypeScript write into a JS project at exit 0). The
 in `plan()`, the bypass routes into the same refusal rather than around it, and both are covered by
 unit tests.
 
-**Distribution.** `manteen-kit@0.2.1` and `manteen@0.7.0` are public on npm as `latest`. Both lines
+**Distribution.** `manteen-kit@0.2.1` and `manteen@0.8.0` are public on npm as `latest`. Both lines
 were published from tagged GitHub Actions OIDC workflows and expose npm publish plus SLSA
-provenance attestations. The agent-native client resolves the newly public
+provenance attestations. The current agent-native client resolves the public
 `manteen-kit@^0.2.1`; the earlier client-only `0.3.0`, `0.4.0` and `0.5.0` releases correctly kept
 the prior kit range and created no kit tags. The
 initial trusted-release receipts are in
@@ -105,7 +107,8 @@ the [`0.2 release handoff`](v0.2-release-handoff.md), and the completed client-o
 `0.4.0` and `0.5.0` boundaries are in the [`0.3 release handoff`](v0.3-release-handoff.md),
 [`0.4 release handoff`](v0.4-release-handoff.md),
 [`0.5 release handoff`](v0.5-release-handoff.md), and the
-[`agent-native release handoff`](agent-native-release-handoff.md).
+[`agent-native release handoff`](agent-native-release-handoff.md). The public client `0.8.0`
+follow-on is recorded in the [`0.8 release handoff`](v0.8-release-handoff.md).
 
 **Project hygiene.** The MIT license, Biome, Dependabot, editorconfig and rename are done.
 `SECURITY.md` and contributor ceremony remain deliberately deferred until the repository has
@@ -159,7 +162,7 @@ is a judgment call, which is exactly why they are separate runs.
 | Wv | [`Update verification`](update-verification-handoff.md) | complete and public in `0.3.0`: post-apply orchestration, fail-fast bounded project scripts, drift detection, built-Node and fresh-consumer acceptance | Lets a consumer define what “the merged component still works here” means without placing arbitrary scripts inside Manteen's rollback journal. |
 | Wp | [`Upstream removal`](upstream-removal-handoff.md) | complete and public in client `0.4.0`: explicit selection, adapted-file opt-in, one journal, built/hosted/public acceptance | Adds explicit, exact-selected pruning for ordinary files proven absent upstream without turning update into implicit deletion or inferring renames. |
 | Wa | [`AST-assisted fallback`](ast-merge-integration-decision.md) | complete and public in client `0.5.0`: exact source splicing, built/hosted/public accepted-and-refused acceptance | Reduces a narrow class of adjacent TypeScript line conflicts without allowing an AST printer or ambiguous structural mapping to emit bytes. |
-| Wn | [`Agent-native interface`](agent-native-build-plan.md) | complete and public: kit `0.2.1`, client `0.7.0`, hosted portability, npm consumers, and Pages accepted | Makes discovery, planning, refusal, mutation, verification, and guidance safe to drive without an interactive human loop. |
+| Wn | [`Agent-native interface`](agent-native-build-plan.md) | complete and public: kit `0.2.1`, client `0.8.0`, hosted portability, npm consumers, and Pages accepted | Makes discovery, planning, refusal, mutation, verification, and guidance safe to drive without an interactive human loop. |
 
 **Not workflow-shaped, do directly:** the hygiene set (LICENSE, linter, SECURITY, CONTRIBUTING,
 dependabot, README rename). Single-file, single-concern, no discovery — a workflow would be
@@ -212,7 +215,7 @@ Wu update merging ........... complete; public in client 0.3.0
 Wv update verification ...... complete; public in client 0.3.0
 Wp upstream removal ......... complete; public in client 0.4.0
 Wa AST-assisted fallback .... complete; public in client 0.5.0
-Wn agent-native interface ... complete; public in kit 0.2.1, client 0.7.0 and Pages
+Wn agent-native interface ... complete; public in kit 0.2.1, client 0.8.0 and Pages
 hygiene ..................... done, direct
 ```
 
