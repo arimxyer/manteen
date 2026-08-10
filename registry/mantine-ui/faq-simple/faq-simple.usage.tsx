@@ -1,4 +1,4 @@
-import { FaqSimple, type FaqSimpleItem } from "@ui/faq-simple";
+import { FaqSimple, type FaqSimpleItem } from "@/components/ui/faq-simple";
 
 const items: FaqSimpleItem[] = [
   {

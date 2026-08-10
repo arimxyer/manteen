@@ -112,7 +112,7 @@ import {
   IconFingerprint,
   IconNotification,
 } from "@tabler/icons-react";
-import { HeaderMegaMenu, type HeaderMegaMenuLink } from "@ui/header-mega-menu";
+import { HeaderMegaMenu, type HeaderMegaMenuLink } from "@/components/ui/header-mega-menu";
 
 const links: HeaderMegaMenuLink[] = [
   { label: "Home", href: "/" },

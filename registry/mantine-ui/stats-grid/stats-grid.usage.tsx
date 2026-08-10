@@ -1,5 +1,5 @@
 import { IconCoin, IconDiscount2, IconReceipt2, IconUserPlus } from "@tabler/icons-react";
-import { StatsGrid } from "@ui/stats-grid";
+import { StatsGrid } from "@/components/ui/stats-grid";
 
 export function QuarterlyStats() {
   return (

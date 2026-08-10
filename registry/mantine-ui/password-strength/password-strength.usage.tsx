@@ -1,4 +1,4 @@
-import { PasswordStrength } from "@ui/password-strength";
+import { PasswordStrength } from "@/components/ui/password-strength";
 
 export function SignupPasswordField() {
   return (

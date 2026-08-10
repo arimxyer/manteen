@@ -135,7 +135,7 @@ const adapter: PlaygroundAdapter = {
       : "";
 
     return `import { Text } from "@mantine/core";${socialImport}
-import { FooterLinks, type FooterLinksGroup${socialTypeImport} } from "@ui/footer-links";
+import { FooterLinks, type FooterLinksGroup${socialTypeImport} } from "@/components/ui/footer-links";
 
 const groups: FooterLinksGroup[] = [
   {

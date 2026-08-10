@@ -1,4 +1,4 @@
-import { AutocompleteLoading } from "@ui/autocomplete-loading";
+import { AutocompleteLoading } from "@/components/ui/autocomplete-loading";
 
 async function searchTeamMembers(query: string): Promise<string[]> {
   const response = await fetch(`/api/team-members?q=${encodeURIComponent(query)}`);

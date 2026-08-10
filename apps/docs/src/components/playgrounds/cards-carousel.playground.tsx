@@ -75,7 +75,7 @@ const adapter: PlaygroundAdapter = {
       ? '\n      onSelect={(item) => console.log("selected", item.id)}'
       : "";
 
-    return `import { CardsCarousel, type CardsCarouselItem } from "@ui/cards-carousel";
+    return `import { CardsCarousel, type CardsCarouselItem } from "@/components/ui/cards-carousel";
 
 // Give an item \`href\` to render its action as a link instead of the onSelect button.
 const items: CardsCarouselItem[] = [
