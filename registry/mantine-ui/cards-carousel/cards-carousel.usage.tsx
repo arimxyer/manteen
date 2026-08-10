@@ -1,4 +1,4 @@
-import { CardsCarousel, type CardsCarouselItem } from "@ui/cards-carousel";
+import { CardsCarousel, type CardsCarouselItem } from "@/components/ui/cards-carousel";
 
 const items: CardsCarouselItem[] = [
   {

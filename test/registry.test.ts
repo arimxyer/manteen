@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { compileRegistry } from "manteen-kit";
 
@@ -71,5 +71,25 @@ describe("house catalog", () => {
     expect(compiled.get("dropzone-button")!.css).toEqual({
       '@import "@mantine/dropzone/styles.css"': {},
     });
+  });
+
+  test("copy-ready examples use the consumer aliases emitted by init", () => {
+    const { source } = compileRegistry(CATALOG);
+    const registryOnlyAlias = /from\s+["']@(components|hooks|lib|ui)\//;
+
+    for (const item of source.items) {
+      if (!item.usage) continue;
+
+      const usage = readFileSync(resolve(import.meta.dirname, "..", item.usage), "utf8");
+      expect(usage).not.toMatch(registryOnlyAlias);
+    }
+
+    const playgroundRoot = resolve(import.meta.dirname, "../apps/docs/src/components/playgrounds");
+    for (const entry of readdirSync(playgroundRoot, { withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.endsWith(".tsx")) continue;
+
+      const playground = readFileSync(resolve(playgroundRoot, entry.name), "utf8");
+      expect(playground).not.toMatch(registryOnlyAlias);
+    }
   });
 });

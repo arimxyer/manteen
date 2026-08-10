@@ -1,4 +1,4 @@
-import { DndList } from "@ui/dnd-list";
+import { DndList } from "@/components/ui/dnd-list";
 
 export function ProjectPriorityList() {
   return (

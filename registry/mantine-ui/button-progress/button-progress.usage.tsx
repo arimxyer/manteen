@@ -1,4 +1,4 @@
-import { ButtonProgress } from "@ui/button-progress";
+import { ButtonProgress } from "@/components/ui/button-progress";
 
 export function UploadFilesButton() {
   return (

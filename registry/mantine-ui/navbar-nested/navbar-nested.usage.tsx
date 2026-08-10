@@ -1,6 +1,6 @@
 import { IconCalendarStats, IconGauge, IconLock, IconNotes } from "@tabler/icons-react";
 
-import { NavbarNested } from "@ui/navbar-nested";
+import { NavbarNested } from "@/components/ui/navbar-nested";
 
 export function AppSidebar() {
   // NavbarNested fills its parent's height (see the `height: 100%` note in

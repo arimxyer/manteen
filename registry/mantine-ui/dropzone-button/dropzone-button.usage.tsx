@@ -1,4 +1,4 @@
-import { DropzoneButton } from "@ui/dropzone-button";
+import { DropzoneButton } from "@/components/ui/dropzone-button";
 
 export function ResumeUpload() {
   return (

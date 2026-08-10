@@ -72,7 +72,7 @@ const adapter: PlaygroundAdapter = {
     const avatarProp = props.avatar ? `,\n          avatar: ${JSON.stringify(AVATAR_URL)}` : "";
 
     return `import { IconCalendarStats, IconGauge, IconLock, IconNotes } from "@tabler/icons-react";
-import { NavbarNested } from "@ui/navbar-nested";
+import { NavbarNested } from "@/components/ui/navbar-nested";
 
 export function AppSidebar() {
   return (

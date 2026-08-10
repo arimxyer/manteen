@@ -1,4 +1,4 @@
-import { ArticleCard } from "@ui/article-card";
+import { ArticleCard } from "@/components/ui/article-card";
 
 export function FeaturedArticle() {
   return (

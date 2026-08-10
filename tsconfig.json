@@ -20,29 +20,37 @@
       "@/components/ui/*": ["./registry/ui/*"],
       "@/hooks/*": ["./registry/blocks/data-table/*"],
       "@/lib/*": ["./registry/lib/*"],
-      // Usage examples (`usage` in the catalog) are written with the consumer's
-      // manteen alias. Explicit per-module entries, not `@ui/*`: each item nests
-      // in its own directory here but installs flat under the alias.
-      "@ui/article-card": ["./registry/mantine-ui/article-card/article-card"],
-      "@ui/authentication-form": ["./registry/mantine-ui/authentication-form/authentication-form"],
-      "@ui/autocomplete-loading": [
+      // Mantine UI usage examples use the same `@/*` import init configures for
+      // consumers. Explicit per-module entries are required because each item
+      // nests in its own directory here but installs flat under components/ui.
+      "@/components/ui/article-card": ["./registry/mantine-ui/article-card/article-card"],
+      "@/components/ui/authentication-form": [
+        "./registry/mantine-ui/authentication-form/authentication-form"
+      ],
+      "@/components/ui/autocomplete-loading": [
         "./registry/mantine-ui/autocomplete-loading/autocomplete-loading"
       ],
-      "@ui/button-progress": ["./registry/mantine-ui/button-progress/button-progress"],
-      "@ui/cards-carousel": ["./registry/mantine-ui/cards-carousel/cards-carousel"],
-      "@ui/dnd-list": ["./registry/mantine-ui/dnd-list/dnd-list"],
-      "@ui/dropzone-button": ["./registry/mantine-ui/dropzone-button/dropzone-button"],
-      "@ui/faq-simple": ["./registry/mantine-ui/faq-simple/faq-simple"],
-      "@ui/floating-label-input": [
+      "@/components/ui/button-progress": ["./registry/mantine-ui/button-progress/button-progress"],
+      "@/components/ui/cards-carousel": ["./registry/mantine-ui/cards-carousel/cards-carousel"],
+      "@/components/ui/dnd-list": ["./registry/mantine-ui/dnd-list/dnd-list"],
+      "@/components/ui/dropzone-button": ["./registry/mantine-ui/dropzone-button/dropzone-button"],
+      "@/components/ui/faq-simple": ["./registry/mantine-ui/faq-simple/faq-simple"],
+      "@/components/ui/floating-label-input": [
         "./registry/mantine-ui/floating-label-input/floating-label-input"
       ],
-      "@ui/footer-links": ["./registry/mantine-ui/footer-links/footer-links"],
-      "@ui/header-mega-menu": ["./registry/mantine-ui/header-mega-menu/header-mega-menu"],
-      "@ui/hero-image-right": ["./registry/mantine-ui/hero-image-right/hero-image-right"],
-      "@ui/navbar-nested": ["./registry/mantine-ui/navbar-nested/navbar-nested"],
-      "@ui/password-strength": ["./registry/mantine-ui/password-strength/password-strength"],
-      "@ui/stats-grid": ["./registry/mantine-ui/stats-grid/stats-grid"],
-      "@ui/table-sort": ["./registry/mantine-ui/table-sort/table-sort"],
+      "@/components/ui/footer-links": ["./registry/mantine-ui/footer-links/footer-links"],
+      "@/components/ui/header-mega-menu": [
+        "./registry/mantine-ui/header-mega-menu/header-mega-menu"
+      ],
+      "@/components/ui/hero-image-right": [
+        "./registry/mantine-ui/hero-image-right/hero-image-right"
+      ],
+      "@/components/ui/navbar-nested": ["./registry/mantine-ui/navbar-nested/navbar-nested"],
+      "@/components/ui/password-strength": [
+        "./registry/mantine-ui/password-strength/password-strength"
+      ],
+      "@/components/ui/stats-grid": ["./registry/mantine-ui/stats-grid/stats-grid"],
+      "@/components/ui/table-sort": ["./registry/mantine-ui/table-sort/table-sort"],
       // The data-table block installs its component under the classic alias, but its
       // source lives under blocks/ — the wildcard above only covers registry/ui/.
       "@/components/ui/data-table": ["./registry/blocks/data-table/data-table"]

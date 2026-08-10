@@ -1,4 +1,4 @@
-import { AuthenticationForm } from "@ui/authentication-form";
+import { AuthenticationForm } from "@/components/ui/authentication-form";
 
 export function AccountSignIn() {
   return (

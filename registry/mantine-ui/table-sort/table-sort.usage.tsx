@@ -1,4 +1,4 @@
-import { TableSort } from "@ui/table-sort";
+import { TableSort } from "@/components/ui/table-sort";
 
 export function TeamDirectoryTable() {
   return (

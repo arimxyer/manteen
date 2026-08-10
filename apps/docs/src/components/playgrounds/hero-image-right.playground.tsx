@@ -54,7 +54,7 @@ const adapter: PlaygroundAdapter = {
       ? `\n      backgroundImageUrl=${JSON.stringify(IMAGE_EARTH)}`
       : "";
 
-    return `import { HeroImageRight } from "@ui/hero-image-right";
+    return `import { HeroImageRight } from "@/components/ui/hero-image-right";
 
 export function MarketingHero() {
   return (

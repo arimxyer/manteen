@@ -1,6 +1,10 @@
 import { Text } from "@mantine/core";
 import { IconBrandInstagram, IconBrandTwitter, IconBrandYoutube } from "@tabler/icons-react";
-import { FooterLinks, type FooterLinksGroup, type FooterLinksSocialLink } from "@ui/footer-links";
+import {
+  FooterLinks,
+  type FooterLinksGroup,
+  type FooterLinksSocialLink,
+} from "@/components/ui/footer-links";
 
 const groups: FooterLinksGroup[] = [
   {

@@ -71,7 +71,7 @@ const adapter: PlaygroundAdapter = {
     const chevronProp = props.chevronLeft ? '\n      chevronPosition="left"' : "";
     const defaultValueProp = props.openFirst ? '\n      defaultValue="faq-0"' : "";
 
-    return `import { FaqSimple, type FaqSimpleItem } from "@ui/faq-simple";
+    return `import { FaqSimple, type FaqSimpleItem } from "@/components/ui/faq-simple";
 
 const items: FaqSimpleItem[] = [
   {

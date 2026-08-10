@@ -1,5 +1,5 @@
-import { FloatingLabelInput } from "@ui/floating-label-input";
 import { useState } from "react";
+import { FloatingLabelInput } from "@/components/ui/floating-label-input";
 
 export function SignupEmailField() {
   const [email, setEmail] = useState("");

@@ -145,7 +145,7 @@ const adapter: PlaygroundAdapter = {
       ? 'import { IconCoin, IconDiscount2, IconReceipt2, IconUserPlus } from "@tabler/icons-react";\n'
       : "";
 
-    return `${iconImports}import { StatsGrid } from "@ui/stats-grid";
+    return `${iconImports}import { StatsGrid } from "@/components/ui/stats-grid";
 
 <StatsGrid
   items={[

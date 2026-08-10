@@ -1,4 +1,4 @@
-import { HeroImageRight } from "@ui/hero-image-right";
+import { HeroImageRight } from "@/components/ui/hero-image-right";
 
 export function MarketingHero() {
   return (
