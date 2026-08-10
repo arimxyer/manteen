@@ -149,6 +149,67 @@ describe("W6 shared init planning", () => {
     ).toEqual([]);
   });
 
+  test("additively completes missing house and theme fields without dropping custom config", () => {
+    const project = snapshot();
+    const initialized = applyProposals(project, planShared(project, frameworkSetFor("vite")).files);
+    const configPath = join(ROOT, "manteen.json");
+    const themePath = join(ROOT, "src/lib/theme.ts");
+    const partial = JSON.parse(initialized.files.get(configPath) ?? "null");
+    delete partial.registries["@house"];
+    partial.registries["@probe"] = {
+      url: "https://example.com/r/{name}.json",
+      index: "https://example.com/r/registry.json",
+    };
+    delete partial.theme;
+    partial.resolutions = { card: "@probe/card" };
+    initialized.files.set(configPath, `${JSON.stringify(partial, null, 2)}\n`);
+    initialized.files.delete(themePath);
+
+    const migration = planShared(initialized, frameworkSetFor("vite"));
+
+    expect(migration.diagnostics).toEqual([]);
+    expect(migration.files.find((file) => file.kind === "theme")?.content).toBe(INIT_THEME_SOURCE);
+    const config = JSON.parse(
+      migration.files.find((file) => file.kind === "manteen-config")?.content ?? "null",
+    );
+    expect(config.registries["@house"]).toEqual({
+      url: HOUSE_REGISTRY_ITEM_URL,
+      index: HOUSE_REGISTRY_INDEX_URL,
+    });
+    expect(config.registries["@probe"]).toEqual(partial.registries["@probe"]);
+    expect(config.theme).toBe("src/lib/theme.ts");
+    expect(config.resolutions).toEqual({ card: "@probe/card" });
+  });
+
+  test("a missing ownership field is truthful and carries an exact config patch", () => {
+    const project = snapshot();
+    const initialized = applyProposals(project, planShared(project, frameworkSetFor("vite")).files);
+    const configPath = join(ROOT, "manteen.json");
+    const partial = JSON.parse(initialized.files.get(configPath) ?? "null");
+    delete partial.aliases;
+    initialized.files.set(configPath, `${JSON.stringify(partial, null, 2)}\n`);
+
+    const result = planShared(initialized, frameworkSetFor("vite"));
+    const diagnostic = result.diagnostics.find((entry) => entry.path === configPath);
+
+    expect(result.files.some((file) => file.kind === "manteen-config")).toBe(false);
+    expect(diagnostic?.message).toContain("does not declare `aliases`");
+    expect(diagnostic?.message).not.toContain("has an explicit value");
+    expect(diagnostic?.actions).toEqual([
+      {
+        kind: "configPatch",
+        patch: {
+          aliases: {
+            components: "@/components",
+            ui: "@/components/ui",
+            hooks: "@/hooks",
+            lib: "@/lib",
+          },
+        },
+      },
+    ]);
+  });
+
   test("adds the styles path and scaffold to a compatible pre-styles config", () => {
     const project = snapshot();
     const initialized = applyProposals(project, planShared(project, frameworkSetFor("vite")).files);

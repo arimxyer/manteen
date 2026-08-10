@@ -262,3 +262,10 @@ A fresh-agent probe found two bounded W6 seams. A planning refusal from
 the Vite adapter accepts a directly provable named `App` function or variable, including a separate
 unaliased `App` export specifier, without changing that export contract. Computed, aliased,
 duplicate, or otherwise ambiguous application bindings still refuse rather than guessing.
+
+A second probe exposed two further bounded seams. JSON-mode dependency installation now captures
+child output so stdout remains one command envelope on both success and failure, with captured
+failure detail retained in the structured error. Existing configs also distinguish absent fields
+from authored conflicts: a missing canonical `@house` member and detected theme path are additive
+migrations that preserve custom registries, while ownership-selecting omissions receive an exact
+reviewable config patch and differing authored values continue to refuse.

@@ -3,6 +3,16 @@ import { diag } from "../plan/diagnostics";
 import type { Diagnostic } from "../plan/types";
 import type { InitFrameworkFlag } from "./types";
 
+export type InitConfigIssue =
+  | {
+      kind: "missing-field";
+      field: string;
+      detail: string;
+      patch: Record<string, unknown>;
+    }
+  | { kind: "conflicting-field"; field: string; detail: string }
+  | { kind: "invalid-shape"; field: string; detail: string };
+
 export function initFrameworkUnrecognized(root: string): Diagnostic {
   return diag(
     "init-framework-unrecognized",
@@ -38,6 +48,28 @@ export function initConfigConflict(path: string, detail: string): Diagnostic {
   return diag(
     "init-config-conflict",
     `${path} has an explicit value that init cannot merge safely: ${detail} Resolve it manually, then re-run manteen init.`,
+    { path },
+  );
+}
+
+export function initConfigIssue(path: string, issue: InitConfigIssue): Diagnostic {
+  if (issue.kind === "missing-field") {
+    return diag(
+      "init-config-conflict",
+      `${path} does not declare ${issue.field}: ${issue.detail} Review and merge the proposed config patch, then re-run manteen init.`,
+      { path, actions: [{ kind: "configPatch", patch: issue.patch }] },
+    );
+  }
+  if (issue.kind === "invalid-shape") {
+    return diag(
+      "init-config-conflict",
+      `${path} has an invalid ${issue.field} shape that init cannot merge safely: ${issue.detail} Resolve it manually, then re-run manteen init.`,
+      { path },
+    );
+  }
+  return diag(
+    "init-config-conflict",
+    `${path} has an explicit ${issue.field} value that init cannot merge safely: ${issue.detail} Resolve it manually, then re-run manteen init.`,
     { path },
   );
 }

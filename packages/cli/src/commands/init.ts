@@ -249,7 +249,15 @@ export async function runInit(
 
   let outcome: InitApplyOutcome;
   try {
-    outcome = await applyInit(plan, { interactive, dryRun: flags.dryRun }, ports.apply);
+    outcome = await applyInit(
+      plan,
+      {
+        interactive,
+        dryRun: flags.dryRun,
+        ...(flags.json ? { dependencyOutput: "capture" as const } : {}),
+      },
+      ports.apply,
+    );
   } catch (error) {
     streams.stderr("error  init apply\n");
     streams.stderr(renderThrown(error));

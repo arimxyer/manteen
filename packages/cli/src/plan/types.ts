@@ -27,6 +27,11 @@ export type { MergeConflict };
 export type CanonicalId = string; // "@house/data-table" | "url:https://x/r/a.json"
 export type Severity = "error" | "warn" | "info";
 
+export type DiagnosticAction =
+  | { kind: "rerun"; argv: string[] }
+  | { kind: "configPatch"; patch: Record<string, unknown> }
+  | { kind: "manual"; instruction: string };
+
 export type DiagnosticCode =
   | "unknown-namespace"
   | "missing-env"
@@ -120,6 +125,9 @@ export interface Diagnostic {
   items?: CanonicalId[]; // who this is about
   path?: string; // destination or config path, when relevant
   forceable: boolean; // whether --force may downgrade error -> warn
+  /** Exact command-specific remediation, preserved by the machine envelope. */
+  actions?: DiagnosticAction[];
+  manualRationale?: string;
 }
 
 // ---- ports -----------------------------------------------------------------

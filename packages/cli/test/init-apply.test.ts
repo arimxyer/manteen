@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { applyInit } from "../src/init/apply";
 import type {
   InitApplyPorts,
+  InitInstallInput,
   InitPlan,
   InitPlannedDependency,
   InitWriteJournal,
@@ -68,6 +69,7 @@ function fakePorts(
 ) {
   const disk = new Map<string, string>([[FIRST, "old first\n"]]);
   const calls = { confirm: 0, install: 0, journal: 0 };
+  const installs: InitInstallInput[] = [];
   const ports: InitApplyPorts = {
     hashFile(path) {
       const content = disk.get(path);
@@ -77,8 +79,9 @@ function fakePorts(
       calls.confirm += 1;
       return { confirmed: input.confirm !== false };
     },
-    async install() {
+    async install(installInput) {
       calls.install += 1;
+      installs.push(installInput);
       if (input.installError) throw input.installError;
       return { installed: true, command: "npm install @mantine/core@^9" };
     },
@@ -105,7 +108,7 @@ function fakePorts(
       return journal;
     },
   };
-  return { disk, calls, ports };
+  return { disk, calls, installs, ports };
 }
 
 describe("W6 init apply sequencing", () => {
@@ -150,6 +153,19 @@ describe("W6 init apply sequencing", () => {
     expect(outcome.failure?.message).toContain("registry offline");
     expect(fixture.calls).toEqual({ confirm: 0, install: 1, journal: 0 });
     expect(fixture.disk).toEqual(new Map([[FIRST, "old first\n"]]));
+  });
+
+  test("machine callers explicitly capture dependency-manager output", async () => {
+    const fixture = fakePorts();
+    const outcome = await applyInit(
+      plan({ dependencies: true }),
+      { interactive: false, dependencyOutput: "capture" },
+      fixture.ports,
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect(fixture.installs).toHaveLength(1);
+    expect(fixture.installs[0]?.dependencyOutput).toBe("capture");
   });
 
   test("a write failure unwinds every init file through the shared journal", async () => {

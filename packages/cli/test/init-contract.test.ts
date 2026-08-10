@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   initConfigConflict,
+  initConfigIssue,
   initFrameworkAmbiguous,
   initFrameworkMismatch,
   initFrameworkUnrecognized,
@@ -75,6 +76,27 @@ describe("W6 diagnostic contract", () => {
     expect(detection.map((entry) => entry.message).join("\n")).toContain("re-run manteen init");
     expect(transforms.map((entry) => entry.message).join("\n")).toContain("manually");
     expect(transforms.map((entry) => entry.message).join("\n")).toContain("Nothing was written");
+  });
+
+  test("missing config fields are distinct from conflicts and expose reviewable patches", () => {
+    const missing = initConfigIssue("/project/manteen.json", {
+      kind: "missing-field",
+      field: "`aliases`",
+      detail: "aliases choose source destinations.",
+      patch: { aliases: { lib: "@/lib" } },
+    });
+    const conflicting = initConfigIssue("/project/manteen.json", {
+      kind: "conflicting-field",
+      field: "`theme`",
+      detail: "expected src/lib/theme.ts",
+    });
+
+    expect(missing.message).toContain("does not declare `aliases`");
+    expect(missing.actions).toEqual([
+      { kind: "configPatch", patch: { aliases: { lib: "@/lib" } } },
+    ]);
+    expect(conflicting.message).toContain("has an explicit `theme` value");
+    expect(conflicting.actions).toBeUndefined();
   });
 });
 

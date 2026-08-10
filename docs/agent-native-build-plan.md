@@ -11,6 +11,11 @@ Every recognized `--json` invocation writes exactly one JSON document to stdout 
 JSON mode is non-interactive, but it is not consent: a command that needs a destructive or ambiguous
 choice still refuses unless the matching explicit flag was supplied.
 
+That stdout reservation includes subprocesses. Package-manager and verification output must be
+captured or sent to stderr; a child process may never inherit machine stdout. Captured dependency
+output is discarded on success and retained in the structured failure on error so the envelope stays
+parseable without erasing the evidence needed to diagnose an install.
+
 The client envelope is schema version 1:
 
 ```ts
@@ -83,6 +88,13 @@ the process exits. Verification definitions are included in the plan digest and 
 `healthy: false`; only inability to inspect the target is a command failure. It reports configuration,
 framework, package manager, Mantine, receipt/base integrity, `.gitignore`, verification, and packaged
 skill installation without fetching a registry.
+
+`init` may complete only enumerated, absent standard fields in an existing configuration. A missing
+canonical `@house` member and missing detected `theme` path are additive migrations; custom registry
+members and every unrelated key remain byte-semantically preserved. Missing fields that select source
+ownership, and every explicit differing value, still refuse with a truthful missing/conflicting/invalid
+reason. When one exact JSON edit is safe to propose but not safe to assume, machine output carries a
+`configPatch` action.
 
 ## 4. Metadata, discovery, and SDK
 

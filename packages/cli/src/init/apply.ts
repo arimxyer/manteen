@@ -100,7 +100,7 @@ async function applyInitCore(
         root: plan.root,
         packageManager: plan.packageManager,
         dependencies: plan.dependencies,
-        interactive: options.interactive,
+        dependencyOutput: options.dependencyOutput ?? (options.interactive ? "capture" : "inherit"),
       });
       dependencies = installed;
       if (!installed.installed) {

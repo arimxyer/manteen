@@ -16,7 +16,7 @@ import {
   houseRegistrySource,
 } from "../config/defaults";
 import type { Diagnostic } from "../plan/types";
-import { initConfigConflict } from "./diagnostics";
+import { type InitConfigIssue, initConfigConflict, initConfigIssue } from "./diagnostics";
 import { VITE_CONFIG_PATHS } from "./framework-paths";
 import { planPostcss } from "./postcss";
 import { INIT_STYLES_SOURCE } from "./styles";
@@ -84,7 +84,9 @@ function desiredConfig(project: InitProjectSnapshot): Record<string, unknown> {
   };
 }
 
-type ConfigCompatibility = { ok: true; content: string | null } | { ok: false; detail: string };
+type ConfigCompatibility =
+  | { ok: true; content: string | null }
+  | { ok: false; issue: InitConfigIssue };
 
 function serializedJson(parsed: Record<string, unknown>, source: string): string {
   const lineEnding = source.includes("\r\n") ? "\r\n" : "\n";
@@ -96,16 +98,47 @@ function serializedJson(parsed: Record<string, unknown>, source: string): string
 
 function compatibleConfig(source: string, expected: Record<string, unknown>): ConfigCompatibility {
   const parsed = jsonObject(source);
-  if (parsed === null) return { ok: false, detail: "the existing file is not a JSON object" };
+  if (parsed === null) {
+    return {
+      ok: false,
+      issue: {
+        kind: "invalid-shape",
+        field: "configuration",
+        detail: "the existing file is not a JSON object",
+      },
+    };
+  }
 
   const registries = parsed.registries;
-  if (typeof registries !== "object" || registries === null || Array.isArray(registries)) {
-    return { ok: false, detail: "registries is not an object" };
+  if (registries === undefined) {
+    return {
+      ok: false,
+      issue: {
+        kind: "missing-field",
+        field: "`registries`",
+        detail: "init will not create the registry map inside an existing config without review.",
+        patch: { registries: expected.registries },
+      },
+    };
   }
+  if (typeof registries !== "object" || registries === null || Array.isArray(registries)) {
+    return {
+      ok: false,
+      issue: {
+        kind: "invalid-shape",
+        field: "`registries`",
+        detail: "the value is not an object",
+      },
+    };
+  }
+
   const registryMap = registries as Record<string, unknown>;
   const house = registryMap["@house"];
   let migrateConfig = false;
-  if (house === HOUSE_REGISTRY_ITEM_URL) {
+  if (house === undefined) {
+    registryMap["@house"] = houseRegistrySource();
+    migrateConfig = true;
+  } else if (house === HOUSE_REGISTRY_ITEM_URL) {
     registryMap["@house"] = houseRegistrySource();
     migrateConfig = true;
   } else if (typeof house === "object" && house !== null && !Array.isArray(house)) {
@@ -113,7 +146,11 @@ function compatibleConfig(source: string, expected: Record<string, unknown>): Co
     if (sourceObject.url !== HOUSE_REGISTRY_ITEM_URL) {
       return {
         ok: false,
-        detail: `registries.@house.url is not ${JSON.stringify(HOUSE_REGISTRY_ITEM_URL)}`,
+        issue: {
+          kind: "conflicting-field",
+          field: "`registries.@house.url`",
+          detail: `expected ${JSON.stringify(HOUSE_REGISTRY_ITEM_URL)}`,
+        },
       };
     }
     if (sourceObject.index === undefined) {
@@ -122,33 +159,96 @@ function compatibleConfig(source: string, expected: Record<string, unknown>): Co
     } else if (sourceObject.index !== HOUSE_REGISTRY_INDEX_URL) {
       return {
         ok: false,
-        detail: `registries.@house.index is not ${JSON.stringify(HOUSE_REGISTRY_INDEX_URL)}`,
+        issue: {
+          kind: "conflicting-field",
+          field: "`registries.@house.index`",
+          detail: `expected ${JSON.stringify(HOUSE_REGISTRY_INDEX_URL)}`,
+        },
       };
     }
   } else {
     return {
       ok: false,
-      detail: "registries.@house is neither the legacy item URL nor a registry source object",
+      issue: {
+        kind: "conflicting-field",
+        field: "`registries.@house`",
+        detail: "the value is neither the legacy item URL nor a registry source object",
+      },
     };
   }
 
-  for (const key of ["aliases", "theme"] as const) {
-    if (JSON.stringify(parsed[key]) !== JSON.stringify(expected[key])) {
-      return { ok: false, detail: `${key} differs from the detected project layout` };
-    }
+  if (parsed.aliases === undefined) {
+    return {
+      ok: false,
+      issue: {
+        kind: "missing-field",
+        field: "`aliases`",
+        detail: "aliases select the destinations for future registry source and need review.",
+        patch: { aliases: expected.aliases },
+      },
+    };
+  }
+  if (JSON.stringify(parsed.aliases) !== JSON.stringify(expected.aliases)) {
+    return {
+      ok: false,
+      issue: {
+        kind: "conflicting-field",
+        field: "`aliases`",
+        detail: "the value differs from the detected project layout",
+      },
+    };
+  }
+
+  if (parsed.theme === undefined) {
+    parsed.theme = expected.theme;
+    migrateConfig = true;
+  } else if (parsed.theme !== expected.theme) {
+    return {
+      ok: false,
+      issue: {
+        kind: "conflicting-field",
+        field: "`theme`",
+        detail: "the value differs from the detected project layout",
+      },
+    };
   }
 
   if (parsed.styles === undefined) {
     parsed.styles = expected.styles;
     migrateConfig = true;
   } else if (parsed.styles !== expected.styles) {
-    return { ok: false, detail: "styles differs from the detected project layout" };
+    return {
+      ok: false,
+      issue: {
+        kind: "conflicting-field",
+        field: "`styles`",
+        detail: "the value differs from the detected project layout",
+      },
+    };
   }
 
   const expectedTsconfig = expected.tsconfig;
   const authoredTsconfig = parsed.tsconfig ?? "tsconfig.json";
   if (authoredTsconfig !== expectedTsconfig) {
-    return { ok: false, detail: "tsconfig differs from the detected application tsconfig" };
+    if (parsed.tsconfig === undefined) {
+      return {
+        ok: false,
+        issue: {
+          kind: "missing-field",
+          field: "`tsconfig`",
+          detail: "the detected application config is not the default tsconfig.json.",
+          patch: { tsconfig: expectedTsconfig },
+        },
+      };
+    }
+    return {
+      ok: false,
+      issue: {
+        kind: "conflicting-field",
+        field: "`tsconfig`",
+        detail: "the value differs from the detected application config",
+      },
+    };
   }
 
   return { ok: true, content: migrateConfig ? serializedJson(parsed, source) : null };
@@ -186,7 +286,7 @@ function planConfig(project: InitProjectSnapshot): InitSharedResult {
     : {
         files: [],
         instructions: [],
-        diagnostics: [initConfigConflict(destination, compatible.detail)],
+        diagnostics: [initConfigIssue(destination, compatible.issue)],
       };
 }
 

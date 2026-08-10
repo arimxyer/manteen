@@ -39,7 +39,9 @@ and Pages deployment are accepted. Its frozen contract is
 Current unreleased agent-probe hardening amends discovery so queried rows are explainably,
 deterministically relevance-ranked within stable registry groups; it also makes init refusal
 dry-run reporting truthful, accepts bounded named Vite `App` exports, and clarifies that offline
-status health is not application build proof. Publication and deployment remain separate work.
+status health is not application build proof. A follow-up keeps dependency subprocess output out of
+machine stdout and narrowly completes absent canonical registry/theme config without overwriting
+authored values. Publication and deployment remain separate work.
 
 The client-only `manteen@0.3.0` release now carries Wu's receipt v3, committed pristine bases and
 three-way updates; the apply-time state-versioning advisory; and Wv's opt-in post-update project
