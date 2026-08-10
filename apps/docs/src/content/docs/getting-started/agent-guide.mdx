@@ -14,13 +14,14 @@ apply exactly the plan a person reviewed.
 :::caution[Check the installed surface]
 This contract was frozen while
 <code>{`manteen@${manifest.releases.publishedClientAtContractFreeze}`}</code> was public. The
-agent-native authoring and workflow surfaces described here are now public in
+agent-native authoring and workflow foundation shipped in
 <code>manteen-kit@0.2.1</code> and
 <code>{`manteen@${manifest.releases.agentWorkflowMilestone}`}</code>; the machine-envelope work was
 an internal <code>{manifest.releases.machineInterfaceMilestone}</code> milestone, not a separate
-package release. Documentation still is not proof of what a project has installed. Inspect
-`manteen --version` and command `--help`; never invent a command or flag that the installed binary
-does not expose.
+package release. The complete behavior documented here is versioned for
+<code>{`manteen@${manifest.releases.documentedClientRelease}`}</code>. Documentation still is not
+proof of what a project has installed. Inspect `manteen --version` and command `--help`; never
+invent a command or flag that the installed binary does not expose.
 :::
 
 Examples on this page use the logical command `manteen`. Resolve the project-installed binary with

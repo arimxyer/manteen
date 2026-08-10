@@ -24,6 +24,7 @@ Full agent context: https://arimxyer.github.io/manteen/llms-full.txt
 - Do not hand-edit `manteen.lock.json` or `.manteen/bases/`.
 - Never expose expanded environment variables from registry URLs.
 
-The complete agent-native surface is public in manteen 0.7.0 and manteen-kit 0.2.1. Documentation
-does not prove a project's installed version; check local help. `status` health covers Manteen's
-local state, not the application's typecheck, tests, or build.
+The agent-native foundation shipped in manteen 0.7.0 and manteen-kit 0.2.1; the complete behavior
+documented here is versioned for manteen 0.8.0. Documentation does not prove a project's installed
+version; check local help. `status` health covers Manteen's local state, not the application's
+typecheck, tests, or build.

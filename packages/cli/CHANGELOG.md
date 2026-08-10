@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.0
+
 - Rank `list --query` matches deterministically within each registry while preserving unqueried and
   equal-rank order. JSON rows expose matching fields and the winning rank.
 - Make refused `init --dry-run --json` responses report the requested dry-run mode truthfully and

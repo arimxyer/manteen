@@ -36,7 +36,7 @@ and Pages deployment are accepted. Its frozen contract is
 [`agent-native-build-plan.md`](agent-native-build-plan.md), and its receipts are in the
 [`agent-native release handoff`](agent-native-release-handoff.md).
 
-Current unreleased agent-probe hardening amends discovery so queried rows are explainably,
+The current `manteen@0.8.0` release candidate amends discovery so queried rows are explainably,
 deterministically relevance-ranked within stable registry groups; it also makes init refusal
 dry-run reporting truthful, accepts bounded named Vite `App` exports, and clarifies that offline
 status health is not application build proof. A follow-up keeps dependency subprocess output out of

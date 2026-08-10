@@ -10,10 +10,10 @@ Documentation: https://arimxyer.github.io/manteen/
 ## Availability boundary
 
 The contract was frozen while manteen 0.5.0 was public. The agent-native authoring and workflow
-surfaces described here are now public in manteen-kit 0.2.1 and manteen 0.7.0. The schema-v1
-machine contract was an internal 0.6.0 milestone, not a separate package release. Documentation is
-not proof of what a project has installed: always inspect the installed version and relevant
-`--help` output.
+foundation shipped in manteen-kit 0.2.1 and manteen 0.7.0. The complete behavior documented here
+is versioned for manteen 0.8.0. The schema-v1 machine contract was an internal 0.6.0 milestone, not
+a separate package release. Documentation is not proof of what a project has installed: always
+inspect the installed version and relevant `--help` output.
 
 ## Consumer workflow
 

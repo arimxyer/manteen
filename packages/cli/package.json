@@ -1,6 +1,6 @@
 {
   "name": "manteen",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Install Mantine components from a registry into your project. The consumer side of manteen-kit.",
   "type": "module",
   "license": "MIT",
