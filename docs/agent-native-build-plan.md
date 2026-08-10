@@ -90,8 +90,11 @@ Registry items retain `docs`, `props`, and `usage`. Malformed optional display m
 metadata section without making otherwise installable item bytes unusable. `info --json` returns the
 full fields by default; text is compact, with `--props` and `--usage` for expansion.
 
-`list` supports deterministic `--query`, repeatable `--type`, and `--installed` filters. Filtering is
-stable and happens before presentation.
+`list` supports deterministic `--query`, repeatable `--type`, and `--installed` filters. With no
+query, registry and canonical item order remain unchanged. A query ranks matching rows within each
+registry by exact canonical id, exact name, exact title, title prefix, id/name substring, title
+substring, then description substring; ties retain the prior item order. JSON exposes both every
+matching field and the winning rank so the ordering is explainable rather than an opaque score.
 
 The supported programmatic entrypoint is `createManteenClient()`: read operations plus opaque
 plan/apply handles. Existing low-level exports remain available but are not the stable façade.

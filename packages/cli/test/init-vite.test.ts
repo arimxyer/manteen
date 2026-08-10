@@ -112,6 +112,37 @@ export default function App() {
     expect(second.files[0]?.content.match(/<MantineProvider/g)).toHaveLength(1);
   });
 
+  test("integrates a directly exported named App without changing its export contract", () => {
+    const result = planViteEntry(
+      input(`export function App() {
+  return <main>Keep named</main>;
+}
+`),
+    );
+    const content = result.files[0]?.content ?? "";
+
+    expect(result.diagnostics).toEqual([]);
+    expect(content).toContain("export function App()");
+    expect(content).not.toContain("export default");
+    expect(content).toContain("<MantineProvider theme={theme}>");
+    expect(content).toContain("<main>Keep named</main>");
+  });
+
+  test("integrates a separately exported named App variable", () => {
+    const result = planViteEntry(
+      input(`const App = () => <main>Keep separate</main>;
+export { App };
+`),
+    );
+    const content = result.files[0]?.content ?? "";
+
+    expect(result.diagnostics).toEqual([]);
+    expect(content).toContain("const App = () =>");
+    expect(content).toContain("export { App }");
+    expect(content).toContain("<MantineProvider theme={theme}>");
+    expect(content).toContain("<main>Keep separate</main>");
+  });
+
   test("refuses a computed default export and emits no proposed file", () => {
     const result = planViteEntry(
       input(`const candidates = [() => <main>A</main>, () => <main>B</main>];

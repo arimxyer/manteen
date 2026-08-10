@@ -13,13 +13,19 @@ const INDEXES: Record<string, unknown> = {
         name: "data-hook",
         type: "registry:hook",
         title: "Loader",
-        description: "Fetches remote data",
+        description: "Fetches remote card data",
       },
       {
         name: "card",
         type: "registry:ui",
         title: "Feature Panel",
         description: "Overview analytics",
+      },
+      {
+        name: "manual",
+        type: "registry:file",
+        title: "Reference",
+        description: "Card manual",
       },
     ],
   },
@@ -29,14 +35,20 @@ const INDEXES: Record<string, unknown> = {
       {
         name: "select",
         type: "registry:ui",
-        title: "Picker",
+        title: "Card",
         description: "Choose a value",
       },
       {
         name: "chart",
         type: "registry:block",
-        title: "Revenue Chart",
+        title: "Revenue Card Chart",
         description: "Visualizes metrics",
+      },
+      {
+        name: "grid",
+        type: "registry:layout",
+        title: "Card Grid",
+        description: "Arranges content",
       },
     ],
   },
@@ -107,18 +119,79 @@ function ids(result: Awaited<ReturnType<typeof filtered>>): (string | null)[][] 
   return result.groups.map((group) => group.rows.map((row) => row.item.id));
 }
 
+function matches(result: Awaited<ReturnType<typeof filtered>>) {
+  return result.groups.flatMap((group) =>
+    group.rows.map((row) => [row.item.id, row.queryMatches] as const),
+  );
+}
+
+function ranks(result: Awaited<ReturnType<typeof filtered>>) {
+  return result.groups.flatMap((group) =>
+    group.rows.map((row) => [row.item.id, row.queryRank] as const),
+  );
+}
+
 describe("list filters", () => {
   test("query matches canonical id, name, title, and description case-insensitively", async () => {
-    expect(ids(await filtered({ query: "@BETA/CHART" }))).toEqual([[], ["@beta/chart"]]);
-    expect(ids(await filtered({ query: "HOOK" }))).toEqual([["@alpha/data-hook"], []]);
-    expect(ids(await filtered({ query: "feature" }))).toEqual([["@alpha/card"], []]);
-    expect(ids(await filtered({ query: "ANALYTICS" }))).toEqual([["@alpha/card"], []]);
+    const canonical = await filtered({ query: "@BETA/CHART" });
+    const name = await filtered({ query: "HOOK" });
+    const title = await filtered({ query: "feature" });
+    const description = await filtered({ query: "ANALYTICS" });
+
+    expect(ids(canonical)).toEqual([[], ["@beta/chart"]]);
+    expect(ids(name)).toEqual([["@alpha/data-hook"], []]);
+    expect(ids(title)).toEqual([["@alpha/card"], []]);
+    expect(ids(description)).toEqual([["@alpha/card"], []]);
+    expect(matches(canonical)).toEqual([["@beta/chart", ["id"]]]);
+    expect(matches(name)).toEqual([["@alpha/data-hook", ["id", "name"]]]);
+    expect(matches(title)).toEqual([["@alpha/card", ["title"]]]);
+    expect(matches(description)).toEqual([["@alpha/card", ["description"]]]);
+    expect(ranks(canonical)).toEqual([["@beta/chart", "exact-id"]]);
+    expect(ranks(name)).toEqual([["@alpha/data-hook", "identity-substring"]]);
+    expect(ranks(title)).toEqual([["@alpha/card", "title-prefix"]]);
+    expect(ranks(description)).toEqual([["@alpha/card", "description-substring"]]);
+  });
+
+  test("query relevance is deterministic within registries and exposes the winning rank", async () => {
+    const result = await filtered({ query: "card" });
+
+    expect(ids(result)).toEqual([
+      ["@alpha/card", "@alpha/data-hook", "@alpha/manual"],
+      ["@beta/select", "@beta/grid", "@beta/chart"],
+    ]);
+    expect(ranks(result)).toEqual([
+      ["@alpha/card", "exact-name"],
+      ["@alpha/data-hook", "description-substring"],
+      ["@alpha/manual", "description-substring"],
+      ["@beta/select", "exact-title"],
+      ["@beta/grid", "title-prefix"],
+      ["@beta/chart", "title-substring"],
+    ]);
+    expect(matches(result)).toEqual([
+      ["@alpha/card", ["id", "name"]],
+      ["@alpha/data-hook", ["description"]],
+      ["@alpha/manual", ["description"]],
+      ["@beta/select", ["title"]],
+      ["@beta/grid", ["title"]],
+      ["@beta/chart", ["title"]],
+    ]);
+  });
+
+  test("no query preserves canonical registry and item order", async () => {
+    expect(ids(await filtered({}))).toEqual([
+      ["@alpha/card", "@alpha/data-hook", "@alpha/manual"],
+      ["@beta/chart", "@beta/grid", "@beta/select"],
+    ]);
   });
 
   test("repeatable types are exact, OR-ed, and preserve registry and item order", async () => {
     const result = await filtered({ types: ["registry:hook", "registry:block"] });
     expect(result.groups.map((group) => group.registry)).toEqual(["@alpha", "@beta"]);
     expect(ids(result)).toEqual([["@alpha/data-hook"], ["@beta/chart"]]);
+    expect(matches(result)).toEqual([
+      ["@alpha/data-hook", []],
+      ["@beta/chart", []],
+    ]);
 
     expect(ids(await filtered({ types: ["REGISTRY:UI"] }))).toEqual([[], []]);
   });

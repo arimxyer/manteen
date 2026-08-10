@@ -23,6 +23,11 @@ package release. Documentation still is not proof of what a project has installe
 does not expose.
 :::
 
+Examples on this page use the logical command `manteen`. Resolve the project-installed binary with
+the declared package manager and disallow transient acquisition: `npm exec --yes=false -- manteen`,
+`pnpm exec manteen`, `yarn manteen`, or `bunx --no-install manteen`. Keep package-manager stderr
+separate from Manteen's JSON stdout.
+
 ## The operating model
 
 1. Establish the project root and read its `AGENTS.md` or equivalent instructions.
@@ -36,6 +41,11 @@ does not expose.
 
 JSON mode disables prompting; it does not grant overwrite or discard authority. A missing choice
 is supposed to remain a structured refusal.
+
+An unqueried `list` retains deterministic registry and canonical item order. `--query` ranks rows
+within each registry by exact canonical id, exact name, exact title, title prefix, id/name
+substring, title substring, then description substring. Ties retain prior order, and JSON exposes
+both `queryMatches` and the winning `queryRank`.
 
 ## Agent-oriented command surface
 
@@ -91,6 +101,10 @@ payload, diagnostics, errors, notes
 <code>{manifest.machineInterface.invariant}</code>. A successful offline status can still report
 `healthy: false`; that is an assessment, not a command failure. Blocking diagnostics include a
 typed rerun argv array, a configuration patch, or a bounded manual action/rationale.
+
+Status health covers only Manteen's local configuration and ownership state. It does not run the
+application's typecheck, tests, or production build. Inspect configured verification and execute
+the project checks required for application-level proof.
 
 Never expose an expanded environment placeholder from a registry URL. Only redacted URLs are safe
 in output, receipts, diagnostics, or plan digests.

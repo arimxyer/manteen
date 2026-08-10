@@ -115,6 +115,31 @@ describe("W6 init command shell", () => {
     expect(readFileSync(join(root, "postcss.config.mjs"), "utf8")).toBe(tailwind);
   });
 
+  test("JSON planning refusals preserve the requested dry-run mode", async () => {
+    const root = fixture();
+    viteFixture(root);
+    const sourcePath = join(root, "src/App.tsx");
+    const source = "export default chooseAtRuntime();\n";
+    writeFileSync(sourcePath, source, "utf8");
+
+    const captured = streams();
+    const exit = await runInit({ cwd: root, dryRun: true, json: true }, captured.value);
+    const document = JSON.parse(captured.output.stdout) as {
+      ok: boolean;
+      dryRun: boolean;
+      diagnostics: { code: string }[];
+    };
+
+    expect(exit).toBe(1);
+    expect(captured.output.stderr).toBe("");
+    expect(document.ok).toBe(false);
+    expect(document.dryRun).toBe(true);
+    expect(document.diagnostics.map((diagnostic) => diagnostic.code)).toContain(
+      "init-source-unsupported",
+    );
+    expect(readFileSync(sourcePath, "utf8")).toBe(source);
+  });
+
   test("unknown framework and package-manager values are usage errors", async () => {
     const root = fixture();
     const framework = streams();

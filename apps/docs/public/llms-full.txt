@@ -19,6 +19,11 @@ not proof of what a project has installed: always inspect the installed version 
 
 Run from the application root or pass `--cwd`.
 
+Resolve the project-installed binary through its declared package manager without permitting a
+transient download: `npm exec --yes=false -- manteen`, `pnpm exec manteen`, `yarn manteen`, or
+`bunx --no-install manteen`. The commands below spell the resolved binary as `manteen`. Keep
+package-manager stderr separate from JSON stdout.
+
 1. Read repository agent instructions.
 2. Run `manteen --version` and, when available, `manteen status --json`.
 3. Discover with `manteen list --json` and inspect an item with `manteen info <ref> --json`.
@@ -31,7 +36,14 @@ Run from the application root or pass `--cwd`.
    `--take-packaged` as distinct decisions. Never add them as generic retries.
 
 `status` is offline. Missing or invalid setup is a successful assessment with `healthy: false`;
-only inability to inspect the target is a command failure.
+only inability to inspect the target is a command failure. Status health covers Manteen's local
+configuration and ownership state, not the application's typecheck, tests, or build. Inspect
+configured verification and run the project checks required for application-level proof.
+
+With no query, list retains deterministic registry and canonical item order. `--query` ranks
+matches within each registry by exact canonical id, exact name, exact title, title prefix, id/name
+substring, title substring, then description substring. Equal ranks retain prior order. JSON rows
+explain the ordering through `queryMatches` and `queryRank`.
 
 Files removed upstream are retained until exact selection. Discover with:
 

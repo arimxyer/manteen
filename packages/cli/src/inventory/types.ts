@@ -366,12 +366,30 @@ export interface ItemDetail {
 
 // ---- command results --------------------------------------------------------
 
+/** Stable query fields, strongest identity fields first. */
+export type ListQueryMatchField = "id" | "name" | "title" | "description";
+
+/** The strongest reason a row matched, in deterministic relevance order. */
+export type ListQueryRank =
+  | "exact-id"
+  | "exact-name"
+  | "exact-title"
+  | "title-prefix"
+  | "identity-substring"
+  | "title-substring"
+  | "description-substring";
+
 /** One row of `manteen list`: what the registry offers, and whether we have it. */
 export interface ListRow {
   item: AvailableItem;
   /** The receipt's record for `item.id`, or `null`. Always `null` when
    *  `item.id` is `null` — an uninstallable name cannot have been installed. */
   installed: InstalledItem | null;
+  /** Fields whose normalized value contains the current query, in stable
+   * identity-to-description order. Empty when no query was supplied. */
+  queryMatches: ListQueryMatchField[];
+  /** Strongest deterministic match, or null when no query was supplied. */
+  queryRank: ListQueryRank | null;
 }
 
 export interface ListGroup {

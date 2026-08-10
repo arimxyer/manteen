@@ -391,7 +391,7 @@ test("init safely migrates the exact legacy house registry string", () => {
   assert.deepEqual(second.plan.dependencies, []);
 });
 
-test("a source refusal is zero-mutation in the built binary", () => {
+test("a dry-run source refusal is truthful and zero-mutation in the built binary", () => {
   const root = project("refusal");
   write(root, "package.json", packageFile("create-vite@9.1.1", {}, { vite: "^8" }));
   write(root, "index.html", '<div id="root"></div>\n');
@@ -401,11 +401,39 @@ test("a source refusal is zero-mutation in the built binary", () => {
   write(root, "vite.config.ts", "export default {};\n");
   const before = manifest(root);
 
-  const result = run(root, ["--yes", "--json"]);
+  const result = run(root, ["--dry-run", "--yes", "--json"]);
   assert.equal(result.status, 1, result.all);
   const document = json(result);
   assert.equal(document.ok, false);
+  assert.equal(document.mutated, false);
+  assert.equal(document.dryRun, true);
   assert.deepEqual(document.plan.files, []);
   assert.ok(document.diagnostics.some((entry) => entry.code === "init-source-unsupported"));
   assert.deepEqual(manifest(root), before);
+});
+
+test("init preserves and integrates a named App export in the built binary", () => {
+  const fixture = viteFixture();
+  write(
+    fixture.root,
+    "src/App.tsx",
+    `export function App() {
+  return <main>Keep this named export</main>;
+}
+`,
+  );
+
+  const result = run(fixture.root, ["--dry-run", "--yes", "--json"]);
+  assert.equal(result.status, 0, result.all);
+  const document = json(result);
+  const app = document.plan.files.find((file) => file.path === "src/App.tsx");
+  assert.ok(app, result.stdout);
+
+  const applied = run(fixture.root, ["--yes", "--expect-plan", document.planDigest, "--json"]);
+  assert.equal(applied.status, 0, applied.all);
+  const content = readFileSync(join(fixture.root, "src/App.tsx"), "utf8");
+  assert.match(content, /export function App\(\)/);
+  assert.doesNotMatch(content, /export default/);
+  assert.match(content, /<MantineProvider theme=\{theme\}>/);
+  assert.match(content, /Keep this named export/);
 });

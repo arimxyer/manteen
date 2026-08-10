@@ -1,5 +1,20 @@
 # Consumer workflow
 
+## Resolve the installed command
+
+Use the package manager declared by the project. These forms use the local package and refuse or
+fail when it is absent rather than silently downloading a newer CLI:
+
+```bash
+npm exec --yes=false -- manteen --version
+pnpm exec manteen --version
+yarn manteen --version
+bunx --no-install manteen --version
+```
+
+The rest of this guide spells that resolved command as `manteen`. Keep stderr separate from JSON
+stdout; package-manager notices are not part of Manteen's machine document.
+
 ## Establish state
 
 Run from the application root, or pass `--cwd <dir>` explicitly.
@@ -13,6 +28,10 @@ manteen status --json
 inspectable but needs work. If the installed CLI has no `status`, inspect `manteen.json`,
 `manteen.lock.json`, `.manteen/bases/`, and the relevant command help without modifying them.
 
+`healthy: true` covers Manteen's local configuration and ownership state only. It does not run the
+application's typecheck, tests, or production build. Inspect whether verification is configured,
+then run the project's required checks explicitly when the task needs application-level proof.
+
 Do not fetch registry data merely to answer whether local initialization or receipt state is
 healthy.
 
@@ -23,6 +42,11 @@ manteen list --json
 manteen list @house --query table --type registry:block --json
 manteen info @house/data-table --json
 ```
+
+With no query, list keeps deterministic registry and canonical item order. A query ranks matches
+within each registry by exact canonical id, exact name, exact title, title prefix, id/name
+substring, title substring, then description substring; equal ranks retain prior order. JSON rows
+explain the result through `queryMatches` and `queryRank`.
 
 Use configured namespaces for repeatable work. A direct item URL is suitable for one
 self-contained item, but cannot safely resolve its bare parent-local dependencies.

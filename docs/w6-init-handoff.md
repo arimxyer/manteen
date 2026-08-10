@@ -254,3 +254,11 @@ The regression test remains hermetic: it first asserts the live URLs emitted by 
 points that same generated object at a kit-compiled `file:` registry before driving built `list`.
 The updated local receipt is 151 source-tier tests and 90 built-Node e2e tests. It proves the
 init/list seam without turning external GitHub Pages availability into a CI dependency.
+
+### Agent-probe hardening follow-up — 2026-08-10
+
+A fresh-agent probe found two bounded W6 seams. A planning refusal from
+`init --dry-run --json` now preserves the requested dry-run fact even when no outcome exists, and
+the Vite adapter accepts a directly provable named `App` function or variable, including a separate
+unaliased `App` export specifier, without changing that export contract. Computed, aliased,
+duplicate, or otherwise ambiguous application bindings still refuse rather than guessing.

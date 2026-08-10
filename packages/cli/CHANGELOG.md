@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Rank `list --query` matches deterministically within each registry while preserving unqueried and
+  equal-rank order. JSON rows expose matching fields and the winning rank.
+- Make refused `init --dry-run --json` responses report the requested dry-run mode truthfully and
+  safely support Vite entry files that export a directly provable named `App` instead of default.
+- Clarify local package-manager runner forms and distinguish offline Manteen status health from
+  application typecheck, test, and build verification across the packaged skill and agent docs.
+
 ## 0.7.0
 
 - Add offline `status`, deterministic `list --query` / `--type` / `--installed` discovery, and
