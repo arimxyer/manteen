@@ -1,11 +1,8 @@
 import { resolve } from "node:path";
 
-import type { Diagnostic } from "../plan/types";
+import type { Diagnostic, DiagnosticAction } from "../plan/types";
 
-export type RemediationAction =
-  | { kind: "rerun"; argv: string[] }
-  | { kind: "configPatch"; patch: Record<string, unknown> }
-  | { kind: "manual"; instruction: string };
+export type RemediationAction = DiagnosticAction;
 
 export interface MachineDiagnostic extends Omit<Diagnostic, "code"> {
   code: string;
@@ -154,6 +151,21 @@ function remediationFor(
   }
 }
 
+function remediationAction(value: unknown): RemediationAction | null {
+  if (!isRecord(value) || typeof value.kind !== "string") return null;
+  if (value.kind === "rerun" && Array.isArray(value.argv)) {
+    const argv = value.argv.filter((entry): entry is string => typeof entry === "string");
+    return argv.length === value.argv.length ? { kind: "rerun", argv } : null;
+  }
+  if (value.kind === "configPatch" && isRecord(value.patch)) {
+    return { kind: "configPatch", patch: value.patch };
+  }
+  if (value.kind === "manual" && typeof value.instruction === "string") {
+    return { kind: "manual", instruction: value.instruction };
+  }
+  return null;
+}
+
 function machineDiagnostics(value: unknown, argv: readonly string[]): MachineDiagnostic[] {
   if (!Array.isArray(value)) return [];
   return value.filter(isRecord).map((diagnostic) => {
@@ -177,7 +189,22 @@ function machineDiagnostics(value: unknown, argv: readonly string[]): MachineDia
         : {}),
       ...(typeof diagnostic.path === "string" ? { path: diagnostic.path } : {}),
     };
-    if (severity === "error") Object.assign(result, remediationFor(code, argv));
+    const suppliedActions = Array.isArray(diagnostic.actions)
+      ? diagnostic.actions
+          .map(remediationAction)
+          .filter((action): action is RemediationAction => action !== null)
+      : [];
+    if (suppliedActions.length > 0) result.actions = suppliedActions;
+    if (typeof diagnostic.manualRationale === "string" && diagnostic.manualRationale !== "") {
+      result.manualRationale = diagnostic.manualRationale;
+    }
+    if (
+      severity === "error" &&
+      result.actions === undefined &&
+      result.manualRationale === undefined
+    ) {
+      Object.assign(result, remediationFor(code, argv));
+    }
     return result;
   });
 }

@@ -10,14 +10,19 @@ Documentation: https://arimxyer.github.io/manteen/
 ## Availability boundary
 
 The contract was frozen while manteen 0.5.0 was public. The agent-native authoring and workflow
-surfaces described here are now public in manteen-kit 0.2.1 and manteen 0.7.0. The schema-v1
-machine contract was an internal 0.6.0 milestone, not a separate package release. Documentation is
-not proof of what a project has installed: always inspect the installed version and relevant
-`--help` output.
+foundation shipped in manteen-kit 0.2.1 and manteen 0.7.0. The complete behavior documented here
+is versioned for manteen 0.8.0. The schema-v1 machine contract was an internal 0.6.0 milestone, not
+a separate package release. Documentation is not proof of what a project has installed: always
+inspect the installed version and relevant `--help` output.
 
 ## Consumer workflow
 
 Run from the application root or pass `--cwd`.
+
+Resolve the project-installed binary through its declared package manager without permitting a
+transient download: `npm exec --yes=false -- manteen`, `pnpm exec manteen`, `yarn manteen`, or
+`bunx --no-install manteen`. The commands below spell the resolved binary as `manteen`. Keep
+package-manager stderr separate from JSON stdout.
 
 1. Read repository agent instructions.
 2. Run `manteen --version` and, when available, `manteen status --json`.
@@ -31,7 +36,19 @@ Run from the application root or pass `--cwd`.
    `--take-packaged` as distinct decisions. Never add them as generic retries.
 
 `status` is offline. Missing or invalid setup is a successful assessment with `healthy: false`;
-only inability to inspect the target is a command failure.
+only inability to inspect the target is a command failure. Status health covers Manteen's local
+configuration and ownership state, not the application's typecheck, tests, or build. Inspect
+configured verification and run the project checks required for application-level proof.
+
+With no query, list retains deterministic registry and canonical item order. `--query` ranks
+matches within each registry by exact canonical id, exact name, exact title, title prefix, id/name
+substring, title substring, then description substring. Equal ranks retain prior order. JSON rows
+explain the ordering through `queryMatches` and `queryRank`.
+
+`manteen add` installs registry-managed source and ownership state; it does not prove application
+integration. If the request asks only for installation, do not invent a placement. If it asks to
+use, show, or wire the item, inspect `manteen info` usage and props, edit consumer-owned application
+code, run the project's required checks, and report installation and integration separately.
 
 Files removed upstream are retained until exact selection. Discover with:
 

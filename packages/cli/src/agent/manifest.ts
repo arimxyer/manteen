@@ -5,7 +5,7 @@
 
 export const MANTEEN_AGENT_MANIFEST = {
   schemaVersion: 1,
-  guideVersion: 1,
+  guideVersion: 3,
   product: {
     name: "Manteen",
     description: "Mantine-native registry authoring and source maintenance",
@@ -15,6 +15,7 @@ export const MANTEEN_AGENT_MANIFEST = {
     publishedClientAtContractFreeze: "0.5.0",
     machineInterfaceMilestone: "0.6.0",
     agentWorkflowMilestone: "0.7.0",
+    documentedClientRelease: "0.8.0",
     minimumNode: "22.12.0",
   },
   machineInterface: {

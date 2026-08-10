@@ -36,6 +36,15 @@ and Pages deployment are accepted. Its frozen contract is
 [`agent-native-build-plan.md`](agent-native-build-plan.md), and its receipts are in the
 [`agent-native release handoff`](agent-native-release-handoff.md).
 
+The current `manteen@0.8.0` release candidate amends discovery so queried rows are explainably,
+deterministically relevance-ranked within stable registry groups; it also makes init refusal
+dry-run reporting truthful, accepts bounded named Vite `App` exports, and clarifies that offline
+status health is not application build proof. A follow-up keeps dependency subprocess output out of
+machine stdout and narrowly completes absent canonical registry/theme config without overwriting
+authored values. Successful adds now also distinguish registry installation from application
+integration without guessing an application placement. Publication and deployment remain separate
+work.
+
 The client-only `manteen@0.3.0` release now carries Wu's receipt v3, committed pristine bases and
 three-way updates; the apply-time state-versioning advisory; and Wv's opt-in post-update project
 verification. Merge commit `123d3c1a1ef047994326cdcb3ffba7cc07e3dea9`, the signed

@@ -260,6 +260,11 @@ export type PlanInitFn = (
 export interface InitApplyOptions {
   interactive: boolean;
   dryRun?: boolean;
+  /**
+   * Whether dependency-manager output may inherit the caller's terminal.
+   * Machine callers capture both child streams so stdout remains one document.
+   */
+  dependencyOutput?: "inherit" | "capture";
 }
 
 export interface InitConfirmRequest {
@@ -275,7 +280,7 @@ export interface InitInstallInput {
   root: string;
   packageManager: PackageManagerName;
   dependencies: InitPlannedDependency[];
-  interactive: boolean;
+  dependencyOutput: "inherit" | "capture";
 }
 
 export interface InitInstallResult {

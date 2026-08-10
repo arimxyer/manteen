@@ -11,6 +11,11 @@ Every recognized `--json` invocation writes exactly one JSON document to stdout 
 JSON mode is non-interactive, but it is not consent: a command that needs a destructive or ambiguous
 choice still refuses unless the matching explicit flag was supplied.
 
+That stdout reservation includes subprocesses. Package-manager and verification output must be
+captured or sent to stderr; a child process may never inherit machine stdout. Captured dependency
+output is discarded on success and retained in the structured failure on error so the envelope stays
+parseable without erasing the evidence needed to diagnose an install.
+
 The client envelope is schema version 1:
 
 ```ts
@@ -84,14 +89,30 @@ the process exits. Verification definitions are included in the plan digest and 
 framework, package manager, Mantine, receipt/base integrity, `.gitignore`, verification, and packaged
 skill installation without fetching a registry.
 
+`init` may complete only enumerated, absent standard fields in an existing configuration. A missing
+canonical `@house` member and missing detected `theme` path are additive migrations; custom registry
+members and every unrelated key remain byte-semantically preserved. Missing fields that select source
+ownership, and every explicit differing value, still refuse with a truthful missing/conflicting/invalid
+reason. When one exact JSON edit is safe to propose but not safe to assume, machine output carries a
+`configPatch` action.
+
+A successful `add` proves registry installation, not application integration. Text mode emits that
+fact as an informational stderr advisory and machine mode carries the same text in `notes`; previews,
+refusals, cancellations, and failed or rolled-back applies do not claim installation. Guidance tells
+agents to inspect item usage and edit consumer-owned application code only when the request asks to
+use the item. Manteen never guesses a route or automatically inserts a component into one.
+
 ## 4. Metadata, discovery, and SDK
 
 Registry items retain `docs`, `props`, and `usage`. Malformed optional display metadata degrades the
 metadata section without making otherwise installable item bytes unusable. `info --json` returns the
 full fields by default; text is compact, with `--props` and `--usage` for expansion.
 
-`list` supports deterministic `--query`, repeatable `--type`, and `--installed` filters. Filtering is
-stable and happens before presentation.
+`list` supports deterministic `--query`, repeatable `--type`, and `--installed` filters. With no
+query, registry and canonical item order remain unchanged. A query ranks matching rows within each
+registry by exact canonical id, exact name, exact title, title prefix, id/name substring, title
+substring, then description substring; ties retain the prior item order. JSON exposes both every
+matching field and the winning rank so the ordering is explainable rather than an opaque score.
 
 The supported programmatic entrypoint is `createManteenClient()`: read operations plus opaque
 plan/apply handles. Existing low-level exports remain available but are not the stable façade.

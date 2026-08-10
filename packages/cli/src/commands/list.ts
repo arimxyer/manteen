@@ -76,6 +76,8 @@ import {
   type InventoryNoteCode,
   itemsById,
   type ListGroup,
+  type ListQueryMatchField,
+  type ListQueryRank,
   type ListResult,
   type ListRow,
   type LocalStatus,
@@ -113,7 +115,8 @@ export interface ListPorts {
 export interface ListOptions {
   registries?: readonly string[];
   /** Case-insensitive substring match over the canonical id and the index's
-   * sanitized name, title and description. Empty strings do not filter. */
+   * sanitized name, title and description. Matching rows are deterministically
+   * relevance-ranked within each registry. Empty strings do not filter. */
   query?: string;
   /** Exact wire item types. Multiple values are OR-ed; an empty array does not
    * filter. Authored order is irrelevant and never reorders the listing. */
@@ -145,6 +148,7 @@ export async function buildList(
   const available = await readAvailable(config, ports.available, toAvailableOptions(options));
   const installed = readInstalled(config.root, ports.installed);
   const byId = itemsById(installed);
+  const query = normalizedQuery(options.query);
 
   const unfilteredGroups: ListGroup[] = available.registries.map((listing) => ({
     registry: listing.registry,
@@ -162,6 +166,8 @@ export async function buildList(
         // rather than allowed to answer, so `list` can never mark a row
         // installed that `add` would have refused.
         installed: item.id === null ? null : (byId.get(item.id) ?? null),
+        queryMatches: queryMatchFields(item, query),
+        queryRank: queryRank(item, query),
       }),
     ),
   }));
@@ -185,14 +191,15 @@ export async function buildList(
 }
 
 /**
- * Apply presentation filters without changing registry order, row order, or
- * group membership. Keeping an empty group is intentional: the renderer can
+ * Apply presentation filters without changing registry order or group
+ * membership. A query relevance-ranks rows inside each group; every other
+ * filter preserves row order. Keeping an empty group is intentional: the renderer can
  * then distinguish "this registry matched no rows" from "this registry could
  * not be inspected", the latter of which is represented by a note and no
  * group.
  */
 function filterGroups(groups: readonly ListGroup[], options: ListOptions): ListGroup[] {
-  const query = options.query?.toLowerCase() ?? "";
+  const query = normalizedQuery(options.query);
   const types = new Set(options.types ?? []);
   const filterByType = types.size > 0;
   const installedOnly = options.installed === true;
@@ -201,18 +208,74 @@ function filterGroups(groups: readonly ListGroup[], options: ListOptions): ListG
 
   return groups.map((group) => ({
     ...group,
-    rows: group.rows.filter((row) => {
-      if (installedOnly && row.installed === null) return false;
-      if (filterByType && (row.item.type === null || !types.has(row.item.type))) return false;
-      return query === "" || queryMatches(row.item, query);
-    }),
+    rows: rankQueryRows(
+      group.rows.filter((row) => {
+        if (installedOnly && row.installed === null) return false;
+        if (filterByType && (row.item.type === null || !types.has(row.item.type))) return false;
+        return query === "" || row.queryMatches.length > 0;
+      }),
+      query,
+    ),
   }));
 }
 
-function queryMatches(item: AvailableItem, lowerQuery: string): boolean {
-  return [item.id, item.name, item.title, item.description].some((value) =>
-    (value ?? "").toLowerCase().includes(lowerQuery),
-  );
+function normalizedQuery(query: string | undefined): string {
+  return query?.toLowerCase() ?? "";
+}
+
+function queryMatchFields(item: AvailableItem, lowerQuery: string): ListQueryMatchField[] {
+  if (lowerQuery === "") return [];
+  const values: readonly [ListQueryMatchField, string | null][] = [
+    ["id", item.id],
+    ["name", item.name],
+    ["title", item.title],
+    ["description", item.description],
+  ];
+  return values
+    .filter(([, value]) => (value ?? "").toLowerCase().includes(lowerQuery))
+    .map(([field]) => field);
+}
+
+const QUERY_RANKS: readonly ListQueryRank[] = [
+  "exact-id",
+  "exact-name",
+  "exact-title",
+  "title-prefix",
+  "identity-substring",
+  "title-substring",
+  "description-substring",
+];
+
+function queryRank(item: AvailableItem, lowerQuery: string): ListQueryRank | null {
+  if (lowerQuery === "") return null;
+  const id = item.id?.toLowerCase() ?? "";
+  const name = item.name.toLowerCase();
+  const title = item.title?.toLowerCase() ?? "";
+  const description = item.description?.toLowerCase() ?? "";
+
+  if (id === lowerQuery) return "exact-id";
+  if (name === lowerQuery) return "exact-name";
+  if (title === lowerQuery) return "exact-title";
+  if (title.startsWith(lowerQuery)) return "title-prefix";
+  if (id.includes(lowerQuery) || name.includes(lowerQuery)) return "identity-substring";
+  if (title.includes(lowerQuery)) return "title-substring";
+  if (description.includes(lowerQuery)) return "description-substring";
+  return null;
+}
+
+function rankQueryRows(rows: readonly ListRow[], query: string): ListRow[] {
+  if (query === "") return [...rows];
+  return rows
+    .map((row, priorIndex) => ({ row, priorIndex }))
+    .sort((left, right) => {
+      const leftRank = left.row.queryRank;
+      const rightRank = right.row.queryRank;
+      const rankDifference =
+        (leftRank === null ? QUERY_RANKS.length : QUERY_RANKS.indexOf(leftRank)) -
+        (rightRank === null ? QUERY_RANKS.length : QUERY_RANKS.indexOf(rightRank));
+      return rankDifference === 0 ? left.priorIndex - right.priorIndex : rankDifference;
+    })
+    .map(({ row }) => row);
 }
 
 /** See `ListOptions`. `[]` and `undefined` mean the same thing to a user and
@@ -459,6 +522,10 @@ export interface ListJsonItem {
   description: string | null;
   requires: string | null;
   provider: string | null;
+  /** Stable match provenance for the active `--query`. */
+  queryMatches: ListQueryMatchField[];
+  /** Strongest match used for deterministic relevance ranking. */
+  queryRank: ListQueryRank | null;
   installed: ListJsonInstalled | null;
 }
 
@@ -523,6 +590,8 @@ function toJsonItem(row: ListRow): ListJsonItem {
     description: item.description,
     requires: item.mantine?.requires ?? null,
     provider: item.mantine?.provider ?? null,
+    queryMatches: row.queryMatches,
+    queryRank: row.queryRank,
     installed:
       row.installed === null
         ? null

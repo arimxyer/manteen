@@ -8,6 +8,10 @@ description: Inspect, install, update, and remove Mantine registry components wi
 Use Manteen's plans and receipts as authority. Do not infer ownership from a filename or edit
 `manteen.lock.json` or `.manteen/bases/` by hand.
 
+Examples below use the logical command `manteen`. Resolve the project-installed binary through the
+declared package manager without permitting a transient package download; the consumer reference
+has exact runner forms.
+
 1. Read the nearest applicable `AGENTS.md` files or equivalent repository instructions. For
    consumer work inspect `manteen --version`; for authoring inspect `manteen-kit build --help`.
    Always inspect the relevant command's local `--help` before relying on a documented flag.
@@ -18,7 +22,10 @@ Use Manteen's plans and receipts as authority. Do not infer ownership from a fil
 5. Supply destructive flags only when the user explicitly chose that consequence. Never use
    `--force`, `--overwrite`, `--take-upstream`, `--discard-adapted`, or `--take-packaged` as a
    generic retry.
-6. If a documented command or flag is absent from local help, follow the installed CLI's surface;
+6. After `add`, distinguish registry installation from application integration. If the request asks
+   to use an item, follow the consumer reference and verify the application-owned integration
+   before claiming completion.
+7. If a documented command or flag is absent from local help, follow the installed CLI's surface;
    do not fabricate support from a newer contract.
 
 Read exactly the reference needed for the task:

@@ -4,6 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Streams } from "../src/cli/render";
 import { runInit } from "../src/commands/init";
+import { createInitApplyPorts, createInitPlanPorts } from "../src/init/ports";
+import type { InitInstallInput } from "../src/init/types";
 
 const roots: string[] = [];
 
@@ -113,6 +115,60 @@ describe("W6 init command shell", () => {
       "tailwind-postcss",
     ]);
     expect(readFileSync(join(root, "postcss.config.mjs"), "utf8")).toBe(tailwind);
+  });
+
+  test("JSON planning refusals preserve the requested dry-run mode", async () => {
+    const root = fixture();
+    viteFixture(root);
+    const sourcePath = join(root, "src/App.tsx");
+    const source = "export default chooseAtRuntime();\n";
+    writeFileSync(sourcePath, source, "utf8");
+
+    const captured = streams();
+    const exit = await runInit({ cwd: root, dryRun: true, json: true }, captured.value);
+    const document = JSON.parse(captured.output.stdout) as {
+      ok: boolean;
+      dryRun: boolean;
+      diagnostics: { code: string }[];
+    };
+
+    expect(exit).toBe(1);
+    expect(captured.output.stderr).toBe("");
+    expect(document.ok).toBe(false);
+    expect(document.dryRun).toBe(true);
+    expect(document.diagnostics.map((diagnostic) => diagnostic.code)).toContain(
+      "init-source-unsupported",
+    );
+    expect(readFileSync(sourcePath, "utf8")).toBe(source);
+  });
+
+  test("JSON mode requests captured dependency output from the production apply seam", async () => {
+    const root = fixture();
+    viteFixture(root);
+    write(
+      root,
+      "package.json",
+      `${JSON.stringify({ private: true, devDependencies: { vite: "^8" } }, null, 2)}\n`,
+    );
+    const installs: InitInstallInput[] = [];
+    const applyPorts = createInitApplyPorts();
+    const captured = streams();
+
+    const exit = await runInit({ cwd: root, json: true, yes: true, pm: "npm" }, captured.value, {
+      plan: createInitPlanPorts(),
+      apply: {
+        ...applyPorts,
+        async install(input) {
+          installs.push(input);
+          return { installed: true, command: "npm install fixture dependencies" };
+        },
+      },
+    });
+
+    expect(exit).toBe(0);
+    expect(JSON.parse(captured.output.stdout).ok).toBe(true);
+    expect(installs).toHaveLength(1);
+    expect(installs[0]?.dependencyOutput).toBe("capture");
   });
 
   test("unknown framework and package-manager values are usage errors", async () => {

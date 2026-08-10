@@ -61,6 +61,9 @@ export interface Streams {
   stderr: Writer;
 }
 
+export const ADD_INTEGRATION_NOTE =
+  "Manteen completed registry installation but did not assess application integration. If the task requires the installed items to be used, inspect their `manteen info` usage and props, edit consumer-owned application code, and run the project's required checks.";
+
 /**
  * The real streams.
  *
@@ -294,6 +297,16 @@ export function renderOutcome(outcome: ApplyOutcome, root: string): string {
     lines.push(`${"installed".padEnd(VERB_WIDTH)}  ${outcome.dependencies.command}`);
   }
   return lines.length > 0 ? `${lines.join("\n")}\n` : "";
+}
+
+/**
+ * A successful add proves registry installation, not that an application route
+ * imports or renders the installed item. Keep this on stderr in text mode so
+ * the observed write report on stdout stays pipeline-safe; machine mode carries
+ * the same fact in the envelope's notes array.
+ */
+export function renderAddIntegrationAdvisory(): string {
+  return `info  application-integration\n  ${ADD_INTEGRATION_NOTE}\n`;
 }
 
 /**

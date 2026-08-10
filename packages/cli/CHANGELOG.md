@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+## 0.8.0
+
+- Rank `list --query` matches deterministically within each registry while preserving unqueried and
+  equal-rank order. JSON rows expose matching fields and the winning rank.
+- Make refused `init --dry-run --json` responses report the requested dry-run mode truthfully and
+  safely support Vite entry files that export a directly provable named `App` instead of default.
+- Clarify local package-manager runner forms and distinguish offline Manteen status health from
+  application typecheck, test, and build verification across the packaged skill and agent docs.
+- Keep `init --json` stdout to one parseable envelope while dependencies install, retaining captured
+  package-manager evidence on failure, and narrowly complete missing canonical `@house` and detected
+  theme fields in partial configs without replacing authored values.
+- Distinguish missing, conflicting, and invalid init configuration diagnostics; emit an exact
+  `configPatch` action when a safe edit can be proposed but should still be reviewed.
+- Distinguish successful registry installation from application integration in add output and agent
+  guidance without automatically editing consumer-owned application routes.
+
 ## 0.7.0
 
 - Add offline `status`, deterministic `list --query` / `--type` / `--installed` discovery, and

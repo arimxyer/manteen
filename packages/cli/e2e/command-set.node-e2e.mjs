@@ -317,6 +317,9 @@ test("add JSON is non-interactive, truthful about mutation, and gives typed reme
   assert.equal(addedDocument.exitCode, 0);
   assert.equal(addedDocument.mutated, true);
   assert.deepEqual(addedDocument.payload.refs, [ITEM]);
+  assert.deepEqual(addedDocument.notes, [
+    "Manteen completed registry installation but did not assess application integration. If the task requires the installed items to be used, inspect their `manteen info` usage and props, edit consumer-owned application code, and run the project's required checks.",
+  ]);
 
   const target = join(project, DESTINATION);
   writeFileSync(target, `${readFileSync(target, "utf8")}\n// local adaptation\n`);
@@ -388,7 +391,12 @@ test("offline status and packaged agent guidance work before project initializat
   assert.equal(guideDocument.command, "agent guide");
   assert.equal(guideDocument.root, null);
   assert.equal(guideDocument.payload.manifest.skill.name, "manteen");
+  assert.equal(guideDocument.payload.manifest.guideVersion, 3);
   assert.match(guideDocument.payload.skill, /^---\nname: manteen\n/);
+  assert.match(
+    guideDocument.payload.skill,
+    /distinguish registry installation from application integration/,
+  );
 });
 
 test("built agent install is dry-run safe and writes an owned packaged skill", () => {
@@ -424,6 +432,10 @@ test("built agent install is dry-run safe and writes an owned packaged skill", (
   assert.equal(document.payload.action, "install");
   assert.ok(existsSync(join(project, "skill", ".manteen-skill.json")));
   assert.ok(existsSync(join(project, "skill", "references", "json-contract.md")));
+  assert.match(
+    readFileSync(join(project, "skill", "references", "consumer.md"), "utf8"),
+    /Report registry installation and application integration as separate facts/,
+  );
 });
 
 test("add couples a reviewed dry-run to apply with planDigest", () => {
@@ -463,6 +475,7 @@ test("configured add verification failure restores every managed byte", () => {
   assert.equal(document.payload.verification.status, "failed");
   assert.equal(document.payload.verification.failure.kind, "script-failed");
   assert.equal(document.mutated, false);
+  assert.deepEqual(document.notes, []);
   assert.equal(existsSync(join(project, ".verify-add-ran")), true);
   assert.equal(existsSync(join(project, DESTINATION)), false);
   assert.equal(existsSync(join(project, "manteen.lock.json")), false);

@@ -27,9 +27,12 @@ describe("packaged agent guidance", () => {
     expect(document).toMatchObject({
       command: "agent guide",
       ok: true,
-      manifest: { schemaVersion: 1, skill: { name: "manteen" } },
+      manifest: { schemaVersion: 1, guideVersion: 3, skill: { name: "manteen" } },
     });
     expect(document.skill).toContain("name: manteen");
+    expect(document.skill).toContain(
+      "distinguish registry installation from application integration",
+    );
   });
 
   test("dry-run plans the default copy without creating it", async () => {

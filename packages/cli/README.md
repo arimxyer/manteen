@@ -19,6 +19,19 @@ bun add -d manteen      # or: pnpm add -D manteen / yarn add -D manteen / npm i 
 
 Requires Node 22.12 or newer.
 
+The examples below use the local `manteen` binary. When a local install is not placed on `PATH`,
+resolve it through the project's declared package manager without allowing a transient download:
+
+```bash
+npm exec --yes=false -- manteen --version
+pnpm exec manteen --version
+yarn manteen --version
+bunx --no-install manteen --version
+```
+
+Keep stderr separate when parsing `--json`; package-manager notices are not part of Manteen's
+single stdout document.
+
 The portability gate runs the built CLI on Node 22.12, 24 and 26, exercises npm, pnpm, Yarn PnP and
 Bun from packed tarballs, and includes native macOS and Windows jobs. The hosted Windows
 `.cmd`/caret-range install is green as of the Wave 7 receipt; Windows remains best-effort so that
@@ -132,6 +145,15 @@ manteen update --take-upstream # explicitly discard local source adaptations
 manteen update --no-verify     # skip configured project checks for this run
 manteen remove --upstream-removed --dry-run
 ```
+
+`status` is an offline assessment of Manteen's local configuration and ownership state. Even
+`healthy: true` does not mean the application typechecks, tests, or builds; inspect whether project
+verification is configured and run the checks required by your task.
+
+Unqueried `list` output keeps deterministic registry and canonical item order. `--query` instead
+ranks matches within each registry by exact canonical id, exact name, exact title, title prefix,
+id/name substring, title substring, then description substring, with prior order as the tie-breaker.
+JSON rows expose `queryMatches` and the winning `queryRank` so agents can explain the order.
 
 For automation, every recognized `--json` invocation writes exactly one versioned envelope to
 stdout with `schemaVersion`, `command`, `root`, `ok`, `exitCode`, `mutated`, `payload`,

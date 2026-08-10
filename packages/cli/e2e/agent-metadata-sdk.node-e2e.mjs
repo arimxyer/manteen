@@ -46,7 +46,18 @@ const item = {
 writeFileSync(join(registry, "card.json"), `${JSON.stringify(item, null, 2)}\n`);
 writeFileSync(
   join(registry, "registry.json"),
-  `${JSON.stringify({ name: "house", items: [{ name: "card", type: "registry:ui" }] }, null, 2)}\n`,
+  `${JSON.stringify(
+    {
+      name: "house",
+      items: [
+        { name: "card", type: "registry:ui" },
+        { name: "guide", type: "registry:file", description: "Card examples" },
+        { name: "panel", type: "registry:ui", title: "Card panel" },
+      ],
+    },
+    null,
+    2,
+  )}\n`,
 );
 
 const registryBase = pathToFileURL(registry).href;
@@ -99,6 +110,21 @@ function cli(...args) {
 }
 
 test("built CLI keeps full metadata in JSON and expands text only on request", () => {
+  const listed = cli("list", "@house", "--query", "card", "--json");
+  assert.equal(listed.status, 0, `${listed.stdout}\n${listed.stderr}`);
+  assert.equal(listed.stderr, "");
+  const listEnvelope = JSON.parse(listed.stdout);
+  const listedItems = listEnvelope.payload.registries[0].items;
+  assert.deepEqual(
+    listedItems.map((listedItem) => listedItem.id),
+    ["@house/card", "@house/panel", "@house/guide"],
+  );
+  assert.deepEqual(
+    listedItems.map((listedItem) => listedItem.queryRank),
+    ["exact-name", "title-prefix", "description-substring"],
+  );
+  assert.deepEqual(listedItems[0].queryMatches, ["id", "name"]);
+
   const jsonResult = cli("info", "@house/card", "--json");
   assert.equal(jsonResult.status, 0, `${jsonResult.stdout}\n${jsonResult.stderr}`);
   assert.equal(jsonResult.stderr, "");

@@ -81,7 +81,7 @@ async function install(input: InitInstallInput): Promise<InitInstallResult> {
       cwd: input.root,
       packageManager: input.packageManager,
       dev: batch.dev,
-      silent: input.interactive,
+      silent: input.dependencyOutput === "capture",
     });
     if (result.exec !== undefined) {
       commands.push([result.exec.command, ...result.exec.args].join(" "));

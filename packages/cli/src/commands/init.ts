@@ -116,14 +116,22 @@ function jsonInstruction(instruction: InitInstruction, root: string) {
   };
 }
 
-function jsonDocument(plan: InitPlan, outcome: InitApplyOutcome | null, planDigest: string) {
+function jsonDocument(
+  plan: InitPlan,
+  outcome: InitApplyOutcome | null,
+  planDigest: string,
+  requestedDryRun: boolean,
+) {
   return {
     command: "init" as const,
     root: plan.root,
     ok: outcome?.ok ?? plan.ok,
     complete: outcome?.complete ?? false,
     framework: plan.framework.kind,
-    dryRun: outcome?.dryRun ?? false,
+    // Planning refusals and plan mismatches return before `applyInit`, so there
+    // is no outcome to carry the invocation mode. The payload must still tell
+    // the truth about the flag the caller supplied.
+    dryRun: outcome?.dryRun ?? requestedDryRun,
     planDigest,
     plan: {
       version: plan.version,
@@ -217,7 +225,9 @@ export async function runInit(
     packageManager: flags.pm,
   });
   if (!plan.ok) {
-    if (flags.json) streams.stdout(renderJson(jsonDocument(plan, null, planDigest)));
+    if (flags.json) {
+      streams.stdout(renderJson(jsonDocument(plan, null, planDigest, flags.dryRun === true)));
+    }
     return blockingExitCode(plan.diagnostics, false) === 2 ? EXIT_USAGE : EXIT_REFUSED;
   }
 
@@ -231,14 +241,23 @@ export async function runInit(
       diagnostics: sortDiagnostics([...plan.diagnostics, mismatch]),
       ok: false,
     };
-    if (flags.json) streams.stdout(renderJson(jsonDocument(refused, null, planDigest)));
-    else renderDiagnostics([mismatch], plan.root, streams.stderr);
+    if (flags.json) {
+      streams.stdout(renderJson(jsonDocument(refused, null, planDigest, flags.dryRun === true)));
+    } else renderDiagnostics([mismatch], plan.root, streams.stderr);
     return EXIT_REFUSED;
   }
 
   let outcome: InitApplyOutcome;
   try {
-    outcome = await applyInit(plan, { interactive, dryRun: flags.dryRun }, ports.apply);
+    outcome = await applyInit(
+      plan,
+      {
+        interactive,
+        dryRun: flags.dryRun,
+        ...(flags.json ? { dependencyOutput: "capture" as const } : {}),
+      },
+      ports.apply,
+    );
   } catch (error) {
     streams.stderr("error  init apply\n");
     streams.stderr(renderThrown(error));
@@ -246,7 +265,7 @@ export async function runInit(
   }
 
   if (flags.json) {
-    streams.stdout(renderJson(jsonDocument(plan, outcome, planDigest)));
+    streams.stdout(renderJson(jsonDocument(plan, outcome, planDigest, flags.dryRun === true)));
   } else {
     streams.stdout(flags.dryRun ? renderInitPlan(plan) : renderInitOutcome(outcome, plan.root));
     streams.stdout(renderInstructions(outcome.instructions, plan.root));

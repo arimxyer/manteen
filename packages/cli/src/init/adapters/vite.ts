@@ -171,12 +171,12 @@ function findTransformTarget(sourceFile: SourceFile): TransformTarget | string {
     .getExportAssignments()
     .filter((assignment) => !assignment.isExportEquals());
 
-  if (defaultFunctions.length + exportAssignments.length !== 1) {
-    return "App.tsx must have exactly one statically resolvable default component export.";
+  if (defaultFunctions.length + exportAssignments.length > 1) {
+    return "App.tsx must have exactly one statically resolvable default or named App component export.";
   }
 
   let component: ComponentFunction | undefined = defaultFunctions[0];
-  if (component === undefined) {
+  if (component === undefined && exportAssignments.length === 1) {
     const exported = exportAssignments[0]?.getExpression();
     if (exported === undefined) {
       return "App.tsx has no statically resolvable default component export.";
@@ -189,8 +189,14 @@ function findTransformTarget(sourceFile: SourceFile): TransformTarget | string {
     }
   }
 
+  if (component === undefined && defaultFunctions.length + exportAssignments.length === 0) {
+    component = namedAppComponent(sourceFile);
+  }
+
   if (component === undefined) {
-    return "the default export is computed rather than a function or static component binding.";
+    return defaultFunctions.length + exportAssignments.length === 0
+      ? "App.tsx has no statically resolvable default or named App component export."
+      : "the default export is computed rather than a function or static component binding.";
   }
 
   const expression = returnedExpression(component);
@@ -208,6 +214,54 @@ function findTransformTarget(sourceFile: SourceFile): TransformTarget | string {
   }
 
   return { expression: root, root };
+}
+
+/**
+ * Accept the common `export function App()` / `export const App = ...` shape
+ * without rewriting its export contract or the import in `main.tsx`.
+ *
+ * The filename and binding name are both fixed. Other named exports are not
+ * guessed to be the application root, and a separately exported binding is
+ * accepted only when its export specifier is exactly `App` with no alias.
+ */
+function namedAppComponent(sourceFile: SourceFile): ComponentFunction | undefined {
+  const directlyOrSeparatelyExported = (direct: boolean): boolean =>
+    direct ||
+    sourceFile
+      .getExportDeclarations()
+      .some(
+        (declaration) =>
+          declaration.getModuleSpecifier() === undefined &&
+          declaration
+            .getNamedExports()
+            .some((named) => named.getName() === "App" && named.getAliasNode() === undefined),
+      );
+
+  const candidates: ComponentFunction[] = [];
+  for (const fn of sourceFile.getFunctions()) {
+    if (
+      fn.getName() === "App" &&
+      fn.getBody() !== undefined &&
+      !fn.isDefaultExport() &&
+      directlyOrSeparatelyExported(fn.isExported())
+    ) {
+      candidates.push(fn);
+    }
+  }
+
+  const declaration = sourceFile.getVariableDeclaration("App");
+  const statement = declaration?.getVariableStatement();
+  const initializer = declaration?.getInitializer();
+  if (
+    statement !== undefined &&
+    !statement.isDefaultExport() &&
+    directlyOrSeparatelyExported(statement.isExported()) &&
+    (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer))
+  ) {
+    candidates.push(initializer);
+  }
+
+  return candidates.length === 1 ? candidates[0] : undefined;
 }
 
 function componentDeclaration(sourceFile: SourceFile, name: string): ComponentFunction | undefined {

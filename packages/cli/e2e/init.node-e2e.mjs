@@ -10,6 +10,7 @@
 import { strict as assert } from "node:assert";
 import { spawnSync } from "node:child_process";
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -19,7 +20,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, relative, resolve } from "node:path";
+import { delimiter, dirname, join, relative, resolve } from "node:path";
 import { after, test } from "node:test";
 import { pathToFileURL } from "node:url";
 
@@ -80,10 +81,10 @@ function packageFile(generator, extraDependencies = {}, extraDevDependencies = {
   )}\n`;
 }
 
-function runCommand(root, args) {
+function runCommand(root, args, extraEnv = {}) {
   const result = spawnSync(process.execPath, [CLI, ...args], {
     cwd: root,
-    env: childEnv(),
+    env: childEnv(extraEnv),
     encoding: "utf8",
     timeout: 15_000,
   });
@@ -93,6 +94,32 @@ function runCommand(root, args) {
     stderr: result.stderr,
     all: `${result.stdout}\n${result.stderr}`,
   };
+}
+
+function fakePackageManager(root) {
+  const bin = join(root, "fake-bin");
+  write(
+    root,
+    "fake-bin/fake-package-manager.mjs",
+    `process.stdout.write("FAKE_PM_STDOUT\\n");
+process.stderr.write("FAKE_PM_STDERR\\n");
+process.exit(process.env.FAKE_PM_FAIL === "1" ? 17 : 0);
+`,
+  );
+  write(
+    root,
+    "fake-bin/aube",
+    `#!/usr/bin/env node
+await import(${JSON.stringify(pathToFileURL(join(bin, "fake-package-manager.mjs")).href)});
+`,
+  );
+  if (process.platform !== "win32") chmodSync(join(bin, "aube"), 0o755);
+  write(
+    root,
+    "fake-bin/aube.cmd",
+    `@echo off\r\n"${process.execPath}" "%~dp0\\fake-package-manager.mjs" %*\r\n`,
+  );
+  return bin;
 }
 
 function run(root, args) {
@@ -391,7 +418,151 @@ test("init safely migrates the exact legacy house registry string", () => {
   assert.deepEqual(second.plan.dependencies, []);
 });
 
-test("a source refusal is zero-mutation in the built binary", () => {
+test("init additively completes a partial config while preserving its custom registry", () => {
+  const fixture = viteFixture();
+  write(
+    fixture.root,
+    "manteen.json",
+    `${JSON.stringify(
+      {
+        registries: {
+          "@probe": {
+            url: "https://example.com/r/{name}.json",
+            index: "https://example.com/r/registry.json",
+          },
+        },
+        aliases: {
+          components: "@/components",
+          ui: "@/components/ui",
+          hooks: "@/hooks",
+          lib: "@/lib",
+        },
+        tsconfig: "tsconfig.app.json",
+        resolutions: { card: "@probe/card" },
+      },
+      null,
+      2,
+    )}\n`,
+  );
+
+  const result = run(fixture.root, ["--yes", "--json"]);
+  assert.equal(result.status, 0, result.all);
+  const document = json(result);
+  assert.equal(document.ok, true);
+
+  const config = JSON.parse(readFileSync(join(fixture.root, "manteen.json"), "utf8"));
+  assert.deepEqual(config.registries["@probe"], {
+    url: "https://example.com/r/{name}.json",
+    index: "https://example.com/r/registry.json",
+  });
+  assert.deepEqual(config.registries["@house"], {
+    url: "https://arimxyer.github.io/manteen/r/{name}.json",
+    index: "https://arimxyer.github.io/manteen/r/registry.json",
+  });
+  assert.equal(config.theme, "src/lib/theme.ts");
+  assert.equal(config.styles, "src/manteen.css");
+  assert.deepEqual(config.resolutions, { card: "@probe/card" });
+  assert.equal(loadConfig(fixture.root).ok, true);
+});
+
+test("a missing ownership field refuses truthfully with a machine config patch", () => {
+  const fixture = viteFixture();
+  write(
+    fixture.root,
+    "manteen.json",
+    `${JSON.stringify(
+      {
+        registries: {
+          "@probe": "https://example.com/r/{name}.json",
+        },
+        theme: "src/lib/theme.ts",
+        styles: "src/manteen.css",
+        tsconfig: "tsconfig.app.json",
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  const before = manifest(fixture.root);
+
+  const result = run(fixture.root, ["--dry-run", "--yes", "--json"]);
+  assert.equal(result.status, 2, result.all);
+  const document = json(result);
+  const diagnostic = document.diagnostics.find((entry) => entry.code === "init-config-conflict");
+  assert.ok(diagnostic, result.stdout);
+  assert.match(diagnostic.message, /does not declare `aliases`/);
+  assert.doesNotMatch(diagnostic.message, /has an explicit value/);
+  assert.deepEqual(diagnostic.actions, [
+    {
+      kind: "configPatch",
+      patch: {
+        aliases: {
+          components: "@/components",
+          ui: "@/components/ui",
+          hooks: "@/hooks",
+          lib: "@/lib",
+        },
+      },
+    },
+  ]);
+  assert.equal(document.mutated, false);
+  assert.deepEqual(manifest(fixture.root), before);
+});
+
+for (const [label, fail] of [
+  ["success", false],
+  ["failure", true],
+]) {
+  test(`init --json isolates real package-manager output on ${label}`, () => {
+    const fixture = viteFixture();
+    write(
+      fixture.root,
+      "package.json",
+      `${JSON.stringify(
+        {
+          private: true,
+          devDependencies: { vite: "^8" },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const bin = fakePackageManager(fixture.root);
+    const result = runCommand(
+      fixture.root,
+      ["init", "--cwd", fixture.root, "--yes", "--json", "--pm", "aube"],
+      {
+        PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
+        FAKE_PM_FAIL: fail ? "1" : undefined,
+      },
+    );
+
+    assert.equal(result.status, fail ? 1 : 0, result.all);
+    assert.ok(result.stdout.trimStart().startsWith("{"), result.stdout);
+    const document = JSON.parse(result.stdout);
+    assert.deepEqual(Object.keys(document).sort(), [
+      "command",
+      "diagnostics",
+      "errors",
+      "exitCode",
+      "mutated",
+      "notes",
+      "ok",
+      "payload",
+      "root",
+      "schemaVersion",
+    ]);
+    assert.equal(document.ok, !fail);
+    assert.equal(document.exitCode, fail ? 1 : 0);
+    assert.equal(result.stderr, "", result.all);
+    if (fail) {
+      assert.match(document.errors[0]?.message ?? "", /FAKE_PM_STDOUT/);
+      assert.match(document.errors[0]?.message ?? "", /FAKE_PM_STDERR/);
+    } else assert.doesNotMatch(result.stdout, /FAKE_PM_STDOUT|FAKE_PM_STDERR/);
+  });
+}
+
+test("a dry-run source refusal is truthful and zero-mutation in the built binary", () => {
   const root = project("refusal");
   write(root, "package.json", packageFile("create-vite@9.1.1", {}, { vite: "^8" }));
   write(root, "index.html", '<div id="root"></div>\n');
@@ -401,11 +572,39 @@ test("a source refusal is zero-mutation in the built binary", () => {
   write(root, "vite.config.ts", "export default {};\n");
   const before = manifest(root);
 
-  const result = run(root, ["--yes", "--json"]);
+  const result = run(root, ["--dry-run", "--yes", "--json"]);
   assert.equal(result.status, 1, result.all);
   const document = json(result);
   assert.equal(document.ok, false);
+  assert.equal(document.mutated, false);
+  assert.equal(document.dryRun, true);
   assert.deepEqual(document.plan.files, []);
   assert.ok(document.diagnostics.some((entry) => entry.code === "init-source-unsupported"));
   assert.deepEqual(manifest(root), before);
+});
+
+test("init preserves and integrates a named App export in the built binary", () => {
+  const fixture = viteFixture();
+  write(
+    fixture.root,
+    "src/App.tsx",
+    `export function App() {
+  return <main>Keep this named export</main>;
+}
+`,
+  );
+
+  const result = run(fixture.root, ["--dry-run", "--yes", "--json"]);
+  assert.equal(result.status, 0, result.all);
+  const document = json(result);
+  const app = document.plan.files.find((file) => file.path === "src/App.tsx");
+  assert.ok(app, result.stdout);
+
+  const applied = run(fixture.root, ["--yes", "--expect-plan", document.planDigest, "--json"]);
+  assert.equal(applied.status, 0, applied.all);
+  const content = readFileSync(join(fixture.root, "src/App.tsx"), "utf8");
+  assert.match(content, /export function App\(\)/);
+  assert.doesNotMatch(content, /export default/);
+  assert.match(content, /<MantineProvider theme=\{theme\}>/);
+  assert.match(content, /Keep this named export/);
 });

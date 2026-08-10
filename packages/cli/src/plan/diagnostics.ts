@@ -12,7 +12,7 @@
  *
  * Pure — no fs, no network, no env, no clock.
  */
-import type { CanonicalId, Diagnostic, DiagnosticCode, Severity } from "./types";
+import type { CanonicalId, Diagnostic, DiagnosticAction, DiagnosticCode, Severity } from "./types";
 
 export interface DiagnosticSpec {
   severity: Severity;
@@ -198,6 +198,8 @@ export const DIAGNOSTIC_CODES: Record<DiagnosticCode, DiagnosticSpec> = {
 export interface DiagnosticExtras {
   items?: CanonicalId[];
   path?: string;
+  actions?: DiagnosticAction[];
+  manualRationale?: string;
   /**
    * Override the table's severity. Exactly one code needs this
    * (`destination-exists`, whose severity depends on whether a decision path
@@ -227,6 +229,8 @@ export function diag(
     ...(extras.items ? { items: extras.items } : {}),
     ...(extras.path !== undefined ? { path: extras.path } : {}),
     forceable: extras.forceable ?? spec.forceable,
+    ...(extras.actions !== undefined ? { actions: extras.actions } : {}),
+    ...(extras.manualRationale !== undefined ? { manualRationale: extras.manualRationale } : {}),
   };
 }
 

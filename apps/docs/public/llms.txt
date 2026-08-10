@@ -12,12 +12,19 @@ Full agent context: https://arimxyer.github.io/manteen/llms-full.txt
 ## Agent rules
 
 - Inspect `manteen --version` and command help; the installed binary is authoritative.
+- Resolve the local binary with the declared package manager; disable transient downloads.
 - Prefer `--json`; it emits machine data but never grants destructive consent.
 - Inspect with status/list/info/diff, then preview mutations with `--dry-run`.
+- Query results are deterministically relevance-ranked; JSON explains them with `queryMatches` and
+  `queryRank`.
 - Apply a returned plan digest with the same arguments plus `--expect-plan <sha256>`.
+- Treat registry installation and application integration as separate outcomes; when asked to use
+  an item, inspect its usage, edit consumer-owned application code, and run project checks.
 - Preserve local adaptations by default. Destructive flags require explicit intent.
 - Do not hand-edit `manteen.lock.json` or `.manteen/bases/`.
 - Never expose expanded environment variables from registry URLs.
 
-The published 0.5 client predates the complete 0.6/0.7 agent-native surface. Check local help before
-using status, plan expectations, or agent skill commands.
+The agent-native foundation shipped in manteen 0.7.0 and manteen-kit 0.2.1; the complete behavior
+documented here is versioned for manteen 0.8.0. Documentation does not prove a project's installed
+version; check local help. `status` health covers Manteen's local state, not the application's
+typecheck, tests, or build.
