@@ -214,6 +214,8 @@ test("add writes the component at its paths-resolved destination", () => {
   const result = run(installed, ["add", "@base/empty-state"]);
   assert.equal(result.status, 0, result.all);
   assert.match(result.stderr, /info {2}state-versioning-required/, result.stderr);
+  assert.match(result.stderr, /info {2}application-integration/, result.stderr);
+  assert.match(result.stderr, /did not assess application integration/, result.stderr);
 
   const written = readFileSync(join(installed, DESTINATION));
   assert.equal(
@@ -249,6 +251,7 @@ test("re-running reports identical and rewrites nothing", () => {
   const result = run(installed, ["add", "@base/empty-state"]);
   assert.equal(result.status, 0, result.all);
   assert.doesNotMatch(result.stderr, /state-versioning-required/, result.stderr);
+  assert.match(result.stderr, /info {2}application-integration/, result.stderr);
   // Named separately from the match below so a silent apply — one that filters
   // no-op destinations out of `ApplyOutcome.files` — fails as a contract
   // violation ("every planned destination, in write-list order") rather than as
@@ -275,6 +278,7 @@ test("--dry-run previews the disposition and writes nothing", () => {
 
   assert.equal(result.status, 0, result.all);
   assert.doesNotMatch(result.stderr, /state-versioning-required/, result.stderr);
+  assert.doesNotMatch(result.stderr, /application-integration/, result.stderr);
   // `create`, a Disposition — what plan() PREDICTED. A dry run that printed a
   // WriteResult (`written`) would be describing phase 3, which D19 never enters.
   assert.match(result.stdout, /^create\s+src\/components\/ui\/empty-state\.tsx$/m, result.all);

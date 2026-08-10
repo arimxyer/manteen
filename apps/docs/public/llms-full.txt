@@ -45,6 +45,11 @@ matches within each registry by exact canonical id, exact name, exact title, tit
 substring, title substring, then description substring. Equal ranks retain prior order. JSON rows
 explain the ordering through `queryMatches` and `queryRank`.
 
+`manteen add` installs registry-managed source and ownership state; it does not prove application
+integration. If the request asks only for installation, do not invent a placement. If it asks to
+use, show, or wire the item, inspect `manteen info` usage and props, edit consumer-owned application
+code, run the project's required checks, and report installation and integration separately.
+
 Files removed upstream are retained until exact selection. Discover with:
 
     manteen remove --upstream-removed --dry-run --json

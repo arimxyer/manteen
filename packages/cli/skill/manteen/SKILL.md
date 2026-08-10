@@ -22,7 +22,10 @@ has exact runner forms.
 5. Supply destructive flags only when the user explicitly chose that consequence. Never use
    `--force`, `--overwrite`, `--take-upstream`, `--discard-adapted`, or `--take-packaged` as a
    generic retry.
-6. If a documented command or flag is absent from local help, follow the installed CLI's surface;
+6. After `add`, distinguish registry installation from application integration. If the request asks
+   to use an item, follow the consumer reference and verify the application-owned integration
+   before claiming completion.
+7. If a documented command or flag is absent from local help, follow the installed CLI's surface;
    do not fabricate support from a newer contract.
 
 Read exactly the reference needed for the task:

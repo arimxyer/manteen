@@ -96,6 +96,12 @@ ownership, and every explicit differing value, still refuse with a truthful miss
 reason. When one exact JSON edit is safe to propose but not safe to assume, machine output carries a
 `configPatch` action.
 
+A successful `add` proves registry installation, not application integration. Text mode emits that
+fact as an informational stderr advisory and machine mode carries the same text in `notes`; previews,
+refusals, cancellations, and failed or rolled-back applies do not claim installation. Guidance tells
+agents to inspect item usage and edit consumer-owned application code only when the request asks to
+use the item. Manteen never guesses a route or automatically inserts a component into one.
+
 ## 4. Metadata, discovery, and SDK
 
 Registry items retain `docs`, `props`, and `usage`. Malformed optional display metadata degrades the

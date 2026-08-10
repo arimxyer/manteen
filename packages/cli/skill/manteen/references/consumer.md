@@ -79,6 +79,20 @@ manteen add @house/data-table --overwrite --expect-plan <sha256> --json
 
 A digest mismatch is a non-forceable, zero-write refusal. Re-preview instead of weakening it.
 
+## Distinguish installation from integration
+
+`manteen add` installs registry-managed source and ownership state. It does not prove that an
+application route imports, renders, or otherwise uses the item.
+
+If the request asks only to install an item, verify the add outcome and stop without inventing an
+application placement. If it asks to use, show, or wire the item into the application:
+
+1. Read `manteen info <ref> --json` for usage, props, provider, and dependency requirements.
+2. Edit the appropriate consumer-owned application file to import and use the installed item. Do
+   not alter registry-managed source merely to connect it to the application.
+3. Run the project's required typecheck, tests, or build; `manteen status` is not application proof.
+4. Report registry installation and application integration as separate facts.
+
 ## Preserve local adaptations during maintenance
 
 ```bash

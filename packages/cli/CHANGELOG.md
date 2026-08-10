@@ -13,6 +13,8 @@
   theme fields in partial configs without replacing authored values.
 - Distinguish missing, conflicting, and invalid init configuration diagnostics; emit an exact
   `configPatch` action when a safe edit can be proposed but should still be reviewed.
+- Distinguish successful registry installation from application integration in add output and agent
+  guidance without automatically editing consumer-owned application routes.
 
 ## 0.7.0
 

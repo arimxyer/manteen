@@ -18,6 +18,8 @@ Full agent context: https://arimxyer.github.io/manteen/llms-full.txt
 - Query results are deterministically relevance-ranked; JSON explains them with `queryMatches` and
   `queryRank`.
 - Apply a returned plan digest with the same arguments plus `--expect-plan <sha256>`.
+- Treat registry installation and application integration as separate outcomes; when asked to use
+  an item, inspect its usage, edit consumer-owned application code, and run project checks.
 - Preserve local adaptations by default. Destructive flags require explicit intent.
 - Do not hand-edit `manteen.lock.json` or `.manteen/bases/`.
 - Never expose expanded environment variables from registry URLs.

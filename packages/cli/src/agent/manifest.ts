@@ -5,7 +5,7 @@
 
 export const MANTEEN_AGENT_MANIFEST = {
   schemaVersion: 1,
-  guideVersion: 2,
+  guideVersion: 3,
   product: {
     name: "Manteen",
     description: "Mantine-native registry authoring and source maintenance",

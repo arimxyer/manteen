@@ -88,6 +88,14 @@ consequence is chosen.
 Do not edit `manteen.lock.json` or `.manteen/bases/` by hand. Commit installed source, the receipt,
 and pristine bases together.
 
+## Installation is not application integration
+
+`manteen add` installs registry-managed source and ownership state. It does not determine which
+application route should import, render, or otherwise use the item. If the request asks only for
+installation, do not invent a placement. If it asks to use the item, inspect `manteen info` usage
+and props, edit the appropriate consumer-owned application file, and run the project's required
+checks. Report installation and application integration as separate facts.
+
 ## Machine responses
 
 The client schema version is <code>{manifest.machineInterface.schemaVersion}</code>. Every recognized

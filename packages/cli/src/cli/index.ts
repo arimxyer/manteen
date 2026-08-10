@@ -60,9 +60,11 @@ import { planRemoval } from "../removal/plan";
 import { interactiveFromProcess } from "../ui";
 import { beginMachineSession } from "./machine";
 import {
+  ADD_INTEGRATION_NOTE,
   display,
   loadProjectConfig,
   PROCESS_STREAMS,
+  renderAddIntegrationAdvisory,
   renderApplyFailure,
   renderDiagnostics,
   renderDryRun,
@@ -179,7 +181,7 @@ function renderAddJson(
             versioningRequired: outcome.updateState.changed,
           },
     diagnostics: planned.diagnostics,
-    notes: [],
+    notes: ok && !dryRun && outcome?.ok === true ? [ADD_INTEGRATION_NOTE] : [],
   });
 }
 
@@ -322,6 +324,9 @@ async function runAdd(refs: string[], flags: AddFlags, command: Command): Promis
   }
 
   if (!flags.json) {
+    if (outcome.ok && !flags.dryRun) {
+      PROCESS_STREAMS.stderr(renderAddIntegrationAdvisory());
+    }
     PROCESS_STREAMS.stderr(renderApplyFailure(outcome, planned.root));
     PROCESS_STREAMS.stderr(renderUpdateStateAdvisory(outcome, planned));
     if (outcome.verification !== undefined) {
