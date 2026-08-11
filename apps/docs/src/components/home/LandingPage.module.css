@@ -194,8 +194,26 @@
   padding-top: 3.5rem;
 }
 
+/* Stacking context so the mascot's z-index: -1 stays behind the headline rather than dropping
+   behind the hero background — same arrangement as .installNarrative. */
 .heroHeadline {
+  position: relative;
+  z-index: 1;
   min-width: 0;
+}
+
+/* Beside the headline rather than across it. The h1's longest line ends ~233px short of the
+   column's right edge, and the grid gap adds another 80px, so there is a genuine void here — no
+   type is crossed and no contrast concession is needed, unlike the story bands where he grazes
+   display type. Sized to leave roughly equal air either side of him. */
+.heroManny {
+  position: absolute;
+  z-index: -1;
+  top: -0.5rem;
+  right: -1.5rem;
+  width: 12.5rem;
+  height: auto;
+  object-fit: contain;
 }
 
 .heroHeadline h1 {
@@ -400,10 +418,9 @@
   --card-tone: var(--f-green);
 }
 
+/* No image column any more — the mascot moved to the hero headline, so the copy gets the card's
+   full width. That also gives the receipt states room to sit on one line again. */
 .reconciled {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 11rem;
-  gap: 1rem;
   overflow: hidden;
   background: var(--f-success-inset);
 }
@@ -411,6 +428,7 @@
 .reconciled > div {
   display: flex;
   min-width: 0;
+  flex: 1;
   flex-direction: column;
 }
 
@@ -430,9 +448,9 @@
 code.receiptStates {
   display: flex;
   align-items: center;
-  /* Wraps rather than forcing one line: the states share a baseline with the mascot, and a
-     max-content line overruns the text column and caps how large the mascot can grow. There is
-     vertical slack above (margin-top: auto), so the second row costs nothing. */
+  /* Allowed to wrap rather than forced onto one line. With the mascot gone from this card the
+     states fit on a single row again at full width, but wrapping keeps them from overrunning the
+     card at narrower breakpoints, and the slack above (margin-top: auto) makes a second row free. */
   flex-wrap: wrap;
   gap: 0.35rem 0.8rem;
   margin-top: auto;
@@ -446,35 +464,6 @@ code.receiptStates {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-}
-
-.reconciled img {
-  align-self: end;
-  width: min(7.37rem, 100%);
-  height: auto;
-  object-fit: contain;
-}
-
-@media (min-width: 82.001rem) {
-  .reconciled {
-    grid-template-columns: minmax(0, 1fr) 8.75rem;
-    gap: 1.25rem;
-  }
-
-  /* Four-across: the image track is only 8.75rem, so the mascot is sized past its track and
-     anchored to the track's end, bleeding into the card padding. Widening the track instead would
-     take the width out of the text column, which is already the tighter of the two. */
-  .reconciled img {
-    width: 7.7rem;
-    /* Starlight's `max-width: 100%` resolves against the grid track and would clamp the mascot
-       straight back to the track width, silently undoing the size above. */
-    max-width: none;
-    justify-self: end;
-    /* The asset is trimmed to its visible bounds, so these are plain optical gaps to the card
-       edge rather than bleeds compensating for transparent padding. */
-    margin-right: 1.05rem;
-    margin-bottom: 0.7rem;
-  }
 }
 
 .ownership,
@@ -1504,6 +1493,17 @@ code.receiptStates {
     max-width: 36rem;
   }
 
+  /* The headline column goes full width here, so the void he sat in is gone. Back into the flow
+     above the headline, right-aligned — the same fallback .installManny uses when its band
+     collapses. */
+  .heroManny {
+    position: static;
+    z-index: auto;
+    display: block;
+    width: min(9rem, 34vw);
+    margin: 0 0 1.25rem auto;
+  }
+
   .ownershipHeader,
   .ecosystemHeader {
     grid-template-columns: minmax(0, 1fr) 11rem;
@@ -1869,14 +1869,6 @@ code.receiptStates {
 
   .version {
     display: none;
-  }
-
-  .reconciled {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .reconciled img {
-    width: 6.03rem;
   }
 
   .terminalBody {
