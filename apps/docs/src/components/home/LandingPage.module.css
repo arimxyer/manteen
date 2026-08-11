@@ -944,28 +944,41 @@ code.receiptStates {
   text-overflow: ellipsis;
 }
 
+/* In the narrative's flex flow rather than absolutely placed: as a floating annotation it had no
+   anchor to the copy it qualifies, and it occupied the corner the mascot needs. */
 .editGuide {
-  position: absolute;
-  right: 21rem;
-  bottom: 7.5rem;
-  width: 13.75rem;
+  max-width: 22rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--f-line);
 }
 
 .editGuide strong {
   color: var(--f-amber-bright);
 }
 
+/* Mirrors .installManny: a child of the narrative, which is a stacking context, so z-index: -1
+   sits behind the type without dropping behind the section background. Crosses the display type
+   only — the asset's visible bottom edge (80% of the box) is held clear of the body copy. */
 .editManny {
   position: absolute;
-  right: clamp(4rem, 8vw, 8rem);
-  bottom: 7rem;
-  width: min(23rem, 26vw);
+  z-index: -1;
+  top: -9rem;
+  right: -2rem;
+  width: min(24rem, 27vw);
   height: auto;
+  /* The asset carries pure-white highlights (eyes, paper) across its whole visible body, so white
+     display type over it measures 0.91:1 at full strength — no placement avoids this. Compositing
+     at 0.55 against the section background lifts the worst case to 2.80:1 and drops the
+     sub-3:1 area from 11% to 0.1%. Large bold type, so 3:1 is the applicable bar. */
+  opacity: 0.55;
   object-fit: contain;
 }
 
+/* Was 71.875rem, which reserved ~440px of empty band below the content for an absolutely placed
+   mascot that overlapped nothing. The mascot now overlaps the transaction panel, so the height
+   only has to cover the content. */
 .reconcileBand {
-  min-height: 71.875rem;
+  min-height: 58rem;
   padding-block: 8rem;
   background: var(--f-reconcile-canvas);
 }
@@ -1045,6 +1058,10 @@ code.receiptStates {
 }
 
 .transaction {
+  position: relative;
+  /* Lifted above .reconcileManny so the panel occludes him; a plain block background would paint
+     below any positioned sibling regardless of order. */
+  z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 17.5rem;
   gap: 1.75rem;
@@ -1088,10 +1105,9 @@ code.receiptStates {
 
 .destructiveNote {
   display: flex;
-  max-inline-size: 65ch;
+  max-inline-size: 52ch;
   align-items: center;
   gap: 1rem;
-  margin-top: 1.5rem;
   color: var(--f-copy-strong);
   font-size: 0.875rem;
 }
@@ -1101,24 +1117,38 @@ code.receiptStates {
   color: var(--f-warning-copy);
 }
 
+/* Both closing annotations sit in one row under the transaction instead of floating absolutely.
+   The row is held to the left of the band so the mascot has the right-hand corner to itself. */
+.reconcileFooter {
+  display: grid;
+  max-width: 54rem;
+  grid-template-columns: minmax(0, 1fr) 17rem;
+  gap: 2.5rem;
+  align-items: start;
+  margin-top: 1.75rem;
+}
+
 .reconcileGuide {
-  position: absolute;
-  z-index: 3;
-  right: 22.5rem;
-  bottom: 8.5rem;
-  width: 18rem;
+  width: auto;
 }
 
 .reconcileGuide strong {
   color: var(--f-success-bright);
 }
 
+/* Layered by occlusion rather than by passing behind type: the transaction panel is opaque and
+   lifted above him, so he reads as sitting inside the band instead of on top of it. This avoids
+   the contrast problem entirely — no text crosses the asset — and varies the mechanism from the
+   two bands above so the treatment does not become a formula. */
 .reconcileManny {
   position: absolute;
-  z-index: 2;
-  right: 0.75rem;
-  bottom: 3.5rem;
-  width: min(25rem, 28vw);
+  z-index: 0;
+  right: 0;
+  /* Offset is set from the asset's visible bounds (16% top / 27% bottom transparent margin), not
+     its box, so ~50px of him actually passes behind the panel and his feet land on the content
+     edge rather than floating above it. */
+  bottom: 2.75rem;
+  width: min(28rem, 30vw);
   height: auto;
   object-fit: contain;
 }

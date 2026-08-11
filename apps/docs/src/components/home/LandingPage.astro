@@ -277,14 +277,14 @@ const command = "npx manteen add @house/article-card --dry-run --json";
       </footer>
     </div>
     <div class={styles.editNarrative}>
+      <Image class={styles.editManny} src={mannyEdit} alt="" width={400} height={333} />
       <h2 id="edit-title">Edit it as ordinary project code.</h2>
       <p>Local changes stay in your project. The receipt keeps them distinguishable from future registry updates.</p>
+      <div class={styles.editGuide}>
+        <strong>Local source</strong>
+        <span>Change the file in place. The receipt remains separate from the code you edit.</span>
+      </div>
     </div>
-    <div class={styles.editGuide}>
-      <strong>Local source</strong>
-      <span>Change the file in place. The receipt remains separate from the code you edit.</span>
-    </div>
-    <Image class={styles.editManny} src={mannyEdit} alt="" width={400} height={333} />
   </section>
 
   <section class={styles.reconcileBand} aria-labelledby="reconcile-title">
@@ -313,8 +313,10 @@ const command = "npx manteen add @house/article-card --dry-run --json";
       <div><strong>Verified transaction</strong><code>manteen update @house/article-card --expect-plan 4b7e…a921</code></div>
       <div><strong>Applied · 3 files</strong><code>receipt v3 · base refreshed</code></div>
     </div>
-    <p class={styles.destructiveNote}><IconShieldExclamation size={19} aria-hidden="true" />Replacement stays an explicit decision. A destructive flag is never treated as an automatic retry.</p>
-    <div class={styles.reconcileGuide}><strong>Plan verified</strong><span>The proposed result keeps local intent and registry changes visible.</span></div>
+    <div class={styles.reconcileFooter}>
+      <p class={styles.destructiveNote}><IconShieldExclamation size={19} aria-hidden="true" />Replacement stays an explicit decision. A destructive flag is never treated as an automatic retry.</p>
+      <div class={styles.reconcileGuide}><strong>Plan verified</strong><span>The proposed result keeps local intent and registry changes visible.</span></div>
+    </div>
     <Image class={styles.reconcileManny} src={mannyCompare} alt="" width={400} height={317} />
   </section>
 
