@@ -854,6 +854,10 @@ code.receiptStates {
 }
 
 .editBand {
+  /* Overrides .storyBand's 55rem locally rather than lowering it, since the install band shares
+     that rule and its mascot bleeds upward out of the column, making the height load-bearing
+     there. Here the tallest column is the 514px artifact, so the band sizes to its content. */
+  min-height: 48rem;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 26.25rem;
   gap: clamp(3rem, 6vw, 6rem);
