@@ -289,6 +289,7 @@ const command = "npx manteen add @house/article-card --dry-run --json";
 
   <section class={styles.reconcileBand} aria-labelledby="reconcile-title">
     <div class={styles.reconcileHeader}>
+      <Image class={styles.reconcileManny} src={mannyCompare} alt="" width={400} height={317} />
       <div>
         <h2 id="reconcile-title">Compare local and registry changes before writing.</h2>
       </div>
@@ -317,7 +318,6 @@ const command = "npx manteen add @house/article-card --dry-run --json";
       <p class={styles.destructiveNote}><IconShieldExclamation size={19} aria-hidden="true" />Replacement stays an explicit decision. A destructive flag is never treated as an automatic retry.</p>
       <div class={styles.reconcileGuide}><strong>Plan verified</strong><span>The proposed result keeps local intent and registry changes visible.</span></div>
     </div>
-    <Image class={styles.reconcileManny} src={mannyCompare} alt="" width={400} height={317} />
   </section>
 
   <section class={styles.ecosystem} aria-labelledby="ecosystem-title">

@@ -621,11 +621,15 @@ code.receiptStates {
   gap: 1.75rem;
 }
 
+/* Same graze-not-cross placement as .editManny. The horizontal shift is doing as much work as the
+   lift: the headline's second line is short, so moving right takes his body off it entirely.
+   At -7rem/7.5rem the crossing measured 1.06:1; at -11rem/12rem it is 4.66:1 for the same 27px
+   of overlap, so no opacity concession is needed. */
 .installManny {
   position: absolute;
   z-index: -1;
-  top: -7rem;
-  left: 7.5rem;
+  top: -11rem;
+  left: 12rem;
   width: 25rem;
   height: auto;
   opacity: 0.98;
@@ -980,15 +984,19 @@ code.receiptStates {
 }
 
 /* Was 71.875rem, which reserved ~440px of empty band below the content for an absolutely placed
-   mascot that overlapped nothing. The mascot now overlaps the transaction panel, so the height
-   only has to cover the content. */
+   mascot that overlapped nothing. The mascot now lives in the header, so the band sizes to its
+   content and this only guards the small-viewport case. */
 .reconcileBand {
-  min-height: 58rem;
+  min-height: 52rem;
   padding-block: 8rem;
   background: var(--f-reconcile-canvas);
 }
 
 .reconcileHeader {
+  /* Stacking context, so the mascot's z-index: -1 keeps it behind the header's own content
+     without dropping behind the band background. Same arrangement as .installNarrative. */
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 45rem) 24.375rem;
   gap: 5rem;
@@ -1063,10 +1071,6 @@ code.receiptStates {
 }
 
 .transaction {
-  position: relative;
-  /* Lifted above .reconcileManny so the panel occludes him; a plain block background would paint
-     below any positioned sibling regardless of order. */
-  z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 17.5rem;
   gap: 1.75rem;
@@ -1141,19 +1145,21 @@ code.receiptStates {
   color: var(--f-success-bright);
 }
 
-/* Layered by occlusion rather than by passing behind type: the transaction panel is opaque and
-   lifted above him, so he reads as sitting inside the band instead of on top of it. This avoids
-   the contrast problem entirely — no text crosses the asset — and varies the mechanism from the
-   two bands above so the treatment does not become a formula. */
+/* Sits in the header's negative space, between the title and the standfirst, rather than being
+   occluded by the transaction panel further down — being covered by an information surface read
+   as an accident rather than as layering.
+
+   Unlike the other two bands there is no grazing position available: this asset goes straight
+   from transparent margin into a bright code document on its left edge, so every overlap with the
+   title measures 0.95:1 across 26-52% of the crossing. He is placed clear of the type instead.
+   Bounds are derived from his visible box (19% left / 18% right / 27% bottom margin): visible
+   right lands 13px short of the standfirst, visible bottom 14px above the merge trail. */
 .reconcileManny {
   position: absolute;
-  z-index: 0;
-  right: 0;
-  /* Offset is set from the asset's visible bounds (16% top / 27% bottom transparent margin), not
-     its box, so ~50px of him actually passes behind the panel and his feet land on the content
-     edge rather than floating above it. */
-  bottom: 2.75rem;
-  width: min(28rem, 30vw);
+  z-index: -1;
+  top: -4.5rem;
+  left: 32.5rem;
+  width: 24rem;
   height: auto;
   object-fit: contain;
 }
