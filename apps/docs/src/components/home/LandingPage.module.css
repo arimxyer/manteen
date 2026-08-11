@@ -50,6 +50,21 @@
   --f-role-green-copy: #a6f7d5;
   --f-agent-label: #7f85f4;
   --f-type-micro: 0.75rem;
+
+  /* Mascot scale. Sizes are picked from these four roles rather than per placement, which is what
+     the trimmed assets make possible: the box is now the character, so equal width means equal
+     character. The two lockups are deliberate exceptions — he reads as a mark beside the wordmark
+     there, not as an illustration.
+     Caveat worth knowing before adding a fifth: equal width is not exactly equal presence, because
+     the poses frame him differently — the ones holding documents or a laptop spend more of their
+     width on props. Close enough to systematise; not a guarantee. */
+  --manny-nav: 1.7rem;
+  --manny-footer: 3.5rem;
+  /* Illustration occupying its own column in a section header. */
+  --manny-figure: 10.25rem;
+  /* Layered into a section beside or behind its display type. The vw term keeps him from
+     crowding the type on mid-width screens, where the columns narrow but rem sizes do not. */
+  --manny-scene: min(13rem, 15vw);
   --f-sans: "Figtree Variable", Inter, ui-sans-serif, system-ui, sans-serif;
   --f-serif: "Fraunces Subset", Georgia, serif;
   --f-mono: "JetBrains Mono", "Geist Mono", ui-monospace, monospace;
@@ -124,7 +139,7 @@
 }
 
 .brand img {
-  width: 1.7rem;
+  width: var(--manny-nav);
   height: auto;
   object-fit: contain;
 }
@@ -209,9 +224,9 @@
 .heroManny {
   position: absolute;
   z-index: -1;
-  top: -0.5rem;
+  top: -0.65rem;
   right: -1.5rem;
-  width: 12.5rem;
+  width: var(--manny-scene);
   height: auto;
   object-fit: contain;
 }
@@ -509,7 +524,7 @@ code.receiptStates {
 
 .ownershipHeader img,
 .ecosystemHeader img {
-  width: 10.34rem;
+  width: var(--manny-figure);
   height: auto;
   object-fit: contain;
 }
@@ -617,9 +632,9 @@ code.receiptStates {
 .installManny {
   position: absolute;
   z-index: -1;
-  top: -7.94rem;
+  top: -9.06rem;
   left: 18.87rem;
-  width: 11.64rem;
+  width: var(--manny-scene);
   height: auto;
   opacity: 0.98;
   object-fit: contain;
@@ -964,9 +979,9 @@ code.receiptStates {
      sub-3:1 pixels (worst 1.39:1). At this height only his lower body edge — the dark underside —
      meets the headline's cap-height, measuring 3.25:1, so he stays whole and vivid above the type
      instead of being hidden behind it. */
-  top: -10.3rem;
+  top: -10.25rem;
   right: 2.93rem;
-  width: min(13.64rem, 15.35vw);
+  width: var(--manny-scene);
   height: auto;
   opacity: 0.95;
   object-fit: contain;
@@ -1148,7 +1163,7 @@ code.receiptStates {
   z-index: -1;
   top: -1.52rem;
   left: 36.98rem;
-  width: 15.27rem;
+  width: var(--manny-scene);
   height: auto;
   object-fit: contain;
 }
@@ -1324,7 +1339,7 @@ code.receiptStates {
 }
 
 .closingCta img {
-  width: 10.04rem;
+  width: var(--manny-figure);
   height: auto;
   object-fit: contain;
 }
@@ -1399,7 +1414,7 @@ code.receiptStates {
 }
 
 .footerBrand img {
-  width: 3.49rem;
+  width: var(--manny-footer);
   height: auto;
   object-fit: contain;
 }
