@@ -30,8 +30,13 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = join(root, "assets-src/manny");
 const OUT = join(root, "src/assets/manny");
 
+// The approved cutouts are pencil/images/manny-approved/finals — thirteen poses, each with a
+// transparent background. Its sibling sources/ holds the pre-cutout green-screen renders
+// (corners are rgb(10,248,18)); those are upstream art, never site assets. Everything here
+// mirrors finals/, so the whole approved set is available rather than only what is placed today.
+//
 // name -> width in px of the emitted asset = 2x the character's largest rendered CSS width.
-// Where that largest width comes from is named so the two stay in sync.
+// Naming where that width comes from keeps the target and the stylesheet honest about each other.
 const TARGETS = {
   "manny-mantine-ambassador": [54, ".brand img 2.5rem"],
   "manny-welcome": [247, ".reconciled img 11.5rem"],
@@ -42,6 +47,15 @@ const TARGETS = {
   "manny-guardrail": [335, ".ecosystemHeader img 15.625rem"],
   "manny-success": [321, ".closingCta img 15.3125rem"],
   "manny-reyamira-connection": [112, ".footerBrand img 8rem"],
+
+  // Not placed in a layout yet, so there is no CSS rule to derive a width from. 512 covers any
+  // size the site currently uses at 2x (the largest placed target is 489). When one of these
+  // lands somewhere, replace the width with 2x its rule the way the entries above are — leaving
+  // the default is a silent overshoot, not a neutral choice.
+  "manny-discovering": [512, "unplaced"],
+  "manny-presenting": [512, "unplaced"],
+  "manny-reyamira-flag": [512, "unplaced"],
+  "manny-thinking": [512, "unplaced"],
 };
 
 try {
