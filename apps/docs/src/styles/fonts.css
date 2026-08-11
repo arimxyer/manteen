@@ -16,8 +16,8 @@
    different typeface than the one that was approved. Fraunces' optical-size axis is what gives it
    contrast and delicacy at display sizes; freezing it produced visibly heavier, wider, lower-
    contrast letterforms. That was a design change made as a file-size decision. Keep the axis, and
-   keep `font-optical-sizing: auto` on `.mh` (home-v3.css) so the browser resolves opsz from the
-   rendered size the way the approved specimen did.
+   keep `font-optical-sizing: auto` on the Fraunces landing-page text so the browser resolves opsz
+   from the rendered size the way the approved specimen did.
 
    To regenerate (fonttools + brotli, both already on this machine):
 

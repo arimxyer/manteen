@@ -37,7 +37,7 @@
 
 /* Starlight's markdown rhythm and inline-code treatment are correct for prose pages, but this
    component owns a complete product layout. Reset both at the boundary so intentional grid/flex
-   gaps—not inherited paragraph margins or code pills—control Study F's geometry. */
+   gaps—not inherited paragraph margins or code pills—control the landing page geometry. */
 .root :where(*) + :where(*) {
   margin-top: 0;
 }

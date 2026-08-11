@@ -14,17 +14,13 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const routePath = Astro.url.pathname.startsWith(base)
 	? Astro.url.pathname.slice(base.length)
 	: Astro.url.pathname;
-// Study F owns its own product navigation. Keep Starlight's full docs header everywhere else,
-// while the home and review routes start at the top edge exactly like the approved canvas.
-const isLandingStudy =
-	routePath === "" ||
-	routePath === "/" ||
-	routePath === "/preview/hero-d" ||
-	routePath === "/preview/hero-d/";
+// The landing page owns its product navigation. Keep Starlight's full docs header everywhere
+// else, while the home route starts at the top edge exactly like the approved canvas.
+const isLandingPage = routePath === "" || routePath === "/";
 ---
 
 <div class="page sl-flex">
-	{!isLandingStudy && <header class="header"><slot name="header" /></header>}
+	{!isLandingPage && <header class="header"><slot name="header" /></header>}
 	{
 		hasSidebar && (
 			<nav class="sidebar print:hidden" aria-label={Astro.locals.t("sidebarNav.accessibleLabel")}>
@@ -36,7 +32,7 @@ const isLandingStudy =
 			</nav>
 		)
 	}
-	<div class="main-frame" data-landing-study={isLandingStudy ? "f" : undefined}><slot /></div>
+	<div class="main-frame" data-home-landing={isLandingPage ? "true" : undefined}><slot /></div>
 </div>
 
 <style>
@@ -116,7 +112,7 @@ const isLandingStudy =
 			padding-inline-start: var(--sl-content-inline-start);
 		}
 
-		.main-frame[data-landing-study='f'] {
+		.main-frame[data-home-landing='true'] {
 			padding-top: 0;
 		}
 	}

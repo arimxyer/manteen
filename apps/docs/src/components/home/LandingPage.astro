@@ -19,7 +19,7 @@ import mannyReyamira from "../../assets/manny/manny-reyamira-connection.png";
 import mannySuccess from "../../assets/manny/manny-success.png";
 import mannyWelcome from "../../assets/manny/manny-welcome.png";
 import mannyWorking from "../../assets/manny/manny-working.png";
-import styles from "./LandingStudyF.module.css";
+import styles from "./LandingPage.module.css";
 import "../../styles/fonts.css";
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -111,7 +111,7 @@ const agentFeatures = [
 const command = "npx manteen add @house/article-card --dry-run --json";
 ---
 
-<div class={styles.root} data-landing-study="f">
+<div class={styles.root} data-home-landing="true">
   <section class={styles.hero} aria-labelledby="landing-title">
     <nav class={styles.nav} aria-label="Primary">
       <a class={styles.brand} href={`${base}/`} aria-label="Manteen home">
@@ -410,29 +410,29 @@ const command = "npx manteen add @house/article-card --dry-run --json";
 </script>
 
 <style is:global>
-  body:has([data-landing-study="f"]) .content-panel:first-of-type {
+  body:has([data-home-landing="true"]) .content-panel:first-of-type {
     display: none;
   }
 
-  body:has([data-landing-study="f"]) .content-panel,
-  body:has([data-landing-study="f"]) .main-pane {
+  body:has([data-home-landing="true"]) .content-panel,
+  body:has([data-home-landing="true"]) .main-pane {
     padding: 0;
   }
 
-  body:has([data-landing-study="f"]) .content-panel .sl-container {
+  body:has([data-home-landing="true"]) .content-panel .sl-container {
     max-width: none;
   }
 
-  body:has([data-landing-study="f"]) .main-frame,
-  body:has([data-landing-study="f"]) .main-pane {
+  body:has([data-home-landing="true"]) .main-frame,
+  body:has([data-home-landing="true"]) .main-pane {
     overflow-x: clip;
   }
 
-  body:has([data-landing-study="f"]) main {
+  body:has([data-home-landing="true"]) main {
     padding-bottom: 0;
   }
 
-  body:has([data-landing-study="f"]) .content-panel > .sl-container > footer.sl-flex {
+  body:has([data-home-landing="true"]) .content-panel > .sl-container > footer.sl-flex {
     display: none;
   }
 </style>
