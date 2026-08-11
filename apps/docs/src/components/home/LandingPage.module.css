@@ -966,15 +966,16 @@ code.receiptStates {
 .editManny {
   position: absolute;
   z-index: -1;
-  top: -9rem;
+  /* Placement, not opacity, buys the legibility here. The asset's opaque body is light almost
+     everywhere, so any deep crossing fails: at -13rem the headline sits on 5.4% sub-3:1 pixels
+     (worst 1.39:1). Lifting one more rem drops the crossing to the asset's lower transparent
+     margin — 27px of graze into the headline's cap-height, worst 3.25:1 — which passes at full
+     strength. He stays whole and vivid above the type instead of being hidden behind it. */
+  top: -14rem;
   right: -2rem;
   width: min(24rem, 27vw);
   height: auto;
-  /* The asset carries pure-white highlights (eyes, paper) across its whole visible body, so white
-     display type over it measures 0.91:1 at full strength — no placement avoids this. Compositing
-     at 0.55 against the section background lifts the worst case to 2.80:1 and drops the
-     sub-3:1 area from 11% to 0.1%. Large bold type, so 3:1 is the applicable bar. */
-  opacity: 0.55;
+  opacity: 0.95;
   object-fit: contain;
 }
 
