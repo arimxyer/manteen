@@ -267,7 +267,11 @@ function LiveMini({ adapter }: { adapter: PlaygroundAdapter }) {
           theme={liveMiniTheme}
         >
           <div className={boxClassName} style={boxStyle}>
-            {adapter.render(adapter.defaultProps, noop, { viewport: "desktop", scheme: value })}
+            {adapter.render(adapter.defaultProps, noop, {
+              viewport: "desktop",
+              scheme: value,
+              surface: "catalog",
+            })}
           </div>
         </MantineProvider>
       </div>

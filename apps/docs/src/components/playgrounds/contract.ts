@@ -64,6 +64,8 @@ export interface PlaygroundRenderContext {
   viewport: "desktop" | "mobile";
   /** The stage color scheme currently forced on the scoped MantineProvider. */
   scheme: "dark" | "light";
+  /** Full interactive playground or the inert catalog-card thumbnail. */
+  surface: "playground" | "catalog";
 }
 
 export interface PlaygroundAdapter {

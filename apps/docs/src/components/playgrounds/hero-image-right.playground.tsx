@@ -5,6 +5,7 @@ const DESCRIPTION =
   "Build fully functional, accessible interfaces faster — a complete kit of components and hooks that cover you in any situation.";
 const IMAGE_EARTH =
   "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1080&q=80";
+const IMAGE_EARTH_CATALOG = IMAGE_EARTH.replace("w=1080&q=80", "w=360&q=55");
 
 const adapter: PlaygroundAdapter = {
   item: "hero-image-right",
@@ -32,7 +33,7 @@ const adapter: PlaygroundAdapter = {
   // narrow the stage slot without visibly reflowing the title size or button width; it only
   // matches the component's real behavior when the reader's actual browser window is
   // narrower than 992px (62em).
-  render: (props, recordEvent) => (
+  render: (props, recordEvent, context) => (
     <HeroImageRight
       highlightedText={String(props.highlightedText) || "fully featured"}
       titleAfter={String(props.titleAfter) || "component library for your product"}
@@ -43,7 +44,13 @@ const adapter: PlaygroundAdapter = {
       onSecondaryButtonClick={
         props.secondaryButton ? () => recordEvent("onSecondaryButtonClick") : undefined
       }
-      backgroundImageUrl={props.backgroundImage ? IMAGE_EARTH : undefined}
+      backgroundImageUrl={
+        props.backgroundImage
+          ? context.surface === "catalog"
+            ? IMAGE_EARTH_CATALOG
+            : IMAGE_EARTH
+          : undefined
+      }
     />
   ),
   renderJsx: (props) => {

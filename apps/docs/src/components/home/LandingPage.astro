@@ -130,13 +130,13 @@ const command = "npx manteen add @house/article-card --dry-run --json";
       <div class={styles.category}><span></span>A source-owned component registry for Mantine</div>
       <div class={styles.heroIntro}>
         <div class={styles.heroHeadline}>
-          <Image class={styles.heroManny} src={mannyWelcome} alt="" width={247} height={224} loading="eager" />
           <h1 id="landing-title">
             Source you own,<br />
             <em>that still knows</em><br />
             where it came from.
           </h1>
         </div>
+        <Image class={styles.heroManny} src={mannyWelcome} alt="" width={247} height={224} loading="eager" />
         <div class={styles.heroSupport}>
           <p>
             Install Mantine source into your project. Change it there. When registry source moves,
@@ -226,7 +226,7 @@ const command = "npx manteen add @house/article-card --dry-run --json";
       </header>
       <div class={styles.terminalBody}>
         <div class={styles.commandRow}>
-          <code>$ {command}</code>
+          <code tabindex="0">$ {command}</code>
           <button type="button" data-copy-command={command} aria-label="Copy install command">
             <IconCopy size={16} aria-hidden="true" />
             <span data-copy-label>Copy</span>

@@ -13,6 +13,10 @@ const IMAGE_HIKING =
 const IMAGE_COASTAL =
   "https://images.unsplash.com/photo-1516214104703-d870798883c5?auto=format&fit=crop&w=1080&q=80";
 
+function imageForSurface(image: string, surface: "playground" | "catalog") {
+  return surface === "catalog" ? image.replace("w=1080&q=80", "w=360&q=55") : image;
+}
+
 const adapter: PlaygroundAdapter = {
   item: "cards-carousel",
   defaultProps: {
@@ -35,19 +39,19 @@ const adapter: PlaygroundAdapter = {
     const items: CardsCarouselItem[] = [
       {
         id: "1",
-        image: IMAGE_FORESTS,
+        image: imageForSurface(IMAGE_FORESTS, context.surface),
         title: String(props.title) || "Untitled",
         category: String(props.category) || "Uncategorized",
       },
       {
         id: "2",
-        image: IMAGE_HIKING,
+        image: imageForSurface(IMAGE_HIKING, context.surface),
         title: "Hiking gear you actually need",
         category: "Outdoors",
       },
       {
         id: "3",
-        image: IMAGE_COASTAL,
+        image: imageForSurface(IMAGE_COASTAL, context.surface),
         title: "Planning a coastal road trip",
         category: "Travel",
       },
