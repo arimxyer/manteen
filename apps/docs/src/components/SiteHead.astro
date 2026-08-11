@@ -24,6 +24,9 @@ const needsCoreStyles = hasPlayground || isCatalogPage;
 ---
 
 <DefaultHead />
+<!-- impeccable-live-start -->
+<!-- <script is:inline src="http://localhost:8400/live.js?token=ae182ee2-6af4-47a1-933f-35fc648e0556"></script> -->
+<!-- impeccable-live-end -->
 {needsCoreStyles && <link rel="stylesheet" href={mantineStylesHref} />}
 {/* Type is self-hosted — see styles/fonts.css, imported by the page that uses it. No font CDN,
     no third-party request, nothing to preconnect to. */}

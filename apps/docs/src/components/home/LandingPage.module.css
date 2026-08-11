@@ -124,8 +124,8 @@
 }
 
 .brand img {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 1.7rem;
+  height: auto;
   object-fit: contain;
 }
 
@@ -450,7 +450,7 @@ code.receiptStates {
 
 .reconciled img {
   align-self: end;
-  width: min(11rem, 100%);
+  width: min(7.37rem, 100%);
   height: auto;
   object-fit: contain;
 }
@@ -465,15 +465,15 @@ code.receiptStates {
      anchored to the track's end, bleeding into the card padding. Widening the track instead would
      take the width out of the text column, which is already the tighter of the two. */
   .reconciled img {
-    width: 11.5rem;
+    width: 7.7rem;
     /* Starlight's `max-width: 100%` resolves against the grid track and would clamp the mascot
        straight back to the track width, silently undoing the size above. */
     max-width: none;
     justify-self: end;
-    /* Bleed is tuned against the asset's own transparent margin (15.7% right, 19.2% bottom), not
-       the box edge, so the optical gap to the card border reads like the 1.5rem padding elsewhere. */
-    margin-right: -0.75rem;
-    margin-bottom: -1.5rem;
+    /* The asset is trimmed to its visible bounds, so these are plain optical gaps to the card
+       edge rather than bleeds compensating for transparent padding. */
+    margin-right: 1.05rem;
+    margin-bottom: 0.7rem;
   }
 }
 
@@ -499,7 +499,7 @@ code.receiptStates {
 .ownershipHeader,
 .ecosystemHeader {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 15.625rem 22.5rem;
+  grid-template-columns: minmax(0, 1fr) 10.34rem 22.5rem;
   gap: 1.5rem;
   align-items: center;
 }
@@ -520,8 +520,8 @@ code.receiptStates {
 
 .ownershipHeader img,
 .ecosystemHeader img {
-  width: 15.625rem;
-  height: 15.625rem;
+  width: 10.34rem;
+  height: auto;
   object-fit: contain;
 }
 
@@ -628,9 +628,9 @@ code.receiptStates {
 .installManny {
   position: absolute;
   z-index: -1;
-  top: -11rem;
-  left: 12rem;
-  width: 25rem;
+  top: -7.94rem;
+  left: 18.87rem;
+  width: 11.64rem;
   height: auto;
   opacity: 0.98;
   object-fit: contain;
@@ -966,18 +966,18 @@ code.receiptStates {
 
 /* Mirrors .installManny: a child of the narrative, which is a stacking context, so z-index: -1
    sits behind the type without dropping behind the section background. Crosses the display type
-   only — the asset's visible bottom edge (80% of the box) is held clear of the body copy. */
+   only — his bottom edge is held clear of the body copy below. */
 .editManny {
   position: absolute;
   z-index: -1;
-  /* Placement, not opacity, buys the legibility here. The asset's opaque body is light almost
-     everywhere, so any deep crossing fails: at -13rem the headline sits on 5.4% sub-3:1 pixels
-     (worst 1.39:1). Lifting one more rem drops the crossing to the asset's lower transparent
-     margin — 27px of graze into the headline's cap-height, worst 3.25:1 — which passes at full
-     strength. He stays whole and vivid above the type instead of being hidden behind it. */
-  top: -14rem;
-  right: -2rem;
-  width: min(24rem, 27vw);
+  /* Placement, not opacity, buys the legibility here. His body is light almost everywhere, so a
+     deep crossing cannot be legible at full strength: one rem lower the headline sits on 5.4%
+     sub-3:1 pixels (worst 1.39:1). At this height only his lower body edge — the dark underside —
+     meets the headline's cap-height, measuring 3.25:1, so he stays whole and vivid above the type
+     instead of being hidden behind it. */
+  top: -10.3rem;
+  right: 2.93rem;
+  width: min(13.64rem, 15.35vw);
   height: auto;
   opacity: 0.95;
   object-fit: contain;
@@ -1152,14 +1152,14 @@ code.receiptStates {
    Unlike the other two bands there is no grazing position available: this asset goes straight
    from transparent margin into a bright code document on its left edge, so every overlap with the
    title measures 0.95:1 across 26-52% of the crossing. He is placed clear of the type instead.
-   Bounds are derived from his visible box (19% left / 18% right / 27% bottom margin): visible
-   right lands 13px short of the standfirst, visible bottom 14px above the merge trail. */
+   He clears the type on every side: 26px from the title's last glyph, 13px from the standfirst,
+   and his bottom edge sits above the merge trail. */
 .reconcileManny {
   position: absolute;
   z-index: -1;
-  top: -4.5rem;
-  left: 32.5rem;
-  width: 24rem;
+  top: -1.52rem;
+  left: 36.98rem;
+  width: 15.27rem;
   height: auto;
   object-fit: contain;
 }
@@ -1320,7 +1320,7 @@ code.receiptStates {
 
 .closingCta {
   display: grid;
-  grid-template-columns: minmax(0, 51.25rem) 15.3125rem 16.875rem;
+  grid-template-columns: minmax(0, 51.25rem) 10.04rem 16.875rem;
   gap: 2.5rem;
   align-items: end;
   justify-content: space-between;
@@ -1335,8 +1335,8 @@ code.receiptStates {
 }
 
 .closingCta img {
-  width: 15.3125rem;
-  height: 15.3125rem;
+  width: 10.04rem;
+  height: auto;
   object-fit: contain;
 }
 
@@ -1410,7 +1410,7 @@ code.receiptStates {
 }
 
 .footerBrand img {
-  width: 8rem;
+  width: 3.49rem;
   height: auto;
   object-fit: contain;
 }
@@ -1471,8 +1471,8 @@ code.receiptStates {
 
   .ownershipHeader img,
   .ecosystemHeader img {
-    width: 12rem;
-    height: 12rem;
+    width: 7.94rem;
+    height: auto;
   }
 
   .closingCta {
@@ -1480,8 +1480,8 @@ code.receiptStates {
   }
 
   .closingCta img {
-    width: 12rem;
-    height: 12rem;
+    width: 7.87rem;
+    height: auto;
   }
 }
 
@@ -1517,8 +1517,8 @@ code.receiptStates {
 
   .ownershipHeader img,
   .ecosystemHeader img {
-    width: 11rem;
-    height: 11rem;
+    width: 7.28rem;
+    height: auto;
   }
 
   .ownershipSteps {
@@ -1545,7 +1545,7 @@ code.receiptStates {
   }
 
   .installManny {
-    left: 13rem;
+    left: 19.87rem;
   }
 
   .editGuide,
@@ -1555,9 +1555,14 @@ code.receiptStates {
     margin-top: 3rem;
   }
 
-  .editManny,
+  /* Split because the two assets trim to different proportions of their original frames, so one
+     shared width no longer renders them at matching sizes. */
+  .editManny {
+    width: 11.37rem;
+  }
+
   .reconcileManny {
-    width: 20rem;
+    width: 12.73rem;
   }
 
   .editManny {
@@ -1586,8 +1591,8 @@ code.receiptStates {
   }
 
   .closingCta img {
-    width: 11rem;
-    height: 11rem;
+    width: 7.21rem;
+    height: auto;
   }
 
   .closingActions {
@@ -1673,8 +1678,8 @@ code.receiptStates {
 
   .ownershipHeader img,
   .ecosystemHeader img {
-    width: 10rem;
-    height: 10rem;
+    width: 6.62rem;
+    height: auto;
     justify-self: start;
   }
 
@@ -1705,8 +1710,10 @@ code.receiptStates {
     position: static;
     z-index: auto;
     order: -1;
-    width: min(14rem, 76vw);
-    margin: -1.5rem 0 -0.5rem auto;
+    width: min(6.52rem, 35.4vw);
+    /* Was -1.5rem/-0.5rem, pulling the frame's transparent padding back off the flow. The asset
+       is trimmed now, so a negative margin would crop into the neighbouring content instead. */
+    margin: 0 0 0 auto;
   }
 
   .planGrid,
@@ -1739,10 +1746,17 @@ code.receiptStates {
   .editManny,
   .reconcileManny {
     position: static;
-    width: min(15rem, 78vw);
     height: auto;
     margin: 0 0 0 auto;
     object-fit: contain;
+  }
+
+  .editManny {
+    width: min(8.53rem, 44.3vw);
+  }
+
+  .reconcileManny {
+    width: min(9.55rem, 49.6vw);
   }
 
   .editGuide,
@@ -1821,8 +1835,8 @@ code.receiptStates {
   }
 
   .closingCta img {
-    width: 10rem;
-    height: 10rem;
+    width: 6.56rem;
+    height: auto;
   }
 
   .closingTrail {
@@ -1862,7 +1876,7 @@ code.receiptStates {
   }
 
   .reconciled img {
-    width: 9rem;
+    width: 6.03rem;
   }
 
   .terminalBody {

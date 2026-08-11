@@ -10,15 +10,15 @@ import {
 } from "@tabler/icons-react";
 import { Image } from "astro:assets";
 
-import mannyBringHome from "../../assets/manny/manny-bringing-source-home.png";
-import mannyCompare from "../../assets/manny/manny-comparing-diffs.png";
-import mannyEdit from "../../assets/manny/manny-editing-owned-source.png";
-import mannyGuardrail from "../../assets/manny/manny-guardrail.png";
-import mannyMantine from "../../assets/manny/manny-mantine-ambassador.png";
-import mannyReyamira from "../../assets/manny/manny-reyamira-connection.png";
-import mannySuccess from "../../assets/manny/manny-success.png";
-import mannyWelcome from "../../assets/manny/manny-welcome.png";
-import mannyWorking from "../../assets/manny/manny-working.png";
+import mannyBringHome from "../../assets/manny/manny-bringing-source-home.webp";
+import mannyCompare from "../../assets/manny/manny-comparing-diffs.webp";
+import mannyEdit from "../../assets/manny/manny-editing-owned-source.webp";
+import mannyGuardrail from "../../assets/manny/manny-guardrail.webp";
+import mannyMantine from "../../assets/manny/manny-mantine-ambassador.webp";
+import mannyReyamira from "../../assets/manny/manny-reyamira-connection.webp";
+import mannySuccess from "../../assets/manny/manny-success.webp";
+import mannyWelcome from "../../assets/manny/manny-welcome.webp";
+import mannyWorking from "../../assets/manny/manny-working.webp";
 import styles from "./LandingPage.module.css";
 import "../../styles/fonts.css";
 
@@ -115,7 +115,7 @@ const command = "npx manteen add @house/article-card --dry-run --json";
   <section class={styles.hero} aria-labelledby="landing-title">
     <nav class={styles.nav} aria-label="Primary">
       <a class={styles.brand} href={`${base}/`} aria-label="Manteen home">
-        <Image src={mannyMantine} alt="" width={40} height={40} loading="eager" />
+        <Image src={mannyMantine} alt="" width={54} height={55} loading="eager" />
         <span>manteen</span>
       </a>
       <div class={styles.navLinks}>
@@ -172,7 +172,7 @@ const command = "npx manteen add @house/article-card --dry-run --json";
                 <span><IconCheck size={14} aria-hidden="true" />healthy receipt</span>
               </code>
             </div>
-            <Image src={mannyWelcome} alt="" width={250} height={250} loading="eager" />
+            <Image src={mannyWelcome} alt="" width={247} height={224} loading="eager" />
           </article>
         </div>
       </div>
@@ -184,7 +184,7 @@ const command = "npx manteen add @house/article-card --dry-run --json";
       <div>
         <h2 id="ownership-title">Install, change, and update source you own.</h2>
       </div>
-      <Image src={mannyWorking} alt="" width={250} height={250} loading="eager" />
+      <Image src={mannyWorking} alt="" width={327} height={281} loading="eager" />
       <p>
         Manteen gives you source you can change while preserving enough history to understand what
         changed upstream and what changed locally.
@@ -203,7 +203,7 @@ const command = "npx manteen add @house/article-card --dry-run --json";
 
   <section class={`${styles.storyBand} ${styles.installBand}`} aria-labelledby="install-title">
     <div class={styles.installNarrative}>
-      <Image class={styles.installManny} src={mannyBringHome} alt="" width={400} height={267} loading="eager" />
+      <Image class={styles.installManny} src={mannyBringHome} alt="" width={372} height={307} loading="eager" />
       <h2 id="install-title">Install source into your project.</h2>
       <p>
         Manteen writes the component into your project as ordinary source and records the registry
@@ -277,7 +277,7 @@ const command = "npx manteen add @house/article-card --dry-run --json";
       </footer>
     </div>
     <div class={styles.editNarrative}>
-      <Image class={styles.editManny} src={mannyEdit} alt="" width={400} height={333} />
+      <Image class={styles.editManny} src={mannyEdit} alt="" width={437} height={394} />
       <h2 id="edit-title">Edit it as ordinary project code.</h2>
       <p>Local changes stay in your project. The receipt keeps them distinguishable from future registry updates.</p>
       <div class={styles.editGuide}>
@@ -289,7 +289,7 @@ const command = "npx manteen add @house/article-card --dry-run --json";
 
   <section class={styles.reconcileBand} aria-labelledby="reconcile-title">
     <div class={styles.reconcileHeader}>
-      <Image class={styles.reconcileManny} src={mannyCompare} alt="" width={400} height={317} />
+      <Image class={styles.reconcileManny} src={mannyCompare} alt="" width={489} height={350} />
       <div>
         <h2 id="reconcile-title">Compare local and registry changes before writing.</h2>
       </div>
@@ -323,7 +323,7 @@ const command = "npx manteen add @house/article-card --dry-run --json";
   <section class={styles.ecosystem} aria-labelledby="ecosystem-title">
     <div class={styles.ecosystemHeader}>
       <div><h2 id="ecosystem-title">Manteen installs source. Manteen Kit publishes registries.</h2></div>
-      <Image src={mannyGuardrail} alt="" width={250} height={250} />
+      <Image src={mannyGuardrail} alt="" width={335} height={322} />
       <p>Use Manteen in consumer projects. Use Manteen Kit to author, validate, and publish deterministic registry output.</p>
     </div>
     <div class={styles.toolRoles}>
@@ -351,7 +351,7 @@ const command = "npx manteen add @house/article-card --dry-run --json";
         <h2 id="closing-title">Start with the registry, then follow the source.</h2>
         <p>Inspect the component, preview the plan, and reconcile source changes before Manteen writes.</p>
       </div>
-      <Image src={mannySuccess} alt="" width={245} height={245} />
+      <Image src={mannySuccess} alt="" width={321} height={288} />
       <div class={styles.closingActions}>
         <a href={links.registry}>Explore the registry <IconArrowUpRight size={17} aria-hidden="true" /></a>
         <a href={links.agent}>Read the agent guide <IconBook2 size={17} aria-hidden="true" /></a>
@@ -369,7 +369,7 @@ const command = "npx manteen add @house/article-card --dry-run --json";
     </div>
     <footer class={styles.footer}>
       <div class={styles.footerBrand}>
-        <Image src={mannyReyamira} alt="" width={200} height={133} />
+        <Image src={mannyReyamira} alt="" width={112} height={113} />
         <div><strong>manteen</strong><span>Source-owned. Mantine-native. Agent-safe.</span></div>
       </div>
       <nav aria-label="Footer">
