@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-11T17:25:38Z",
+  "generatedAt": "2026-08-11T18:40:00Z",
   "title": "Design System: Manteen",
   "extensions": {
     "colorMeta": {
@@ -279,7 +279,7 @@
       },
       "micro-label": {
         "displayName": "Provenance Label",
-        "purpose": "State, sequence, path, and receipt metadata."
+        "purpose": "Concise state, provenance, path, and receipt metadata at a 12px minimum."
       }
     },
     "shadows": [
@@ -381,7 +381,7 @@
       "kind": "custom",
       "description": "The landing page's joined source-state record.",
       "html": "<article class=\"ds-source-card\"><p class=\"ds-source-label\"><span>01</span> Installed</p><h3>Real source lands<br>in your repo.</h3><code>components/ui/<br><b>article-card.tsx</b></code><p>Editable by design.</p></article>",
-      "css": ".ds-source-card { position:relative; width:16rem; min-height:15rem; display:flex; flex-direction:column; justify-content:space-between; padding:1.5rem; border:1px solid #272b35; background:#0d0e12; color:#f2f4f8; font-family:\"Figtree Variable\",Inter,system-ui,sans-serif; } .ds-source-card::before { position:absolute; inset:-1px -1px auto; height:.1875rem; background:#8f9bff; content:\"\"; } .ds-source-label { margin:0; color:#8f9bff; font:700 .625rem/1.5 \"JetBrains Mono\",ui-monospace,monospace; letter-spacing:.08em; text-transform:uppercase; } .ds-source-label span { color:#798192; margin-right:.6rem; } .ds-source-card h3 { margin:2rem 0 0; font-size:1.1875rem; line-height:1.18; } .ds-source-card code { display:block; margin-top:1.5rem; padding:.85rem; background:#1a1d25; color:#a4abba; font:400 .6875rem/1.5 \"JetBrains Mono\",ui-monospace,monospace; } .ds-source-card code b { color:#8f9bff; } .ds-source-card > p:last-child { margin:1rem 0 0; color:#9ba3b2; font-size:.75rem; }"
+      "css": ".ds-source-card { width:16rem; min-height:15rem; display:flex; flex-direction:column; justify-content:space-between; padding:1.5rem; border:1px solid #272b35; background:#0d0e12; color:#f2f4f8; font-family:\"Figtree Variable\",Inter,system-ui,sans-serif; } .ds-source-label { margin:0; color:#8f9bff; font:700 .75rem/1.5 \"JetBrains Mono\",ui-monospace,monospace; letter-spacing:.08em; text-transform:uppercase; } .ds-source-label span { color:#798192; margin-right:.6rem; } .ds-source-card h3 { margin:2rem 0 0; font-size:1.1875rem; line-height:1.18; } .ds-source-card code { display:block; margin-top:1.5rem; padding:.85rem; background:#1a1d25; color:#a4abba; font:400 .75rem/1.5 \"JetBrains Mono\",ui-monospace,monospace; } .ds-source-card code b { color:#8f9bff; } .ds-source-card > p:last-child { margin:1rem 0 0; color:#9ba3b2; font-size:.75rem; }"
     },
     {
       "name": "Terminal Frame",
@@ -419,7 +419,7 @@
       },
       {
         "name": "The Continuous Record Rule",
-        "body": "Sections connect through aligned rails, repeated gutters, and visible state sequences; avoid isolated feature islands.",
+        "body": "Sections connect through aligned gutters, adjacent tonal fields, and visible state sequences; avoid isolated feature islands and ornamental continuity markers.",
         "section": "layout"
       },
       {
@@ -431,6 +431,11 @@
         "name": "The Three-Radius Rule",
         "body": "Documentation surfaces use the small, medium, and pill tokens; one-off landing geometry stays tight and never becomes soft SaaS bubble styling.",
         "section": "shapes"
+      },
+      {
+        "name": "The Local Variant Rule",
+        "body": "Repeated landing palette variants are named once in the landing root and consumed through semantic tokens without changing the global source-state meanings.",
+        "section": "colors"
       },
       {
         "name": "The Instrument Rule",

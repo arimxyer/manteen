@@ -20,6 +20,24 @@ colors:
   light-ink: "#171a22"
   light-indigo: "#364fc7"
 typography:
+  scale:
+    micro: "0.75rem"
+    ui: "0.8125rem"
+    body-small: "0.875rem"
+    body-compact: "0.9375rem"
+    body: "1rem"
+    heading-small: "1.125rem"
+    heading-medium: "1.1875rem"
+    heading-large: "1.375rem"
+    title-small: "1.5rem"
+    title-medium: "1.75rem"
+    title-large: "2rem"
+    display-small: "2.35rem"
+    display-compact: "2.5rem"
+    display-medium: "2.55rem"
+    display-large: "3.25rem"
+    display-wide: "3.5rem"
+    display-hero: "3.625rem"
   landing-display:
     fontFamily: "Figtree Variable, Inter, ui-sans-serif, system-ui, sans-serif"
     fontSize: "clamp(3rem, 4vw, 3.625rem)"
@@ -44,7 +62,7 @@ typography:
     lineHeight: 1.75
   micro-label:
     fontFamily: "JetBrains Mono, Geist Mono, ui-monospace, monospace"
-    fontSize: "0.6875rem"
+    fontSize: "0.75rem"
     fontWeight: 700
     lineHeight: 1.75
     letterSpacing: "0.08em"
@@ -144,7 +162,7 @@ visible without turning every screen into an alert.
   sidebar.
 - **Raised Graphite:** A small tonal step reserved for catalog cards and other surfaces that need
   to separate from the base panel.
-- **Structural Border:** The persistent one-pixel rule that defines groups, rails, frames, and
+- **Structural Border:** The persistent one-pixel rule that defines groups, frames, and
   component boundaries.
 - **Clear Text / Quiet Text:** A deliberate contrast ladder for primary facts and supporting copy.
 - **Light Paper / Light Panel / Light Ink:** The light theme keeps the same monotonic surface order
@@ -180,21 +198,24 @@ parallel heading family.
   always with compact line height and clear separation from body copy.
 - **Body:** Comfortable technical prose with approximately 42–75 characters per line depending on
   context. Landing support copy is slightly tighter than documentation prose.
-- **Micro Label:** Uppercase mono, compact, bold, and tracked. It is reserved for state, sequence,
-  provenance, and section markers rather than ordinary navigation or prose.
+- **Micro Label:** Compact mono, bold, lightly tracked, and never smaller than 0.75rem. It is
+  reserved for concise state, provenance, path, and receipt metadata rather than section kickers,
+  ordinary navigation, or prose. Uppercase is limited to short machine-state vocabularies. The
+  catalog's `aria-hidden` thumbnail compositions are decorative scale models, not readable UI, and
+  remain outside this role ramp.
 
 **The One Serif Phrase Rule.** Fraunces is a deliberate landing-page accent inside a Figtree display
 line, never a second body or heading system.
 
 ## Layout
 
-Documentation uses a fixed Starlight header, a persistent desktop sidebar from 50rem upward, a
-52rem reading measure, and compact secondary navigation. The catalog uses a two-column card grid
-with a one-column collapse below 40rem. Content surfaces align to one reading axis, while code,
-tables, and source disclosures gain their own bounded overflow regions when needed.
+Documentation uses a fixed Starlight header, a persistent desktop sidebar from 50rem upward, and a
+52rem technical content canvas with ordinary prose capped at 75ch. The catalog uses a two-column
+card grid with a one-column collapse below 40rem. Content surfaces align to one reading axis, while
+code, tables, and source disclosures gain their own bounded overflow regions when needed.
 
 The landing page uses full-width horizontal bands with a centered maximum canvas, repeated side
-gutters, vertical guide rails, and explicit source-state sequences. Wide four-part comparisons and
+gutters, restrained tonal shifts, and explicit source-state sequences. Wide four-part comparisons and
 two-column narrative/artifact compositions progressively collapse at 82rem, 68rem, 48rem, and
 30rem. Mobile preserves the story order, shortens the hero scale, and stacks evidence rather than
 shrinking it into unreadable miniatures.
@@ -203,15 +224,15 @@ Spacing comes from a compact six-step documentation rhythm. Narrative bands may 
 sectional distances, but their internal controls, labels, and evidence panels return to the same
 dense metric.
 
-**The Continuous Record Rule.** Sections connect through aligned rails, repeated gutters, and
-visible state sequences; avoid isolated feature islands.
+**The Continuous Record Rule.** Sections connect through aligned gutters, adjacent tonal fields,
+and visible state sequences; avoid isolated feature islands and ornamental continuity markers.
 
 ## Elevation & Depth
 
 The system is flat by default and layered by tone. Canvas, panel, raised panel, inset code surface,
 and active surface establish depth before any shadow appears. One-pixel borders carry most
 structure. The landing page uses no ambient shadow; depth comes from section color, rules, inset
-artifacts, and state rails.
+artifacts, and semantic state colors.
 
 ### Shadow Vocabulary
 
@@ -228,11 +249,16 @@ interaction needs feedback, never as ambient decoration.
 Documentation uses three durable shapes: gently curved small controls, medium panels, and true
 pills for badges or progress tracks. Borders remain crisp and one pixel. The landing page permits a
 few tightly bounded radii for actions, code frames, and comparison panels, but its dominant geometry
-is rectilinear and rail-driven. Circular forms are status dots, window controls, or Manny artwork—not
+is rectilinear and evidence-led. Circular forms are status dots, window controls, or Manny artwork—not
 default containers.
 
 **The Three-Radius Rule.** Documentation surfaces use the small, medium, and pill tokens; one-off
 landing geometry stays tight and never becomes soft SaaS bubble styling.
+
+**The Local Variant Rule.** The landing narrative may use exact local palette variants for code,
+receipts, and source states, but every repeated value is named once in the landing root and
+consumed through that semantic token. Local variants do not become undocumented literal colors at
+each component site, and they never change the global source-state meanings.
 
 ## Components
 
@@ -288,7 +314,7 @@ simulating a neon console.
 ### Source Trail
 
 The signature composition joins Installed, Local, Upstream, and Reconciled states into one visual
-record. Color rails, mono state labels, small code fragments, and a final Manny state marker make
+record. Semantic mono state labels, small code fragments, and a final Manny state marker make
 the lifecycle legible without turning it into a generic stepper.
 
 **The Instrument Rule.** Controls should feel like precise instruments with human warmth: compact,

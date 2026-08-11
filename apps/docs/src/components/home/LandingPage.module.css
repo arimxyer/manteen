@@ -14,6 +14,42 @@
   --f-green-bright: #49e0a3;
   --f-amber: #e8b06a;
   --f-amber-bright: #f3b54a;
+  --f-action: #aab3ff;
+  --f-action-hover: #a3acff;
+  --f-action-ink: #08090c;
+  --f-code-copy: #a4abba;
+  --f-success-inset: #10211c;
+  --f-success-bright: #36d98b;
+  --f-copy-muted: #8f95a6;
+  --f-copy-strong: #a8adbc;
+  --f-indigo-mark: #a99fff;
+  --f-indigo-label: #8288ff;
+  --f-indigo-canvas: #111421;
+  --f-note-panel: #171a23;
+  --f-note-copy: #9aa0b0;
+  --f-chrome: #151720;
+  --f-chrome-text: #7e8495;
+  --f-danger: #ef6b68;
+  --f-plan-border: #2b3150;
+  --f-code-bg: #11131a;
+  --f-success-wash: rgba(73, 224, 163, 0.12);
+  --f-success-border-soft: rgba(73, 224, 163, 0.35);
+  --f-line-muted: #555c6d;
+  --f-code-dim: #9096a7;
+  --f-code-faint: #777d8f;
+  --f-reconcile-canvas: #0c1716;
+  --f-success-border: #2c765a;
+  --f-success-copy: #8af0c5;
+  --f-merge-arrow: #5d6374;
+  --f-warning-copy: #f2b55d;
+  --f-ecosystem-bg: #15163d;
+  --f-ecosystem-copy: #b5b8ce;
+  --f-ecosystem-border: #3b3e67;
+  --f-role-body: #d8daff;
+  --f-role-indigo-copy: #d8daff;
+  --f-role-green-copy: #a6f7d5;
+  --f-agent-label: #7f85f4;
+  --f-type-micro: 0.75rem;
   --f-sans: "Figtree Variable", Inter, ui-sans-serif, system-ui, sans-serif;
   --f-serif: "Fraunces Subset", Georgia, serif;
   --f-mono: "JetBrains Mono", "Geist Mono", ui-monospace, monospace;
@@ -113,7 +149,7 @@
 .version {
   color: var(--f-faint);
   font-family: var(--f-mono);
-  font-size: 0.625rem;
+  font-size: var(--f-type-micro);
   font-weight: 400;
 }
 
@@ -137,14 +173,12 @@
   gap: 0.6rem;
   color: var(--f-muted);
   font-family: var(--f-mono);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: var(--f-type-micro);
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
-.category span,
-.sectionMarker span {
+.category span {
   width: 0.4375rem;
   height: 0.4375rem;
   flex: none;
@@ -164,28 +198,8 @@
   min-width: 0;
 }
 
-.eyebrow,
-.sectionEyebrow,
-.sectionMarker {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  color: var(--f-faint);
-  font-family: var(--f-mono);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-.eyebrow strong {
-  color: var(--f-green);
-  font-size: 0.625rem;
-}
-
 .heroHeadline h1 {
   max-width: none;
-  margin-top: 1.25rem;
   font-size: clamp(3rem, 4vw, 3.625rem);
   font-weight: 800;
   letter-spacing: -0.033em;
@@ -241,8 +255,8 @@
 .root .primaryAction {
   gap: 0.55rem;
   padding-inline: 1.125rem;
-  background: #aab3ff;
-  color: #08090c;
+  background: var(--f-action);
+  color: var(--f-action-ink);
 }
 
 .primaryAction span {
@@ -250,7 +264,7 @@
 }
 
 .primaryAction:hover {
-  background: #a3acff;
+  background: var(--f-action-hover);
 }
 
 .textAction {
@@ -282,15 +296,14 @@
   justify-content: space-between;
   color: var(--f-faint);
   font-family: var(--f-mono);
-  font-size: 0.625rem;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+  font-size: var(--f-type-micro);
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
 .trailHeader span:last-child {
   color: var(--f-muted);
-  font-size: 0.5625rem;
+  font-size: var(--f-type-micro);
   font-weight: 500;
   letter-spacing: 0;
 }
@@ -322,14 +335,6 @@
   border-left: 0;
 }
 
-.sourceCard::before {
-  position: absolute;
-  inset: -1px -1px auto;
-  height: 0.1875rem;
-  background: var(--card-tone, var(--f-purple));
-  content: "";
-}
-
 .sourceCard h2 {
   margin-top: 2rem;
   font-size: 1.1875rem;
@@ -343,7 +348,7 @@
   gap: 0.6rem;
   color: var(--card-tone, var(--f-text));
   font-family: var(--f-mono);
-  font-size: 0.625rem;
+  font-size: var(--f-type-micro);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -361,12 +366,12 @@
   margin-top: 1.5rem;
   padding: 0.85rem;
   background: var(--f-panel-2);
-  color: #a4abba;
+  color: var(--f-code-copy);
 }
 
 .miniCode code {
   font-family: var(--f-mono);
-  font-size: 0.6875rem;
+  font-size: var(--f-type-micro);
 }
 
 .miniCode code:first-child {
@@ -400,7 +405,7 @@
   grid-template-columns: minmax(0, 1fr) 11rem;
   gap: 1rem;
   overflow: hidden;
-  background: #10211c;
+  background: var(--f-success-inset);
 }
 
 .reconciled > div {
@@ -426,7 +431,7 @@
   margin-top: auto;
   color: var(--f-green);
   font-family: var(--f-mono);
-  font-size: 0.625rem;
+  font-size: var(--f-type-micro);
 }
 
 .reconciled img {
@@ -455,30 +460,6 @@
   border-bottom: 1px solid var(--f-line);
 }
 
-.railSet {
-  position: absolute;
-  inset: 0 0 auto;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  height: 0.25rem;
-}
-
-.railSet i:nth-child(1) {
-  background: #7c6cff;
-}
-
-.railSet i:nth-child(2) {
-  background: #dde1ea;
-}
-
-.railSet i:nth-child(3) {
-  background: #f3b54a;
-}
-
-.railSet i:nth-child(4) {
-  background: #36d98b;
-}
-
 .ownershipHeader,
 .ecosystemHeader {
   display: grid;
@@ -492,15 +473,9 @@
   min-width: 0;
 }
 
-.sectionEyebrow {
-  color: var(--f-green-bright);
-  font-size: 0.8125rem;
-}
-
 .ownershipHeader h2,
 .ecosystemHeader h2,
 .closingCta h2 {
-  margin-top: 1.1rem;
   font-size: clamp(2.55rem, 3.7vw, 3.5rem);
   font-weight: 700;
   letter-spacing: -0.032em;
@@ -568,12 +543,12 @@
 }
 
 .ownershipSteps p {
-  color: #8f95a6;
+  color: var(--f-copy-muted);
   font-size: 0.9375rem;
 }
 
 .ownershipSteps .purple {
-  --step-tone: #8288ff;
+  --step-tone: var(--f-indigo-label);
 }
 
 .ownershipSteps .white {
@@ -598,18 +573,7 @@
   gap: clamp(3rem, 6vw, 6rem);
   align-items: center;
   padding-block: 8rem;
-  background: #111421;
-}
-
-.installBand::before,
-.editBand::before,
-.reconcileBand::before,
-.closing::before {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 0.25rem;
-  background: var(--rail, var(--f-purple));
-  content: "";
+  background: var(--f-indigo-canvas);
 }
 
 .installNarrative,
@@ -632,11 +596,6 @@
   object-fit: contain;
 }
 
-.sectionMarker {
-  color: var(--f-purple-soft);
-  font-size: 0.8125rem;
-}
-
 .installNarrative h2,
 .editNarrative h2,
 .reconcileHeader h2 {
@@ -647,10 +606,10 @@
   line-height: 1.02;
 }
 
-.installNarrative > p:not(.sectionMarker),
-.editNarrative > p:not(.sectionMarker),
+.installNarrative > p,
+.editNarrative > p,
 .reconcileHeader > p {
-  color: #a8adbc;
+  color: var(--f-copy-strong);
   font-size: 1.125rem;
   line-height: 1.5;
 }
@@ -662,7 +621,7 @@
   padding: 1.35rem 1.5rem;
   border: 1px solid var(--f-line-strong);
   border-radius: 0.625rem;
-  background: #171a23;
+  background: var(--f-note-panel);
 }
 
 .installNote strong {
@@ -670,7 +629,7 @@
 }
 
 .installNote span {
-  color: #9aa0b0;
+  color: var(--f-note-copy);
   font-size: 0.875rem;
   line-height: 1.45;
 }
@@ -690,9 +649,9 @@
 .guidance strong,
 .editGuide strong,
 .reconcileGuide strong {
-  color: #a99fff;
+  color: var(--f-indigo-mark);
   font-family: var(--f-mono);
-  font-size: 0.625rem;
+  font-size: var(--f-type-micro);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -700,7 +659,7 @@
 .guidance span,
 .editGuide span,
 .reconcileGuide span {
-  color: #a8adbc;
+  color: var(--f-copy-strong);
   font-size: 0.8125rem;
   line-height: 1.45;
 }
@@ -722,10 +681,10 @@
   justify-content: space-between;
   padding-inline: 1.125rem;
   border-bottom: 1px solid var(--f-line-strong);
-  background: #151720;
-  color: #7e8495;
+  background: var(--f-chrome);
+  color: var(--f-chrome-text);
   font-family: var(--f-mono);
-  font-size: 0.6875rem;
+  font-size: var(--f-type-micro);
 }
 
 .windowDots {
@@ -737,7 +696,7 @@
   width: 0.4rem;
   height: 0.4rem;
   border-radius: 50%;
-  background: #49e0a3;
+  background: var(--f-green-bright);
 }
 
 .windowDots i:nth-child(2) {
@@ -745,7 +704,7 @@
 }
 
 .windowDots i:nth-child(3) {
-  background: #ef6b68;
+  background: var(--f-danger);
 }
 
 .terminalBody {
@@ -775,7 +734,7 @@
 }
 
 .commandRow > code:focus-visible {
-  border-radius: 0.25rem;
+  border-radius: 0.375rem;
   outline: 2px solid var(--f-purple);
   outline-offset: 3px;
 }
@@ -820,8 +779,8 @@
 .plannedFiles > strong,
 .planReceipt > strong {
   margin-bottom: 0.4rem;
-  color: #7e8495;
-  font: 700 0.6875rem var(--f-mono);
+  color: var(--f-chrome-text);
+  font: 700 var(--f-type-micro) var(--f-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -839,9 +798,9 @@
 .planReceipt {
   gap: 0.75rem;
   padding: 1.25rem;
-  border: 1px solid #2b3150;
-  border-radius: 0.5rem;
-  background: #111421;
+  border: 1px solid var(--f-plan-border);
+  border-radius: 0.4375rem;
+  background: var(--f-indigo-canvas);
 }
 
 .planReceipt > strong {
@@ -854,7 +813,7 @@
 }
 
 .planReceipt span {
-  color: #8f95a6;
+  color: var(--f-copy-muted);
   font-size: 0.75rem;
 }
 
@@ -866,11 +825,10 @@
   padding-block: 8rem;
   background: var(--f-bg);
   border-bottom: 1px solid var(--f-line);
-  --rail: var(--f-amber-bright);
 }
 
 .codeArtifact {
-  background: #11131a;
+  background: var(--f-code-bg);
 }
 
 .codeArtifact > header span {
@@ -900,19 +858,19 @@
 }
 
 .codeLines > div.add {
-  background: rgba(73, 224, 163, 0.12);
+  background: var(--f-success-wash);
 }
 
 .codeLines span {
-  color: #555c6d;
-  font: 400 0.6875rem var(--f-mono);
+  color: var(--f-line-muted);
+  font: 400 var(--f-type-micro) var(--f-mono);
   text-align: right;
 }
 
 .codeLines code {
   min-width: 0;
   overflow-x: auto;
-  color: #9096a7;
+  color: var(--f-code-dim);
   font: 400 0.75rem var(--f-mono);
   white-space: nowrap;
 }
@@ -939,14 +897,14 @@
 }
 
 .codeArtifact footer span {
-  color: #777d8f;
-  font: 400 0.625rem var(--f-mono);
+  color: var(--f-code-faint);
+  font: 400 var(--f-type-micro) var(--f-mono);
 }
 
 .codeArtifact footer code {
   overflow: hidden;
   color: var(--f-text);
-  font: 400 0.6875rem var(--f-mono);
+  font: 400 var(--f-type-micro) var(--f-mono);
   text-overflow: ellipsis;
 }
 
@@ -973,8 +931,7 @@
 .reconcileBand {
   min-height: 71.875rem;
   padding-block: 8rem;
-  background: #0c1716;
-  --rail: #36d98b;
+  background: var(--f-reconcile-canvas);
 }
 
 .reconcileHeader {
@@ -985,13 +942,8 @@
   justify-content: space-between;
 }
 
-.reconcileHeader .sectionMarker {
-  color: var(--f-green-bright);
-}
-
 .reconcileHeader h2 {
   max-width: none;
-  margin-top: 1.1rem;
 }
 
 .mergeTrail {
@@ -1011,18 +963,18 @@
   justify-content: space-between;
   padding: 1.375rem;
   border: 1px solid var(--f-line-strong);
-  border-radius: 0.5625rem;
+  border-radius: 0.625rem;
   background: var(--f-bg-deep);
 }
 
 .mergeTrail article.green {
-  border-color: #2c765a;
-  background: #10211c;
+  border-color: var(--f-success-border);
+  background: var(--f-success-inset);
 }
 
 .mergeTrail article > p {
   color: var(--card-tone, var(--f-purple));
-  font: 700 0.6875rem var(--f-mono);
+  font: 700 var(--f-type-micro) var(--f-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -1044,16 +996,16 @@
 }
 
 .mergeTrail code {
-  color: #8f95a6;
+  color: var(--f-copy-muted);
   font: 400 0.75rem / 1.5 var(--f-mono);
 }
 
 .mergeTrail .green code {
-  color: #8af0c5;
+  color: var(--f-success-copy);
 }
 
 .mergeArrow {
-  color: #5d6374;
+  color: var(--f-merge-arrow);
 }
 
 .transaction {
@@ -1064,7 +1016,7 @@
   margin-top: 2rem;
   padding: 1.625rem 1.75rem;
   border: 1px solid var(--f-line-strong);
-  border-radius: 0.5625rem;
+  border-radius: 0.625rem;
   background: var(--f-bg-deep);
 }
 
@@ -1081,7 +1033,7 @@
 
 .transaction > div:first-child strong {
   color: var(--f-green-bright);
-  font: 700 0.6875rem var(--f-mono);
+  font: 700 var(--f-type-micro) var(--f-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -1094,22 +1046,23 @@
 }
 
 .transaction > div:last-child code {
-  color: #7e8495;
-  font-size: 0.6875rem;
+  color: var(--f-chrome-text);
+  font-size: var(--f-type-micro);
 }
 
 .destructiveNote {
   display: flex;
+  max-inline-size: 65ch;
   align-items: center;
   gap: 1rem;
   margin-top: 1.5rem;
-  color: #a8adbc;
+  color: var(--f-copy-strong);
   font-size: 0.875rem;
 }
 
 .destructiveNote svg {
   flex: none;
-  color: #f2b55d;
+  color: var(--f-warning-copy);
 }
 
 .reconcileGuide {
@@ -1121,7 +1074,7 @@
 }
 
 .reconcileGuide strong {
-  color: #36d98b;
+  color: var(--f-success-bright);
 }
 
 .reconcileManny {
@@ -1139,19 +1092,7 @@
   flex-direction: column;
   gap: 4rem;
   padding-block: 8rem;
-  background: #15163d;
-}
-
-.ecosystemRails {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.ecosystemRails i:nth-child(2) {
-  background: #36d98b;
-}
-
-.ecosystem .sectionEyebrow {
-  color: var(--f-purple-soft);
+  background: var(--f-ecosystem-bg);
 }
 
 .ecosystemHeader h2 {
@@ -1159,13 +1100,13 @@
 }
 
 .ecosystemHeader > p {
-  color: #b5b8ce;
+  color: var(--f-ecosystem-copy);
 }
 
 .toolRoles {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  border-block: 1px solid #3b3e67;
+  border-block: 1px solid var(--f-ecosystem-border);
 }
 
 .toolRoles > article {
@@ -1174,7 +1115,7 @@
 }
 
 .toolRoles > article + article {
-  border-left: 1px solid #3b3e67;
+  border-left: 1px solid var(--f-ecosystem-border);
 }
 
 .toolRoles header {
@@ -1191,14 +1132,14 @@
 
 .toolRoles header span {
   color: var(--role-tone, var(--f-purple-soft));
-  font: 700 0.625rem var(--f-mono);
+  font: 700 var(--f-type-micro) var(--f-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .toolRoles article > p {
   margin-top: 1.75rem;
-  color: #c8cad8;
+  color: var(--f-role-body);
   font-size: 1.1875rem;
   line-height: 1.48;
 }
@@ -1213,25 +1154,25 @@
 .toolRoles article > div code {
   padding: 0.5rem 0.75rem;
   border: 1px solid color-mix(in srgb, var(--role-tone, var(--f-purple)) 35%, transparent);
-  border-radius: 0.3rem;
+  border-radius: 0.375rem;
   background: color-mix(in srgb, var(--role-tone, var(--f-purple)) 13%, transparent);
-  color: var(--role-copy, #d8daff);
-  font: 400 0.6875rem var(--f-mono);
+  color: var(--role-copy, var(--f-role-indigo-copy));
+  font: 400 var(--f-type-micro) var(--f-mono);
 }
 
 .toolRoles .consumer {
   --role-tone: var(--f-purple-soft);
-  --role-copy: #d8daff;
+  --role-copy: var(--f-role-indigo-copy);
 }
 
 .toolRoles .registry {
   --role-tone: var(--f-green-bright);
-  --role-copy: #a6f7d5;
+  --role-copy: var(--f-role-green-copy);
 }
 
 .agentContract {
   padding: 2rem 2.25rem;
-  border: 1px solid #3b3e67;
+  border: 1px solid var(--f-ecosystem-border);
   border-radius: 0.625rem;
   background: var(--f-bg-deep);
 }
@@ -1249,10 +1190,10 @@
 
 .agentContract > header span {
   padding: 0.5rem 0.75rem;
-  border: 1px solid rgba(73, 224, 163, 0.35);
+  border: 1px solid var(--f-success-border-soft);
   border-radius: 99rem;
   color: var(--f-green-bright);
-  font: 700 0.625rem var(--f-mono);
+  font: 700 var(--f-type-micro) var(--f-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -1277,8 +1218,8 @@
 }
 
 .agentContract article strong {
-  color: #7f85f4;
-  font: 700 0.625rem var(--f-mono);
+  color: var(--f-agent-label);
+  font: 700 var(--f-type-micro) var(--f-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -1289,7 +1230,7 @@
 }
 
 .agentContract article p {
-  color: #8f95a6;
+  color: var(--f-copy-muted);
   font-size: 0.8125rem;
   line-height: 1.42;
 }
@@ -1298,7 +1239,6 @@
   min-height: 56.25rem;
   padding-block: 8.75rem 3.25rem;
   background: var(--f-bg);
-  --rail: #36d98b;
 }
 
 .closingCta {
@@ -1312,7 +1252,7 @@
 .closingCta > div:first-child > p:last-child {
   max-width: 40.625rem;
   margin-top: 1.5rem;
-  color: #a8adbc;
+  color: var(--f-copy-strong);
   font-size: 1.125rem;
   line-height: 1.5;
 }
@@ -1353,17 +1293,17 @@
   gap: 0.875rem;
   margin-top: 7rem;
   border-block: 1px solid var(--f-line-strong);
-  color: #555c6d;
+  color: var(--f-line-muted);
 }
 
 .closingTrail span {
-  font: 700 0.625rem var(--f-mono);
+  font: 700 var(--f-type-micro) var(--f-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .closingTrail .purple {
-  color: #8288ff;
+  color: var(--f-indigo-label);
 }
 
 .closingTrail .white {
@@ -1371,7 +1311,7 @@
 }
 
 .closingTrail .amber {
-  color: #f2b55d;
+  color: var(--f-warning-copy);
 }
 
 .closingTrail .green {
@@ -1411,7 +1351,7 @@
 }
 
 .footerBrand span {
-  color: #7e8495;
+  color: var(--f-chrome-text);
   font-size: 0.8125rem;
 }
 
@@ -1421,7 +1361,7 @@
   justify-content: end;
   gap: 1.75rem;
   padding-bottom: 0.4rem;
-  color: #a8adbc;
+  color: var(--f-copy-strong);
   font-size: 0.8125rem;
 }
 
@@ -1430,6 +1370,7 @@
 }
 
 .disclaimer {
+  max-inline-size: 65ch;
   margin-top: 2rem;
   padding-top: 1.25rem;
   border-top: 1px solid var(--f-line);
@@ -1600,7 +1541,7 @@
   .category {
     top: 2.25rem;
     max-width: calc(100% - 3rem);
-    font-size: 0.6rem;
+    font-size: var(--f-type-micro);
   }
 
   .heroHeadline h1 {
@@ -1764,7 +1705,7 @@
   }
 
   .toolRoles > article + article {
-    border-top: 1px solid #3b3e67;
+    border-top: 1px solid var(--f-ecosystem-border);
     border-left: 0;
   }
 
