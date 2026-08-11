@@ -35,6 +35,7 @@ export default defineConfig({
     react(),
     starlight({
       title: "manteen",
+      favicon: "/favicon.png",
       description: "Build, share, install, and maintain Mantine-native component registries.",
       lastUpdated: true,
       editLink: {
