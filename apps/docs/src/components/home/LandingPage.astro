@@ -167,7 +167,10 @@ const command = "npx manteen add @house/article-card --dry-run --json";
               <p class={styles.cardLabel}><span>04</span>Reconciled</p>
               <h2>Both changes.<br />One maintained source.</h2>
               <p>Review the plan, apply the same inputs, keep ownership.</p>
-              <code><IconCheck size={14} aria-hidden="true" /> clean diff&nbsp; · &nbsp;healthy receipt</code>
+              <code class={styles.receiptStates}>
+                <span><IconCheck size={14} aria-hidden="true" />clean diff</span>
+                <span><IconCheck size={14} aria-hidden="true" />healthy receipt</span>
+              </code>
             </div>
             <Image src={mannyWelcome} alt="" width={250} height={250} loading="eager" />
           </article>
@@ -181,7 +184,7 @@ const command = "npx manteen add @house/article-card --dry-run --json";
       <div>
         <h2 id="ownership-title">Install, change, and update source you own.</h2>
       </div>
-      <Image src={mannyWorking} alt="" width={250} height={250} />
+      <Image src={mannyWorking} alt="" width={250} height={250} loading="eager" />
       <p>
         Manteen gives you source you can change while preserving enough history to understand what
         changed upstream and what changed locally.
@@ -200,7 +203,7 @@ const command = "npx manteen add @house/article-card --dry-run --json";
 
   <section class={`${styles.storyBand} ${styles.installBand}`} aria-labelledby="install-title">
     <div class={styles.installNarrative}>
-      <Image class={styles.installManny} src={mannyBringHome} alt="" width={400} height={267} />
+      <Image class={styles.installManny} src={mannyBringHome} alt="" width={400} height={267} loading="eager" />
       <h2 id="install-title">Install source into your project.</h2>
       <p>
         Manteen writes the component into your project as ordinary source and records the registry
@@ -223,7 +226,7 @@ const command = "npx manteen add @house/article-card --dry-run --json";
       </header>
       <div class={styles.terminalBody}>
         <div class={styles.commandRow}>
-          <code tabindex="0">$ {command}</code>
+          <code>$ {command}</code>
           <button type="button" data-copy-command={command} aria-label="Copy install command">
             <IconCopy size={16} aria-hidden="true" />
             <span data-copy-label>Copy</span>

@@ -425,13 +425,27 @@
   line-height: 1.5;
 }
 
-.reconciled > div > code {
-  display: inline-flex;
+/* Qualified with `code` so it outranks the `.root code` reset above, the same way
+   `.miniCode code` and `.codeLines code` do. A bare `.receiptStates` loses to it. */
+code.receiptStates {
+  display: flex;
   align-items: center;
+  /* Wraps rather than forcing one line: the states share a baseline with the mascot, and a
+     max-content line overruns the text column and caps how large the mascot can grow. There is
+     vertical slack above (margin-top: auto), so the second row costs nothing. */
+  flex-wrap: wrap;
+  gap: 0.35rem 0.8rem;
   margin-top: auto;
-  color: var(--f-green);
+  color: var(--f-success-copy);
   font-family: var(--f-mono);
   font-size: var(--f-type-micro);
+  line-height: 1.5;
+}
+
+.receiptStates > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
 .reconciled img {
@@ -439,6 +453,28 @@
   width: min(11rem, 100%);
   height: auto;
   object-fit: contain;
+}
+
+@media (min-width: 82.001rem) {
+  .reconciled {
+    grid-template-columns: minmax(0, 1fr) 8.75rem;
+    gap: 1.25rem;
+  }
+
+  /* Four-across: the image track is only 8.75rem, so the mascot is sized past its track and
+     anchored to the track's end, bleeding into the card padding. Widening the track instead would
+     take the width out of the text column, which is already the tighter of the two. */
+  .reconciled img {
+    width: 11.5rem;
+    /* Starlight's `max-width: 100%` resolves against the grid track and would clamp the mascot
+       straight back to the track width, silently undoing the size above. */
+    max-width: none;
+    justify-self: end;
+    /* Bleed is tuned against the asset's own transparent margin (15.7% right, 19.2% bottom), not
+       the box edge, so the optical gap to the card border reads like the 1.5rem padding elsewhere. */
+    margin-right: -0.75rem;
+    margin-bottom: -1.5rem;
+  }
 }
 
 .ownership,
@@ -921,9 +957,9 @@
 
 .editManny {
   position: absolute;
-  right: 0;
-  bottom: 1.8rem;
-  width: min(25rem, 28vw);
+  right: clamp(4rem, 8vw, 8rem);
+  bottom: 7rem;
+  width: min(23rem, 26vw);
   height: auto;
   object-fit: contain;
 }
