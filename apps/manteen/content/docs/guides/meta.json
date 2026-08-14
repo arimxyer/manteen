@@ -1,0 +1,6 @@
+{
+  "title": "Docs",
+  "description": "Configure and use Manteen in a consumer project.",
+  "root": true,
+  "pages": ["index"]
+}
