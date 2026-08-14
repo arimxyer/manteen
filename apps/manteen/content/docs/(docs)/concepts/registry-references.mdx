@@ -1,0 +1,59 @@
+---
+title: URLs and namespaces
+description: Choose between one direct item URL and a configured registry collection.
+---
+
+Manteen resolves the same installable item documents from direct URLs and configured namespaces.
+The difference is how the consumer discovers related documents and records registry identity.
+
+| Capability | Direct item URL | Configured namespace |
+| --- | --- | --- |
+| Install one multi-file item | Yes | Yes |
+| Install npm, package-style, and theme requirements | Yes | Yes |
+| Discover items with `list` | No | Yes |
+| Use short, stable item references | No | Yes |
+| Configure registry request headers or parameters | No | Yes |
+| Resolve bare registry dependencies | No | Yes |
+
+## Direct item URL
+
+Use a URL for one self-contained item when the consumer does not need registry discovery:
+
+```bash
+manteen info https://example.com/r/release-panel.json
+manteen add https://example.com/r/release-panel.json
+```
+
+A direct item can still contain several files and declare npm packages, package styles, or a theme
+fragment. It has no namespace from which to resolve a bare registry dependency. Fully qualified
+dependencies require their namespaces to be configured by the consumer.
+
+## Configured namespace
+
+Configure a collection in the consumer project's `manteen.json`:
+
+```json
+{
+  "registries": {
+    "@acme": {
+      "url": "https://example.com/r/{name}.json",
+      "index": "https://example.com/r/registry.json"
+    }
+  }
+}
+```
+
+The consumer can now discover and address items by name:
+
+```bash
+manteen list @acme
+manteen info @acme/release-panel
+manteen add @acme/release-panel
+```
+
+For a self-contained collection, the namespace is a consumer-side convenience. A dependency-bearing
+catalog compiled by `manteen-kit` qualifies its local dependencies with the catalog namespace, so
+that namespace becomes part of the collection's public contract.
+
+There is no central registry directory or account. Sharing an HTTPS item URL or a namespace snippet
+is enough for a consumer to opt into a registry.

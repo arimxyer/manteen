@@ -1,0 +1,89 @@
+---
+title: Build a registry
+description: Compile a Mantine-native source catalog into installable registry documents.
+---
+
+`manteen-kit` is the author-side package. You describe normal source files with a
+`manteen.registry.json` catalog, then compile that catalog into static registry JSON.
+
+This authoring documentation lives under Docs. The separate Registry section is reserved for the
+browsable catalog and item pages.
+
+## Create an authoring project
+
+`manteen-kit` requires Node.js 20.11 or newer and does not require Bun:
+
+```bash
+mkdir my-manteen-registry
+cd my-manteen-registry
+npm init -y
+npm install --save-dev manteen-kit
+```
+
+Start with a catalog and ordinary source files:
+
+```text
+my-manteen-registry/
+├── manteen.registry.json
+└── src/
+    └── release-panel.tsx
+```
+
+## Describe the item
+
+```json
+{
+  "$schema": "./node_modules/manteen-kit/schema/manteen.registry.schema.json",
+  "name": "acme-registry",
+  "namespace": "@acme",
+  "items": [
+    {
+      "name": "release-panel",
+      "kind": "block",
+      "title": "Release Panel",
+      "description": "Release highlights composed with Mantine.",
+      "mantine": ">=9 <10",
+      "provider": true,
+      "npm": ["@mantine/core@^9"],
+      "files": [
+        {
+          "path": "src/release-panel.tsx",
+          "as": "component",
+          "target": "@ui/release-panel.tsx"
+        }
+      ]
+    }
+  ]
+}
+```
+
+The catalog uses Manteen's authoring vocabulary. `kind` describes the composition, `mantine` is a
+consumer compatibility gate, `npm` declares packages the item needs, and `target` selects a
+consumer alias destination.
+
+Unknown authoring fields are rejected rather than silently discarded. Optional theme fragments,
+package stylesheet imports, public Styles API selectors, props, and usage examples can be added as
+the registry grows.
+
+## Compile and validate
+
+```bash
+npx manteen-kit build
+```
+
+The defaults read `manteen.registry.json` and write:
+
+```text
+public/r/
+├── registry.json
+└── release-panel.json
+```
+
+The build validates both the authoring catalog and every emitted interchange document. A failed
+validation is a refusal, not trustworthy partial output.
+
+The repository's
+[registry starter](https://github.com/arimxyer/manteen/tree/main/examples/registry-starter)
+contains a complete multi-file example with package styles and a theme fragment. Once the compiled
+files are hosted over HTTPS, consumers can choose a [direct URL or configured
+namespace](/docs/concepts/registry-references).

@@ -1,0 +1,63 @@
+---
+title: Source ownership
+description: Understand local adaptations, pristine bases, receipts, and updates.
+---
+
+Registry items are source you are expected to read and edit. Manteen copies that composed layer
+into your project instead of hiding it behind another runtime component package.
+
+## Three versions of one file
+
+For every ordinary installed file, maintenance compares three states:
+
+| State | Meaning |
+| --- | --- |
+| Local | The source currently present in your project. |
+| Pristine base | The exact upstream bytes accepted by the last successful install or update. |
+| Current upstream | The source published by the registry now. |
+
+`manteen.lock.json` records registry identity, ownership, hashes, and non-file contributions. The
+exact pristine ordinary files live under `.manteen/bases/`. Treat the receipt and bases as one state
+boundary and commit them with the installed source.
+
+Do not edit either state store by hand. If a base is missing or corrupt, Manteen refuses to guess
+which side owns a difference.
+
+## Inspect before updating
+
+```bash
+manteen status
+manteen diff
+manteen diff --stat
+manteen update --dry-run
+```
+
+`status` assesses local configuration and receipt health without contacting a registry. `diff`
+compares local, pristine, and current upstream source without writing. `update` uses the same model
+to plan a three-way merge.
+
+Non-overlapping local and upstream edits are preserved together. Line-based merging runs first; a
+remaining TypeScript conflict can receive one conservative exact-source attempt for changes to
+distinct stable top-level declarations. Manteen never reformats a file through an AST and never
+writes conflict markers.
+
+If local and upstream edits overlap ambiguously, the update refuses before changing project files.
+`--force` does not clear that conflict.
+
+## Destructive replacement is separate
+
+After reviewing the diff, use `--take-upstream` only when discarding local adaptations is the
+intended result:
+
+```bash
+manteen update @house/article-card --take-upstream
+```
+
+That choice resets source still published by the registry. Files omitted upstream are reported and
+retained until an exact removal is separately selected; Manteen does not infer renames or deletions.
+
+## Installation is not application integration
+
+Installing an item establishes source and maintenance ownership. It does not select an application
+route, compose page content, or prove the application's behavior. Integrating the item into the
+host application and running project checks remain explicit consumer work.

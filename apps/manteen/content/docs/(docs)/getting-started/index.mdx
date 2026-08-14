@@ -1,0 +1,75 @@
+---
+title: Install your first item
+description: Initialize a supported Mantine application and install registry source.
+---
+
+Manteen installs source code into an existing application. The source remains visible and editable;
+Mantine itself stays an ordinary package dependency.
+
+## Requirements
+
+- Node.js 22.12 or newer
+- A Vite, Next.js, or framework-mode React Router application
+- The package manager already used by that application
+
+Install the consumer CLI as a development dependency:
+
+```bash
+npm install --save-dev manteen
+npx manteen --version
+```
+
+Use the equivalent local-binary command for pnpm, Yarn, or Bun when your project uses one of those
+package managers.
+
+## Initialize the project
+
+Run initialization from the application root. Preview the complete plan before applying it:
+
+```bash
+npx manteen init --dry-run
+npx manteen init
+```
+
+Manteen detects Vite, the Next.js App or Pages Router, a valid Next.js hybrid, or framework-mode
+React Router. It adds the shared Mantine setup while preserving the framework's generated entry
+structure.
+
+Read every required-work notice before calling initialization complete. For example, an existing
+Tailwind PostCSS pipeline can require a small project-owned integration step that Manteen reports
+without rewriting the file.
+
+## Inspect and install an item
+
+Initialization configures the reference `@house` registry. Discover an item, inspect its contract,
+and preview the installation before writing source:
+
+```bash
+npx manteen list --query article-card
+npx manteen info @house/article-card
+npx manteen add @house/article-card --dry-run
+npx manteen add @house/article-card
+```
+
+The install can add multiple source files, npm dependencies, package stylesheet imports, and a
+theme contribution as one planned operation. It does not decide where your application should
+render the installed component.
+
+## Keep the maintenance state together
+
+Commit the installed source together with `manteen.lock.json` and `.manteen/bases/`. The receipt
+records ownership and the bases preserve exact pristine source for future comparisons and updates.
+
+Then verify both Manteen's state and the application itself:
+
+```bash
+npx manteen status
+npx manteen diff
+npm run build
+```
+
+A healthy Manteen status does not prove that the application typechecks, tests, or builds. Use the
+checks required by the project for application-level proof.
+
+Continue with [source ownership](/docs/concepts/source-ownership) or review the
+[CLI command groups](/docs/reference/cli).
