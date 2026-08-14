@@ -13,7 +13,7 @@ browsable catalog and item pages.
 
 `manteen-kit` requires Node.js 20.11 or newer and does not require Bun:
 
-```bash
+```npm
 mkdir my-manteen-registry
 cd my-manteen-registry
 npm init -y
@@ -67,8 +67,8 @@ the registry grows.
 
 ## Compile and validate
 
-```bash
-npx manteen-kit build
+```npm
+npm exec -- manteen-kit build
 ```
 
 The defaults read `manteen.registry.json` and write:

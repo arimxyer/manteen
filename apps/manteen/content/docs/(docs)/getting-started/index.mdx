@@ -16,23 +16,23 @@ Mantine itself stays an ordinary package dependency.
 
 Install the consumer CLI as a development dependency:
 
-```package-install
+```npm
 npm install --save-dev manteen
 ```
 
 Confirm the project-local binary is available:
 
-```bash
-npx manteen --version
+```npm
+npm exec -- manteen --version
 ```
 
 ## Initialize the project
 
 Run initialization from the application root. Preview the complete plan before applying it:
 
-```bash
-npx manteen init --dry-run
-npx manteen init
+```npm
+npm exec -- manteen init --dry-run
+npm exec -- manteen init
 ```
 
 Manteen detects Vite, the Next.js App or Pages Router, a valid Next.js hybrid, or framework-mode
@@ -48,11 +48,11 @@ without rewriting the file.
 Initialization configures the reference `@house` registry. Discover an item, inspect its contract,
 and preview the installation before writing source:
 
-```bash
-npx manteen list --query article-card
-npx manteen info @house/article-card
-npx manteen add @house/article-card --dry-run
-npx manteen add @house/article-card
+```npm
+npm exec -- manteen list --query article-card
+npm exec -- manteen info @house/article-card
+npm exec -- manteen add @house/article-card --dry-run
+npm exec -- manteen add @house/article-card
 ```
 
 The install can add multiple source files, npm dependencies, package stylesheet imports, and a
@@ -66,9 +66,9 @@ records ownership and the bases preserve exact pristine source for future compar
 
 Then verify both Manteen's state and the application itself:
 
-```bash
-npx manteen status
-npx manteen diff
+```npm
+npm exec -- manteen status
+npm exec -- manteen diff
 npm run build
 ```
 
