@@ -2,6 +2,7 @@
 
 import { Water } from "@paper-design/shaders-react";
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/cn";
 
 /**
  * Water caustics behind a panel.
@@ -49,7 +50,14 @@ function readIsDark() {
   return document.documentElement.classList.contains("dark");
 }
 
-export function WaterBackdrop({ variant = "hero" }: { variant?: WaterVariant }) {
+export function WaterBackdrop({
+  variant = "hero",
+  className,
+}: {
+  variant?: WaterVariant;
+  /** Override the corner radius when the containing panel does not use `rounded-2xl`. */
+  className?: string;
+}) {
   const [isDark, setIsDark] = useState<boolean | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
 
@@ -71,7 +79,13 @@ export function WaterBackdrop({ variant = "hero" }: { variant?: WaterVariant }) 
 
   return (
     <Water
-      className="absolute inset-0 size-full"
+      // The rounding is repeated here rather than inherited from the panel. A WebGL canvas is
+      // composited on its own layer, and an ancestor's `overflow-hidden` + `border-radius` is
+      // not reliably applied to one across engines — Chromium clips it, others leave the
+      // canvas's square corners showing through the panel's rounded ones. Clipping at the
+      // shader's own wrapper, which is the canvas's direct parent, does not depend on that.
+      // Keep this radius in step with the panel's.
+      className={cn("absolute inset-0 size-full overflow-hidden rounded-2xl", className)}
       width="100%"
       height="100%"
       {...colors}
