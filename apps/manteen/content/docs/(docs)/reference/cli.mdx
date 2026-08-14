@@ -54,15 +54,18 @@ packaged-guide replacement authority.
 
 ## Destructive and bypass choices are command-specific
 
-Manteen does not provide one universal force switch:
+<Callout title="No universal force switch" type="warn">
+
+Each option grants narrowly scoped authority. Treat these as separate decisions with concrete
+consequences, not as generic retry flags.
+
+</Callout>
 
 - `add --overwrite` replaces occupied destinations; `--no-overwrite` keeps them.
 - `update --take-upstream` discards local source adaptations.
 - `remove --discard-adapted` applies only to exact selected upstream-removed files.
 - `--no-verify` skips configured project checks for the supported mutation.
 - `--force` downgrades only diagnostics explicitly classified as forceable.
-
-Treat these as separate decisions with concrete consequences, not as generic retry flags.
 
 ## Local health and application proof
 
