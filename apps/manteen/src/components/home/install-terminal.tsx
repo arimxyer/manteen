@@ -1,6 +1,6 @@
 "use client";
 
-import { type Step, TerminalPanel } from "@/components/home/terminal-panel";
+import { type Block, TerminalPanel } from "@/components/home/terminal-panel";
 
 /**
  * A project's first two minutes with Manteen, in the order the getting-started
@@ -13,6 +13,11 @@ import { type Step, TerminalPanel } from "@/components/home/terminal-panel";
  * an artefact of two pipes, which is why npm's own `notice` lines appear where
  * they do. Nothing is trimmed: the blank lines are npm's and the CLI's.
  *
+ * The grouping is the one editorial decision. Each `output` block is a batch that
+ * lands together, so the run has three beats — npm's install summary, npm's two
+ * notices about what it is about to execute, and then the files Manteen writes.
+ * That last group is the one the section is selling, and it arrives alone.
+ *
  * `npx manteen` and `npm exec -- manteen` are the same command and print the
  * same two notices; the docs use the latter because their code blocks render
  * pnpm/yarn/bun tabs from it. What does NOT work is a bare `manteen init` —
@@ -21,23 +26,34 @@ import { type Step, TerminalPanel } from "@/components/home/terminal-panel";
  *
  * The install counts are of course a moment in time, not a promise.
  */
-const firstRun: Step[] = [
+const firstRun: Block[] = [
+  { kind: "command", text: "npm install --save-dev manteen" },
   {
-    blocks: [
-      { kind: "command", text: "npm install --save-dev manteen" },
-      { kind: "line", text: "", tone: "note" },
-      { kind: "line", text: "added 35 packages, and audited 90 packages in 534ms", tone: "note" },
-      { kind: "line", text: "", tone: "note" },
-      { kind: "line", text: "found 0 vulnerabilities", tone: "note" },
-      { kind: "line", text: "", tone: "note" },
-      { kind: "command", text: "npx manteen init" },
-      { kind: "line", text: "npm notice run acme-app@0.1.0 npx", tone: "npm" },
-      { kind: "line", text: "npm notice run 'manteen' init", tone: "npm" },
-      { kind: "line", verb: "written", text: "manteen.json", tone: "write" },
-      { kind: "line", verb: "written", text: "postcss.config.cjs", tone: "write" },
-      { kind: "line", verb: "written", text: "src/app/layout.tsx", tone: "write" },
-      { kind: "line", verb: "written", text: "src/lib/theme.ts", tone: "write" },
-      { kind: "line", verb: "written", text: "src/manteen.css", tone: "write" },
+    kind: "output",
+    lines: [
+      { text: "", tone: "note" },
+      { text: "added 35 packages, and audited 90 packages in 534ms", tone: "note" },
+      { text: "", tone: "note" },
+      { text: "found 0 vulnerabilities", tone: "note" },
+      { text: "", tone: "note" },
+    ],
+  },
+  { kind: "command", text: "npx manteen init" },
+  {
+    kind: "output",
+    lines: [
+      { text: "npm notice run acme-app@0.1.0 npx", tone: "npm" },
+      { text: "npm notice run 'manteen' init", tone: "npm" },
+    ],
+  },
+  {
+    kind: "output",
+    lines: [
+      { verb: "written", text: "manteen.json", tone: "write" },
+      { verb: "written", text: "postcss.config.cjs", tone: "write" },
+      { verb: "written", text: "src/app/layout.tsx", tone: "write" },
+      { verb: "written", text: "src/lib/theme.ts", tone: "write" },
+      { verb: "written", text: "src/manteen.css", tone: "write" },
     ],
   },
 ];
@@ -45,9 +61,10 @@ const firstRun: Step[] = [
 export function InstallTerminal({ className }: { className?: string }) {
   return (
     <TerminalPanel
-      steps={firstRun}
-      // Sized to the finished transcript so the card never grows as it plays.
-      // Below `sm` the two commands wrap, which is why the phone reserve is taller.
+      blocks={firstRun}
+      // Sized to the finished transcript, which is also the state it loads in.
+      // It matters during a replay, where a short reserve would let the card
+      // collapse to one line and grow back. Below `sm` the commands wrap.
       reserve="min-h-96 sm:min-h-90"
       className={className}
     />
