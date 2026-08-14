@@ -46,8 +46,12 @@ If local and upstream edits overlap ambiguously, the update refuses before chang
 
 ## Destructive replacement is separate
 
+<Callout title="This discards local adaptations" type="warn">
+
 After reviewing the diff, use `--take-upstream` only when discarding local adaptations is the
-intended result:
+intended result.
+
+</Callout>
 
 ```bash
 manteen update @house/article-card --take-upstream
