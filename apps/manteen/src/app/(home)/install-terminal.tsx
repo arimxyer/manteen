@@ -5,21 +5,22 @@ import { cn } from "@/lib/cn";
 
 const command = "npm exec -- manteen add @house/article-card --dry-run";
 
-const output: { text: string; tone: "plan" | "write" | "note" | "ok" }[] = [
-  { text: "resolve  @house/article-card", tone: "plan" },
-  { text: "plan     3 writes, 1 npm dependency, 1 theme contribution", tone: "plan" },
-  { text: "write    components/ui/article-card.tsx", tone: "write" },
-  { text: "write    components/ui/article-card.module.css", tone: "write" },
-  { text: "write    manteen.lock.json", tone: "write" },
-  { text: "note     dry run — nothing was written", tone: "note" },
-  { text: "planDigest sha256:9f4c…21ab", tone: "ok" },
+/**
+ * Verbatim stdout from that command, captured against this repository's own
+ * catalog compiled to a `file:` registry. The blank line before the closing
+ * notice is the CLI's, not padding — keep it.
+ */
+const output: { text: string; tone: "write" | "note" }[] = [
+  { text: "create     LICENSES/MANTINE-UI.txt", tone: "write" },
+  { text: "create     src/components/ui/article-card.tsx", tone: "write" },
+  { text: "create     src/components/ui/article-card.module.css", tone: "write" },
+  { text: "", tone: "note" },
+  { text: "Dry run — nothing was written.", tone: "note" },
 ];
 
 const toneClass = {
-  plan: "text-fd-muted-foreground",
   write: "text-brand",
-  note: "text-fd-muted-foreground italic",
-  ok: "text-fd-foreground",
+  note: "text-fd-muted-foreground",
 } as const;
 
 export function InstallTerminal({ className }: { className?: string }) {
@@ -76,10 +77,13 @@ export function InstallTerminal({ className }: { className?: string }) {
           </span>
         </span>
       </p>
-      <div className="mt-2 min-h-[10.5rem]">
-        {output.slice(0, revealed).map((line) => (
-          <p key={line.text} className={cn("break-all", toneClass[line.tone])}>
-            {line.text}
+      <div className="mt-2 min-h-[7.5rem]">
+        {output.slice(0, revealed).map((line, index) => (
+          // Line order is fixed and the list never reorders, so the index is a stable identity —
+          // the text is not, since one line is intentionally blank.
+          // biome-ignore lint/suspicious/noArrayIndexKey: see above.
+          <p key={index} className={cn("break-all", toneClass[line.tone])}>
+            {line.text || " "}
           </p>
         ))}
       </div>

@@ -46,6 +46,35 @@ html > body[data-scroll-locked] {
   );
 }
 
+/* Legibility scrim over the water. Strongest where the copy sits — the left edge on wide
+   screens, the whole panel once the hero centres its text. */
+.hero-scrim {
+  background-image:
+    linear-gradient(
+      100deg,
+      var(--color-fd-background) 0%,
+      color-mix(in oklab, var(--color-fd-background) 62%, transparent) 42%,
+      transparent 76%
+    ),
+    linear-gradient(
+      to top,
+      color-mix(in oklab, var(--color-fd-background) 72%, transparent),
+      transparent 55%
+    );
+}
+
+/* The hero centres its copy below md, so the scrim becomes a full veil rather than a side wash.
+   Kept light enough that the water still reads — the copy carries its own contrast at this size. */
+@media (max-width: 767px) {
+  .hero-scrim {
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--color-fd-background) 55%, transparent),
+      color-mix(in oklab, var(--color-fd-background) 72%, transparent)
+    );
+  }
+}
+
 @keyframes caret-blink {
   0%,
   45% {

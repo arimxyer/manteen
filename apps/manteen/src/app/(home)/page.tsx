@@ -8,6 +8,7 @@ import {
   Terminal,
 } from "lucide-react";
 import Link from "next/link";
+import { HeroWater } from "@/app/(home)/hero-water";
 import { InstallTerminal } from "@/app/(home)/install-terminal";
 import { cn } from "@/lib/cn";
 
@@ -76,8 +77,11 @@ export default function HomePage() {
   return (
     <main className="pt-4 pb-6 md:pb-12">
       <div className="relative mx-auto flex h-[70vh] max-h-[820px] min-h-[560px] w-full max-w-[1400px] overflow-hidden rounded-2xl border bg-fd-card bg-origin-border">
+        {/* Painted first so the hero still reads as designed wherever WebGL does not run. */}
         <div className="hero-grid absolute inset-0" />
         <div className="hero-glow absolute inset-0" />
+        <HeroWater />
+        <div className="hero-scrim absolute inset-0" />
 
         <div className="relative z-2 flex size-full flex-col px-4 py-8 max-md:items-center max-md:text-center md:p-12">
           <p className="w-fit rounded-full border border-brand/40 px-3 py-1.5 text-xs font-medium text-brand">
