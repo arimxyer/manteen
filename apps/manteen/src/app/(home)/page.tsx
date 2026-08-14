@@ -1,12 +1,5 @@
 import { ServerCodeBlock } from "fumadocs-ui/components/codeblock.rsc";
-import {
-  ArrowRight,
-  Braces,
-  FileJson,
-  GitCompareArrows,
-  ShieldCheck,
-  Terminal,
-} from "lucide-react";
+import { ArrowRight, Braces, FileJson, GitCompareArrows, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { HeroWater } from "@/app/(home)/hero-water";
 import { InstallTerminal } from "@/app/(home)/install-terminal";
@@ -184,14 +177,9 @@ function TryItOut() {
           />
         </div>
 
-        <div className="relative mt-2 rounded-xl border bg-fd-secondary shadow-md">
-          <div className="flex flex-row items-center gap-2 border-b p-2 text-fd-muted-foreground">
-            <Terminal className="size-4" aria-hidden="true" />
-            <span className="text-xs font-medium">Terminal</span>
-            <div className="me-2 ms-auto size-2 rounded-full bg-brand" />
-          </div>
-          <InstallTerminal className="p-3 text-fd-secondary-foreground/85" />
-        </div>
+        {/* The terminal chrome moved into the client component: its header carries the
+            rotation indicator, which only that component knows the state of. */}
+        <InstallTerminal className="mt-2" />
       </div>
     </div>
   );
