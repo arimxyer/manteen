@@ -2,6 +2,20 @@
 @import "fumadocs-ui/css/ocean.css";
 @import "fumadocs-ui/css/preset.css";
 
+/* The landing page accent. Mantine's own blue in light mode, lifted to a legible tint
+   against the ocean preset's dark navy background. */
+@theme {
+  --color-brand: hsl(208, 79%, 48%);
+  --color-brand-hover: hsl(208, 79%, 40%);
+  --color-brand-foreground: hsl(0, 0%, 100%);
+}
+
+.dark {
+  --color-brand: hsl(205, 100%, 78%);
+  --color-brand-hover: hsl(205, 100%, 88%);
+  --color-brand-foreground: hsl(220, 60%, 8%);
+}
+
 html {
   scrollbar-gutter: stable;
 }
@@ -11,4 +25,44 @@ html > body[data-scroll-locked] {
   margin-right: 0 !important;
   /* biome-ignore lint/complexity/noImportantStyles: Keep the library's matching CSS variable in sync. */
   --removed-body-scroll-bar-size: 0px !important;
+}
+
+/* Hero backdrop: a ruled grid faded out from the top-left, plus one soft brand glow.
+   Drawn in CSS so the landing page ships no image assets. */
+.hero-grid {
+  background-image:
+    linear-gradient(to right, var(--color-fd-border) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-fd-border) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse 90% 80% at 20% 0%, black 10%, transparent 70%);
+  mask-image: radial-gradient(ellipse 90% 80% at 20% 0%, black 10%, transparent 70%);
+}
+
+.hero-glow {
+  background-image: radial-gradient(
+    ellipse 70% 60% at 15% -10%,
+    color-mix(in oklab, var(--color-brand) 22%, transparent),
+    transparent 70%
+  );
+}
+
+@keyframes caret-blink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  50%,
+  95% {
+    opacity: 0;
+  }
+}
+
+.caret {
+  animation: caret-blink 1.1s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret {
+    animation: none;
+  }
 }
