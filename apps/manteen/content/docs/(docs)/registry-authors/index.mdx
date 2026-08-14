@@ -3,6 +3,8 @@ title: Build a registry
 description: Compile a Mantine-native source catalog into installable registry documents.
 ---
 
+import { File, Folder, Files } from "fumadocs-ui/components/files";
+
 `manteen-kit` is the author-side package. You describe normal source files with a
 `manteen.registry.json` catalog, then compile that catalog into static registry JSON.
 
@@ -22,12 +24,14 @@ npm install --save-dev manteen-kit
 
 Start with a catalog and ordinary source files:
 
-```text
-my-manteen-registry/
-├── manteen.registry.json
-└── src/
-    └── release-panel.tsx
-```
+<Files>
+  <Folder name="my-manteen-registry" defaultOpen>
+    <File name="manteen.registry.json" />
+    <Folder name="src" defaultOpen>
+      <File name="release-panel.tsx" />
+    </Folder>
+  </Folder>
+</Files>
 
 ## Describe the item
 
@@ -73,11 +77,14 @@ npm exec -- manteen-kit build
 
 The defaults read `manteen.registry.json` and write:
 
-```text
-public/r/
-├── registry.json
-└── release-panel.json
-```
+<Files>
+  <Folder name="public" defaultOpen>
+    <Folder name="r" defaultOpen>
+      <File name="registry.json" />
+      <File name="release-panel.json" />
+    </Folder>
+  </Folder>
+</Files>
 
 The build validates both the authoring catalog and every emitted interchange document. A failed
 validation is a refusal, not trustworthy partial output.
