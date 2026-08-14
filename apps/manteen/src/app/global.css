@@ -6,6 +6,10 @@ html {
   scrollbar-gutter: stable;
 }
 
+:root:not(.dark) {
+  --color-fd-muted-foreground: hsl(0, 0%, 40%);
+}
+
 html > body[data-scroll-locked] {
   /* biome-ignore lint/complexity/noImportantStyles: Override the scroll-lock library's inline spacing. */
   margin-right: 0 !important;
