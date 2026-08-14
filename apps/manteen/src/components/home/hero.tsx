@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { HeroWater } from "@/components/home/hero-water";
 import { primaryButton, secondaryButton } from "@/components/home/styles";
+import { WaterBackdrop } from "@/components/home/water-backdrop";
 import { cn } from "@/lib/cn";
 
 /** The one journey the whole page describes, in the three artefacts it produces. */
@@ -17,7 +17,7 @@ export function Hero() {
       {/* Painted first so the hero still reads as designed wherever WebGL does not run. */}
       <div className="hero-grid absolute inset-0" />
       <div className="hero-glow absolute inset-0" />
-      <HeroWater />
+      <WaterBackdrop variant="hero" />
       <div className="hero-scrim absolute inset-0" />
 
       <div className="relative z-2 flex size-full flex-col px-4 py-8 max-md:items-center max-md:text-center md:p-12">
