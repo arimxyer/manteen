@@ -67,6 +67,32 @@ const commands: [string, string][] = [
   ["manteen agent", "Read or install the packaged Manteen agent guidance."],
 ];
 
+/**
+ * The specifics under each band's copy. Every key is a real field, path, or command — the
+ * authoring vocabulary comes from `manteen.registry.schema.json`, the rest from the pages each
+ * card links to.
+ */
+const authoringFields: [string, string][] = [
+  ["kind", "component, block, hook, lib, theme, or file"],
+  ["mantine", "the consumer compatibility gate"],
+  ["provider", "whether MantineProvider is required"],
+  ["npm, css", "packages and stylesheets the item needs"],
+  ["stylesApi, props", "the surface consumers style and pass"],
+];
+
+const compiledOutput: [string, string][] = [
+  ["registry.json", "the catalog index clients discover"],
+  ["<item>.json", "one installable document per item"],
+  ["manteen-kit build", "validates both, and refuses rather than emitting partial output"],
+];
+
+const ownershipState: [string, string][] = [
+  ["manteen.lock.json", "the receipt recording what Manteen owns"],
+  [".manteen/bases/", "pristine upstream source, kept for comparison"],
+  ["manteen diff", "local, base, and upstream side by side"],
+  ["manteen status", "local health, assessed without registry access"],
+];
+
 const sourceMap: [string, string][] = [
   ["Author", "manteen.registry.json"],
   ["Compile", "/r/article-card.json"],
@@ -171,6 +197,20 @@ function TryItOut() {
   );
 }
 
+/** The key/detail rows shared by all three copy cards. */
+function DetailList({ items }: { items: [string, string][] }) {
+  return (
+    <ul className="mt-1 mb-6 flex flex-col gap-2.5 border-t pt-5 text-xs">
+      {items.map(([key, detail]) => (
+        <li key={key} className="flex flex-col gap-x-3 sm:flex-row">
+          <code className="shrink-0 font-mono text-fd-foreground sm:w-36">{key}</code>
+          <span className="text-fd-muted-foreground">{detail}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function Authoring() {
   return (
     <div className={band}>
@@ -183,6 +223,7 @@ function Authoring() {
           discarded, and <code className="font-mono text-fd-foreground">manteen-kit</code> owns the
           interchange details.
         </p>
+        <DetailList items={authoringFields} />
         <Link href="/docs/registry-authors" className={cn(textLink, "mt-auto")}>
           Read the authoring guide
           <ArrowRight className="size-4" aria-hidden="true" />
@@ -227,6 +268,7 @@ function Interop() {
           clients can install them. Manteen reads the richer Mantine metadata on top — provider
           setup, theme fragments, package styles, and compatibility gates.
         </p>
+        <DetailList items={compiledOutput} />
         <Link href="/docs/concepts/registry-references" className={cn(textLink, "mt-auto")}>
           URLs and namespaces
           <ArrowRight className="size-4" aria-hidden="true" />
@@ -248,6 +290,7 @@ function Ownership() {
           <code className="font-mono text-fd-foreground">update</code> merges around your edits
           instead of over them, and every mutating command will show you the plan first.
         </p>
+        <DetailList items={ownershipState} />
         <Link href="/docs/concepts/source-ownership" className={cn(textLink, "mt-auto")}>
           Follow the ownership model
           <ArrowRight className="size-4" aria-hidden="true" />
