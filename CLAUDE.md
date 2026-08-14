@@ -4,14 +4,23 @@ A Mantine-native component registry toolchain. Two packages:
 
 - **`packages/registry-kit`** (`manteen-kit`) — authoring. You write a catalog in Mantine's
   vocabulary; it compiles to the shadcn-compatible interchange format other clients already read.
-  Published on npm as `manteen-kit@0.2.0`.
 - **`packages/cli`** (`manteen`) — consuming. Installs registry items into a project, and keeps
-  them: `init`, `add`, `list`, `info`, `diff`, `update`. Published on npm as `manteen@0.2.0` with
-  provenance; W4–W8 (apply surface through release) are all complete — see `docs/roadmap.md`.
+  them: `init`, `add`, `list`, `info`, `diff`, `update`, `remove`, `status`, `agent`. W4–W8
+  (apply surface through release) are all complete — see `docs/roadmap.md`.
+
+Both are published on npm with SLSA provenance. **Version numbers are deliberately absent from
+this file.** A restated version is a copy, and this one drifted: it claimed `0.2.0` for both
+packages long after the client reached `0.8.0`. Ask the thing that knows instead —
+`packages/*/package.json` for what this repository holds, `npm view <pkg> version` for what is
+public, and `packages/cli/src/agent/manifest.ts` for the release milestones prose cites, which is
+the same data the docs site and the packaged skill read. The command list above is here for
+orientation; that manifest is what it must agree with.
 
 The repo root is also a live registry (`manteen.registry.json` → `public/r/`), which is what the
-e2e tier installs from. `apps/docs` is the deployed Starlight documentation site — a registry
-browser and authoring/sharing guide over that same `/r` contract.
+e2e tier installs from. `apps/docs` is the Starlight documentation site GitHub Pages deploys
+(`.github/workflows/pages.yml` publishes `apps/docs/dist`) — a registry browser and
+authoring/sharing guide over that same `/r` contract. `apps/manteen` is a newer Fumadocs/Next
+documentation-and-marketing site; CI checks it, no workflow deploys it yet.
 
 ## Read these before changing anything substantial
 
