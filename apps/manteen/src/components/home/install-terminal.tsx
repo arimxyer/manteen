@@ -1,6 +1,6 @@
 "use client";
 
-import { type Step, TerminalPanel } from "@/app/(home)/terminal-panel";
+import { type Step, TerminalPanel } from "@/components/home/terminal-panel";
 
 /**
  * A project's first two minutes with Manteen, in the order the getting-started
