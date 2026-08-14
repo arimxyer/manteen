@@ -33,14 +33,19 @@ const palette = {
 
 /**
  * `hero` is the page's signature moment and is tuned for a 70vh panel. `panel` is the reprise at
- * the foot of the page, and differs where the smaller panel demands it: dimmer highlights, a
- * little slower, and much broader features pulled closer in, because detail that reads as water
- * across 600px reads as noise across 250. A bookend works only while the second instance stays
- * quieter than the first — which is a constraint on `panel`, not on `hero`.
+ * the foot of the page, and differs where the smaller panel demands it: much broader features
+ * pulled closer in, and a little slower, because detail that reads as water across 600px reads
+ * as noise across 250.
+ *
+ * The highlights deliberately match. Dimming them here was the wrong lever for keeping the
+ * reprise quieter than the hero: highlights are what make caustics legible as *motion*, and
+ * cutting them left a panel you had to stare at to be sure it was animating at all. Scale and
+ * size already carry the difference in character, and the scrim over each panel carries the
+ * difference in prominence — so brightness is the one thing the two share.
  */
 const variants = {
   hero: { highlightsDark: 0.16, highlightsLight: 0.24, speed: 0.35, size: 1.4, scale: 0.9 },
-  panel: { highlightsDark: 0.11, highlightsLight: 0.17, speed: 0.3, size: 2.6, scale: 0.7 },
+  panel: { highlightsDark: 0.16, highlightsLight: 0.24, speed: 0.3, size: 2.6, scale: 0.7 },
 } as const;
 
 export type WaterVariant = keyof typeof variants;
