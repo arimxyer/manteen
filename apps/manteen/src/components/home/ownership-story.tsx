@@ -1,21 +1,18 @@
 "use client";
 
-import { GitMerge } from "lucide-react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { type RefObject, useEffect, useRef, useState } from "react";
 import { AnimatedBeam } from "@/components/home/animated-beam";
 import { cn } from "@/lib/cn";
 
 /**
- * A four-beat storyboard of what owning the source actually costs you, which is
- * nothing: install, your edit, upstream's edit, and the merge that reconciles
- * them against the copy neither of you touched.
+ * A four-beat storyboard of what owning the source costs you, which is nothing:
+ * install, your edit, upstream's edit, and the merge that reconciles them
+ * against the copy neither of you touched.
  *
- * The shape is deliberate. Two sources on the left, `update` in the middle, your
- * file on the right — that is the data flow of a three-way merge stated as a
- * diagram, and it is why the pristine base has to be on screen at all. A picture
- * with only two documents can show a change arriving; it cannot show why the
- * change knows to arrive *around* your edit.
+ * Manteen is the hub and every wire runs through it. That is the claim — the
+ * three files never talk to each other, and the tool is what makes an upstream
+ * change safe to accept — so no wire may connect two documents directly.
  */
 type Origin = "base" | "local" | "upstream";
 
@@ -48,21 +45,39 @@ const TONE = {
 
 export type StoryStep = 0 | 1 | 2 | 3;
 
-export const STORY: { caption: string; hold: number }[] = [
+/**
+ * The captions carry the story, and on two of the four beats they carry all of
+ * it — editing a file is not a thing that flows anywhere, so beats two and three
+ * have no beam by design. That makes the words load-bearing rather than a label
+ * under a picture, which is why they are set as their own panel instead of as a
+ * muted line of small print.
+ */
+export const STORY: { lead: string; caption: string; hold: number }[] = [
   {
-    caption: "Install writes your copy — and keeps a pristine base of it beside the file.",
-    hold: 2000,
-  },
-  { caption: "You adapt two lines. Nothing else on the diagram knows yet.", hold: 1600 },
-  { caption: "Upstream changes two others, and has never heard of yours.", hold: 1600 },
-  {
+    lead: "Install",
     caption:
-      "update reads all three. The base says which two lines are upstream's to change, so upstream's arrive and yours are never touched.",
+      "Manteen writes your copy — and keeps a pristine base of it, untouched, beside the file.",
+    hold: 3600,
+  },
+  {
+    lead: "You adapt it",
+    caption: "Two lines become yours. This is the edit every other registry tells you not to make.",
+    hold: 2600,
+  },
+  {
+    lead: "Upstream moves",
+    caption: "The registry changes two different lines, and has never heard of yours.",
+    hold: 2600,
+  },
+  {
+    lead: "Update",
+    caption:
+      "Manteen reads all three. The base is what proves which two lines were upstream's to change — so upstream's arrive, and yours are never touched.",
     hold: 0,
   },
 ];
 
-/** Which side of a line each document is showing, at a given beat. */
+/** Which version of a line each document is showing, at a given beat. */
 function tone(origin: Origin, node: "upstream" | "base" | "yours", step: StoryStep): Origin {
   if (origin === "base") return "base";
   if (node === "base") return "base";
@@ -92,8 +107,8 @@ function Doc({
       className={cn(
         "relative z-10 rounded-lg border bg-fd-background p-2.5",
         // The base is not a file anyone opens, and a dashed edge is the cheapest
-        // way to say "kept, not used" without a second label competing with the
-        // three that are already on screen.
+        // way to say "kept, not used" without a fourth label competing with the
+        // three already on screen.
         pristine && "border-dashed bg-fd-secondary",
       )}
     >
@@ -135,131 +150,189 @@ function Doc({
 }
 
 /**
- * The storyboard, controlled. It owns no clock — a caller passes the beat, which
- * is what lets the same component be hover-driven on the page and scrubbed
- * step-by-step in a preview without the two versions drifting apart.
- *
- * `beamKey` restarts the pulses. A gradient animation plays on mount, so a beat
- * that is entered twice has to remount its beams to fire twice.
+ * The hub, and it carries the product's name rather than the command it happens
+ * to be running. What the diagram claims is that ONE tool sits between these
+ * three files — not that two different verbs do two different jobs. Naming the
+ * verb also put a command in the picture that a reader could not run, set in a
+ * mono face that suggested they should.
  */
+function Hub({ innerRef, live }: { innerRef: RefObject<HTMLDivElement | null>; live: boolean }) {
+  return (
+    <div
+      ref={innerRef}
+      className={cn(
+        "relative z-10 rounded-full border px-3.5 py-1.5 text-xs font-medium tracking-tight transition-colors duration-300",
+        live
+          ? "border-brand bg-brand text-brand-foreground"
+          : "border-fd-border bg-fd-background text-fd-foreground",
+      )}
+    >
+      Manteen
+    </div>
+  );
+}
+
+export type StoryLayout = "row" | "triangle";
+
 export function OwnershipStory({
   step,
   beamKey = 0,
-  beamDuration = 1.8,
+  beamDuration = 1.2,
+  beamRepeat = 1,
+  layout = "triangle",
   className,
 }: {
   step: StoryStep;
   beamKey?: number;
   beamDuration?: number;
+  beamRepeat?: number;
+  layout?: StoryLayout;
   className?: string;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const upstream = useRef<HTMLDivElement>(null);
   const base = useRef<HTMLDivElement>(null);
-  const centre = useRef<HTMLDivElement>(null);
+  const hub = useRef<HTMLDivElement>(null);
   const yours = useRef<HTMLDivElement>(null);
 
-  // Beat 0 writes: upstream comes in, and both the file and its base go out.
-  // Beat 3 reads: upstream and the base come in, and the merged file goes out.
-  // Same three wires, and the direction of travel is the difference between
+  // Beat 0 writes: upstream comes in, the file and its base go out. Beat 3
+  // reads: upstream and the base come in, the merged file goes out. The same
+  // three wires, and the direction of travel is the whole difference between
   // being installed and being updated.
   const installing = step === 0;
   const merging = step === 3;
   const live = installing || merging;
 
+  const beam = { play: live, duration: beamDuration, repeat: beamRepeat };
+
+  const docs = {
+    upstream: (
+      <Doc
+        node="upstream"
+        step={step}
+        title="Upstream"
+        path="@acme/release-panel"
+        innerRef={upstream}
+      />
+    ),
+    base: (
+      <Doc node="base" step={step} title="Base" path=".manteen/bases/" pristine innerRef={base} />
+    ),
+    yours: (
+      <Doc node="yours" step={step} title="Your copy" path="release-panel.tsx" innerRef={yours} />
+    ),
+  };
+
   return (
     <div className={cn("flex flex-col", className)}>
-      <div ref={container} className="relative flex flex-row items-stretch gap-3 sm:gap-4">
+      <div ref={container} className="relative">
         <AnimatedBeam
           key={`up-${beamKey}`}
           containerRef={container}
           fromRef={upstream}
-          toRef={centre}
-          play={live}
-          duration={beamDuration}
+          toRef={hub}
+          {...beam}
         />
         <AnimatedBeam
           key={`base-${beamKey}`}
           containerRef={container}
           fromRef={base}
-          toRef={centre}
-          // Written at install, read at update. One wire, and the pulse runs the
-          // other way round depending on which is happening.
+          toRef={hub}
+          // Written at install, read at update. One wire; the pulse runs the
+          // other way round depending on which of those is happening.
           reverse={installing}
-          play={live}
-          delay={installing ? beamDuration * 0.4 : 0}
-          duration={beamDuration}
+          delay={installing ? beamDuration * 0.35 : 0}
+          {...beam}
         />
         <AnimatedBeam
           key={`out-${beamKey}`}
           containerRef={container}
-          fromRef={centre}
+          fromRef={hub}
           toRef={yours}
-          play={live}
-          delay={beamDuration * 0.4}
-          duration={beamDuration}
+          delay={beamDuration * 0.35}
+          {...beam}
         />
 
-        <div className="flex w-[38%] flex-col justify-between gap-3">
-          <Doc
-            node="upstream"
-            step={step}
-            title="Upstream"
-            path="@acme/release-panel"
-            innerRef={upstream}
-          />
-          <Doc
-            node="base"
-            step={step}
-            title="Base"
-            path=".manteen/bases/"
-            pristine
-            innerRef={base}
-          />
-        </div>
-
-        <div className="flex flex-1 items-center justify-center">
-          <div className="flex flex-col items-center gap-1.5">
-            <div
-              ref={centre}
-              className={cn(
-                "relative z-10 flex size-9 items-center justify-center rounded-full border bg-fd-background transition-colors",
-                live && "border-brand",
-              )}
-            >
-              <GitMerge
-                className={cn(
-                  "size-4 transition-colors",
-                  live ? "text-brand" : "text-fd-muted-foreground",
-                )}
-                aria-hidden="true"
-              />
+        {layout === "row" ? (
+          <div className="flex flex-row items-stretch gap-3 sm:gap-4">
+            <div className="flex w-[38%] flex-col justify-between gap-3">
+              {docs.upstream}
+              {docs.base}
             </div>
-            <span className="font-mono text-[9px] whitespace-nowrap text-fd-muted-foreground">
-              {installing ? "manteen add" : "manteen update"}
-            </span>
+            <div className="flex flex-1 items-center justify-center">
+              <Hub innerRef={hub} live={live} />
+            </div>
+            {/* A column, not a row: a row's child sizes to its content, so the
+                document shrank to the width of its own header. */}
+            <div className="flex w-[38%] flex-col justify-center">{docs.yours}</div>
           </div>
-        </div>
-
-        {/* A column, not a row: a row's child sizes to its content, so the
-            document shrank to the width of its own header and stopped matching
-            the two it is being compared against. */}
-        <div className="flex w-[38%] flex-col justify-center">
-          <Doc
-            node="yours"
-            step={step}
-            title="Your copy"
-            path="release-panel.tsx"
-            innerRef={yours}
-          />
-        </div>
+        ) : (
+          // The three-way merge, drawn the way version control has always drawn
+          // it: the common ancestor above, the two that diverged from it below.
+          // The row arrangement had to put the base on the "inputs" side, which
+          // is wrong at install — the base is WRITTEN there, not read — and a
+          // triangle has no sides to be wrong about.
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-[52%]">{docs.base}</div>
+            <Hub innerRef={hub} live={live} />
+            <div className="grid w-full grid-cols-2 gap-3 sm:gap-6">
+              {docs.upstream}
+              {docs.yours}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Three lines held, because the last beat's caption is the long one and
-          the copy card beside this is a grid sibling. */}
-      <p className="mt-4 min-h-[3.75rem] text-xs text-fd-muted-foreground sm:min-h-[3rem]">
-        {STORY[step]?.caption}
-      </p>
+      <Caption step={step} />
+    </div>
+  );
+}
+
+/**
+ * The beat, given its own panel.
+ *
+ * It was a muted line under the diagram, which is the wrong weight for the thing
+ * doing most of the explaining. The rule and the lead word give it a place; the
+ * pips give beats two and three — which have no beam — something that visibly
+ * advances; and the swap is animated because a sentence that changes without
+ * moving reads as a typo rather than as a step.
+ */
+function Caption({ step }: { step: StoryStep }) {
+  const beat = STORY[step];
+  if (!beat) return null;
+
+  return (
+    <div className="mt-5 border-l-2 border-brand pl-3">
+      <div className="flex min-h-[4.5rem] flex-col gap-2 sm:min-h-[3.75rem]">
+        <div className="flex flex-row items-center gap-1.5" aria-hidden="true">
+          {STORY.map((item, index) => (
+            <motion.span
+              key={item.lead}
+              className={cn(
+                "h-0.5 rounded-full",
+                index === step ? "bg-brand" : "bg-fd-muted-foreground/30",
+              )}
+              initial={false}
+              animate={{ width: index === step ? 18 : 8 }}
+              transition={{ type: "spring", stiffness: 420, damping: 34 }}
+            />
+          ))}
+        </div>
+
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.p
+            key={beat.lead}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18 }}
+            className="text-sm leading-snug"
+          >
+            <span className="font-medium text-brand">{beat.lead}.</span>{" "}
+            <span className="text-fd-muted-foreground">{beat.caption}</span>
+          </motion.p>
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
@@ -268,7 +341,13 @@ export function OwnershipStory({
  * The clock. Starts finished, replays on hover — `TerminalPanel`'s contract, and
  * the page's idiom: nothing animates at a reader on arrival.
  */
-export function OwnershipStoryPlayer({ className }: { className?: string }) {
+export function OwnershipStoryPlayer({
+  layout,
+  className,
+}: {
+  layout?: StoryLayout;
+  className?: string;
+}) {
   const [step, setStep] = useState<StoryStep>(3);
   const [run, setRun] = useState(0);
   const [still, setStill] = useState(false);
@@ -285,9 +364,9 @@ export function OwnershipStoryPlayer({ className }: { className?: string }) {
   }, [step]);
 
   return (
-    // Decoration over a claim the copy beside it already makes, so the whole
-    // diagram is hidden from assistive technology rather than announced as a
-    // pile of unlabelled boxes.
+    // Decoration over a claim the copy beside it already makes, so the diagram is
+    // hidden from assistive technology rather than announced as a pile of
+    // unlabelled boxes.
     <div
       className={className}
       aria-hidden="true"
@@ -299,7 +378,7 @@ export function OwnershipStoryPlayer({ className }: { className?: string }) {
         setStep(0);
       }}
     >
-      <OwnershipStory step={step} beamKey={run * 4 + step} />
+      <OwnershipStory step={step} beamKey={run * 4 + step} layout={layout} />
     </div>
   );
 }
