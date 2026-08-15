@@ -1,7 +1,7 @@
 import { ArrowRight, GitCompareArrows, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { DetailList } from "@/components/home/detail-list";
-import { OwnershipMerge } from "@/components/home/ownership-merge";
+import { OwnershipStoryPlayer } from "@/components/home/ownership-story";
 import { band, card, h3, textLink } from "@/components/home/styles";
 import { cn } from "@/lib/cn";
 
@@ -32,7 +32,7 @@ export function Ownership() {
       </div>
       <div className="flex flex-col gap-4">
         <div className={cn(card, "flex flex-col justify-center")}>
-          <OwnershipMerge />
+          <OwnershipStoryPlayer />
         </div>
         <div className={cn(card, "flex flex-row items-start gap-3")}>
           <ShieldCheck className="mt-0.5 size-5 shrink-0 text-brand" aria-hidden="true" />

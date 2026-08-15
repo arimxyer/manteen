@@ -13,6 +13,17 @@ import { cn } from "@/lib/cn";
  * Manteen is the hub and every wire runs through it. That is the claim — the
  * three files never talk to each other, and the tool is what makes an upstream
  * change safe to accept — so no wire may connect two documents directly.
+ *
+ * Sources left, tool centre, your file right. A triangle was built and reviewed
+ * against this — ancestor above, the two that diverged below, which is how
+ * version control has always drawn a three-way merge — and Ari chose the row
+ * (2026-08-15). It is in the history at 61c7cc5 behind a `layout` prop if the
+ * question reopens.
+ *
+ * The row's known cost, so nobody rediscovers it as a bug: it puts the base on
+ * the side the eye reads as inputs, and at the install beat the base is
+ * WRITTEN rather than read. The pulse running outward on that wire is what
+ * carries the correction, which is why its direction is not decorative.
  */
 type Origin = "base" | "local" | "upstream";
 
@@ -172,21 +183,17 @@ function Hub({ innerRef, live }: { innerRef: RefObject<HTMLDivElement | null>; l
   );
 }
 
-export type StoryLayout = "row" | "triangle";
-
 export function OwnershipStory({
   step,
   beamKey = 0,
   beamDuration = 1.2,
   beamRepeat = 1,
-  layout = "triangle",
   className,
 }: {
   step: StoryStep;
   beamKey?: number;
   beamDuration?: number;
   beamRepeat?: number;
-  layout?: StoryLayout;
   className?: string;
 }) {
   const container = useRef<HTMLDivElement>(null);
@@ -253,34 +260,23 @@ export function OwnershipStory({
           {...beam}
         />
 
-        {layout === "row" ? (
-          <div className="flex flex-row items-stretch gap-3 sm:gap-4">
-            <div className="flex w-[38%] flex-col justify-between gap-3">
-              {docs.upstream}
-              {docs.base}
-            </div>
-            <div className="flex flex-1 items-center justify-center">
-              <Hub innerRef={hub} live={live} />
-            </div>
-            {/* A column, not a row: a row's child sizes to its content, so the
-                document shrank to the width of its own header. */}
-            <div className="flex w-[38%] flex-col justify-center">{docs.yours}</div>
-          </div>
-        ) : (
-          // The three-way merge, drawn the way version control has always drawn
-          // it: the common ancestor above, the two that diverged from it below.
-          // The row arrangement had to put the base on the "inputs" side, which
-          // is wrong at install — the base is WRITTEN there, not read — and a
-          // triangle has no sides to be wrong about.
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-[52%]">{docs.base}</div>
+        {/* One DOM order, two arrangements, because the three columns do not
+            survive a phone: at 390px the hub's pill takes its width out of the
+            middle and both documents shrink until their headers truncate to
+            nothing. Below `sm` the same reading — sources, then the tool, then
+            your file — runs top to bottom instead of left to right. The wires
+            need no help with either: they are measured from wherever the boxes
+            land, which is the whole reason for porting a beam that measures. */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-[38%_1fr_38%] sm:gap-4">
+          <div className="sm:col-start-1 sm:row-start-1">{docs.upstream}</div>
+          <div className="sm:col-start-1 sm:row-start-2">{docs.base}</div>
+          <div className="col-span-2 flex items-center justify-center sm:col-span-1 sm:col-start-2 sm:row-span-2 sm:row-start-1">
             <Hub innerRef={hub} live={live} />
-            <div className="grid w-full grid-cols-2 gap-3 sm:gap-6">
-              {docs.upstream}
-              {docs.yours}
-            </div>
           </div>
-        )}
+          <div className="col-span-2 sm:col-span-1 sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:self-center">
+            {docs.yours}
+          </div>
+        </div>
       </div>
 
       <Caption step={step} />
@@ -341,13 +337,7 @@ function Caption({ step }: { step: StoryStep }) {
  * The clock. Starts finished, replays on hover — `TerminalPanel`'s contract, and
  * the page's idiom: nothing animates at a reader on arrival.
  */
-export function OwnershipStoryPlayer({
-  layout,
-  className,
-}: {
-  layout?: StoryLayout;
-  className?: string;
-}) {
+export function OwnershipStoryPlayer({ className }: { className?: string }) {
   const [step, setStep] = useState<StoryStep>(3);
   const [run, setRun] = useState(0);
   const [still, setStill] = useState(false);
@@ -378,7 +368,7 @@ export function OwnershipStoryPlayer({
         setStep(0);
       }}
     >
-      <OwnershipStory step={step} beamKey={run * 4 + step} layout={layout} />
+      <OwnershipStory step={step} beamKey={run * 4 + step} />
     </div>
   );
 }
