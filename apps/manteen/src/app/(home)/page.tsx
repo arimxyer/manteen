@@ -4,6 +4,7 @@ import { Commands } from "@/components/home/commands";
 import { Hero } from "@/components/home/hero";
 import { Interop } from "@/components/home/interop";
 import { Ownership } from "@/components/home/ownership";
+import { Reveal } from "@/components/home/reveal";
 import { TryItOut } from "@/components/home/try-it-out";
 
 /**
@@ -21,21 +22,38 @@ export default function HomePage() {
     <div className="pt-4 pb-6 md:pb-12">
       <Hero />
 
+      {/* One `Reveal` per section, and none nested inside another: the unit that settles
+          into place is the unit a reader arrives at. Staggering the pieces within a
+          section would animate parts of something already being looked at. */}
       <div className="mx-auto mt-12 flex w-full max-w-[1400px] flex-col gap-10 px-6 md:px-12 lg:mt-20">
-        <p className="text-2xl leading-snug font-light tracking-tight md:text-3xl xl:text-4xl">
-          Manteen is a <span className="font-medium text-brand">Mantine-native</span> registry
-          toolchain. Components arrive as{" "}
-          <span className="font-medium text-brand">source you edit</span>, not a dependency you wrap
-          — and every install, diff, and update is a{" "}
-          <span className="font-medium text-brand">plan you read first</span>.
-        </p>
+        <Reveal>
+          <p className="text-2xl leading-snug font-light tracking-tight md:text-3xl xl:text-4xl">
+            Manteen is a <span className="font-medium text-brand">Mantine-native</span> registry
+            toolchain. Components arrive as{" "}
+            <span className="font-medium text-brand">source you edit</span>, not a dependency you
+            wrap — and every install, diff, and update is a{" "}
+            <span className="font-medium text-brand">plan you read first</span>.
+          </p>
+        </Reveal>
 
-        <TryItOut />
-        <Authoring />
-        <Interop />
-        <Ownership />
-        <Commands />
-        <Closing />
+        <Reveal>
+          <TryItOut />
+        </Reveal>
+        <Reveal>
+          <Authoring />
+        </Reveal>
+        <Reveal>
+          <Interop />
+        </Reveal>
+        <Reveal>
+          <Ownership />
+        </Reveal>
+        <Reveal>
+          <Commands />
+        </Reveal>
+        <Reveal>
+          <Closing />
+        </Reveal>
       </div>
 
       <footer className="mx-auto mt-16 w-full max-w-[1400px] border-t px-6 pt-6 text-xs text-fd-muted-foreground md:px-12">

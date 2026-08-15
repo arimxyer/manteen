@@ -2,7 +2,7 @@ import { ServerCodeBlock } from "fumadocs-ui/components/codeblock.rsc";
 import { ArrowRight, GitCompareArrows, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { DetailList } from "@/components/home/detail-list";
-import { band, card, h3, textLink } from "@/components/home/styles";
+import { arrowIcon, band, card, h3, textLink } from "@/components/home/styles";
 import { cn } from "@/lib/cn";
 
 const plannedUpdate = `# Read the plan, keep its digest
@@ -33,7 +33,7 @@ export function Ownership() {
         <DetailList items={ownershipState} />
         <Link href="/docs/concepts/source-ownership" className={cn(textLink, "mt-auto")}>
           Follow the ownership model
-          <ArrowRight className="size-4" aria-hidden="true" />
+          <ArrowRight className={arrowIcon} aria-hidden="true" />
         </Link>
       </div>
       <div className="flex flex-col gap-4">

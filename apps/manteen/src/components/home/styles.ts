@@ -8,10 +8,20 @@
  */
 
 export const primaryButton =
-  "inline-flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 font-medium tracking-tight text-brand-foreground transition-colors hover:bg-brand-hover";
+  "group inline-flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 font-medium tracking-tight text-brand-foreground transition-colors hover:bg-brand-hover";
 
 export const secondaryButton =
-  "inline-flex items-center justify-center gap-2 rounded-full border bg-fd-secondary px-5 py-3 font-medium tracking-tight text-fd-secondary-foreground transition-colors hover:bg-fd-accent";
+  "group inline-flex items-center justify-center gap-2 rounded-full border bg-fd-secondary px-5 py-3 font-medium tracking-tight text-fd-secondary-foreground transition-colors hover:bg-fd-accent";
+
+/**
+ * The trailing arrow on anything that leads somewhere. It nudges toward where it points
+ * on hover, which is why every one of those three classes above opens a `group`.
+ *
+ * `motion-safe` rather than an unconditional transform: the nudge is decoration, and a
+ * reader who asked for less motion is not asking to lose the arrow, only its travel.
+ */
+export const arrowIcon =
+  "size-4 transition-transform duration-200 motion-safe:group-hover:translate-x-0.5";
 
 export const card = "rounded-2xl border bg-fd-card p-6 text-sm shadow-lg";
 
@@ -26,4 +36,4 @@ export const h2 = "text-3xl font-medium tracking-tight lg:text-4xl";
 export const h3 = "text-xl font-medium tracking-tight lg:text-2xl";
 
 export const textLink =
-  "inline-flex items-center gap-1.5 font-medium text-brand transition-opacity hover:opacity-70";
+  "group inline-flex items-center gap-1.5 font-medium text-brand transition-opacity hover:opacity-70";

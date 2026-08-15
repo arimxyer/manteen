@@ -1,7 +1,7 @@
 import { ArrowRight, FileJson } from "lucide-react";
 import Link from "next/link";
 import { DetailList } from "@/components/home/detail-list";
-import { band, card, h3, textLink } from "@/components/home/styles";
+import { arrowIcon, band, card, h3, textLink } from "@/components/home/styles";
 import { cn } from "@/lib/cn";
 
 const flow: [string, string][] = [
@@ -43,7 +43,7 @@ export function Interop() {
         <DetailList items={compiledOutput} />
         <Link href="/docs/concepts/registry-references" className={cn(textLink, "mt-auto")}>
           URLs and namespaces
-          <ArrowRight className="size-4" aria-hidden="true" />
+          <ArrowRight className={arrowIcon} aria-hidden="true" />
         </Link>
       </div>
     </div>

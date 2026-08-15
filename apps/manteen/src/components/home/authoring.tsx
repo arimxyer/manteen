@@ -2,7 +2,7 @@ import { ServerCodeBlock } from "fumadocs-ui/components/codeblock.rsc";
 import { ArrowRight, Braces } from "lucide-react";
 import Link from "next/link";
 import { DetailList } from "@/components/home/detail-list";
-import { band, card, h3, textLink } from "@/components/home/styles";
+import { arrowIcon, band, card, h3, textLink } from "@/components/home/styles";
 import { cn } from "@/lib/cn";
 
 const catalog = `{
@@ -50,7 +50,7 @@ export function Authoring() {
         <DetailList items={authoringFields} />
         <Link href="/docs/registry-authors" className={cn(textLink, "mt-auto")}>
           Read the authoring guide
-          <ArrowRight className="size-4" aria-hidden="true" />
+          <ArrowRight className={arrowIcon} aria-hidden="true" />
         </Link>
       </div>
       <ServerCodeBlock

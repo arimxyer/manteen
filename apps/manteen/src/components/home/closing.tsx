@@ -1,6 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { h2, primaryButton, secondaryButton } from "@/components/home/styles";
+import { arrowIcon, h2, primaryButton, secondaryButton } from "@/components/home/styles";
 import { WaterBackdrop } from "@/components/home/water-backdrop";
 import { cn } from "@/lib/cn";
 
@@ -39,7 +39,7 @@ export function Closing() {
         <div className="flex flex-row flex-wrap items-center justify-center gap-3">
           <Link href="/docs/getting-started" className={primaryButton}>
             Install your first item
-            <ArrowRight className="size-4" aria-hidden="true" />
+            <ArrowRight className={arrowIcon} aria-hidden="true" />
           </Link>
           <Link href="/docs" className={secondaryButton}>
             Read the docs

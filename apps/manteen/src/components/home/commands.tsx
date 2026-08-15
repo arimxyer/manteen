@@ -1,6 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { h2, textLink } from "@/components/home/styles";
+import { arrowIcon, h2, textLink } from "@/components/home/styles";
 import { cn } from "@/lib/cn";
 
 /**
@@ -37,7 +37,7 @@ export function Commands() {
       <p className="mt-4 text-center">
         <Link href="/docs/reference/cli" className={textLink}>
           Read the CLI reference
-          <ArrowRight className="size-4" aria-hidden="true" />
+          <ArrowRight className={arrowIcon} aria-hidden="true" />
         </Link>
       </p>
     </div>

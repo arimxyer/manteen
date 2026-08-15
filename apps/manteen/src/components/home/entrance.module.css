@@ -1,0 +1,84 @@
+/*
+ * The resting states the home page's two entrances animate out of, and the transitions
+ * out of them.
+ *
+ * Both resting states live in CSS rather than in a JavaScript `initial` prop, because
+ * that prop is written into the server-rendered HTML as an inline style. Anyone whose
+ * JavaScript never arrives would be served a permanently blank page, and anyone who
+ * asked for reduced motion would be served the hidden state anyway — the hook that would
+ * have spared them cannot run until after hydration. Here both cases are answered before
+ * hydration by the browser itself.
+ *
+ * A module rather than `global.css`: that file belongs to the registry track while both
+ * are in flight, and these rules have exactly one consumer each.
+ */
+
+/*
+ * Above the fold. A mount stagger has a trigger CSS already owns — time — so the hero
+ * needs no client JavaScript for it and starts painting its entrance without waiting for
+ * hydration.
+ */
+.rise {
+  animation: rise 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--rise-delay, 0ms);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * Below the fold. JavaScript decides *when* — "has this entered the viewport" has no CSS
+ * trigger that works everywhere, since `animation-timeline: view()` is still absent in
+ * Safari — but the animation itself stays here, and that division is load-bearing rather
+ * than tidiness.
+ *
+ * Handing the whole thing to a JS animation was the first attempt and it half-worked: an
+ * engine told to animate to `y: 0` has no way to learn that this rule started the element
+ * 16px low, so it animated from its own default of zero and the lift collapsed on the
+ * first frame while the fade ran correctly. Traced: 26 intermediate opacity values, and a
+ * translate that was already at 0 by the second sample. Declaring both ends in CSS means
+ * the transition interpolates from what the element actually computes to, and both
+ * properties are ones the compositor can animate without repainting the section.
+ */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 550ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 550ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* Asked for less motion: everything renders where it lands, and nothing plays. The same
+   contract the home terminal already follows. */
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* No JavaScript means no IntersectionObserver, so nothing would ever reveal these. */
+@media (scripting: none) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
