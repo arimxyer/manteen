@@ -40,15 +40,17 @@ type Stage = { id: string; label: string; source: string; rows: Row[] };
  * — it enters at compile time and it is why a client that has never heard of
  * Mantine can still install this — so it is the one row that visibly arrives.
  *
- * The rows are held in ONE order across all three stages rather than each
- * document's literal key order, and that is the only editorial decision here.
- * Serialization order is not the claim; the correspondence is. Letting the rows
- * re-sort per stage was the first version and it made `mantine` and `provider`
- * trade places with `dependencies` and `files` on the way to the compiled view —
- * so two rows crossed mid-flight and briefly rendered on top of each other,
- * which is illegible in exactly the frames a reader is watching. Held in place,
- * a row only ever moves by the height of a neighbour arriving or leaving, and
- * the eye can stay on one fact and watch it get re-spelled.
+ * Each stage keeps its OWN document's key order, and that is a decision rather
+ * than a default — Ari's, made against a side-by-side rig that drove this
+ * ordering and a single-order alternative from one control at a tenth speed.
+ *
+ * It has a known cost, so nobody should rediscover it as a bug. Going to the
+ * compiled view, `mantine` and `provider` fall past `dependencies` and `files`,
+ * which are climbing — two pairs of rows cross, and for a few frames they render
+ * over each other. Returning from `installed` is busier still. The alternative
+ * removes the crossing by holding one order everywhere, at the cost of the rows
+ * barely moving; what is bought here is the sense of a document being re-shaped
+ * rather than re-labelled, and it was bought knowingly.
  */
 const STAGES: Stage[] = [
   {
@@ -58,6 +60,8 @@ const STAGES: Stage[] = [
     rows: [
       { id: "name", field: "name", value: "release-panel" },
       { id: "kind", field: "kind", value: "block" },
+      { id: "mantine", field: "mantine", value: ">=9 <10" },
+      { id: "provider", field: "provider", value: "true" },
       { id: "deps", field: "npm", value: "@mantine/core@^9" },
       {
         id: "files",
@@ -65,8 +69,6 @@ const STAGES: Stage[] = [
         value: "src/release-panel.tsx",
         note: "as component, target @ui/release-panel.tsx",
       },
-      { id: "mantine", field: "mantine", value: ">=9 <10" },
-      { id: "provider", field: "provider", value: "true" },
     ],
   },
   {
@@ -93,16 +95,16 @@ const STAGES: Stage[] = [
     label: "Installed",
     source: "your project",
     rows: [
-      { id: "name", field: "manteen.lock.json", value: "@acme/release-panel", note: "the receipt" },
-      { id: "deps", field: "installed", value: "@mantine/core@^9" },
       {
         id: "files",
         field: "written",
         value: "@/components/ui/release-panel",
         note: "the ui alias, resolved through your tsconfig",
       },
-      { id: "mantine", field: "compatibility", value: ">=9 <10", note: "checked before any write" },
+      { id: "deps", field: "installed", value: "@mantine/core@^9" },
       { id: "provider", field: "provider", value: "MantineProvider" },
+      { id: "mantine", field: "compatibility", value: ">=9 <10", note: "checked before any write" },
+      { id: "name", field: "manteen.lock.json", value: "@acme/release-panel", note: "the receipt" },
     ],
   },
 ];
@@ -193,16 +195,16 @@ export function InteropStages({ className }: { className?: string }) {
                   layout
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  exit={{ opacity: 0, transition: { duration: 0.1 } }}
+                  exit={{ opacity: 0 }}
                   // An arriving row is placed at its final slot immediately,
-                  // while the rows it displaces are still sliding to meet it —
-                  // so for a beat it sits on top of one of them. Holding its
-                  // fade until the slide has largely run means the overlap
-                  // happens while it is still invisible. Exits are quicker than
-                  // entrances for the same reason, from the other end.
+                  // while the rows it displaces are still sliding to meet it, so
+                  // for a beat it sits over one of them. Delaying its fade past
+                  // the slide hides that, and was tried — it also drains the
+                  // arrival of any sense of arriving. Same call as the row order
+                  // above: the overlap is accepted, not unnoticed.
                   transition={{
                     layout: { type: "spring", stiffness: 380, damping: 36 },
-                    opacity: { duration: 0.18, delay: 0.14 },
+                    opacity: { duration: 0.18 },
                   }}
                   className="rounded-lg border bg-fd-background/40 px-3 py-2"
                 >
