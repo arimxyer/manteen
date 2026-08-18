@@ -1,5 +1,7 @@
 # Update verification handoff
 
+[Documentation map](../project-context.md) · [Implementation handoffs](README.md)
+
 Status: complete in the source tree on 2026-08-06 and public in `manteen@0.3.0` on 2026-08-07.
 Local, built-Node, hosted and fresh public-consumer acceptance are recorded below.
 
@@ -358,7 +360,7 @@ A fresh public npm-plus-HTTPS consumer, run before the later 22-item Pages deplo
 source/base hash was
 `824cd4dab40597935615719f5392547d0ca2dde0437f6d871bca9134eaf6fcc4`, the pristine base was 979
 bytes, and the receipt carried no `verification` field. The exact setup and command sequence are
-recorded in [`v0.3-release-handoff.md`](v0.3-release-handoff.md).
+recorded in [`v0.3-release-handoff.md`](../releases/v0.3-release-handoff.md).
 
 The separately identified `@proof/lifecycle` revisions ran a verifier that exited `7`: the CLI
 correctly exited 1 with `kind: "applied"` and `script-failed`, retained coherent updated
@@ -366,5 +368,5 @@ source/base/receipt state, wrote no verification certificate, and did not increm
 count. The outer assertion wrapper exited 0 only after proving that expected CLI failure. These
 receipts close public distribution and both verification outcomes without claiming that
 unconfigured checks or other environments passed. The subsequent 22-item Pages receipt in
-[`v0.3-release-handoff.md`](v0.3-release-handoff.md) closes deployment without retroactively
+[`v0.3-release-handoff.md`](../releases/v0.3-release-handoff.md) closes deployment without retroactively
 widening this dated consumer proof.

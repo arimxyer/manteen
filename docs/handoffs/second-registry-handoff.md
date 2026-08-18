@@ -1,5 +1,7 @@
 # Second live registry handoff
 
+[Documentation map](../project-context.md) · [Implementation handoffs](README.md)
+
 Status: **complete — public `manteen@0.2.0` consumed one independently hosted, hand-authored
 registry under two different project-selected namespaces.**
 

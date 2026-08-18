@@ -1,5 +1,7 @@
 # Update merge handoff
 
+[Documentation map](../project-context.md) · [Implementation handoffs](README.md)
+
 Status: complete on 2026-08-05 and public in `manteen@0.3.0` on 2026-08-07; source,
 built-Node, hosted and controlled-revision acceptance are green.
 
@@ -197,7 +199,7 @@ The exact implementation merged as commit
 `123d3c1a1ef047994326cdcb3ffba7cc07e3dea9`, shipped under the signed `manteen-v0.3.0` tag, and
 completed the trusted release workflow at
 <https://github.com/arimxyer/manteen/actions/runs/31149087619>. The full publication/provenance and
-fresh public-consumer receipts are in [`v0.3-release-handoff.md`](v0.3-release-handoff.md).
+fresh public-consumer receipts are in [`v0.3-release-handoff.md`](../releases/v0.3-release-handoff.md).
 
 The canonical controlled receipt in the release handoff names registry ref `@proof/lifecycle` and
 the exact item/source SHA-256 pairs for its old, new, conflict and failure revisions. Its command
@@ -255,8 +257,8 @@ conflict reduction and lost-edit refusal measured separately.
 ## Read-only classification follow-on — 2026-08-08
 
 After public `manteen@0.4.0` acceptance, the bounded follow-on was run and committed as
-[`ast-assisted-merge-spike.md`](ast-assisted-merge-spike.md) plus its
-[`machine report`](ast-assisted-merge-spike.json). It uses two named real upstream pairs for one
+[`ast-assisted-merge-spike.md`](../research/ast-assisted-merge-spike.md) plus its
+[`machine report`](../research/ast-assisted-merge-spike.json). It uses two named real upstream pairs for one
 historical registry TSX source and nine explicitly synthetic controlled local adaptations. The
 production `mergeFile()` result is the baseline for every case.
 
@@ -278,7 +280,7 @@ requires a separate contract and broader acceptance.
 
 ## Exact-splice integration decision — 2026-08-08
 
-The separate [`AST integration decision`](ast-merge-integration-decision.md) supplies that
+The separate [`AST integration decision`](../contracts/ast-merge-integration-decision.md) supplies that
 contract and broader acceptance. It evaluates all 25 eligible
 historical TS/TSX file events across 17 paths, 76 constructed disjoint boundary cases, 24 same-key
 cases, dedicated ambiguity and exact-byte tests, symmetry, and preloaded runtime. Exact source
@@ -292,4 +294,4 @@ conflicts. No AST printer emits bytes, every accepted side reconstructs exactly,
 refuses, and a result remains "conflict-free" rather than semantically safe. `diff` and `update`
 share that path, and source plus built-Node acceptance prove they reach the same result. The signed
 tag, single trusted workflow, npm provenance and controlled exact-public-package accepted/refused
-receipt are recorded in [`v0.5-release-handoff.md`](v0.5-release-handoff.md).
+receipt are recorded in [`v0.5-release-handoff.md`](../releases/v0.5-release-handoff.md).

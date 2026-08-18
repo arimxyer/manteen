@@ -1,5 +1,7 @@
 # AST-assisted merge integration decision
 
+[Documentation map](../project-context.md) · [Contracts](README.md)
+
 Status: **complete and public in the client-only `manteen@0.5.0` release.** The exact source-splice
 merger is now an automatic
 TypeScript-only fallback after the existing line diff3 merger reports a conflict. It is shared by
@@ -133,4 +135,4 @@ source, Node/OS, packed-consumer and stable-gate matrix. Release PR
 trusted release run [`31328655679`](https://github.com/arimxyer/manteen/actions/runs/31328655679).
 npm integrity/provenance and the exact public package passed a fresh controlled accepted merge and
 same-key zero-mutation refusal. The full publication receipt is in
-[`v0.5-release-handoff.md`](v0.5-release-handoff.md).
+[`v0.5-release-handoff.md`](../releases/v0.5-release-handoff.md).

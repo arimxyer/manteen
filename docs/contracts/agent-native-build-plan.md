@@ -1,5 +1,7 @@
 # Agent-native build plan
 
+[Documentation map](../project-context.md) · [Contracts](README.md)
+
 Status: frozen implementation contract for the 0.2.1 kit and 0.6/0.7 client milestones.
 
 This document turns the agent-native roadmap into executable contracts. Existing decisions in

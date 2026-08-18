@@ -24,5 +24,5 @@ zero-mutation operations.
   read-only, exact-source-splicing, and conservative; ambiguity preserves the original conflict.
 
 The guarded refusal table and cumulative decisions are in
-`../../../../docs/client-build-plan.md`; the agent-native digest and machine contracts are in
-`../../../../docs/agent-native-build-plan.md`.
+`../../../../docs/contracts/client-build-plan.md`; the agent-native digest and machine contracts
+are in `../../../../docs/contracts/agent-native-build-plan.md`.

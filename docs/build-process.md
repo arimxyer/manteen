@@ -1,6 +1,6 @@
 # How this repo gets built
 
-`docs/client-build-plan.md` says *what* to build. This says *how*, because most
+`docs/contracts/client-build-plan.md` says *what* to build. This says *how*, because most
 of the defects so far came from the process rather than the design.
 
 ## Phases are shaped, not just sequenced

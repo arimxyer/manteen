@@ -102,7 +102,7 @@ export function readInstalled(root: string, ports: InstalledPorts): Installed {
  * the same path and emits `merge-base-unreadable` for the operations that have
  * to write there.
  *
- * A bounded set, not a blanket catch: `plan/CLAUDE.md`'s rule holds here too.
+ * A bounded set, not a blanket catch: `plan/AGENTS.md`'s rule holds here too.
  * These are confirmed path-shape or permission failures a user can create. A
  * report has no usable ancestor for any of them; unrelated failures such as
  * resource exhaustion or I/O errors still throw.

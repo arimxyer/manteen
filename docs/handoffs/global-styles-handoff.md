@@ -1,5 +1,7 @@
 # Required global styles handoff
 
+[Documentation map](../project-context.md) · [Implementation handoffs](README.md)
+
 Status: **contract implemented, released and publicly accepted.** The original disposable probe
 proved the import arrangement; the production implementation now covers Manteen ownership, receipt
 migration, drift handling, preflight and rollback. Carousel and Dropzone have passed the resulting
@@ -167,4 +169,4 @@ was manually deployed. A fresh Vite React TypeScript project installed the publi
 the two stress cases from the live `@house` HTTPS registry. It produced receipt v2 with the two
 item-attributed imports, production-built both rendered components, and reported five unchanged
 files. The exact receipts and remaining non-evidence are frozen in the
-[`0.2 release handoff`](v0.2-release-handoff.md).
+[`0.2 release handoff`](../releases/v0.2-release-handoff.md).

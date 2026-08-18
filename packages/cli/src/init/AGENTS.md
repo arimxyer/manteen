@@ -26,4 +26,4 @@ an init-specific plan/apply contract and never invents item ids, wire lineage, o
   ambiguous shapes refuse with actionable diagnostics instead of replacing entry files wholesale.
 
 The approved boundary and historical implementation evidence are in
-`../../../../docs/w6-init-handoff.md`.
+`../../../../docs/handoffs/w6-init-handoff.md`.

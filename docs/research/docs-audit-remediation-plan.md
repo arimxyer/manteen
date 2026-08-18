@@ -1,5 +1,7 @@
 # Documentation audit remediation plan
 
+[Documentation map](../project-context.md) · [Research and audits](README.md)
+
 Status: implemented and re-audited locally on 2026-08-11. This is local UI evidence, not a
 deployment or release receipt.
 

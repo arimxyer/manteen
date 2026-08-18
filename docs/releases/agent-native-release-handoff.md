@@ -1,5 +1,7 @@
 # Agent-native release handoff
 
+[Documentation map](../project-context.md) · [Release receipts](README.md)
+
 Status: complete and public on 2026-08-09: hosted portability, both package releases, fresh npm
 consumers, Agent Guide/LLM surfaces, and the unchanged registry contract are accepted.
 

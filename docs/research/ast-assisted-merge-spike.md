@@ -1,8 +1,10 @@
 # AST-assisted merge classification spike
 
+[Documentation map](../project-context.md) · [Research and audits](README.md)
+
 Status: **complete as an evidence-only precursor.** This experiment added no CLI flag, public API,
 AST printer, or merge output and initially recommended no integration. The later
-[`ast-merge-integration-decision.md`](ast-merge-integration-decision.md) met additional output,
+[`ast-merge-integration-decision.md`](../contracts/ast-merge-integration-decision.md) met additional output,
 corpus, runtime, built-Node, and public-consumer gates and now defines production behavior.
 
 ## Question and stopping condition

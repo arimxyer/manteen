@@ -1,5 +1,7 @@
 # Wave 8 — release handoff
 
+[Documentation map](../project-context.md) · [Release receipts](README.md)
+
 Status: **complete — both `0.1.1` packages are public through the tagged GitHub OIDC workflow and
 carry npm provenance attestations.** Preparing a tarball, parsing a workflow or passing
 `npm publish --dry-run` was deliberately not treated as publication evidence; the completion

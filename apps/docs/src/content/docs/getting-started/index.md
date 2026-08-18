@@ -56,7 +56,7 @@ manually afterward.
 This procedure is not established as universal for legacy theme or managed-styles contributions.
 If the old receipt includes either, any exact direct ref cannot be recovered, or any replacement is
 unclear, stay on `0.2.x`. See the
-[0.3 release handoff](https://github.com/arimxyer/manteen/blob/main/docs/v0.3-release-handoff.md)
+[0.3 release handoff](https://github.com/arimxyer/manteen/blob/main/docs/releases/v0.3-release-handoff.md)
 for the compatibility and evidence boundary.
 :::
 

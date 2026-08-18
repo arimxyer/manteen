@@ -12,15 +12,26 @@ separate public evidence.
 | Area | Current state | Authority or evidence |
 | --- | --- | --- |
 | Packages | This tree holds `manteen-kit@0.2.1` and `manteen@0.8.0`; their manifests are authoritative. | `packages/*/package.json` |
-| Public package proof | Both versions above have accepted public release receipts. | [`agent-native-release-handoff.md`](agent-native-release-handoff.md), [`v0.8-release-handoff.md`](v0.8-release-handoff.md) |
+| Public package proof | Both versions above have accepted public release receipts. | [`agent-native-release-handoff.md`](./releases/agent-native-release-handoff.md), [`v0.8-release-handoff.md`](./releases/v0.8-release-handoff.md) |
 | Registry | The source and accepted Pages registry contain 22 items. Generated `public/r/` is local build output and must be rebuilt before use. | [`roadmap.md`](roadmap.md), `manteen.registry.json` |
-| Deployed documentation | `apps/docs` is the Astro/Starlight Pages source and deployment artifact. Pages is manual-dispatch only. | [`.github/workflows/pages.yml`](../.github/workflows/pages.yml), [`docs-site-handoff.md`](docs-site-handoff.md) |
+| Deployed documentation | `apps/docs` is the Astro/Starlight Pages source and deployment artifact. Pages is manual-dispatch only. | [`.github/workflows/pages.yml`](../.github/workflows/pages.yml), [`docs-site-handoff.md`](./handoffs/docs-site-handoff.md) |
 | Replacement site | `apps/manteen` is an active Next.js/Fumadocs replacement candidate. CI checks and builds it; no workflow deploys it. | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), [`apps/manteen/README.md`](../apps/manteen/README.md) |
 | Open direction | The roadmap is the only backlog/status narrative. Historical handoffs do not become active work merely because they preserve a once-open question. | [`roadmap.md`](roadmap.md) |
 
 No local build, screenshot, browser probe, or green CI run proves that the replacement site is
 public. Replacing `apps/docs` in Pages requires a separate reviewed deployment decision after the
 registry artifact and base-path behavior are verified.
+
+## Folder layout
+
+| Path | Purpose |
+| --- | --- |
+| [`roadmap.md`](roadmap.md) | Current sequencing, completion summary, and open work. |
+| [`build-process.md`](build-process.md) | Repository workflow, guards, and incident-derived working rules. |
+| [`contracts/`](contracts/README.md) | Current product contracts and adopted decisions. |
+| [`handoffs/`](handoffs/README.md) | Completed implementation milestone receipts. |
+| [`releases/`](releases/README.md) | Public package and deployment receipts. |
+| [`research/`](research/README.md) | Point-in-time experiments and audits. |
 
 ## Authority order
 
@@ -45,9 +56,9 @@ supersession note and link the later authority.
 
 | Document | Use it for |
 | --- | --- |
-| [`client-build-plan.md`](client-build-plan.md) | Guarded refusal table and cumulative D1-D44 client decisions. Later numbered decisions override earlier prose. |
-| [`agent-native-build-plan.md`](agent-native-build-plan.md) | Frozen machine JSON, generated-output ownership, expected-plan, verification, SDK, and packaged guidance contract. |
-| [`w6-init-handoff.md`](w6-init-handoff.md) | Approved init ownership and framework-transform boundary. Its implementation evidence is historical; the contract remains relevant. |
+| [`client-build-plan.md`](./contracts/client-build-plan.md) | Guarded refusal table and cumulative D1-D44 client decisions. Later numbered decisions override earlier prose. |
+| [`agent-native-build-plan.md`](./contracts/agent-native-build-plan.md) | Frozen machine JSON, generated-output ownership, expected-plan, verification, SDK, and packaged guidance contract. |
+| [`w6-init-handoff.md`](./handoffs/w6-init-handoff.md) | Approved init ownership and framework-transform boundary. Its implementation evidence is historical; the contract remains relevant. |
 | [`build-process.md`](build-process.md) | Repository workflow, guards, workspace safety, and incident-derived engineering rules. |
 | [`roadmap.md`](roadmap.md) | Current completion summary, open work, sequencing, and release/deployment boundaries. |
 
@@ -55,28 +66,28 @@ supersession note and link the later authority.
 
 These documents are receipts, not competing roadmaps:
 
-- [`w7-hardening-handoff.md`](w7-hardening-handoff.md) and
-  [`w8-release-handoff.md`](w8-release-handoff.md) close portability and the first trusted release.
-- [`global-styles-handoff.md`](global-styles-handoff.md),
-  [`update-merge-handoff.md`](update-merge-handoff.md),
-  [`update-verification-handoff.md`](update-verification-handoff.md),
-  [`upstream-removal-handoff.md`](upstream-removal-handoff.md), and
-  [`ast-merge-integration-decision.md`](ast-merge-integration-decision.md) record later client
+- [`w7-hardening-handoff.md`](./handoffs/w7-hardening-handoff.md) and
+  [`w8-release-handoff.md`](./releases/w8-release-handoff.md) close portability and the first trusted release.
+- [`global-styles-handoff.md`](./handoffs/global-styles-handoff.md),
+  [`update-merge-handoff.md`](./handoffs/update-merge-handoff.md),
+  [`update-verification-handoff.md`](./handoffs/update-verification-handoff.md),
+  [`upstream-removal-handoff.md`](./handoffs/upstream-removal-handoff.md), and
+  [`ast-merge-integration-decision.md`](./contracts/ast-merge-integration-decision.md) record later client
   maintenance contracts and proof.
-- [`agent-native-release-handoff.md`](agent-native-release-handoff.md) and
-  [`v0.2-release-handoff.md`](v0.2-release-handoff.md) through
-  [`v0.5-release-handoff.md`](v0.5-release-handoff.md), plus
-  [`v0.8-release-handoff.md`](v0.8-release-handoff.md), record public release boundaries.
-- [`wc-registry-content-handoff.md`](wc-registry-content-handoff.md) records the first eight-item
+- [`agent-native-release-handoff.md`](./releases/agent-native-release-handoff.md) and
+  [`v0.2-release-handoff.md`](./releases/v0.2-release-handoff.md) through
+  [`v0.5-release-handoff.md`](./releases/v0.5-release-handoff.md), plus
+  [`v0.8-release-handoff.md`](./releases/v0.8-release-handoff.md), record public release boundaries.
+- [`wc-registry-content-handoff.md`](./handoffs/wc-registry-content-handoff.md) records the first eight-item
   content milestone; [`roadmap.md`](roadmap.md) owns the later 22-item summary.
-- [`second-registry-handoff.md`](second-registry-handoff.md) records the independent-registry
+- [`second-registry-handoff.md`](./handoffs/second-registry-handoff.md) records the independent-registry
   interoperability proof.
 
 ## Documentation-site evidence
 
-- [`docs-site-handoff.md`](docs-site-handoff.md) records the currently deployed Starlight site's
+- [`docs-site-handoff.md`](./handoffs/docs-site-handoff.md) records the currently deployed Starlight site's
   architecture and public acceptance.
-- [`docs-audit-remediation-plan.md`](docs-audit-remediation-plan.md) is a completed, local audit of
+- [`docs-audit-remediation-plan.md`](./research/docs-audit-remediation-plan.md) is a completed, local audit of
   that site, not a release receipt and not design authority for the clean-room replacement.
 - `apps/docs/DESIGN.md` and `apps/docs/PRODUCT.md` apply only to the deployed Starlight application.
 - `apps/manteen/README.md` describes the replacement application's integration and commands. Its
@@ -85,9 +96,9 @@ These documents are receipts, not competing roadmaps:
 
 ## Superseded experiments
 
-[`ast-assisted-merge-spike.md`](ast-assisted-merge-spike.md) is the read-only experiment that
+[`ast-assisted-merge-spike.md`](./research/ast-assisted-merge-spike.md) is the read-only experiment that
 initially recommended no integration. The later
-[`ast-merge-integration-decision.md`](ast-merge-integration-decision.md) satisfied the additional
+[`ast-merge-integration-decision.md`](./contracts/ast-merge-integration-decision.md) satisfied the additional
 gates and is the current production decision. The spike remains useful only for its corpus,
 method, and evidence limits.
 

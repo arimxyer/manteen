@@ -69,11 +69,11 @@ bun run site:build   # Next/Fumadocs candidate production build
 - Package versions belong in `packages/*/package.json`; public-version claims require a release
   receipt.
 - Diagnostics belong in `packages/cli/src/plan/diagnostics.ts` and the guarded refusal table in
-  `docs/client-build-plan.md`.
+  `docs/contracts/client-build-plan.md`.
 - Cross-stage init types belong in `packages/cli/src/init/types.ts`; the approved boundary is in
-  `docs/w6-init-handoff.md`.
+  `docs/handoffs/w6-init-handoff.md`.
 - Agent-native JSON, plan-digest, SDK, and packaged-skill behavior is frozen in
-  `docs/agent-native-build-plan.md`.
+  `docs/contracts/agent-native-build-plan.md`.
 - Current priorities and open work belong in `docs/roadmap.md`; completed handoffs are evidence,
   not backlogs.
 

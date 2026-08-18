@@ -19,8 +19,8 @@ maintains that source without silently replacing local adaptations.
 ## Contracts that must stay aligned
 
 - Diagnostics are data in `src/plan/diagnostics.ts`. Every new code needs a specification row, an
-  emitter, a test, and a matching row in `docs/client-build-plan.md`; the diagnostics guard checks
-  the mechanically provable parts.
+  emitter, a test, and a matching row in `docs/contracts/client-build-plan.md`; the diagnostics
+  guard checks the mechanically provable parts.
 - JSON mode writes exactly one command envelope to stdout and never prompts. Dependency-manager and
   verification output must not corrupt that channel.
 - Expanded registry secrets never enter diagnostics, errors, receipts, plan digests, or command

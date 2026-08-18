@@ -1,5 +1,7 @@
 # Upstream removal handoff
 
+[Documentation map](../project-context.md) · [Implementation handoffs](README.md)
+
 Status: **complete and public in the client-only `manteen@0.4.0` release.** Implementation PR
 [#15](https://github.com/arimxyer/manteen/pull/15) merged as
 `2a4c94efdaf20e81676ce835e931f15bb7f6fdd3` after CI run
@@ -7,7 +9,7 @@ Status: **complete and public in the client-only `manteen@0.4.0` release.** Impl
 Release PR [#16](https://github.com/arimxyer/manteen/pull/16), merge
 `d93b24ac71942d939693994486db8b753d88e14b`, signed tag, trusted workflow, npm provenance and
 fresh public controlled-registry acceptance are recorded in the
-[`0.4 release handoff`](v0.4-release-handoff.md). The milestone changes neither
+[`0.4 release handoff`](../releases/v0.4-release-handoff.md). The milestone changes neither
 `manteen-kit@0.2.0`, receipt version 3 nor the registry interchange format, and required no Pages
 deployment.
 
@@ -280,7 +282,7 @@ The safest implementation order is:
 The kit remains `0.2.0`. No registry item or Pages deployment was required for the CLI capability.
 README, changelog and public CLI reference describe the public `0.4.0` surface. The separately
 reviewed release candidate and fresh public-consumer lifecycle acceptance are complete in the
-[`0.4 release handoff`](v0.4-release-handoff.md).
+[`0.4 release handoff`](../releases/v0.4-release-handoff.md).
 
 ## Local implementation receipt — 2026-08-07
 

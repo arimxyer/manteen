@@ -1,8 +1,10 @@
 # Wc registry-content handoff
 
+[Documentation map](../project-context.md) · [Implementation handoffs](README.md)
+
 Status: **eight adapted items released and publicly dogfooded, including the Carousel/Dropzone
 extension stress cases; second-live-registry interoperability is also accepted.** This document
-closes that eight-item milestone. Later catalog growth is summarized in [`roadmap.md`](roadmap.md);
+closes that eight-item milestone. Later catalog growth is summarized in [`roadmap.md`](../roadmap.md);
 it is not a reason to rewrite this receipt or reopen the completed W4-W8 client program.
 
 ## Question and stopping condition
@@ -69,7 +71,7 @@ Browser dogfood also caught content defects that build-only checks could not:
 Carousel and Dropzone initially exposed a real client boundary: both require package-level global
 stylesheet imports, while copied source and CSS modules alone cannot install those requirements
 safely across supported frameworks. The resulting
-[`required-global-styles contract`](global-styles-handoff.md) is now implemented and accepted. The
+[`required-global-styles contract`](./global-styles-handoff.md) is now implemented and accepted. The
 existing wire `css` field carries a strict import-only subset; `init` wires one configured,
 Manteen-owned stylesheet; and receipt v2 tracks per-item contributions plus final bytes. That closes
 the deferral rather than special-casing either component.
@@ -149,7 +151,7 @@ package stylesheet imports into receipt v2, passed `tsc -b && vite build`, and r
 unchanged files.
 
 The exact commit, workflow, npm, hash and disposable-consumer receipts are in the
-[`0.2 release handoff`](v0.2-release-handoff.md). This public Vite smoke does not newly establish
+[`0.2 release handoff`](../releases/v0.2-release-handoff.md). This public Vite smoke does not newly establish
 visual or lifecycle behavior on macOS/Windows; the earlier hosted W7 matrix remains the general
 platform boundary.
 
@@ -163,7 +165,7 @@ both `@alpha` and `@vendor`; `list`, `info`, `add`, production build, no-op `upd
 receipt.
 
 The exact authorship boundary, hosted receipts, hashes, warning behavior and non-evidence are in the
-[`second live registry handoff`](second-registry-handoff.md).
+[`second live registry handoff`](./second-registry-handoff.md).
 
 ## Next boundary
 

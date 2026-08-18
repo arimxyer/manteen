@@ -1,8 +1,10 @@
 # Wave 7 hardening handoff
 
+[Documentation map](../project-context.md) · [Implementation handoffs](README.md)
+
 Wave 7 is a findings-first portability pass over the complete W4-W6 client. It does not add
 commands or broaden framework support. Its job is to turn the portability claims in
-[`roadmap.md`](roadmap.md) into executable evidence and to fix only defects those probes expose.
+[`roadmap.md`](../roadmap.md) into executable evidence and to fix only defects those probes expose.
 
 ## Question and stopping condition
 

@@ -1,9 +1,11 @@
 # W6 handoff — `manteen init`
 
+[Documentation map](../project-context.md) · [Implementation handoffs](README.md)
+
 Status: complete and locally verified on 2026-07-29. The probe/checkpoint/contract sequence, four
 framework adapters, shared plan/apply boundary, CLI integration and built-Node acceptance tier have
 all landed. W7 portability/runtime hardening was next at this handoff and has since completed; see
-[`w7-hardening-handoff.md`](w7-hardening-handoff.md) and the current [`roadmap.md`](roadmap.md).
+[`w7-hardening-handoff.md`](./w7-hardening-handoff.md) and the current [`roadmap.md`](../roadmap.md).
 
 ## The question
 

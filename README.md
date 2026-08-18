@@ -76,7 +76,7 @@ The first Wc content milestone also curates eight MIT-licensed
 [Mantine UI](https://ui.mantine.dev/) examples into prop-driven registry items. Their source is
 pinned and attributed, and installing any of them brings one deduplicated upstream license notice
 with it. Carousel and Dropzone exercise the managed package-styles lifecycle across supported
-framework shapes. See the [Wc handoff](docs/wc-registry-content-handoff.md) for the selection,
+framework shapes. See the [Wc handoff](./docs/handoffs/wc-registry-content-handoff.md) for the selection,
 adaptation and verification boundary.
 
 ## Layout
@@ -202,7 +202,7 @@ The reverse direction is also public proof now: `manteen@0.2.0` consumed a
 which has no Manteen authoring catalog or compile step. Its nested block and parent-local bare
 dependency passed under two consumer-selected namespaces, including discovery, install,
 production build, update and diff. The exact receipts and limitations are in the
-[second registry handoff](docs/second-registry-handoff.md).
+[second registry handoff](./docs/handoffs/second-registry-handoff.md).
 
 ### Gotchas worth keeping
 
