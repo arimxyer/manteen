@@ -3,6 +3,9 @@
 `client-build-plan.md` covers the client's phases. This covers everything else between here
 and something a stranger can depend on, and how the remaining work is sequenced.
 
+For the authority order, current repository snapshot, and distinction between active contracts and
+historical receipts, start with [`project-context.md`](project-context.md).
+
 ## Definition of done
 
 "Production" is not "the phases are finished." It is all six of these:
@@ -114,6 +117,13 @@ follow-on is recorded in the [`0.8 release handoff`](v0.8-release-handoff.md).
 `SECURITY.md` and contributor ceremony remain deliberately deferred until the repository has
 outside contributors.
 
+**Documentation applications.** `apps/docs` remains the deployed Astro/Starlight Pages source and
+owns the public `/r` artifact. `apps/manteen` is the clean-room Next.js/Fumadocs replacement
+candidate: CI checks and builds it, but no workflow deploys it. A replacement decision must retain
+the manual deployment gate, regenerate and verify `/r`, and prove the GitHub Pages base path before
+changing `.github/workflows/pages.yml`. Local or CI acceptance of the candidate is not deployed-site
+evidence.
+
 **Content.** The source catalog and separately deployed public Pages registry now both have 22
 items. All 22 item endpoints and the index passed exact-byte public HTTP acceptance in Pages run
 `31338680074`; the eight-item content tranche originally closed in run `31198437310`. The initial
@@ -156,7 +166,7 @@ is a judgment call, which is exactly why they are separate runs.
 | W6 | [`init`](w6-init-handoff.md) | complete: probe → checkpoint → contract → per-framework adapters → integration → built-Node review → disposable dogfood | The adapters preserve generated work; the shared plan/apply boundary makes dry-run, cancellation, install failure and rollback observable; required Tailwind/manual work is separate from mutations; fresh config is list-ready. |
 | W7 | [`Hardening`](w7-hardening-handoff.md) | complete: matrix-driven, findings-first, hosted retry | Real Windows and macOS CI exposed path and line-ending defects that local Linux could not. |
 | W8 | [`Release`](w8-release-handoff.md) | complete: both `0.1.1` packages published through tagged OIDC with provenance | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
-| Wc | [`Registry content`](wc-registry-content-handoff.md) | ongoing: small curated tranches | Independent of all of the above; doubles as client stress-testing without turning fixtures into product evidence. |
+| Wc | [`Registry content`](wc-registry-content-handoff.md) | first eight-item tranche complete; later catalog growth summarized above | Independent of all of the above; doubles as client stress-testing without turning fixtures into product evidence. |
 | Wt | [`Theme builder`](#wt--theme-builder-proposed) | proposed: one page, plan-first | Preview-then-install for the one registry item every consumer is expected to edit. Depends on nothing; blocked by nothing. |
 | Wu | [`Update merging`](update-merge-handoff.md) | complete and public in `0.3.0`: receipt v3, exact bases, three-way plan, explicit reset, three-axis diff, built-Node and controlled-revision acceptance | Changes ordinary source maintenance from skip-or-replace to reproducible three-way merging without weakening the existing plan/apply transaction. |
 | Wv | [`Update verification`](update-verification-handoff.md) | complete and public in `0.3.0`: post-apply orchestration, fail-fast bounded project scripts, drift detection, built-Node and fresh-consumer acceptance | Lets a consumer define what “the merged component still works here” means without placing arbitrary scripts inside Manteen's rollback journal. |

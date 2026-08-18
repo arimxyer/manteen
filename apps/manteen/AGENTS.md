@@ -1,3 +1,9 @@
+## Manteen site scope
+
+Follow the repository contract in `../../AGENTS.md`. This application is the checked, undeployed
+Next.js/Fumadocs replacement candidate; `../docs` remains the source of the Pages deployment and
+live `/r` artifact. Use `bun run site:check` and `bun run site:build` from the repository root.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

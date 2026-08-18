@@ -1,5 +1,9 @@
 # Manteen site
 
+Status: checked replacement candidate, not the deployed documentation application. CI runs its
+type and production builds; the manual Pages workflow still publishes `apps/docs/dist` and the
+generated `/r` registry from the Astro/Starlight application.
+
 This clean-room documentation site is a Next.js application generated with
 [Create Fumadocs](https://github.com/fuma-nama/fumadocs) and adapted to the Manteen monorepo.
 
@@ -22,3 +26,6 @@ repository's root Biome configuration.
 - `content/docs` contains the clean-room documentation source.
 
 No generator version is claimed because it was not captured when the scaffold was created.
+
+See [`docs/project-context.md`](../../docs/project-context.md) for the repository-wide authority and
+evidence map.

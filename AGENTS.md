@@ -1,30 +1,37 @@
 # Manteen agent guide
 
+This is the repository-wide agent contract. `CLAUDE.md` imports it. Scoped directories may add
+their own `AGENTS.md` for durable local invariants and a same-directory `CLAUDE.md` that imports
+it; local guidance supplements this file rather than restating it.
+
 Manteen is a Mantine-native component registry toolchain. `packages/registry-kit` authors and
-compiles registries; `packages/cli` installs and maintains their source in consumer projects. The
-repository root is also a live registry, and `apps/docs` documents the same generated `/r`
-contract.
+compiles registries; `packages/cli` initializes consumer projects and installs and maintains their
+source. The repository root is also the live `@house` registry.
 
-## Establish the contract first
+## Establish current context first
 
-Read these before substantial work:
+Start with [`docs/project-context.md`](docs/project-context.md). It separates live contracts,
+current status, historical decision records, and release evidence. Before substantial
+implementation work, read the documents it marks as authoritative for that scope; do not
+reconstruct a documented decision from implementation details.
 
-- `docs/client-build-plan.md` for diagnostics and named D1-D26 decisions;
-- `docs/roadmap.md` for milestone and release boundaries;
-- `docs/build-process.md` for workflow, guards, and incident rules;
-- `docs/w6-init-handoff.md` for initialization ownership and invariants; and
-- `docs/agent-native-build-plan.md` for the frozen 0.2.1/0.6/0.7 machine contract.
+The two documentation applications have different roles:
 
-Do not re-derive a documented decision from implementation details. Preserve local adaptations by
-default and make destructive replacement explicit.
+- `apps/docs` is the currently deployed Astro/Starlight site and owns the Pages `/r` artifact.
+- `apps/manteen` is the Next.js/Fumadocs replacement candidate. CI checks it, but Pages does not
+  deploy it yet.
+
+Preserve that evidence boundary. A local or CI build of `apps/manteen` is not public deployment
+proof, and changing it does not change the live `/r` contract.
 
 ## Work in verified milestones
 
 Freeze shared contracts before parallel implementation, give shared spine files one writer, then
 integrate and verify sequentially. Keep generated-registry proof, local synthetic tests, built-Node
-e2e evidence, and public release evidence distinct.
+e2e evidence, hosted CI evidence, and public release/deployment evidence distinct.
 
-Use:
+Use the smallest relevant verification set, expanding to the full sequence for shared contracts or
+release candidates:
 
 ```bash
 bun run test
@@ -36,7 +43,14 @@ bun --cwd=packages/cli run build
 node --test packages/cli/e2e/*.node-e2e.mjs
 ```
 
-The e2e tier must run the built bundle under real Node. The glob is required.
+The e2e tier must run the built bundle under real Node. The glob is required. Documentation sites
+have separate commands:
+
+```bash
+bun run build:site   # deployed Astro/Starlight artifact
+bun run site:check   # Next/Fumadocs candidate type generation + TypeScript
+bun run site:build   # Next/Fumadocs candidate production build
+```
 
 ## Protect the workspace and user data
 
@@ -48,5 +62,23 @@ The e2e tier must run the built bundle under real Node. The glob is required.
 - Never print or persist an expanded `${VAR}` from a registry URL. Use only its redacted form.
 - Refuse unimplemented seams visibly. A silent no-op is indistinguishable from success.
 - Prefer a mechanical guard when an invariant can be checked.
+- Preserve unrelated working-tree changes and identify the permitted owner of every changed path.
 
-Signed tags, npm publication, and documentation deployment require separate explicit approval.
+## Keep contracts in their owning source
+
+- Package versions belong in `packages/*/package.json`; public-version claims require a release
+  receipt.
+- Diagnostics belong in `packages/cli/src/plan/diagnostics.ts` and the guarded refusal table in
+  `docs/client-build-plan.md`.
+- Cross-stage init types belong in `packages/cli/src/init/types.ts`; the approved boundary is in
+  `docs/w6-init-handoff.md`.
+- Agent-native JSON, plan-digest, SDK, and packaged-skill behavior is frozen in
+  `docs/agent-native-build-plan.md`.
+- Current priorities and open work belong in `docs/roadmap.md`; completed handoffs are evidence,
+  not backlogs.
+
+Do not copy volatile counts, versions, phase lists, or file inventories into agent instructions.
+Point to the owning source instead so one update cannot leave several plausible truths behind.
+
+Signed tags, npm publication, GitHub releases, Pages deployment, and replacement of the currently
+deployed documentation application require separate explicit approval.

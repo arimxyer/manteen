@@ -1,8 +1,9 @@
 # Wc registry-content handoff
 
 Status: **eight adapted items released and publicly dogfooded, including the Carousel/Dropzone
-extension stress cases; second-live-registry interoperability is also accepted.** Wc is an ongoing
-content stream, not a release blocker or a reason to reopen the completed W4-W8 client program.
+extension stress cases; second-live-registry interoperability is also accepted.** This document
+closes that eight-item milestone. Later catalog growth is summarized in [`roadmap.md`](roadmap.md);
+it is not a reason to rewrite this receipt or reopen the completed W4-W8 client program.
 
 ## Question and stopping condition
 
