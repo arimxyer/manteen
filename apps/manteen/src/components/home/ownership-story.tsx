@@ -1,7 +1,8 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
-import { type RefObject, useEffect, useRef, useState } from "react";
+import { LoaderCircle, Play, RotateCcw } from "lucide-react";
+import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/react";
+import { type RefObject, useEffect, useId, useRef, useState } from "react";
 import { AnimatedBeam } from "@/components/home/animated-beam";
 import { cn } from "@/lib/cn";
 
@@ -115,6 +116,7 @@ function Doc({
   return (
     <div
       ref={innerRef}
+      aria-hidden="true"
       className={cn(
         "relative z-10 rounded-lg border bg-fd-background p-2.5",
         // The base is not a file anyone opens, and a dashed edge is the cheapest
@@ -127,7 +129,7 @@ function Doc({
         <span className="text-[10px] leading-tight font-medium tracking-wide text-fd-foreground uppercase">
           {title}
         </span>
-        <span className="truncate font-mono text-[9px] leading-tight text-fd-muted-foreground [font-variant-ligatures:none]">
+        <span className="truncate font-mono text-[9px] leading-tight text-fd-foreground/70 [font-variant-ligatures:none]">
           {path}
         </span>
       </div>
@@ -143,14 +145,14 @@ function Doc({
                 style={{ left: INDENT[line.indent], width: `${line.base}%` }}
                 initial={false}
                 animate={{ opacity: changed ? 0 : 1 }}
-                transition={{ duration: 0.25 }}
+                transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
               />
               <motion.span
                 className={cn("absolute top-0 h-1 rounded-full", TONE[shown])}
                 style={{ left: INDENT[line.indent], width: `${line.next}%` }}
                 initial={false}
                 animate={{ opacity: changed ? 1 : 0 }}
-                transition={{ duration: 0.25 }}
+                transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
               />
             </div>
           );
@@ -161,45 +163,99 @@ function Doc({
 }
 
 /**
- * The hub, and it carries the product's name rather than the command it happens
- * to be running. What the diagram claims is that ONE tool sits between these
- * three files — not that two different verbs do two different jobs. Naming the
- * verb also put a command in the picture that a reader could not run, set in a
- * mono face that suggested they should.
+ * The hub carries the product's name and is the one control for the explanation.
+ * Putting play on the object that drives every wire keeps transport chrome out
+ * of the caption without making the diagram itself a mystery-meat click target:
+ * the media icon, focus treatment, title, and accessible name all say what it
+ * does. Its transparent pseudo-element supplies a 44px hit area without making
+ * the visual node too large for the diagram.
  */
-function Hub({ innerRef, live }: { innerRef: RefObject<HTMLDivElement | null>; live: boolean }) {
+type HubIconState = "play" | "playing" | "replay";
+
+function Hub({
+  innerRef,
+  live,
+  iconState,
+  label,
+  controlsId,
+  onPlay,
+}: {
+  innerRef: RefObject<HTMLButtonElement | null>;
+  live: boolean;
+  iconState: HubIconState;
+  label: string;
+  controlsId: string;
+  onPlay: () => void;
+}) {
+  const Icon = iconState === "playing" ? LoaderCircle : iconState === "replay" ? RotateCcw : Play;
+
   return (
-    <div
+    <button
       ref={innerRef}
+      type="button"
+      aria-label={label}
+      aria-controls={controlsId}
+      title={label}
+      disabled={iconState === "playing"}
+      onClick={onPlay}
       className={cn(
-        "relative z-10 rounded-full border px-3.5 py-1.5 text-xs font-medium tracking-tight transition-colors duration-300",
+        "relative z-10 inline-flex items-center gap-1.5 rounded-full border py-1.5 pr-3 pl-3.5 text-xs font-medium tracking-tight transition-[color,background-color,border-color,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] before:absolute before:-inset-2 before:rounded-full before:content-[''] focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-fd-card focus-visible:outline-none active:scale-[0.97] disabled:cursor-wait motion-reduce:transition-none motion-reduce:active:scale-100",
         live
-          ? "border-brand bg-brand text-brand-foreground"
-          : "border-fd-border bg-fd-background text-fd-foreground",
+          ? "border-brand-hover bg-brand-hover text-brand-foreground"
+          : "border-fd-border bg-fd-background text-fd-foreground hover:bg-fd-accent",
       )}
     >
-      Manteen
-    </div>
+      <span>Manteen</span>
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.span
+          key={iconState}
+          className="flex size-3.5 items-center justify-center"
+          initial={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
+          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+          exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
+          transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+        >
+          <Icon
+            className={cn(
+              "size-3.5",
+              iconState === "play" && "translate-x-px",
+              iconState === "playing" && "animate-spin",
+            )}
+            aria-hidden="true"
+          />
+        </motion.span>
+      </AnimatePresence>
+    </button>
   );
 }
 
 export function OwnershipStory({
   step,
+  hubLabel,
+  hubIconState,
+  controlsId,
+  onPlay,
   beamKey = 0,
   beamDuration = 1.2,
   beamRepeat = 1,
+  animateBeat = true,
   className,
 }: {
   step: StoryStep;
+  hubLabel: string;
+  hubIconState: HubIconState;
+  controlsId: string;
+  onPlay: () => void;
   beamKey?: number;
   beamDuration?: number;
   beamRepeat?: number;
+  animateBeat?: boolean;
   className?: string;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const upstream = useRef<HTMLDivElement>(null);
   const base = useRef<HTMLDivElement>(null);
-  const hub = useRef<HTMLDivElement>(null);
+  const hub = useRef<HTMLButtonElement>(null);
   const yours = useRef<HTMLDivElement>(null);
 
   // Beat 0 writes: upstream comes in, the file and its base go out. Beat 3
@@ -210,7 +266,7 @@ export function OwnershipStory({
   const merging = step === 3;
   const live = installing || merging;
 
-  const beam = { play: live, duration: beamDuration, repeat: beamRepeat };
+  const beam = { play: live && animateBeat, duration: beamDuration, repeat: beamRepeat };
 
   const docs = {
     upstream: (
@@ -231,144 +287,180 @@ export function OwnershipStory({
   };
 
   return (
-    <div className={cn("flex flex-col", className)}>
-      <div ref={container} className="relative">
-        <AnimatedBeam
-          key={`up-${beamKey}`}
-          containerRef={container}
-          fromRef={upstream}
-          toRef={hub}
-          {...beam}
-        />
-        <AnimatedBeam
-          key={`base-${beamKey}`}
-          containerRef={container}
-          fromRef={base}
-          toRef={hub}
-          // Written at install, read at update. One wire; the pulse runs the
-          // other way round depending on which of those is happening.
-          reverse={installing}
-          delay={installing ? beamDuration * 0.35 : 0}
-          {...beam}
-        />
-        <AnimatedBeam
-          key={`out-${beamKey}`}
-          containerRef={container}
-          fromRef={hub}
-          toRef={yours}
-          delay={beamDuration * 0.35}
-          {...beam}
-        />
+    <div ref={container} className={cn("relative", className)}>
+      <AnimatedBeam
+        key={`up-${beamKey}`}
+        containerRef={container}
+        fromRef={upstream}
+        toRef={hub}
+        {...beam}
+      />
+      <AnimatedBeam
+        key={`base-${beamKey}`}
+        containerRef={container}
+        fromRef={base}
+        toRef={hub}
+        // Written at install, read at update. One wire; the pulse runs the
+        // other way round depending on which of those is happening.
+        reverse={installing}
+        delay={installing ? beamDuration * 0.35 : 0}
+        {...beam}
+      />
+      <AnimatedBeam
+        key={`out-${beamKey}`}
+        containerRef={container}
+        fromRef={hub}
+        toRef={yours}
+        delay={beamDuration * 0.35}
+        {...beam}
+      />
 
-        {/* One DOM order, two arrangements, because the three columns do not
+      {/* One DOM order, two arrangements, because the three columns do not
             survive a phone: at 390px the hub's pill takes its width out of the
             middle and both documents shrink until their headers truncate to
             nothing. Below `sm` the same reading — sources, then the tool, then
             your file — runs top to bottom instead of left to right. The wires
             need no help with either: they are measured from wherever the boxes
             land, which is the whole reason for porting a beam that measures. */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-[38%_1fr_38%] sm:gap-4">
-          <div className="sm:col-start-1 sm:row-start-1">{docs.upstream}</div>
-          <div className="sm:col-start-1 sm:row-start-2">{docs.base}</div>
-          <div className="col-span-2 flex items-center justify-center sm:col-span-1 sm:col-start-2 sm:row-span-2 sm:row-start-1">
-            <Hub innerRef={hub} live={live} />
-          </div>
-          <div className="col-span-2 sm:col-span-1 sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:self-center">
-            {docs.yours}
-          </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-[38%_1fr_38%] sm:gap-4">
+        <div className="sm:col-start-1 sm:row-start-1">{docs.upstream}</div>
+        <div className="sm:col-start-1 sm:row-start-2">{docs.base}</div>
+        <div className="col-span-2 flex items-center justify-center sm:col-span-1 sm:col-start-2 sm:row-span-2 sm:row-start-1">
+          <Hub
+            innerRef={hub}
+            live={live}
+            iconState={hubIconState}
+            label={hubLabel}
+            controlsId={controlsId}
+            onPlay={onPlay}
+          />
+        </div>
+        <div className="col-span-2 sm:col-span-1 sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:self-center">
+          {docs.yours}
         </div>
       </div>
-
-      <Caption step={step} />
     </div>
   );
 }
 
 /**
- * The beat, given its own panel.
+ * The beat, given an editorial caption beneath the diagram.
  *
  * It was a muted line under the diagram, which is the wrong weight for the thing
- * doing most of the explaining. The rule and the lead word give it a place; the
- * pips give beats two and three — which have no beam — something that visibly
- * advances; and the swap is animated because a sentence that changes without
- * moving reads as a typo rather than as a step.
+ * doing most of the explaining. The rule and the lead word give it a place, and
+ * a short fade keeps the sentence swap legible without turning the caption into
+ * a second control surface. `mode="wait"` runs the exit and entrance in series,
+ * so each half gets 120ms rather than making one state change feel twice as long.
  */
-function Caption({ step }: { step: StoryStep }) {
+function Caption({ id, step }: { id: string; step: StoryStep }) {
   const beat = STORY[step];
   if (!beat) return null;
 
   return (
-    <div className="mt-5 border-l-2 border-brand pl-3">
-      <div className="flex min-h-[4.5rem] flex-col gap-2 sm:min-h-[3.75rem]">
-        <div className="flex flex-row items-center gap-1.5" aria-hidden="true">
-          {STORY.map((item, index) => (
-            <motion.span
-              key={item.lead}
-              className={cn(
-                "h-0.5 rounded-full",
-                index === step ? "bg-brand" : "bg-fd-muted-foreground/30",
-              )}
-              initial={false}
-              animate={{ width: index === step ? 18 : 8 }}
-              transition={{ type: "spring", stiffness: 420, damping: 34 }}
-            />
-          ))}
-        </div>
-
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.p
-            key={beat.lead}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.18 }}
-            className="text-sm leading-snug"
-          >
-            <span className="font-medium text-brand">{beat.lead}.</span>{" "}
-            <span className="text-fd-muted-foreground">{beat.caption}</span>
-          </motion.p>
-        </AnimatePresence>
-      </div>
+    <div
+      id={id}
+      className="flex min-h-[4.5rem] min-w-0 flex-1 flex-col justify-center sm:min-h-[3.75rem]"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.p
+          key={beat.lead}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.12, ease: [0.23, 1, 0.32, 1] }}
+          className="text-sm leading-snug"
+        >
+          <span className="font-medium text-brand-hover">{beat.lead}.</span>{" "}
+          <span className="text-fd-foreground">{beat.caption}</span>
+        </motion.p>
+      </AnimatePresence>
     </div>
   );
 }
 
 /**
- * The clock. Starts finished, replays on hover — `TerminalPanel`'s contract, and
- * the page's idiom: nothing animates at a reader on arrival.
+ * The clock and controls. React owns the semantic beat; Motion only explains the
+ * visual change that beat causes. The story rests at Install, its actual starting
+ * condition, then advances only when a reader asks it to.
  */
 export function OwnershipStoryPlayer({ className }: { className?: string }) {
-  const [step, setStep] = useState<StoryStep>(3);
+  const [step, setStep] = useState<StoryStep>(0);
   const [run, setRun] = useState(0);
-  const [still, setStill] = useState(false);
+  const [playback, setPlayback] = useState<"idle" | "playing" | "complete">("idle");
+  const prefersReducedMotion = useReducedMotion();
+  const [motionPreferenceReady, setMotionPreferenceReady] = useState(false);
+  const storyId = useId();
+
+  useEffect(() => setMotionPreferenceReady(true), []);
+
+  const shouldReduceMotion = motionPreferenceReady && prefersReducedMotion === true;
 
   useEffect(() => {
-    setStill(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  }, []);
+    if (playback !== "playing") return;
+    if (shouldReduceMotion) {
+      setStep(3);
+      setPlayback("complete");
+      return;
+    }
 
-  useEffect(() => {
     const hold = STORY[step]?.hold ?? 0;
     if (hold === 0) return;
-    const timer = setTimeout(() => setStep((prev) => (prev + 1) as StoryStep), hold);
+
+    const timer = setTimeout(() => {
+      const next = (step + 1) as StoryStep;
+      setStep(next);
+      if (next === STORY.length - 1) setPlayback("complete");
+    }, hold);
+
     return () => clearTimeout(timer);
-  }, [step]);
+  }, [playback, shouldReduceMotion, step]);
+
+  const play = () => {
+    if (playback === "playing") return;
+    setRun((current) => current + 1);
+
+    if (shouldReduceMotion) {
+      const showStart = step === STORY.length - 1;
+      setStep(showStart ? 0 : 3);
+      setPlayback(showStart ? "idle" : "complete");
+      return;
+    }
+
+    setStep(0);
+    setPlayback("playing");
+  };
+
+  const playLabel = shouldReduceMotion
+    ? step === STORY.length - 1
+      ? "Show ownership story starting state"
+      : "Show ownership story merged result"
+    : playback === "playing"
+      ? "Story playing"
+      : playback === "complete"
+        ? "Replay story"
+        : "Play story";
+  const hubIconState: HubIconState =
+    playback === "playing" ? "playing" : playback === "complete" ? "replay" : "play";
 
   return (
-    // Decoration over a claim the copy beside it already makes, so the diagram is
-    // hidden from assistive technology rather than announced as a pile of
-    // unlabelled boxes.
-    <div
-      className={className}
-      aria-hidden="true"
-      onMouseEnter={() => {
-        // Only a finished run rewinds, so crossing the diagram mid-play cannot
-        // knock it back to the first beat.
-        if (still || step !== 3) return;
-        setRun((prev) => prev + 1);
-        setStep(0);
-      }}
-    >
-      <OwnershipStory step={step} beamKey={run * 4 + step} />
-    </div>
+    <MotionConfig reducedMotion="user">
+      <div className={className} data-ownership-story-player>
+        <OwnershipStory
+          step={step}
+          hubLabel={playLabel}
+          hubIconState={hubIconState}
+          controlsId={storyId}
+          onPlay={play}
+          beamKey={run * STORY.length + step}
+          animateBeat={run > 0 && !shouldReduceMotion}
+        />
+
+        <div className="mt-5 border-l border-brand pl-3">
+          <Caption id={storyId} step={step} />
+        </div>
+      </div>
+    </MotionConfig>
   );
 }
