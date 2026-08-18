@@ -4,11 +4,18 @@ import { primaryButton, secondaryButton } from "@/components/home/styles";
 import { WaterBackdrop } from "@/components/home/water-backdrop";
 import { cn } from "@/lib/cn";
 
-/** The one journey the whole page describes, in the three artefacts it produces. */
+/**
+ * The one journey the whole page describes, in the three artefacts it produces.
+ *
+ * The item named here is the item every card below names. It was `article-card`
+ * while the cards said `release-panel`, which made the promise in this comment
+ * false: a reader following the three stages down the page met a second example
+ * at the first card and had no way to know it was meant to be the same one.
+ */
 const sourceMap: [string, string][] = [
   ["Author", "manteen.registry.json"],
-  ["Compile", "/r/article-card.json"],
-  ["Own", "components/ui/article-card.tsx"],
+  ["Compile", "/r/release-panel.json"],
+  ["Own", "components/ui/release-panel.tsx"],
 ];
 
 export function Hero() {
