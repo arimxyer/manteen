@@ -4,8 +4,8 @@
 
 Status: point-in-time concept research from 2026-08-19, produced for the replacement site's
 interoperability band. It is a design brief for separate prototype owners, not a product contract,
-not a selection, and not deployment evidence. `apps/manteen` remains an undeployed candidate, and
-`InteropStages` remains the production baseline until a selection is made and promoted separately.
+and not deployment evidence. `apps/manteen` remains an undeployed candidate. A later selection is
+recorded under [Selection](#selection); it does not change the evidence boundary of this brief.
 
 Every product claim below is cited to an executable source in this checkout. Where two documents
 disagreed, the disagreement was surfaced rather than smoothed over; the one instance found has since
@@ -13,11 +13,11 @@ been resolved by its owner — see [Resolved evidence finding](#10-resolved-evid
 
 ## 1. What this brief is for
 
-The interoperability band currently pairs a copy card with `InteropStages`, an illustration that
-toggles one registry item between three representations. That illustration answers one question
-well. This brief asks whether the band's central claim — *compile once, stay interoperable* — has a
-better explanatory model available, and it prepares that question for independent prototype owners
-in the shape the
+At the time of this brief, the interoperability band paired a copy card with `InteropStages`, an
+illustration that toggled one registry item between three representations. That illustration
+answered one question well. This brief asks whether the band's central claim — *compile once, stay
+interoperable* — has a better explanatory model available, and it prepares that question for
+independent prototype owners in the shape the
 [authoring-descriptor motion retrospective](authoring-descriptor-motion-retrospective.md)
 established: distinct explanatory models first, motion thesis before choreography, explicit
 scoring, a rejection log, and fresh isolated ownership after shortlisting.
@@ -735,10 +735,10 @@ kept separate from it:
 Support direct variant URLs and replay without adding controls to the illustration itself, as the
 existing authoring-descriptor harness does with `?v=`.
 
-**Do not touch `apps/manteen/src/components/home/interop.tsx` or `interop-stages.tsx`.** They are
-the production baseline and remain so until a concept is selected and promoted as a separate,
-reversible milestone. Promotion copies or extracts the selected concept into a production
-component; it does not mutate the reference study, which is the comparison artifact.
+**Prototype owners must not touch `apps/manteen/src/components/home/interop.tsx` or
+`interop-stages.tsx`.** They are the baseline during exploration. Promotion is a separate,
+reversible milestone that copies or extracts the selected concept into a production component; it
+does not mutate the picker into production and lose the comparison artifact.
 
 ### What each owner owes
 
@@ -768,3 +768,13 @@ quality in one checkout and nothing about deployment.
 Score the built prototypes on the same six axes in §5 against the same threshold, then compare the
 survivors by the question each answers rather than by appearance. If two survivors answer the same
 question, change or remove one before polishing either.
+
+Selection update, 2026-08-19: further exploration of Swap produced six additional studies under
+`apps/manteen/src/app/prototypes/swap-exploration/`. Study F, **Address and record**, was selected
+because one full published plate remains the settled composition in both outcomes, the address is
+the only object that crosses on success, and the readings strip makes the no-partial-set guarantee
+observable. Its shared drawing was extracted to
+`apps/manteen/src/components/home/interop-publication.tsx`; the Study F route remains a reference
+wrapper, and `InteropStages` remains checked in as the earlier comparison rather than the homepage
+illustration. This is local candidate integration evidence only, not CI, hosted, public, or
+deployment evidence.

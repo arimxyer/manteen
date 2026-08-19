@@ -95,8 +95,9 @@ These documents are receipts, not competing roadmaps:
 - [`interop-motion-concept-brief.md`](./research/interop-motion-concept-brief.md) is concept
   research for the replacement site's interoperability illustration. It grounds its product claims
   in the kit and client sources, scores eight explanatory models against a stated threshold, and
-  records rejected metaphors. It is a design brief for prototype owners, not a selection, and the
-  checked-in `InteropStages` remains the production baseline.
+  records rejected metaphors. Its later selection note records Study F's local promotion to
+  `InteropPublication`; `InteropStages` remains checked in as a comparison. Neither the brief nor
+  the local integration is deployment evidence.
 - `apps/docs/DESIGN.md` and `apps/docs/PRODUCT.md` apply only to the deployed Starlight application.
 - `apps/manteen/README.md` describes the replacement application's integration and commands. Its
   UI should follow its own checked-in source and current product contract, not the retired site's
