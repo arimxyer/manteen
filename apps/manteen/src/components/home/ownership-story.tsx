@@ -1,8 +1,8 @@
 "use client";
 
 import { LoaderCircle, Play, RotateCcw } from "lucide-react";
-import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/react";
-import { type RefObject, useEffect, useId, useRef, useState } from "react";
+import { AnimatePresence, MotionConfig, motion, useInView } from "motion/react";
+import { type RefObject, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { AnimatedBeam } from "@/components/home/animated-beam";
 import { cn } from "@/lib/cn";
 
@@ -382,20 +382,26 @@ function Caption({ id, step }: { id: string; step: StoryStep }) {
 
 /**
  * The clock and controls. React owns the semantic beat; Motion only explains the
- * visual change that beat causes. The story rests at Install, its actual starting
- * condition, then advances only when a reader asks it to.
+ * visual change that beat causes. The story rests at Install, plays once when
+ * half the card enters view, and then the hub becomes its replay control.
  */
 export function OwnershipStoryPlayer({ className }: { className?: string }) {
+  const container = useRef<HTMLDivElement>(null);
+  const inView = useInView(container, { once: true, amount: 0.5 });
   const [step, setStep] = useState<StoryStep>(0);
   const [run, setRun] = useState(0);
   const [playback, setPlayback] = useState<"idle" | "playing" | "complete">("idle");
-  const prefersReducedMotion = useReducedMotion();
-  const [motionPreferenceReady, setMotionPreferenceReady] = useState(false);
+  const motionAllowed = useMotionAllowed();
   const storyId = useId();
 
-  useEffect(() => setMotionPreferenceReady(true), []);
+  const shouldReduceMotion = motionAllowed === false;
 
-  const shouldReduceMotion = motionPreferenceReady && prefersReducedMotion === true;
+  useEffect(() => {
+    if (motionAllowed !== true || !inView || run > 0) return;
+    setStep(0);
+    setRun(1);
+    setPlayback("playing");
+  }, [inView, motionAllowed, run]);
 
   useEffect(() => {
     if (playback !== "playing") return;
@@ -418,7 +424,7 @@ export function OwnershipStoryPlayer({ className }: { className?: string }) {
   }, [playback, shouldReduceMotion, step]);
 
   const play = () => {
-    if (playback === "playing") return;
+    if (playback === "playing" || motionAllowed === null) return;
     setRun((current) => current + 1);
 
     if (shouldReduceMotion) {
@@ -446,7 +452,7 @@ export function OwnershipStoryPlayer({ className }: { className?: string }) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className={className} data-ownership-story-player>
+      <div ref={container} className={className} data-ownership-story-player>
         <OwnershipStory
           step={step}
           hubLabel={playLabel}
@@ -454,7 +460,7 @@ export function OwnershipStoryPlayer({ className }: { className?: string }) {
           controlsId={storyId}
           onPlay={play}
           beamKey={run * STORY.length + step}
-          animateBeat={run > 0 && !shouldReduceMotion}
+          animateBeat={run > 0 && motionAllowed === true}
         />
 
         <div className="mt-5 border-l border-brand pl-3">
@@ -463,4 +469,21 @@ export function OwnershipStoryPlayer({ className }: { className?: string }) {
       </div>
     </MotionConfig>
   );
+}
+
+const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+/** Resolve reduced motion before paint so autoplay is never briefly armed for a reader who opted out. */
+function useMotionAllowed() {
+  const [allowed, setAllowed] = useState<boolean | null>(null);
+
+  useBrowserLayoutEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setAllowed(!query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  return allowed;
 }
