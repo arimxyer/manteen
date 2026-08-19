@@ -1,0 +1,123 @@
+---
+title: Publish and share
+description: Host compiled registry JSON and share an item URL or reusable namespace.
+---
+
+Manteen registries need no registry account or central directory. Publish the compiled `public/r/`
+directory through a static host that serves its index and item documents as JSON over HTTPS.
+
+## Build before publishing
+
+Run the project-installed kit binary in the publishing job. Do not let the job acquire an
+unreviewed version implicitly:
+
+```bash
+npm ci
+npm exec --yes=false -- manteen-kit build
+```
+
+Upload `public/` only after the build succeeds. A validation refusal is not trustworthy partial
+output and must stop publication.
+
+For example, a GitHub Pages workflow can build first and then upload the static directory. Pin
+action and runtime versions according to the repository's own maintenance policy:
+
+```yaml title=".github/workflows/pages.yml"
+name: Deploy registry
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm exec --yes=false -- manteen-kit build
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
+```
+
+This is an example for a registry project, not evidence about how the undeployed Fumadocs
+candidate is published.
+
+## Verify the public documents
+
+Check both the index and at least one item URL after deployment:
+
+```text
+https://acme.github.io/manteen-registry/r/registry.json
+https://acme.github.io/manteen-registry/r/release-panel.json
+```
+
+Confirm that both return JSON from the intended deployment. A successful local build does not
+prove those public URLs changed.
+
+## Share one self-contained item
+
+A consumer can inspect and install a direct HTTPS item URL without changing `manteen.json`:
+
+```bash
+npm exec --yes=false -- manteen info \
+  https://acme.github.io/manteen-registry/r/release-panel.json
+npm exec --yes=false -- manteen add \
+  https://acme.github.io/manteen-registry/r/release-panel.json
+```
+
+The item can still contain multiple files, npm dependencies, package stylesheet imports, and a
+theme fragment. A direct URL has no namespace or index, so it cannot resolve a bare registry
+dependency that the consumer has not configured.
+
+## Share the collection
+
+For repeated discovery, authenticated requests, or items that depend on other items, the consumer
+adds a namespace to `manteen.json`:
+
+```json title="manteen.json"
+{
+  "registries": {
+    "@acme": {
+      "url": "https://acme.github.io/manteen-registry/r/{name}.json",
+      "index": "https://acme.github.io/manteen-registry/r/registry.json"
+    }
+  }
+}
+```
+
+Keep the aliases, styles, theme, tsconfig, and other fields written by `manteen init`; the snippet
+shows only the registry entry being added.
+
+```bash
+npm exec --yes=false -- manteen list @acme
+npm exec --yes=false -- manteen info @acme/release-panel
+npm exec --yes=false -- manteen add @acme/release-panel
+```
+
+When a kit-authored item uses another local item, the compiled reference includes the catalog
+namespace. Treat that namespace as part of the collection's public contract. A self-contained
+registry may be assigned another consumer-side name, but renaming a dependency-bearing catalog
+leaves its compiled references pointing at the original namespace.
+
+Read [URLs and namespaces](/docs/concepts/registry-references) for the direct-URL versus configured
+registry boundary.

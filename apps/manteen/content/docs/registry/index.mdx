@@ -3,7 +3,22 @@ title: Registry
 description: Understand Manteen registry authoring and compiled output.
 ---
 
-A Manteen registry defines Mantine-native source components and compiles them into the format
-consumed by Manteen projects.
+A Manteen registry is a static collection of source documents. Authors describe ordinary source
+files in `manteen.registry.json`; `manteen-kit` validates that catalog and compiles an index plus
+one installable document for each item.
 
-This section documents the authoring contract, compiled registry, and available items.
+The index supports discovery. Each item document carries its source files, dependency and
+compatibility requirements, and any author-provided usage, props, styling, or theme metadata. A
+consumer can opt into the collection through a configured namespace or inspect a self-contained
+item by direct HTTPS URL.
+
+## Choose a path
+
+- **Install from a registry:** begin with [Install your first item](/docs/getting-started).
+- **Understand references:** read [URLs and namespaces](/docs/concepts/registry-references).
+- **Build a registry:** follow [Build a registry](/docs/registry-authors), then [Publish and
+  share](/docs/registry-authors/publish-and-share).
+- **Describe catalog fields:** use the [authoring catalog reference](/docs/reference/catalog).
+
+Registry JSON is generated output, not a second source of truth. Authors change the catalog and
+source files, rebuild the complete output set, and publish that coherent result.

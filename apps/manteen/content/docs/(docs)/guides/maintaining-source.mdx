@@ -1,0 +1,82 @@
+---
+title: Maintaining installed source
+description: Inspect updates, preserve adaptations, remove upstream files, and verify the result.
+---
+
+Manteen keeps installed source editable while preserving enough ancestry to compare it with later
+registry versions. Maintenance is therefore an inspect, select, apply, and verify loop—not a blind
+package upgrade.
+
+Start with [source ownership](/docs/concepts/source-ownership) for the local, pristine-base, and
+current-upstream model.
+
+## Inspect before updating
+
+```bash
+manteen status
+manteen diff
+manteen diff --stat
+manteen update --dry-run
+```
+
+`status` checks local Manteen state without contacting a registry. `diff` compares local source,
+its pristine base, and current upstream without writing. The update dry run plans the same merge
+that a real update would apply.
+
+An ordinary update preserves non-overlapping local and upstream changes. If they overlap
+ambiguously, Manteen refuses without writing conflict markers. Use `--take-upstream` only after
+choosing to discard the local adaptation.
+
+## Remove files no longer published upstream
+
+Removal is deliberately a two-step selection. First discover every ordinary file that its same
+registry item no longer publishes:
+
+```bash
+manteen remove --upstream-removed --dry-run
+```
+
+The discovery run writes nothing. Select exact POSIX, project-relative paths from that output and
+preview the chosen transaction:
+
+```bash
+manteen remove --upstream-removed \
+  --file src/components/ui/old.tsx \
+  --dry-run
+```
+
+Apply the same selection only after reviewing it:
+
+```bash
+manteen remove --upstream-removed \
+  --file src/components/ui/old.tsx
+```
+
+A real run without `--file` is a usage refusal. Removal has no `--all`, `--yes`, or `--force`
+escape hatch.
+
+If a selected file differs from its pristine base, Manteen reports it as adapted and keeps it.
+Removing that source requires both its exact path and a separate destructive choice:
+
+```bash
+manteen remove --upstream-removed \
+  --file src/components/ui/old.tsx \
+  --discard-adapted
+```
+
+The transaction removes the selected project file, its obsolete pristine base, and its receipt
+entry together. It does not infer renames, remove directories or packages, or rewrite unrelated
+theme and stylesheet state.
+
+## Run project-owned verification
+
+Projects can configure package scripts after successful `add`, `update`, and `remove` mutations.
+The script names and their exact definitions are part of the reviewed plan. Checks run in authored
+order and stop at the first failure.
+
+A verification failure does not undo a coherent mutation: source, bases, and receipt have already
+been applied. Report the mutation result and the verification result separately, then inspect the
+project before choosing another action. `--no-verify` skips configured checks for that invocation;
+it is not a general success override.
+
+Commit installed source, `manteen.lock.json`, and `.manteen/bases/` as one maintenance boundary.

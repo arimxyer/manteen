@@ -1,0 +1,84 @@
+---
+title: Authoring catalog
+description: Field reference for manteen.registry.json.
+---
+
+`manteen.registry.json` is the author-side catalog consumed by `manteen-kit`. The schema rejects
+unknown fields instead of silently dropping them, so misspellings fail during compilation rather
+than producing incomplete registry documents.
+
+## Catalog root
+
+The root requires `name`, `namespace`, and `items`.
+
+| Field | Meaning |
+| --- | --- |
+| `name` | Human-readable registry name written into the compiled index. |
+| `namespace` | Lowercase public namespace such as `@acme`; qualifies bare `uses`. |
+| `homepage` | Optional project or documentation URL included in the index. |
+| `items` | Components, blocks, hooks, libraries, themes, or files to compile. |
+
+## Item fields
+
+Each item requires `name`, `kind`, and `files`.
+
+| Field | Meaning |
+| --- | --- |
+| `title`, `description`, `docs` | Discovery, explanation, attribution, and source notes. |
+| `mantine` | Installed `@mantine/core` compatibility gate; not an install directive. |
+| `provider` | Declares that the installed source requires `MantineProvider`. |
+| `npm`, `npmDev` | Runtime and development packages required by the item. |
+| `uses` | Other registry items; bare names use the catalog namespace. |
+| `css` | Runtime package stylesheet imports backed by the same item's `npm` entries. |
+| `files` | Source files with component, hook, library, style, or file roles. |
+| `themeFragment` | A theme module merged into the consumer theme rather than copied. |
+| `stylesApi` | Author-declared public Mantine Styles API selectors by component. |
+| `props` | Author-documented prop surfaces by exported component or hook. |
+| `usage` | A copy-ready example module inlined into the compiled item. |
+
+## Styles API declarations
+
+`stylesApi` asserts that an installed component exposes each named part through its public
+`classNames` and `styles` interface. Manteen carries and reports the declaration but does not
+verify arbitrary third-party source. Internal CSS-module class names are implementation details,
+not a public customization contract.
+
+## Props and usage
+
+The kit carries `props` and `usage` verbatim; it does not infer either from source. Every prop row
+requires `name` and `type` and may include `required`, `default`, and `description`:
+
+```json
+{
+  "props": {
+    "ArticleCard": [
+      {
+        "name": "title",
+        "type": "string",
+        "required": true,
+        "description": "Article title."
+      }
+    ]
+  },
+  "usage": "registry/mantine-ui/article-card/article-card.usage.tsx"
+}
+```
+
+`usage`, like `themeFragment`, remains attached to the compiled document rather than appearing in
+`files`; documentation clients read it, but a consumer does not install it as another source file.
+
+When a component forwards additional props to an underlying element, document that behavior as a
+final `...others` row with the forwarded type. Keep the fact in the table readers scan rather than
+hiding inherited behavior in unrelated prose.
+
+## Editor schema
+
+Point `$schema` at the installed kit schema:
+
+```json
+{
+  "$schema": "./node_modules/manteen-kit/schema/manteen.registry.schema.json"
+}
+```
+
+Tooling that resolves package exports can use the `manteen-kit/schema` subpath instead.

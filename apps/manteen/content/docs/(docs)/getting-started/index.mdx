@@ -10,7 +10,7 @@ Mantine itself stays an ordinary package dependency.
 
 ## Requirements
 
-- Node.js 22.12 or newer
+- A Node.js version satisfying the installed `manteen` package's `engines` requirement
 - A Vite, Next.js, or framework-mode React Router application
 - The package manager already used by that application
 
@@ -30,7 +30,7 @@ npm install --save-dev manteen
 Confirm the project-local binary is available:
 
 ```npm
-npm exec -- manteen --version
+npm exec --yes=false -- manteen --version
 ```
 
 </Step>
@@ -42,8 +42,8 @@ npm exec -- manteen --version
 Run initialization from the application root. Preview the complete plan before applying it:
 
 ```npm
-npm exec -- manteen init --dry-run
-npm exec -- manteen init
+npm exec --yes=false -- manteen init --dry-run
+npm exec --yes=false -- manteen init
 ```
 
 Manteen detects Vite, the Next.js App or Pages Router, a valid Next.js hybrid, or framework-mode
@@ -68,10 +68,10 @@ Initialization configures the reference `@house` registry. Discover an item, ins
 and preview the installation before writing source:
 
 ```npm
-npm exec -- manteen list --query article-card
-npm exec -- manteen info @house/article-card
-npm exec -- manteen add @house/article-card --dry-run
-npm exec -- manteen add @house/article-card
+npm exec --yes=false -- manteen list --query article-card
+npm exec --yes=false -- manteen info @house/article-card
+npm exec --yes=false -- manteen add @house/article-card --dry-run
+npm exec --yes=false -- manteen add @house/article-card
 ```
 
 The install can add multiple source files, npm dependencies, package stylesheet imports, and a
@@ -90,15 +90,16 @@ records ownership and the bases preserve exact pristine source for future compar
 Then verify both Manteen's state and the application itself:
 
 ```npm
-npm exec -- manteen status
-npm exec -- manteen diff
+npm exec --yes=false -- manteen status
+npm exec --yes=false -- manteen diff
 npm run build
 ```
 
-<Callout title="Manteen health is not application proof">
+<Callout title="Check the application too">
 
-A healthy Manteen status does not prove that the application typechecks, tests, or builds. Use the
-checks required by the project for application-level proof.
+`status` assesses Manteen's local configuration and ownership state. Continue with [source
+ownership](/docs/concepts/source-ownership#installation-is-not-application-integration) for the
+separate application-integration boundary, then run the checks required by the project.
 
 </Callout>
 
@@ -106,4 +107,5 @@ checks required by the project for application-level proof.
 </Steps>
 
 Continue with [source ownership](/docs/concepts/source-ownership) or review the
-[CLI command groups](/docs/reference/cli).
+[CLI command groups](/docs/reference/cli). Agents and automation harnesses should begin with the
+[agent guide](/docs/getting-started/agent-guide).

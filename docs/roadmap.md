@@ -146,13 +146,14 @@ requiring a live preview runtime or a registry-protocol change. Curated previews
 descriptors follow one item at a time rather than being inferred from arbitrary source.
 
 Styles API support runs beside that work as a bounded contract milestone; it does not pause the
-site and is not implied by an editable CSS module. The present selector arrays are author
-declarations, and the audit found declarations that were not backed by public `classNames` /
-`styles` behavior. The safe sequence is to remove false claims, prove ArticleCard end to end with
-real named selectors and customization tests, render only the resulting truthful metadata, and
-then decide whether other suitable components should adopt the pattern. Broad conversion does not
-start until that vertical slice passes; opinionated blocks may legitimately keep editable internal
-CSS without exposing a public Styles API.
+site and is not implied by an editable CSS module. Every current catalog declaration now has a
+matching per-item test that closes the declared selector list against the implementation and checks
+instance `classNames` / `styles`, stable selector classes, component CSS and theme-level extension.
+That is repository evidence about `@house`, not generic kit verification: `manteen-kit` still
+carries arbitrary registry declarations without proving their source. The remaining durability
+gap is a mechanical guard requiring every declaring item to own the matching test. Components
+without a declaration may deliberately keep editable internal CSS, but later catalog additions
+still need an explicit adopt-or-keep-internal decision rather than silence.
 
 ## The program
 

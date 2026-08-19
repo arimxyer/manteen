@@ -8,12 +8,9 @@ import { File, Folder, Files } from "fumadocs-ui/components/files";
 `manteen-kit` is the author-side package. You describe normal source files with a
 `manteen.registry.json` catalog, then compile that catalog into static registry JSON.
 
-This authoring documentation lives under Docs. The separate Registry section is reserved for the
-browsable catalog and item pages.
-
 ## Create an authoring project
 
-`manteen-kit` requires Node.js 20.11 or newer and does not require Bun:
+Use a Node.js version allowed by the installed `manteen-kit` package. Bun is not required:
 
 ```npm
 mkdir my-manteen-registry
@@ -65,14 +62,14 @@ The catalog uses Manteen's authoring vocabulary. `kind` describes the compositio
 consumer compatibility gate, `npm` declares packages the item needs, and `target` selects a
 consumer alias destination.
 
-Unknown authoring fields are rejected rather than silently discarded. Optional theme fragments,
-package stylesheet imports, public Styles API selectors, props, and usage examples can be added as
-the registry grows.
+Unknown authoring fields are rejected rather than silently discarded. The [catalog
+reference](/docs/reference/catalog) defines theme fragments, package stylesheet imports, public
+Styles API declarations, props, usage examples, and the remaining authoring fields.
 
 ## Compile and validate
 
 ```npm
-npm exec -- manteen-kit build
+npm exec --yes=false -- manteen-kit build
 ```
 
 The defaults read `manteen.registry.json` and write:
@@ -94,3 +91,6 @@ The repository's
 contains a complete multi-file example with package styles and a theme fragment. Once the compiled
 files are hosted over HTTPS, consumers can choose a [direct URL or configured
 namespace](/docs/concepts/registry-references).
+
+Continue with [Publish and share](/docs/registry-authors/publish-and-share) to host the compiled
+documents, verify them, and choose how consumers opt into the registry.

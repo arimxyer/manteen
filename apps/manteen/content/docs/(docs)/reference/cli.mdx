@@ -19,7 +19,8 @@ version for a single command.
 | `manteen update [ref...]` | Merge upstream changes around local source adaptations. |
 | `manteen remove --upstream-removed` | Remove exact receipt-owned files proven absent upstream. |
 | `manteen status` | Assess local configuration and receipt health without registry access. |
-| `manteen agent` | Read or install the packaged Manteen agent guidance. |
+| `manteen agent guide` | Print the packaged guide without requiring project configuration. |
+| `manteen agent install` | Safely install or update the packaged Manteen skill. |
 
 The installed binary is the authority for available options:
 
@@ -31,15 +32,23 @@ manteen update --help
 
 ## Review a machine plan before applying it
 
-Mutating commands support dry-run JSON plans. Retain the returned `planDigest`, repeat the same
-project root, refs, and relevant flags, then apply with `--expect-plan`:
+The `init`, `add`, `update`, and `remove` commands support dry-run JSON plans. Retain the returned
+`planDigest`, repeat the same project root, references, and relevant flags, then apply with
+`--expect-plan`:
 
 ```bash
+manteen init --dry-run --json
+manteen init --expect-plan <sha256> --json
+
 manteen add @house/article-card --dry-run --json
 manteen add @house/article-card --expect-plan <sha256> --json
 
 manteen update @house/article-card --dry-run --json
 manteen update @house/article-card --expect-plan <sha256> --json
+
+manteen remove --upstream-removed --file src/components/ui/old.tsx --dry-run --json
+manteen remove --upstream-removed --file src/components/ui/old.tsx \
+  --expect-plan <sha256> --json
 ```
 
 A changed source, destination, preimage, verification definition, or relevant option makes the
@@ -64,11 +73,9 @@ consequences, not as generic retry flags.
 - `add --overwrite` replaces occupied destinations; `--no-overwrite` keeps them.
 - `update --take-upstream` discards local source adaptations.
 - `remove --discard-adapted` applies only to exact selected upstream-removed files.
-- `--no-verify` skips configured project checks for the supported mutation.
-- `--force` downgrades only diagnostics explicitly classified as forceable.
+- `add`, `update`, and `remove` accept `--no-verify` for configured project checks.
+- `init`, `add`, and `update` accept `--force`; it downgrades only diagnostics classified as
+  forceable. Removal has no `--force` escape hatch.
 
-## Local health and application proof
-
-`manteen status` is intentionally offline and can run before the registry is reachable. It assesses
-Manteen configuration, receipts, bases, and related local state. It does not execute the host
-application's typecheck, tests, or production build.
+`manteen status` is intentionally offline. For the distinction between local Manteen health and
+application behavior, read [source ownership](/docs/concepts/source-ownership#installation-is-not-application-integration).
