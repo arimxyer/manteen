@@ -92,6 +92,11 @@ These documents are receipts, not competing roadmaps:
 - [`authoring-descriptor-motion-retrospective.md`](./research/authoring-descriptor-motion-retrospective.md)
   records local design-process evidence from the replacement site's prototype work. It is a
   reusable method and bounded retrospective, not a production decision or deployment receipt.
+- [`interop-motion-concept-brief.md`](./research/interop-motion-concept-brief.md) is concept
+  research for the replacement site's interoperability illustration. It grounds its product claims
+  in the kit and client sources, scores eight explanatory models against a stated threshold, and
+  records rejected metaphors. It is a design brief for prototype owners, not a selection, and the
+  checked-in `InteropStages` remains the production baseline.
 - `apps/docs/DESIGN.md` and `apps/docs/PRODUCT.md` apply only to the deployed Starlight application.
 - `apps/manteen/README.md` describes the replacement application's integration and commands. Its
   UI should follow its own checked-in source and current product contract, not the retired site's
