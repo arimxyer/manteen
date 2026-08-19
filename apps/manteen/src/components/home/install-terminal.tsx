@@ -58,7 +58,15 @@ const firstRun: Block[] = [
   },
 ];
 
-export function InstallTerminal({ className }: { className?: string }) {
+export function InstallTerminal({
+  replayKey,
+  onPlayingChange,
+  className,
+}: {
+  replayKey?: number;
+  onPlayingChange?: (playing: boolean) => void;
+  className?: string;
+}) {
   return (
     <TerminalPanel
       blocks={firstRun}
@@ -66,6 +74,8 @@ export function InstallTerminal({ className }: { className?: string }) {
       // It matters during a replay, where a short reserve would let the card
       // collapse to one line and grow back. Below `sm` the commands wrap.
       reserve="min-h-96 sm:min-h-90"
+      replayKey={replayKey}
+      onPlayingChange={onPlayingChange}
       className={className}
     />
   );

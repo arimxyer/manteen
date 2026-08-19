@@ -4,20 +4,6 @@ import { primaryButton, secondaryButton } from "@/components/home/styles";
 import { WaterBackdrop } from "@/components/home/water-backdrop";
 import { cn } from "@/lib/cn";
 
-/**
- * The one journey the whole page describes, in the three artefacts it produces.
- *
- * The item named here is the item every card below names. It was `article-card`
- * while the cards said `release-panel`, which made the promise in this comment
- * false: a reader following the three stages down the page met a second example
- * at the first card and had no way to know it was meant to be the same one.
- */
-const sourceMap: [string, string][] = [
-  ["Author", "manteen.registry.json"],
-  ["Compile", "/r/release-panel.json"],
-  ["Own", "components/ui/release-panel.tsx"],
-];
-
 export function Hero() {
   return (
     <div className="relative mx-auto flex h-[70vh] max-h-[820px] min-h-[560px] w-full max-w-[1400px] overflow-hidden rounded-2xl border bg-fd-card bg-origin-border">
@@ -49,15 +35,6 @@ export function Hero() {
             Build a registry
           </Link>
         </div>
-
-        <ul className="mt-auto flex flex-col gap-3 pt-10 font-mono text-xs sm:flex-row sm:gap-8">
-          {sourceMap.map(([step, path]) => (
-            <li key={step} className="flex flex-row items-center gap-2">
-              <span className="text-brand">{step}</span>
-              <span className="text-fd-muted-foreground">{path}</span>
-            </li>
-          ))}
-        </ul>
       </div>
     </div>
   );

@@ -1,7 +1,8 @@
 "use client";
 
 import { Terminal } from "lucide-react";
-import { type ReactElement, useEffect, useMemo, useState } from "react";
+import { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
+import { usePrefersReducedMotion } from "@/components/home/use-prefers-reduced-motion";
 import { cn } from "@/lib/cn";
 
 export type Tone = "write" | "keep" | "head" | "note" | "npm";
@@ -22,7 +23,7 @@ const toneClass = {
   keep: "text-fd-muted-foreground",
   head: "text-fd-foreground",
   note: "text-fd-muted-foreground",
-  npm: "text-fd-muted-foreground/60",
+  npm: "text-fd-muted-foreground",
 } as const;
 
 /**
@@ -36,13 +37,13 @@ const toneClass = {
  *     so nothing can drift out of step with anything else, and the whole run is
  *     legible as a single schedule instead of a chain of nested timeouts.
  *   - **It starts finished.** The panel renders the complete transcript — on the
- *     server, so it is in the HTML — and sits still. Hovering replays it. Nothing
- *     animates at you on arrival.
+ *     server, so it is in the HTML — and sits still. Nothing animates at you on
+ *     arrival.
  *   - **Only the command types.** Output appears whole, after a beat.
  *
- * A consequence worth knowing: a device without hover never plays this, and shows
- * the finished transcript instead. That is the correct trade for a panel whose
- * content is the message.
+ * Replay is deliberate rather than hover-driven. Its trigger lives in the parent
+ * section's "Try it out" label, where the invitation and the action are the same
+ * thing; reduced-motion readers keep the complete transcript.
  */
 const TICK_MS = 100;
 /** Beat between a command finishing and its output landing — their `timeCommandRun`. */
@@ -72,25 +73,35 @@ function schedule(blocks: Block[]): { cues: Cue[]; end: number } {
 export function TerminalPanel({
   blocks,
   reserve,
+  replayKey = 0,
+  onPlayingChange,
   className,
 }: {
   blocks: Block[];
   /** Height held for the transcript so the card cannot resize during a replay. */
   reserve: string;
+  /** Incremented by the section-level trigger to start or restart the transcript. */
+  replayKey?: number;
+  onPlayingChange?: (playing: boolean) => void;
   className?: string;
 }) {
   const { cues, end } = useMemo(() => schedule(blocks), [blocks]);
   const [tick, setTick] = useState(end);
-  const [still, setStill] = useState(false);
-
-  useEffect(() => {
-    setStill(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  }, []);
+  const still = usePrefersReducedMotion();
+  const handledReplayKey = useRef(replayKey);
 
   // The interval exists only while there is something left to advance, so a page
   // sitting at rest is not running a timer that does nothing a hundred times a
   // second. `playing` flips exactly twice per run, so this does not churn.
   const playing = tick < end;
+  useEffect(() => onPlayingChange?.(playing), [onPlayingChange, playing]);
+
+  useEffect(() => {
+    if (replayKey === handledReplayKey.current) return;
+    handledReplayKey.current = replayKey;
+    if (!still) setTick(0);
+  }, [replayKey, still]);
+
   useEffect(() => {
     if (!playing) return;
     const timer = setInterval(() => setTick((prev) => (prev >= end ? prev : prev + 1)), TICK_MS);
@@ -136,26 +147,18 @@ export function TerminalPanel({
   }
 
   return (
-    // Decoration over prose the docs already teach, so the whole widget is hidden
-    // from assistive technology rather than announced one partial line at a time.
-    <div
-      className={cn("rounded-xl border bg-fd-secondary shadow-md", className)}
-      aria-hidden="true"
-      onMouseEnter={() => {
-        // Their guard, kept exactly: only a finished run restarts, so moving the
-        // pointer across the panel mid-play cannot knock it back to the top.
-        if (!still && tick >= end) setTick(0);
-      }}
-    >
+    <div className={cn("rounded-xl border bg-fd-secondary shadow-md", className)}>
       <div className="flex flex-row items-center gap-2 border-b p-2 text-fd-muted-foreground">
-        <Terminal className="size-4" />
-        <span className="text-xs font-medium">Terminal</span>
-        <div className="me-2 ms-auto size-2 rounded-full bg-brand" />
+        <Terminal className="size-4" aria-hidden="true" />
+        <span className="text-xs font-medium" aria-hidden="true">
+          Terminal
+        </span>
       </div>
 
       {/* `pre` rather than a stack of paragraphs: the captured column spacing is
           part of the text, and a grid gives each line its own row without margins. */}
       <pre
+        aria-hidden="true"
         className={cn(
           "p-3 font-mono text-xs leading-6 whitespace-pre-wrap text-fd-secondary-foreground/85 sm:text-[13px]",
           reserve,

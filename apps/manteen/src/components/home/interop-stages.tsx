@@ -142,10 +142,8 @@ export function InteropStages({ className }: { className?: string }) {
               aria-pressed={index === active}
               onClick={() => setActive(index)}
               className={cn(
-                "relative rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                index === active
-                  ? "text-brand-foreground"
-                  : "text-fd-muted-foreground hover:text-fd-foreground",
+                "home-stage-button relative rounded-full px-3 py-1.5 text-xs font-medium transition-[color,transform] duration-150 ease-[var(--ease-out)] before:absolute before:-inset-1 before:rounded-full before:content-[''] focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-fd-card focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-colors motion-reduce:active:scale-100",
+                index === active ? "text-brand-foreground" : "text-fd-muted-foreground",
               )}
             >
               {index === active ? (

@@ -8,10 +8,10 @@
  */
 
 export const primaryButton =
-  "inline-flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 font-medium tracking-tight text-brand-foreground transition-colors hover:bg-brand-hover";
+  "home-primary-button home-directional-link inline-flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 font-medium tracking-tight text-brand-foreground transition-[background-color,transform] duration-150 ease-[var(--ease-out)] active:scale-[0.97] motion-reduce:transition-colors motion-reduce:active:scale-100";
 
 export const secondaryButton =
-  "inline-flex items-center justify-center gap-2 rounded-full border bg-fd-secondary px-5 py-3 font-medium tracking-tight text-fd-secondary-foreground transition-colors hover:bg-fd-accent";
+  "home-secondary-button inline-flex items-center justify-center gap-2 rounded-full border bg-fd-secondary px-5 py-3 font-medium tracking-tight text-fd-secondary-foreground transition-[background-color,border-color,transform] duration-150 ease-[var(--ease-out)] active:scale-[0.97] motion-reduce:transition-colors motion-reduce:active:scale-100";
 
 export const card = "rounded-2xl border bg-fd-card p-6 text-sm shadow-lg";
 
@@ -26,4 +26,4 @@ export const h2 = "text-3xl font-medium tracking-tight lg:text-4xl";
 export const h3 = "text-xl font-medium tracking-tight lg:text-2xl";
 
 export const textLink =
-  "inline-flex items-center gap-1.5 font-medium text-brand transition-opacity hover:opacity-70";
+  "home-text-link home-directional-link inline-flex items-center gap-1.5 font-medium text-brand transition-transform duration-150 ease-[var(--ease-out)] active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100";

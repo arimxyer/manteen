@@ -350,7 +350,7 @@ export function OwnershipStory({
  * doing most of the explaining. The rule and the lead word give it a place, and
  * a short fade keeps the sentence swap legible without turning the caption into
  * a second control surface. `mode="wait"` runs the exit and entrance in series,
- * so each half gets 120ms rather than making one state change feel twice as long.
+ * so each half gets 180ms rather than making one state change feel twice as long.
  */
 function Caption({ id, step }: { id: string; step: StoryStep }) {
   const beat = STORY[step];
@@ -369,7 +369,7 @@ function Caption({ id, step }: { id: string; step: StoryStep }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.12, ease: [0.23, 1, 0.32, 1] }}
+          transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
           className="text-sm leading-snug"
         >
           <span className="font-medium text-brand-hover">{beat.lead}.</span>{" "}
