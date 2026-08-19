@@ -70,12 +70,12 @@ const BRAND_INK = "color-mix(in oklab, var(--color-brand) 78%, var(--color-fd-fo
 /**
  * Body height, and the reason it is a hard height rather than a floor.
  *
- * The exchange animates `y` in percentages, which resolve against the animating
- * element's own box. Both bodies are `absolute inset-0` inside a well of this
- * height, so "-100%" is exactly one window and the outgoing and incoming halves
- * meet at a seam with no measurement, at any width, in any font. A `min-h` would
- * let one body outgrow the other and open a gap in the middle of the one move
- * the whole plate exists to make.
+ * The exchange uses percentage `translate3d`, which resolves against the
+ * animating element's own box. Both bodies are `absolute inset-0` inside a well
+ * of this height, so `-100%` is exactly one window and the outgoing and incoming
+ * halves meet at a seam with no measurement, at any width, in any font. A
+ * `min-h` would let one body outgrow the other and open a gap in the middle of
+ * the one move the whole plate exists to make.
  *
  * Content is budgeted to fit: at the narrow size the body is 144px of rows
  * inside 152px of well, and at `sm` 149px inside 164px.
@@ -123,25 +123,27 @@ type Keyframe = { at: number; phase?: Phase; landed?: number };
  */
 const TIMELINES: Record<Outcome, readonly Keyframe[]> = {
   succeeds: [
-    { at: 380, landed: 1 },
-    { at: 530, landed: 2 },
-    { at: 680, landed: 3 },
-    { at: 830, landed: 4 },
-    { at: 980, landed: 5 },
-    { at: 1130, landed: 6 },
-    { at: 1330, landed: 7 },
-    { at: 1520, landed: 8 },
-    { at: 1640, phase: "complete" },
-    { at: 1980, phase: "exchanging" },
-    { at: 2580, phase: "installed" },
+    { at: 420, landed: 1 },
+    { at: 620, landed: 2 },
+    { at: 820, landed: 3 },
+    { at: 1020, landed: 4 },
+    { at: 1220, landed: 5 },
+    { at: 1420, landed: 6 },
+    { at: 1640, landed: 7 },
+    { at: 1860, landed: 8 },
+    { at: 2000, phase: "complete" },
+    // The complete set holds long enough to be read before the exchange.
+    { at: 2900, phase: "exchanging" },
+    { at: 3550, phase: "installed" },
   ],
   refuses: [
-    { at: 380, landed: 1 },
-    { at: 540, landed: 2 },
-    { at: 780, phase: "colliding" },
-    { at: 1160, phase: "refused" },
-    { at: 1640, phase: "discarding" },
-    { at: 2100, phase: "discarded" },
+    { at: 420, landed: 1 },
+    { at: 680, landed: 2 },
+    { at: 1050, phase: "colliding" },
+    { at: 1350, phase: "refused" },
+    // Refusal is an explanatory hold, not a transient error flash.
+    { at: 2500, phase: "discarding" },
+    { at: 2950, phase: "discarded" },
   ],
 };
 
@@ -171,31 +173,31 @@ const CAPTIONS: Record<Phase, Caption> = {
   },
   complete: {
     lead: "The replacement is whole.",
-    detail: "Every document, an index that is exactly this set, and a marker of paths and hashes.",
+    detail: "Only this complete set can take the published location.",
   },
   exchanging: {
-    lead: "Exchanged in one move.",
-    detail: "The published window is never open on a partial set.",
+    lead: "The complete sets exchange in one move.",
+    detail: "A reader gets the old set or the new set. There is no partial state.",
   },
   installed: {
-    lead: "Exchanged in one move.",
-    detail: "A reader mid-build got the old set or the new one. There is no third answer.",
+    lead: "The complete sets exchange in one move.",
+    detail: "A reader gets the old set or the new set. There is no partial state.",
   },
   colliding: {
-    lead: "Two items compile to empty-state.json.",
-    detail: "One filename, claimed twice — so the set cannot be rendered.",
+    lead: "One output path has two claims.",
+    detail: "The build stops before the remaining documents, index or marker are written.",
   },
   refused: {
-    lead: "The build refuses on the third document.",
-    detail: "The remaining documents, the index and the marker are never written.",
+    lead: "One output path has two claims.",
+    detail: "The build stops before the remaining documents, index or marker are written.",
   },
   discarding: {
     lead: "The incomplete replacement is discarded whole.",
-    detail: "It was never the published set, so there is nothing to undo.",
+    detail: "The published set stays complete and unchanged.",
   },
   discarded: {
-    lead: "Refusing is the guarantee, not the failure.",
-    detail: "The published set is exactly the one it was before the build ran.",
+    lead: "The incomplete replacement is discarded whole.",
+    detail: "The published set stays complete and unchanged.",
   },
 };
 
@@ -274,7 +276,7 @@ export function SwapVariant({ reduceMotion, run }: InteropVariantProps) {
             {outcome === value ? (
               <motion.span
                 layoutId="swap-outcome-pill"
-                className="absolute inset-0 rounded-full bg-brand"
+                className="pointer-events-none absolute inset-0 rounded-full bg-brand"
                 transition={{ type: "spring", stiffness: 420, damping: 34 }}
               />
             ) : null}
@@ -299,7 +301,9 @@ export function SwapVariant({ reduceMotion, run }: InteropVariantProps) {
             <motion.div
               className="absolute inset-0"
               initial={false}
-              animate={{ y: exchanged ? "-100%" : "0%" }}
+              animate={{
+                transform: exchanged ? "translate3d(0,-100%,0)" : "translate3d(0,0%,0)",
+              }}
               transition={exchanged ? EXCHANGE : CUT}
             >
               <SetBody items={LIVE_ITEMS} filled={LIVE_ITEMS.length} sealed />
@@ -308,7 +312,9 @@ export function SwapVariant({ reduceMotion, run }: InteropVariantProps) {
             <motion.div
               className="absolute inset-0"
               initial={false}
-              animate={{ y: exchanged ? "0%" : "100%" }}
+              animate={{
+                transform: exchanged ? "translate3d(0,0%,0)" : "translate3d(0,100%,0)",
+              }}
               transition={exchanged ? EXCHANGE : CUT}
             >
               <SetBody items={NEW_ITEMS} filled={NEW_ITEMS.length} sealed />
@@ -334,14 +340,20 @@ export function SwapVariant({ reduceMotion, run }: InteropVariantProps) {
               className="absolute inset-0"
               initial={false}
               animate={{
-                y: exchanged ? "-100%" : leaving ? "6%" : "0%",
+                transform: exchanged
+                  ? "translate3d(0,-100%,0) scale(1)"
+                  : leaving
+                    ? "translate3d(0,6%,0) scale(0.965)"
+                    : "translate3d(0,0%,0) scale(1)",
                 opacity: leaving ? 0 : 1,
-                scale: leaving ? 0.965 : 1,
               }}
               transition={{
-                y: exchanged ? EXCHANGE : leaving ? { duration: 0.42, ease: EASE_OUT } : CUT,
+                transform: exchanged
+                  ? EXCHANGE
+                  : leaving
+                    ? { duration: 0.42, ease: EASE_OUT }
+                    : CUT,
                 opacity: { duration: 0.42, ease: EASE_OUT },
-                scale: { duration: 0.42, ease: EASE_OUT },
               }}
             >
               <SetBody
@@ -509,19 +521,6 @@ function SetBody({
                 state={collided ? "refused" : present ? "written" : "empty"}
                 animate={animateCells}
               />
-              {collided ? (
-                // Two items, one filename, drawn as two cards on one place. The
-                // offset copy is the arriving document; it never gets a position
-                // of its own because there is not one to get.
-                <motion.div
-                  className="absolute inset-0 translate-x-[5px] translate-y-[6px] rotate-[1.6deg]"
-                  initial={animateCells ? { opacity: 0, scale: 1.08 } : false}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.22, ease: EASE_OUT }}
-                >
-                  <Cell name={`${name}.json`} state="refused" />
-                </motion.div>
-              ) : null}
             </div>
           );
         })}
@@ -573,6 +572,25 @@ function Cell({
       style={state === "sealed" ? { color: BRAND_INK } : undefined}
     >
       <span className="truncate">{name}</span>
+      {state === "refused" ? (
+        <>
+          <span className="shrink-0 text-[8px] tracking-[0.08em] uppercase sm:hidden">
+            2 claims
+          </span>
+          <span className="hidden shrink-0 text-[9px] tracking-[0.05em] uppercase sm:inline">
+            2 claims · 1 path
+          </span>
+          <span className="absolute -top-1 right-2 flex items-end gap-0.5" aria-hidden="true">
+            <span className="h-1.5 w-2 rounded-t-sm border border-b-0 border-fd-foreground/70 bg-fd-secondary" />
+            <motion.span
+              className="h-1.5 w-2 rounded-t-sm border border-b-0 border-fd-foreground/70 bg-fd-secondary"
+              initial={animate ? { opacity: 0, transform: "translate3d(0,-7px,0)" } : false}
+              animate={{ opacity: 1, transform: "translate3d(0,0,0)" }}
+              transition={{ duration: 0.28, ease: EASE_OUT }}
+            />
+          </span>
+        </>
+      ) : null}
       {note && wide ? (
         <span className="hidden shrink-0 text-fd-muted-foreground sm:inline">{note}</span>
       ) : null}
@@ -585,8 +603,8 @@ function Cell({
     <motion.div
       // Landing, not fading in: a document is written at a position, so it
       // arrives with a short drop rather than materialising in place.
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, transform: "translate3d(0,4px,0)" }}
+      animate={{ opacity: 1, transform: "translate3d(0,0,0)" }}
       transition={{ duration: 0.24, ease: EASE_OUT }}
     >
       {body}
