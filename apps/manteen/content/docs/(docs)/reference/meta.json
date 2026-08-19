@@ -1,4 +1,4 @@
 {
   "title": "Reference",
-  "pages": ["configuration", "cli", "catalog"]
+  "pages": ["configuration", "cli", "machine-output", "diagnostics", "catalog"]
 }

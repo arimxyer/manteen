@@ -37,6 +37,9 @@ Header, parameter, and URL values may contain `${VAR}` placeholders. Expansion o
 making a request; configuration, receipts, diagnostics, digests, and JSON output retain redacted
 templates instead of expanded secrets.
 
+See [Authenticated registries](/docs/guides/authenticated-registries) for environment precedence,
+request scope, direct-URL limitations, and safe troubleshooting.
+
 ## Aliases and TypeScript paths
 
 Every configuration declares `components`, `ui`, `hooks`, and `lib` import prefixes:
@@ -82,9 +85,12 @@ Verification entries are `package.json` script names, not shell strings:
 ```
 
 Authored order is execution order. Checks run after the mutation has produced coherent source,
-bases, and receipt state, and they stop at the first failure. `timeoutMs` bounds each check rather
-than the complete sequence. A failed or timed-out check reports verification failure but does not
-roll back an already-applied mutation.
+bases, and receipt state, while the owning rollback journal is still live. They stop at the first
+failure, and `timeoutMs` bounds each check rather than the complete sequence.
+
+A failed, timed-out, or state-mutating check restores captured Manteen-managed and control
+preimages. Manteen does not claim to reverse dependency installations, caches, snapshots, generated
+files, or other unowned verifier side effects.
 
 The plan records the chosen scripts and their definitions. If either changes before apply,
 `--expect-plan` refuses the stale plan instead of running a different check than the one reviewed.
