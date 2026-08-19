@@ -1,30 +1,9 @@
-import { ServerCodeBlock } from "fumadocs-ui/components/codeblock.rsc";
 import { ArrowRight, Braces } from "lucide-react";
 import Link from "next/link";
+import { AuthoringDial } from "@/components/home/authoring-dial";
 import { DetailList } from "@/components/home/detail-list";
 import { band, card, h3, textLink } from "@/components/home/styles";
 import { cn } from "@/lib/cn";
-
-const catalog = `{
-  "name": "acme-registry",
-  "namespace": "@acme",
-  "items": [
-    {
-      "name": "release-panel",
-      "kind": "block",
-      "mantine": ">=9 <10",
-      "provider": true,
-      "npm": ["@mantine/core@^9"],
-      "files": [
-        {
-          "path": "src/release-panel.tsx",
-          "as": "component",
-          "target": "@ui/release-panel.tsx"
-        }
-      ]
-    }
-  ]
-}`;
 
 /** Every key is a real field; the `kind` values come from `manteen.registry.schema.json`. */
 const authoringFields: [string, string][] = [
@@ -53,11 +32,7 @@ export function Authoring() {
           <ArrowRight className="size-4" aria-hidden="true" />
         </Link>
       </div>
-      <ServerCodeBlock
-        lang="json"
-        code={catalog}
-        codeblock={{ title: "manteen.registry.json", className: "my-0 shadow-lg" }}
-      />
+      <AuthoringDial />
     </div>
   );
 }
