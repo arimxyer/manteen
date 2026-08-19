@@ -219,9 +219,10 @@ export function SwapVariant({ reduceMotion, run }: InteropVariantProps) {
   const settled: Phase = outcome === "succeeds" ? "installed" : "discarded";
 
   // Strict no-autoplay. A direct arrival — `run` still zero, nothing pressed —
-  // is the selected outcome already at rest, so the frame that ships in the HTML
-  // states its result without ever having played. Only a reader's own selection
-  // or replay puts the plate in motion.
+  // mounts the selected outcome already at rest. The harness server-renders a
+  // placeholder behind its `clientReady` gate, so this is a client-side arrival
+  // guarantee, not a claim that the settled frame ships in the HTML. Only a
+  // reader's own selection or replay puts the plate in motion.
   const [phase, setPhase] = useState<Phase>(run > 0 ? "assembling" : settled);
   const [landed, setLanded] = useState(run > 0 ? 0 : SUCCESS_STEPS);
 
