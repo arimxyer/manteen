@@ -25,6 +25,11 @@ repository's root Biome configuration.
 - `src/app/docs` contains the documentation routes and search endpoint.
 - `content/docs` contains the clean-room documentation source.
 
+The authoring-descriptor prototype process and promotion boundary are recorded in the
+[`authoring descriptor motion retrospective`](../../docs/research/authoring-descriptor-motion-retrospective.md).
+The studies remain design references until one is integrated and verified in the production
+homepage separately.
+
 No generator version is claimed because it was not captured when the scaffold was created.
 
 See [`docs/project-context.md`](../../docs/project-context.md) for the repository-wide authority and

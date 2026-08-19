@@ -89,6 +89,9 @@ These documents are receipts, not competing roadmaps:
   architecture and public acceptance.
 - [`docs-audit-remediation-plan.md`](./research/docs-audit-remediation-plan.md) is a completed, local audit of
   that site, not a release receipt and not design authority for the clean-room replacement.
+- [`authoring-descriptor-motion-retrospective.md`](./research/authoring-descriptor-motion-retrospective.md)
+  records local design-process evidence from the replacement site's prototype work. It is a
+  reusable method and bounded retrospective, not a production decision or deployment receipt.
 - `apps/docs/DESIGN.md` and `apps/docs/PRODUCT.md` apply only to the deployed Starlight application.
 - `apps/manteen/README.md` describes the replacement application's integration and commands. Its
   UI should follow its own checked-in source and current product contract, not the retired site's
