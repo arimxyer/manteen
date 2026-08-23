@@ -1,0 +1,2 @@
+This ordinary file is intentionally not executable and does not use Bun test naming.
+The generic author profile proves only that it exists and owns one catalog claim.

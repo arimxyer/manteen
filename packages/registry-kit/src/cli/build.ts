@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 
 import {
+  AuthorConformanceError,
   compileRegistry,
   planRegistryWrite,
   RegistryOutputError,
@@ -85,7 +86,17 @@ export function build(argv: string[]): number {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (args.json) {
-      writeJson(kitEnvelope("build", 1, false, null, [{ code: "compile-failed", message }]));
+      writeJson(
+        kitEnvelope("build", 1, false, null, [
+          error instanceof AuthorConformanceError
+            ? {
+                code: "author-conformance-failed",
+                message,
+                details: error.failures,
+              }
+            : { code: "compile-failed", message },
+        ]),
+      );
     } else process.stderr.write(`${message}\n`);
     return 1;
   }

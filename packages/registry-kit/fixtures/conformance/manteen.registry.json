@@ -1,0 +1,14 @@
+{
+  "$schema": "../../schema/manteen.registry.schema.json",
+  "name": "workshop",
+  "namespace": "@workshop",
+  "authorProfile": "manteen.author-profile.json",
+  "items": [
+    {
+      "name": "callout",
+      "kind": "component",
+      "files": [{ "path": "src/callout.tsx", "as": "component" }],
+      "stylesApi": { "WorkshopCallout": ["root", "label"] }
+    }
+  ]
+}

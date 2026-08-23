@@ -44,7 +44,8 @@ manteen-kit merge-theme <base.ts> <fragment.ts> [--write] [--prefer incoming] [-
 ```
 
 `build` validates the catalog against the authoring schema **and** every emitted item against
-the vendored interchange schema, exiting non-zero on either.
+the vendored interchange schema, exiting non-zero on either. If the catalog opts into an author
+profile, both normal and `--check` builds validate it before any output mutation.
 
 ## Authoring format
 
@@ -52,6 +53,7 @@ the vendored interchange schema, exiting non-zero on either.
 {
   "name": "base",
   "namespace": "@base",              // bare `uses` names are qualified with this
+  "authorProfile": "manteen.author-profile.json", // optional, author-only
   "items": [
     {
       "name": "data-grid",
@@ -86,6 +88,30 @@ the kit carries the declaration without trying to infer or verify the component 
 { "stylesApi": { "DataGrid": ["root", "header", "row"] } }
 ```
 
+An optional author profile makes those claims mechanically accountable without asking the kit to
+interpret tests or source behavior:
+
+```json
+{
+  "$schema": "./node_modules/manteen-kit/schema/manteen.author-profile.schema.json",
+  "schemaVersion": 1,
+  "stylesApi": [
+    {
+      "item": "data-grid",
+      "component": "DataGrid",
+      "evidence": "evidence/data-grid-styles.contract"
+    }
+  ]
+}
+```
+
+Every opted-in `stylesApi` item/component claim must have exactly one mapping, every mapping must
+point back to a current claim, and evidence paths must be unique canonical catalog-root-relative
+POSIX paths to existing ordinary files contained by that repository. Evidence can use any filename
+and file type: the generic validator does not require Bun, read evidence contents, inspect
+assertions or skips, execute TypeScript, runtime-import source, or run author commands. The author's
+normal test runner remains the authority for behavioral proof.
+
 `props` and `usage` are the same kind of author assertion, for documentation clients. `props`
 documents the prop surface (keyed by exported component or hook name, each entry `name`/`type`
 plus optional `required`/`default`/`description`); `usage` names a copy-ready example module
@@ -100,8 +126,9 @@ client installs it:
 }
 ```
 
-`mantine`, `provider`, `themeFragment`, `stylesApi`, `props` and `usage` have no direct
-wire-format equivalent, so
+`authorProfile` and its evidence mappings are author-side only and never enter item JSON, the wire
+index, or installed files. `mantine`, `provider`, `themeFragment`, `stylesApi`, `props` and `usage`
+have no direct wire-format equivalent, so
 they compile into the installable item JSON under the open `meta.mantine` object. The registry index
 contains only the discovery-safe `requires` and `provider` summary; `stylesApi` and the inlined theme
 fragment remain item-detail metadata. Clients that understand these fields act on them; clients that

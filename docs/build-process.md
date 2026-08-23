@@ -81,16 +81,17 @@ Seven checks encode rules that a reader could otherwise silently break:
   the ban. Only the leading form: stripping from a mid-line `//` would blind it
   after any string containing `://`, and a false negative in a guard is worse
   than a flagged trailing comment.
-- `scripts/guard-house-styles-api-evidence.mjs` — every item/component claim in the house
-  catalog's `stylesApi` declarations has exactly one entry in
-  `house-styles-api-evidence.json`, and every map entry points back to a current claim. Evidence
-  paths must be canonical, repository-relative ordinary files, and one file cannot be reused for
-  several claims. Each path must also match the root's plain `bun test` discovery surface:
+- `scripts/guard-house-styles-api-evidence.mjs` — a thin Bun-run adapter over `manteen-kit`'s
+  generic author-conformance validator. The generic validator owns bidirectional `stylesApi`
+  claim/evidence ownership and safe repository-contained paths; the adapter adds only the house
+  repository's root `bun test` discovery contract:
   `*.test.*`, `*_test.*`, `*.spec.*`, or `*_spec.*` with a Bun-supported JavaScript or TypeScript
   extension (`js`, `jsx`, `ts`, `tsx`, `mjs`, `cjs`, `mts`, or `cts`), outside hidden and
   `node_modules` directories. The guard pins the root test script and absence of
-  discovery-changing `bunfig.toml` configuration so that invariant cannot silently drift. This
-  checks declaration/evidence ownership and test-runner inclusion only: it never reads test
+  discovery-changing `bunfig.toml` configuration so that invariant cannot silently drift. The
+  adapter is deliberately invoked with Bun in local and CI guards because it imports the kit's
+  TypeScript source directly; published kit builds remain Node-compatible. Together the two layers
+  check declaration/evidence ownership and test-runner inclusion only: neither reads test
   contents or claims that their assertions passed. The normal test runner owns behavioral proof.
 - `packages/cli/scripts/guard-diagnostics.mjs` — every `DiagnosticCode` is
   emitted somewhere or explicitly listed as pending. A specified refusal with no

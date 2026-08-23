@@ -149,15 +149,14 @@ Styles API support runs beside that work as a bounded contract milestone; it doe
 site and is not implied by an editable CSS module. Every current catalog declaration now has a
 matching per-item test that closes the declared selector list against the implementation and checks
 instance `classNames` / `styles`, stable selector classes, component CSS and theme-level extension.
-That is repository evidence about `@house`, not generic kit verification: `manteen-kit` still
-carries arbitrary registry declarations without proving their source. The first Wm milestone closes
-the house durability gap with `house-styles-api-evidence.json` and a bidirectional guard: every
-item/component claim owns one unique repository-contained evidence file, and every mapping points
-back to a current claim. Evidence paths must also lie on the repository's root `bun test` discovery
-surface; an ordinary file that the normal runner will not execute is rejected. The guard
-deliberately does not inspect test semantics or claim that tests passed. Components without a
-declaration may keep editable internal CSS, but later catalog additions still need an explicit
-adopt-or-keep-internal decision rather than silence.
+The optional `manteen-kit` author profile now generalizes that ownership invariant without an
+`@house` assumption: every opted-in item/component claim has exactly one explicit evidence mapping,
+every mapping points back to a current claim, and each unique canonical path resolves to an ordinary
+repository-contained file. The profile remains author-only and is absent from wire output and
+consumer installs. Generic validation does not inspect or execute evidence; the house adapter adds
+the narrower requirement that its mapped files lie on the root `bun test` discovery surface.
+Components without a declaration may keep editable internal CSS, but later catalog additions still
+need an explicit adopt-or-keep-internal decision rather than silence.
 
 ## The program
 
@@ -172,7 +171,7 @@ is a judgment call, which is exactly why they are separate runs.
 | W7 | [`Hardening`](./handoffs/w7-hardening-handoff.md) | complete: matrix-driven, findings-first, hosted retry | Real Windows and macOS CI exposed path and line-ending defects that local Linux could not. |
 | W8 | [`Release`](./releases/w8-release-handoff.md) | complete: both `0.1.1` packages published through tagged OIDC with provenance | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
 | Wc | [`Registry content`](./handoffs/wc-registry-content-handoff.md) | first eight-item tranche complete; later catalog growth summarized above | Independent of all of the above; doubles as client stress-testing without turning fixtures into product evidence. |
-| Wm | [`Mantine custom-component alignment`](./contracts/mantine-component-alignment-plan.md) | active: house author-truthfulness guard complete; generic evidence profile next | Makes author assertions mechanically accountable and aligns Manteen metadata and tooling with Mantine 9.5 custom-component capabilities without requiring `factory`. |
+| Wm | [`Mantine custom-component alignment`](./contracts/mantine-component-alignment-plan.md) | active: generic author-conformance profile complete; range coherence next | Makes author assertions mechanically accountable and aligns Manteen metadata and tooling with Mantine 9.5 custom-component capabilities without requiring `factory`. |
 | Wt | [`Theme builder`](#wt--theme-builder-proposed) | proposed: one page, plan-first | Preview-then-install for the one registry item every consumer is expected to edit. Depends on nothing; blocked by nothing. |
 | Wu | [`Update merging`](./handoffs/update-merge-handoff.md) | complete and public in `0.3.0`: receipt v3, exact bases, three-way plan, explicit reset, three-axis diff, built-Node and controlled-revision acceptance | Changes ordinary source maintenance from skip-or-replace to reproducible three-way merging without weakening the existing plan/apply transaction. |
 | Wv | [`Update verification`](./handoffs/update-verification-handoff.md) | complete and public in `0.3.0`: post-apply orchestration, fail-fast bounded project scripts, drift detection, built-Node and fresh-consumer acceptance | Lets a consumer define what “the merged component still works here” means without placing arbitrary scripts inside Manteen's rollback journal. |
@@ -191,9 +190,9 @@ The implementation contract is frozen in
 original [research proposal](./research/mantine-custom-component-improvement-plan.md) preserves the
 audit and detailed alternatives.
 
-The first implementation milestone now binds every house `stylesApi` declaration to explicit,
-unique evidence in both directions. The next milestone generalizes only that proven evidence-path
-profile. Compatibility validation follows with a
+The first two implementation steps now bind every house `stylesApi` declaration to explicit,
+unique evidence in both directions and generalize that invariant through the kit's optional
+author-only profile. Compatibility validation follows with a
 house band of `>=9.5.0 <10` and fresh-consumer proof at both 9.5.0 and 9.5.2. Broader
 `componentApi` metadata is deferred. Theme summary, the Fumadocs route shell, and prototype cleanup
 can use separate worktrees after their shared readers and schemas have one owner; scaffolding stays

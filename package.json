@@ -13,7 +13,7 @@
     "//typecheck": "guard-workspace runs first because a broken node_modules makes tsc report hundreds of errors in files nobody touched. Checking link integrity costs a few milliseconds and turns that wall into one actionable line. App-specific checks run last because the root tsconfig does not own either documentation application.",
     "typecheck": "node scripts/guard-workspace.mjs && tsc --noEmit && bun --cwd=apps/docs run check && bun run site:check",
     "//guard": "Every mechanical guard in one place. CI invokes them individually so a failure names itself in the job log.",
-    "guard": "node scripts/guard-workspace.mjs && node scripts/guard-deps.mjs && node scripts/guard-runtime-apis.mjs && node scripts/guard-house-styles-api-evidence.mjs && node packages/cli/scripts/guard-diagnostics.mjs && node scripts/guard-release.mjs && node scripts/guard-ci.mjs",
+    "guard": "node scripts/guard-workspace.mjs && node scripts/guard-deps.mjs && node scripts/guard-runtime-apis.mjs && bun scripts/guard-house-styles-api-evidence.mjs && node packages/cli/scripts/guard-diagnostics.mjs && node scripts/guard-release.mjs && node scripts/guard-ci.mjs",
     "guard:release": "node scripts/guard-release.mjs",
     "verify:node": "bun run build:kit && node packages/registry-kit/dist/cli.mjs build",
     "docs:dev": "bun run build:registry && bun --cwd=apps/docs run dev",

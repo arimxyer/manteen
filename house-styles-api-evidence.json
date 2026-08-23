@@ -1,47 +1,51 @@
-[
-  {
-    "item": "empty-state",
-    "component": "EmptyState",
-    "evidence": "test/empty-state-styles-api.test.tsx"
-  },
-  {
-    "item": "page-header",
-    "component": "PageHeader",
-    "evidence": "test/page-header-styles-api.test.tsx"
-  },
-  {
-    "item": "stat-card",
-    "component": "StatCard",
-    "evidence": "test/stat-card-styles-api.test.tsx"
-  },
-  {
-    "item": "article-card",
-    "component": "ArticleCard",
-    "evidence": "test/article-card-styles-api.test.tsx"
-  },
-  {
-    "item": "button-progress",
-    "component": "ButtonProgress",
-    "evidence": "test/button-progress-styles-api.test.tsx"
-  },
-  {
-    "item": "dnd-list",
-    "component": "DndList",
-    "evidence": "test/dnd-list-styles-api.test.tsx"
-  },
-  {
-    "item": "cards-carousel",
-    "component": "CardsCarousel",
-    "evidence": "test/cards-carousel-styles-api.test.tsx"
-  },
-  {
-    "item": "floating-label-input",
-    "component": "FloatingLabelInput",
-    "evidence": "test/floating-label-input-styles-api.test.tsx"
-  },
-  {
-    "item": "password-strength",
-    "component": "PasswordStrength",
-    "evidence": "test/password-strength-styles-api.test.tsx"
-  }
-]
+{
+  "$schema": "./packages/registry-kit/schema/manteen.author-profile.schema.json",
+  "schemaVersion": 1,
+  "stylesApi": [
+    {
+      "item": "empty-state",
+      "component": "EmptyState",
+      "evidence": "test/empty-state-styles-api.test.tsx"
+    },
+    {
+      "item": "page-header",
+      "component": "PageHeader",
+      "evidence": "test/page-header-styles-api.test.tsx"
+    },
+    {
+      "item": "stat-card",
+      "component": "StatCard",
+      "evidence": "test/stat-card-styles-api.test.tsx"
+    },
+    {
+      "item": "article-card",
+      "component": "ArticleCard",
+      "evidence": "test/article-card-styles-api.test.tsx"
+    },
+    {
+      "item": "button-progress",
+      "component": "ButtonProgress",
+      "evidence": "test/button-progress-styles-api.test.tsx"
+    },
+    {
+      "item": "dnd-list",
+      "component": "DndList",
+      "evidence": "test/dnd-list-styles-api.test.tsx"
+    },
+    {
+      "item": "cards-carousel",
+      "component": "CardsCarousel",
+      "evidence": "test/cards-carousel-styles-api.test.tsx"
+    },
+    {
+      "item": "floating-label-input",
+      "component": "FloatingLabelInput",
+      "evidence": "test/floating-label-input-styles-api.test.tsx"
+    },
+    {
+      "item": "password-strength",
+      "component": "PasswordStrength",
+      "evidence": "test/password-strength-styles-api.test.tsx"
+    }
+  ]
+}

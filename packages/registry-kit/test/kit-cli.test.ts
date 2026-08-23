@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -31,6 +31,42 @@ function document(result: ReturnType<typeof run>): Record<string, unknown> {
   const parsed = JSON.parse(result.stdout.toString()) as Record<string, unknown>;
   expect(validateCommand(parsed), JSON.stringify(validateCommand.errors)).toBe(true);
   return parsed;
+}
+
+function invalidConformanceFixture(): { catalog: string; outDir: string; sentinel: string } {
+  const root = temporaryRoot();
+  const catalog = join(root, "manteen.registry.json");
+  const outDir = join(root, "public/r");
+  const sentinel = join(outDir, "sentinel.txt");
+  mkdirSync(join(root, "src"), { recursive: true });
+  mkdirSync(outDir, { recursive: true });
+  writeFileSync(join(root, "src/alpha.tsx"), "export const Alpha = () => null;\n");
+  writeFileSync(sentinel, "unchanged\n");
+  writeFileSync(
+    catalog,
+    `${JSON.stringify(
+      {
+        name: "third-party",
+        namespace: "@workshop",
+        authorProfile: "manteen.author-profile.json",
+        items: [
+          {
+            name: "alpha",
+            kind: "component",
+            files: [{ path: "src/alpha.tsx", as: "component" }],
+            stylesApi: { Alpha: ["root"] },
+          },
+        ],
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  writeFileSync(
+    join(root, "manteen.author-profile.json"),
+    `${JSON.stringify({ schemaVersion: 1, stylesApi: [] }, null, 2)}\n`,
+  );
+  return { catalog, outDir, sentinel };
 }
 
 afterEach(() => {
@@ -87,5 +123,28 @@ describe("kit JSON commands", () => {
     expect(result.stderr.toString()).toBe("");
     expect(json.ok).toBe(false);
     expect(json.errors).toEqual([expect.objectContaining({ code: "invalid-arguments" })]);
+  });
+
+  test("build and build --check author refusals are one valid zero-write envelope", () => {
+    const created = invalidConformanceFixture();
+
+    for (const mode of [[], ["--check"]]) {
+      const result = run(["build", created.catalog, created.outDir, ...mode, "--json"]);
+      const json = document(result);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr.toString()).toBe("");
+      expect(json).toMatchObject({
+        schemaVersion: 1,
+        command: "build",
+        ok: false,
+        exitCode: 1,
+        mutated: false,
+        payload: null,
+        errors: [{ code: "author-conformance-failed" }],
+      });
+      expect(readFileSync(created.sentinel, "utf8")).toBe("unchanged\n");
+      expect(readdirSync(created.outDir)).toEqual(["sentinel.txt"]);
+    }
   });
 });

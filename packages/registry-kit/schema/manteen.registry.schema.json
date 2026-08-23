@@ -15,6 +15,11 @@
       "description": "Namespace consumers register this registry under. Used to qualify `uses` entries at build time."
     },
     "homepage": { "type": "string" },
+    "authorProfile": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Canonical catalog-root-relative path to an optional author-only conformance profile. The profile is validated during builds and never emitted into registry wire output."
+    },
     "items": {
       "type": "array",
       "items": { "$ref": "#/definitions/item" }

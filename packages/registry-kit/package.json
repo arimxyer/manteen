@@ -13,6 +13,7 @@
       "default": "./dist/index.mjs"
     },
     "./schema": "./schema/manteen.registry.schema.json",
+    "./schema/author-profile": "./schema/manteen.author-profile.schema.json",
     "./schema/command": "./schema/manteen-kit-command.schema.json",
     "./schema/output": "./schema/manteen-kit-output.schema.json"
   },
