@@ -16,7 +16,7 @@ import { join, resolve } from "node:path";
 
 const SRC = resolve(import.meta.dirname, "../src");
 const TYPES = join(SRC, "plan/types.ts");
-const BUILD_PLAN = resolve(import.meta.dirname, "../../../docs/client-build-plan.md");
+const BUILD_PLAN = resolve(import.meta.dirname, "../../../docs/contracts/client-build-plan.md");
 
 /**
  * Declared, not yet emitted, with the phase that will land it.
@@ -55,7 +55,9 @@ const declared = [...types.slice(start, end).matchAll(/"([a-z0-9-]+)"/g)].map((m
 const buildPlan = readFileSync(BUILD_PLAN, "utf8");
 const refusalStart = buildPlan.indexOf("### Refusal contract (one table, every path)");
 if (refusalStart === -1) {
-  console.error("guard-diagnostics: no refusal-contract heading in docs/client-build-plan.md");
+  console.error(
+    "guard-diagnostics: no refusal-contract heading in docs/contracts/client-build-plan.md",
+  );
   process.exit(1);
 }
 const refusalTail = buildPlan.slice(refusalStart);
@@ -81,7 +83,9 @@ for (const code of declared) {
     failures.push(`  ${code}: now emitted — remove it from PENDING (${PENDING.get(code)})`);
   }
   if (!refusalContract.includes(`\`${code}\``)) {
-    failures.push(`  ${code}: missing from §1's refusal table in docs/client-build-plan.md`);
+    failures.push(
+      `  ${code}: missing from §1's refusal table in docs/contracts/client-build-plan.md`,
+    );
   }
 }
 for (const code of PENDING.keys()) {

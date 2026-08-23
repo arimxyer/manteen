@@ -3,7 +3,7 @@
  *
  * Fixture provenance is intentionally point-in-time rather than `@latest`:
  * create-vite 9.1.1, create-next-app 16.2.12, and create-react-router 8.3.0,
- * observed 2026-07-29 in docs/w6-init-handoff.md. These compact fixtures keep
+ * observed 2026-07-29 in docs/handoffs/w6-init-handoff.md. These compact fixtures keep
  * the generated entry seams that init transforms; they are not claimed as full
  * generator archives or as live evidence that those generators still match.
  */

@@ -1,0 +1,114 @@
+---
+title: Agent guide
+description: Use Manteen safely and predictably from an agent or automation harness.
+---
+
+Manteen gives agents an inspectable planning loop, one machine-readable response shape, and
+explicit authority for destructive choices. An agent should be able to discover the installed
+surface, explain a refusal, and apply exactly the plan a person reviewed.
+
+**Inspect the installed binary.** Documentation is not proof of what a project has installed. Read
+`manteen --version` and the relevant command `--help`; never invent a command or flag that the
+installed binary does not expose.
+
+Examples use the logical command `manteen`. Resolve the project-installed binary through its
+declared package manager without permitting a transient download:
+
+```bash
+npm exec --yes=false -- manteen --version
+pnpm exec manteen --version
+yarn manteen --version
+bunx --no-install manteen --version
+```
+
+Keep package-manager and project-check output on stderr separate from Manteen's single JSON
+document on stdout.
+
+## Operating model
+
+1. Establish the project root and read its repository instructions.
+2. Inspect `manteen --version`, then run `manteen status --json` when available.
+3. Use `list`, `info`, and `diff` to understand registry and installed state before changing it.
+4. Preview each mutation with `--dry-run --json`.
+5. Retain the returned `planDigest` with the exact root, references, and relevant flags.
+6. Apply the same operation with `--expect-plan <sha256>`.
+7. Treat destructive flags as separate user decisions rather than retry strategies.
+
+JSON mode disables prompting. It does not grant overwrite, reset, removal, verification-bypass,
+or packaged-guide replacement authority. A missing choice remains a structured refusal.
+
+## Agent-facing commands
+
+The installed guide is the authority for the complete agent-facing command manifest:
+
+```bash
+manteen agent guide --json
+```
+
+It returns the packaged guide and a data-only manifest describing the available commands, their
+read/write mode, purpose, and agent-contract milestone. The CLI reference remains the
+human-readable command overview.
+
+## Review and apply the same plan
+
+The planning contract applies to `init`, `add`, `update`, and `remove`:
+
+```bash
+manteen init --dry-run --json
+manteen init --expect-plan <sha256> --json
+
+manteen add @house/article-card --dry-run --json
+manteen add @house/article-card --expect-plan <sha256> --json
+
+manteen update @house/article-card --dry-run --json
+manteen update @house/article-card --expect-plan <sha256> --json
+
+manteen remove --upstream-removed --file src/components/ui/old.tsx --dry-run --json
+manteen remove --upstream-removed --file src/components/ui/old.tsx \
+  --expect-plan <sha256> --json
+```
+
+A changed source, destination, preimage, verification definition, or relevant option makes the
+expectation stale and produces a zero-write refusal.
+
+`--overwrite`, `--take-upstream`, `--discard-adapted`, `--no-verify`, and `--take-packaged` each
+grant a different authority. Explain the concrete consequence and use the option only after that
+consequence is chosen.
+
+## Machine responses
+
+Every recognized `--json` invocation emits one versioned envelope containing:
+
+```text
+schemaVersion, command, root, ok, exitCode, mutated,
+payload, diagnostics, errors, notes
+```
+
+`ok` is exactly `exitCode === 0`. A successful `status` invocation can still report
+`healthy: false`; command success and assessed project health answer different questions. Blocking
+diagnostics carry a typed rerun argument list, a configuration patch, or a bounded manual action
+and rationale.
+
+The [machine output reference](/docs/reference/machine-output) defines every outer field, stream,
+and exit code. [Diagnostics and refusals](/docs/reference/diagnostics) explains forceability and
+typed actions without duplicating the CLI's guarded diagnostic catalogue here.
+
+Do not expose an expanded environment placeholder from a registry URL. Receipts, diagnostics,
+digests, and machine output may contain only its redacted form.
+
+## Install the packaged skill
+
+```bash
+manteen agent guide --json
+manteen agent install --dry-run --json
+manteen agent install --json
+```
+
+Preview the target path before installation. Project, user, Codex, Claude, and custom targets are
+available. An unowned or locally modified installation is refused; `--update` updates an owned
+copy, while `--take-packaged` explicitly discards its local adaptation. `manteen init` never
+installs the skill or edits agent instructions implicitly.
+
+For compact machine discovery, use [`llms.txt`](/llms.txt). For the complete static corpus, use
+[`llms-full.txt`](/llms-full.txt). Continue with [source ownership](/docs/concepts/source-ownership)
+for the receipt, pristine-base, and local-adaptation model.

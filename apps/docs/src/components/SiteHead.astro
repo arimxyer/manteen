@@ -15,24 +15,12 @@ const playgroundItems = Object.keys(playgroundModules).flatMap((path) => {
 const hasPlayground = playgroundItems.some(
   (name) => Astro.url.pathname === `${base}/registry/${name}/`,
 );
-// SPIKE — the catalog card grid (registry index AND the home page's embedded catalog: see
-// RegistryCatalog.astro's `mode` prop) now renders three items' real playground adapters as
-// SSR-inert "live minis" (RegistryCardPreview.tsx), inside real MantineProvider instances. Both
-// pages need core CSS unconditionally now, not just detail pages — this is a deliberate,
-// page-weight-costing extension of the same gate, not a leak. Package-specific extras
-// (carousel) still ride the mini's own import chain rather than being linked here, same as the
-// detail-page convention above.
+// The registry catalog renders three items' real playground adapters as SSR-inert live minis
+// inside MantineProvider instances. It therefore needs core CSS even though it is not a detail
+// page. Package-specific extras still ride each mini's own import chain.
 const isCatalogPage =
-  Astro.url.pathname === `${base}/registry/` ||
-  Astro.url.pathname === `${base}/registry` ||
-  Astro.url.pathname === `${base}/` ||
-  Astro.url.pathname === base;
-// The home-page hero under review renders real Mantine components live (see
-// components/home/HeroShowcase.tsx and OwnershipPanel.tsx), so its review route needs the same
-// core CSS the catalog pages get. Prefix match, not an exact list, so a further direction cannot
-// silently ship an unstyled component.
-const isHeroPreview = Astro.url.pathname.startsWith(`${base}/preview/`);
-const needsCoreStyles = hasPlayground || isCatalogPage || isHeroPreview;
+  Astro.url.pathname === `${base}/registry/` || Astro.url.pathname === `${base}/registry`;
+const needsCoreStyles = hasPlayground || isCatalogPage;
 ---
 
 <DefaultHead />

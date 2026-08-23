@@ -1,0 +1,123 @@
+---
+title: Diagnostics and refusals
+description: Interpret Manteen findings, refusal boundaries, forceability, and typed remediation.
+---
+
+A refusal is Manteen declining to cross an unsafe or ambiguous boundary. It is not a generic error
+message and it is not permission to add progressively broader flags until the command exits zero.
+
+The exact diagnostic catalogue belongs to the CLI source because gates and tests must change with
+it. This page explains the stable reading model and the decisions the most common families require.
+
+## First identify the boundary
+
+| Result | What happened | Where to look |
+| --- | --- | --- |
+| Planned refusal | No project mutation began. | Blocking entries in `diagnostics`. |
+| Usage or configuration refusal | No usable plan was produced. | Exit `2`, then `errors` or diagnostics. |
+| Apply or dependency failure | Execution began but did not complete successfully. | `errors`, command payload, and `mutated`. |
+| Verification failure | Captured Manteen-managed and control preimages are restored. | Verification payload, `errors`, and `mutated`. |
+| Cancellation | The requested interactive authority was not granted. | Exit `130`. |
+
+Manteen's journal can restore source, pristine bases, receipts, configuration, and other captured
+control files. It does not claim to reverse arbitrary cache files, snapshots, dependency changes,
+or other side effects created by a verifier or package manager.
+
+## Read one diagnostic as a decision record
+
+```ts
+interface Diagnostic {
+  code: string;
+  severity: "error" | "warn" | "info";
+  message: string;
+  forceable: boolean;
+  items?: string[];
+  path?: string;
+  actions?: RemediationAction[];
+  manualRationale?: string;
+}
+```
+
+### Severity tells you whether the plan can proceed
+
+- `error` blocks unless that exact diagnostic is forceable and the command accepts `--force`.
+- `warn` preserves a risk or compatibility assumption while allowing the command to proceed.
+- `info` reports useful state, such as declared Styles API metadata or local receipt drift.
+
+Diagnostics are sorted deterministically with errors first. Their order is presentation, not a
+sequence of retries.
+
+### Forceability names one narrow override
+
+`forceable: true` means `--force` may downgrade that diagnostic from error to warning. The finding
+remains visible in text and JSON output. It is never silenced.
+
+<Callout title="Force cannot answer a missing ownership decision" type="warn">
+
+Destination collisions, stale plan digests, update conflicts, unsafe paths, missing credentials,
+and upstream-removal ownership checks are non-forceable. They require a specific resolution,
+reviewed reset, configuration change, or new preview.
+
+</Callout>
+
+Removal has no `--force` option. Other destructive choices—`--overwrite`, `--take-upstream`,
+`--discard-adapted`, and `--no-verify`—grant different authority and cannot substitute for one
+another.
+
+## Remediation is data, not shell text
+
+A blocking machine diagnostic supplies at least one action or explains why no safe automatic action
+exists:
+
+| Action | Meaning |
+| --- | --- |
+| `rerun` | An argv array to review and execute directly, never a shell command string. |
+| `configPatch` | A JSON-compatible patch proposed for `manteen.json`; review before applying. |
+| `manual` | A bounded instruction for work the CLI cannot safely perform. |
+| `manualRationale` | Why the refusal needs human or project-specific judgment. |
+
+An action is not pre-approved consent. For example, the two actions on `destination-exists` expose
+both choices—overwrite or keep—not a recommendation to overwrite.
+
+## Common refusal families
+
+### Identity and destination ownership
+
+`target-collision` and `receipt-collision` mean two owners claim one destination. Fix the durable
+selection in `manteen.json` rather than forcing one implementation behind imports authored for
+another. `destination-exists` instead asks whether one currently unowned path should be replaced or
+kept.
+
+### Registry input and request safety
+
+`unknown-namespace`, `missing-env`, `fetch-failed`, `wire-invalid`, and
+`response-too-large` stop an unresolved or untrusted document before it becomes source. A missing
+environment value is fixed at the credential source; `--force` never sends a request with an
+unexpanded placeholder.
+
+### Compatibility and composed project files
+
+Some compatibility findings are forceable because proceeding has a bounded meaning. For example,
+forcing a Mantine version mismatch accepts that mismatch, while forcing an unmergeable theme drops
+the run's theme contribution. Read the diagnostic message before choosing the override; the same
+flag does not imply the same consequence.
+
+### Maintenance state
+
+`merge-base-unreadable` and `update-conflict` protect local adaptations when Manteen cannot derive a
+safe merge. `plan-mismatch` means the reviewed preview no longer describes the proposed mutation;
+generate a new dry-run instead of bypassing the digest. Upstream-removal diagnostics protect exact
+receipt ownership and require explicit file selection.
+
+## Refusal workflow
+
+1. Preserve the complete envelope and exit code.
+2. Confirm whether `mutated` is false or whether durable side effects remain.
+3. Read every blocking diagnostic, not only the first displayed line.
+4. Prefer its typed action or configuration patch over a hand-built retry.
+5. Explain any destructive consequence before applying it.
+6. Run a new dry-run after project, registry, credential, or source state changes.
+
+See [Machine output](/docs/reference/machine-output) for envelope and stream framing. Registry
+credential refusals are covered in
+[Authenticated registries](/docs/guides/authenticated-registries).

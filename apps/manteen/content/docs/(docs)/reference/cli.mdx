@@ -1,0 +1,84 @@
+---
+title: CLI commands
+description: Review the current Manteen command groups and planning contract.
+---
+
+Run Manteen from the consumer application root unless `--cwd` selects another project directory.
+Use the binary installed by that project's package manager rather than acquiring an unreviewed
+version for a single command.
+
+## Command groups
+
+| Command | Purpose |
+| --- | --- |
+| `manteen init` | Detect and configure a supported Mantine application. |
+| `manteen add <ref...>` | Resolve, plan, and install registry items and dependencies. |
+| `manteen list [namespace...]` | Discover configured registry items and installed state. |
+| `manteen info <ref>` | Inspect one item's files, requirements, metadata, props, and usage. |
+| `manteen diff [ref...]` | Compare local, pristine-base, and current upstream source. |
+| `manteen update [ref...]` | Merge upstream changes around local source adaptations. |
+| `manteen remove --upstream-removed` | Remove exact receipt-owned files proven absent upstream. |
+| `manteen status` | Assess local configuration and receipt health without registry access. |
+| `manteen agent guide` | Print the packaged guide without requiring project configuration. |
+| `manteen agent install` | Safely install or update the packaged Manteen skill. |
+
+The installed binary is the authority for available options:
+
+```bash
+manteen --version
+manteen --help
+manteen update --help
+```
+
+## Review a machine plan before applying it
+
+The `init`, `add`, `update`, and `remove` commands support dry-run JSON plans. Retain the returned
+`planDigest`, repeat the same project root, references, and relevant flags, then apply with
+`--expect-plan`:
+
+```bash
+manteen init --dry-run --json
+manteen init --expect-plan <sha256> --json
+
+manteen add @house/article-card --dry-run --json
+manteen add @house/article-card --expect-plan <sha256> --json
+
+manteen update @house/article-card --dry-run --json
+manteen update @house/article-card --expect-plan <sha256> --json
+
+manteen remove --upstream-removed --file src/components/ui/old.tsx --dry-run --json
+manteen remove --upstream-removed --file src/components/ui/old.tsx \
+  --expect-plan <sha256> --json
+```
+
+A changed source, destination, preimage, verification definition, or relevant option makes the
+expectation stale and produces a zero-write refusal.
+
+Every recognized JSON invocation emits one versioned document on stdout. Package-manager notices,
+project verification output, and other process diagnostics remain on stderr so automation can
+parse the response without mixing streams.
+
+Read [Machine output](/docs/reference/machine-output) for the complete envelope and exit contract,
+then [Diagnostics and refusals](/docs/reference/diagnostics) for typed remediation.
+
+JSON mode disables prompting. It does not grant overwrite, reset, removal, verification-bypass, or
+packaged-guide replacement authority.
+
+## Destructive and bypass choices are command-specific
+
+<Callout title="No universal force switch" type="warn">
+
+Each option grants narrowly scoped authority. Treat these as separate decisions with concrete
+consequences, not as generic retry flags.
+
+</Callout>
+
+- `add --overwrite` replaces occupied destinations; `--no-overwrite` keeps them.
+- `update --take-upstream` discards local source adaptations.
+- `remove --discard-adapted` applies only to exact selected upstream-removed files.
+- `add`, `update`, and `remove` accept `--no-verify` for configured project checks.
+- `init`, `add`, and `update` accept `--force`; it downgrades only diagnostics classified as
+  forceable. Removal has no `--force` escape hatch.
+
+`manteen status` is intentionally offline. For the distinction between local Manteen health and
+application behavior, read [source ownership](/docs/concepts/source-ownership#installation-is-not-application-integration).

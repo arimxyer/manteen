@@ -1,0 +1,43 @@
+---
+title: Styling installed source
+description: Choose between source edits, a declared Styles API, and theme composition.
+---
+
+Manteen installs source rather than hiding components behind another runtime package. The most
+direct customization path is therefore the source and CSS your project owns.
+
+## Edit the installed source
+
+Ordinary component files and their CSS modules become project source. You can change layout,
+tokens, selectors, and markup directly, then use `manteen diff` to distinguish those adaptations
+from pristine and current upstream versions.
+
+Internal CSS-module class names remain implementation details. Their presence does not create a
+public customization contract for component consumers.
+
+## Use a declared Styles API
+
+An author may declare public Mantine Styles API selectors through `stylesApi`. When the installed
+component actually exposes those selectors, consumers can use instance `classNames` and `styles`
+or component extension at the theme level without editing its internals.
+
+The declaration remains an author assertion. `manteen-kit` carries and reports it but does not
+inspect arbitrary third-party source to prove that every selector is wired. Treat only declared,
+implementation-backed selectors as public API; do not infer additional selectors from CSS-module
+names.
+
+An item with no Styles API declaration is still customizable through owned source. Absence means
+its internal class names are not being promised as a stable external interface.
+
+## Compose package styles and theme fragments
+
+The `css` authoring field declares exact runtime package stylesheets associated with the item's npm
+dependencies. Manteen composes those imports into its managed stylesheet during installation.
+
+A `themeFragment` is different: it remains attached to the registry document and is merged into
+the consumer's theme module rather than copied as another installed file. The consumer owns the
+resulting theme and may continue adapting it.
+
+The [authoring catalog reference](/docs/reference/catalog) defines these fields. Source ownership,
+Styles API declarations, package CSS, and theme composition are separate layers; a registry item
+may use one or several without making them interchangeable.

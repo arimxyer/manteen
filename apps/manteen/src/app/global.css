@@ -1,0 +1,112 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/ocean.css";
+@import "fumadocs-ui/css/preset.css";
+
+/* The landing page accent. Mantine's own blue in light mode, lifted to a legible tint
+   against the ocean preset's dark navy background. */
+@theme {
+  --color-brand: hsl(208, 79%, 48%);
+  --color-brand-hover: hsl(208, 79%, 40%);
+  --color-brand-foreground: hsl(0, 0%, 100%);
+}
+
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.dark {
+  --color-brand: hsl(205, 100%, 78%);
+  --color-brand-hover: hsl(205, 100%, 88%);
+  --color-brand-foreground: hsl(220, 60%, 8%);
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+html > body[data-scroll-locked] {
+  /* biome-ignore lint/complexity/noImportantStyles: Override the scroll-lock library's inline spacing. */
+  margin-right: 0 !important;
+  /* biome-ignore lint/complexity/noImportantStyles: Keep the library's matching CSS variable in sync. */
+  --removed-body-scroll-bar-size: 0px !important;
+}
+
+/* Homepage interaction feedback. Hover is a pointer affordance, so it only
+   exists where a precise hovering pointer actually exists; touch keeps the
+   same immediate press response without acquiring a sticky hover state. */
+.home-directional-link > svg {
+  transition: transform 150ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .home-primary-button:hover {
+    background-color: var(--color-brand-hover);
+  }
+
+  .home-secondary-button:hover {
+    background-color: var(--color-fd-accent);
+  }
+
+  .home-directional-link:hover > svg {
+    transform: translateX(0.125rem);
+  }
+
+  .home-stage-button[aria-pressed="false"]:hover {
+    color: var(--color-fd-foreground);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-directional-link > svg {
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Hero backdrop: a ruled grid faded out from the top-left, plus one soft brand glow.
+   Drawn in CSS so the landing page ships no image assets. */
+.hero-grid {
+  background-image:
+    linear-gradient(to right, var(--color-fd-border) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-fd-border) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse 90% 80% at 20% 0%, black 10%, transparent 70%);
+  mask-image: radial-gradient(ellipse 90% 80% at 20% 0%, black 10%, transparent 70%);
+}
+
+.hero-glow {
+  background-image: radial-gradient(
+    ellipse 70% 60% at 15% -10%,
+    color-mix(in oklab, var(--color-brand) 22%, transparent),
+    transparent 70%
+  );
+}
+
+/* Legibility scrim over the water. Strongest where the copy sits — the left edge on wide
+   screens, the whole panel once the hero centres its text. */
+.hero-scrim {
+  background-image:
+    linear-gradient(
+      100deg,
+      var(--color-fd-background) 0%,
+      color-mix(in oklab, var(--color-fd-background) 62%, transparent) 42%,
+      transparent 76%
+    ),
+    linear-gradient(
+      to top,
+      color-mix(in oklab, var(--color-fd-background) 72%, transparent),
+      transparent 55%
+    );
+}
+
+/* The hero centres its copy below md, so the scrim becomes a full veil rather than a side wash.
+   Kept light enough that the water still reads — the copy carries its own contrast at this size. */
+@media (max-width: 767px) {
+  .hero-scrim {
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--color-fd-background) 55%, transparent),
+      color-mix(in oklab, var(--color-fd-background) 72%, transparent)
+    );
+  }
+}

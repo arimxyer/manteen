@@ -1,0 +1,1965 @@
+.root {
+  --f-bg: #0d0e12;
+  --f-bg-deep: #0b0c10;
+  --f-panel: #14161c;
+  --f-panel-2: #1a1d25;
+  --f-line: #272b35;
+  --f-line-strong: #303442;
+  --f-text: #f2f4f8;
+  --f-muted: #9ba3b2;
+  --f-faint: #858d9e;
+  --f-purple: #8f9bff;
+  --f-purple-soft: #9da1ff;
+  --f-green: #64d99a;
+  --f-green-bright: #49e0a3;
+  --f-amber: #e8b06a;
+  --f-amber-bright: #f3b54a;
+  --f-action: #aab3ff;
+  --f-action-hover: #a3acff;
+  --f-action-ink: #08090c;
+  --f-code-copy: #a4abba;
+  --f-success-inset: #10211c;
+  --f-success-bright: #36d98b;
+  --f-copy-muted: #8f95a6;
+  --f-copy-strong: #a8adbc;
+  --f-indigo-mark: #a99fff;
+  --f-indigo-label: #8288ff;
+  --f-indigo-canvas: #111421;
+  --f-note-panel: #171a23;
+  --f-note-copy: #9aa0b0;
+  --f-chrome: #151720;
+  --f-chrome-text: #7e8495;
+  --f-danger: #ef6b68;
+  --f-plan-border: #2b3150;
+  --f-code-bg: #11131a;
+  --f-success-wash: rgba(73, 224, 163, 0.12);
+  --f-success-border-soft: rgba(73, 224, 163, 0.35);
+  --f-line-muted: #8991a3;
+  --f-code-dim: #9096a7;
+  --f-code-faint: #777d8f;
+  --f-reconcile-canvas: #0c1716;
+  --f-success-border: #2c765a;
+  --f-success-copy: #8af0c5;
+  --f-merge-arrow: #5d6374;
+  --f-warning-copy: #f2b55d;
+  --f-ecosystem-bg: #15163d;
+  --f-ecosystem-copy: #b5b8ce;
+  --f-ecosystem-border: #3b3e67;
+  --f-role-body: #d8daff;
+  --f-role-indigo-copy: #d8daff;
+  --f-role-green-copy: #a6f7d5;
+  --f-agent-label: #7f85f4;
+  --f-type-micro: 0.75rem;
+
+  /* Mascot scale. Sizes are picked from these four roles rather than per placement, which is what
+     the trimmed assets make possible: the box is now the character, so equal width means equal
+     character. The two lockups are deliberate exceptions — he reads as a mark beside the wordmark
+     there, not as an illustration.
+     Caveat worth knowing before adding a fifth: equal width is not exactly equal presence, because
+     the poses frame him differently — the ones holding documents or a laptop spend more of their
+     width on props. Close enough to systematise; not a guarantee. */
+  --manny-nav: 1.7rem;
+  --manny-footer: 3.5rem;
+  /* Illustration occupying its own column in a section header. */
+  --manny-figure: 10.25rem;
+  /* Layered into a section beside or behind its display type. The vw term keeps him from
+     crowding the type on mid-width screens, where the columns narrow but rem sizes do not. */
+  --manny-scene: min(13rem, 15vw);
+  --f-sans: "Figtree Variable", Inter, ui-sans-serif, system-ui, sans-serif;
+  --f-serif: "Fraunces Subset", Georgia, serif;
+  --f-mono: "JetBrains Mono", "Geist Mono", ui-monospace, monospace;
+
+  width: 100%;
+  overflow: clip;
+  background: var(--f-bg);
+  color: var(--f-text);
+  font-family: var(--f-sans);
+  font-optical-sizing: auto;
+}
+
+.root,
+.root * {
+  box-sizing: border-box;
+}
+
+.root :is(h1, h2, h3, p, ol) {
+  margin: 0;
+}
+
+/* Starlight's markdown rhythm and inline-code treatment are correct for prose pages, but this
+   component owns a complete product layout. Reset both at the boundary so intentional grid/flex
+   gaps—not inherited paragraph margins or code pills—control the landing page geometry. */
+.root :where(*) + :where(*) {
+  margin-top: 0;
+}
+
+.root code {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+}
+
+.root a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.root :is(a, button):focus-visible {
+  outline: 2px solid var(--f-purple);
+  outline-offset: 4px;
+}
+
+.hero {
+  min-height: 62.5rem;
+  background: var(--f-bg);
+  border-bottom: 1px solid var(--f-line);
+}
+
+.nav {
+  display: flex;
+  width: 100%;
+  min-height: 4rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(1.25rem, 4.6vw, 4.5rem);
+  border-bottom: 1px solid var(--f-line);
+}
+
+.brand {
+  display: inline-flex;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.4rem;
+  font-size: 1.1875rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.brand img {
+  width: var(--manny-nav);
+  height: auto;
+  object-fit: contain;
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  color: var(--f-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.navLinks a {
+  transition: color 140ms ease;
+}
+
+.navLinks a:hover {
+  color: var(--f-text);
+}
+
+.version {
+  color: var(--f-faint);
+  font-family: var(--f-mono);
+  font-size: var(--f-type-micro);
+  font-weight: 400;
+}
+
+.heroBody {
+  position: relative;
+  display: flex;
+  width: min(100%, 98.6875rem);
+  min-height: calc(62.5rem - 4rem);
+  flex-direction: column;
+  gap: 3rem;
+  margin-inline: auto;
+  padding: 3.5rem clamp(1.5rem, 6vw, 6rem) 4.5rem;
+}
+
+.category {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--f-muted);
+  font-family: var(--f-mono);
+  font-size: var(--f-type-micro);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.category span {
+  width: 0.4375rem;
+  height: 0.4375rem;
+  flex: none;
+  border-radius: 50%;
+  background: var(--f-green-bright);
+}
+
+.heroIntro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(8.5rem, var(--manny-scene)) minmax(18rem, 25.625rem);
+  gap: clamp(1.5rem, 3vw, 3rem);
+  align-items: end;
+}
+
+.heroHeadline {
+  min-width: 0;
+}
+
+.heroManny {
+  display: block;
+  width: 100%;
+  height: auto;
+  justify-self: end;
+  object-fit: contain;
+}
+
+.heroHeadline h1 {
+  max-width: none;
+  font-size: clamp(3rem, 4vw, 3.625rem);
+  font-weight: 800;
+  letter-spacing: -0.033em;
+  line-height: 0.99;
+}
+
+.heroHeadline h1 em {
+  color: var(--f-purple);
+  font-family: var(--f-serif);
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: -0.008em;
+}
+
+.heroSupport {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  padding-bottom: 0.15rem;
+}
+
+.heroSupport > p {
+  max-width: 42ch;
+  color: var(--f-muted);
+  font-size: 1rem;
+  line-height: 1.62;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+.primaryAction,
+.textAction,
+.closingActions a {
+  display: inline-flex;
+  min-height: 2.625rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.4375rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease;
+}
+
+.root .primaryAction {
+  gap: 0.55rem;
+  padding-inline: 1.125rem;
+  background: var(--f-action);
+  color: var(--f-action-ink);
+}
+
+.primaryAction span {
+  font-family: var(--f-mono);
+}
+
+.primaryAction:hover {
+  background: var(--f-action-hover);
+}
+
+.textAction {
+  gap: 0.45rem;
+  color: var(--f-text);
+}
+
+.textAction:hover {
+  color: var(--f-purple-soft);
+}
+
+.primaryAction:active,
+.textAction:active,
+.closingActions a:active {
+  transform: translateY(1px);
+}
+
+.trail {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.trailHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--f-faint);
+  font-family: var(--f-mono);
+  font-size: var(--f-type-micro);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.trailHeader span:last-child {
+  color: var(--f-muted);
+  font-size: var(--f-type-micro);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.trailSequence {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.sourceGrid {
+  display: grid;
+  min-height: 20.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(18.75rem, 1.35fr);
+  border: 1px solid var(--f-line);
+}
+
+.sourceCard {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-left: 1px solid var(--f-line);
+}
+
+.sourceCard:first-child {
+  border-left: 0;
+}
+
+.sourceCard h2 {
+  margin-top: 2rem;
+  font-size: 1.1875rem;
+  font-weight: 700;
+  line-height: 1.18;
+}
+
+.cardLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--card-tone, var(--f-text));
+  font-family: var(--f-mono);
+  font-size: var(--f-type-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cardLabel span {
+  color: var(--f-faint);
+}
+
+.miniCode {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-height: 4rem;
+  margin-top: 1.5rem;
+  padding: 0.85rem;
+  background: var(--f-panel-2);
+  color: var(--f-code-copy);
+}
+
+.miniCode code {
+  font-family: var(--f-mono);
+  font-size: var(--f-type-micro);
+}
+
+.miniCode code:first-child {
+  color: var(--card-tone, var(--f-text));
+  font-weight: 600;
+}
+
+.cardNote {
+  margin-top: 1rem;
+  color: var(--f-muted);
+  font-size: 0.75rem;
+}
+
+.installed {
+  --card-tone: var(--f-purple);
+}
+
+.local,
+.upstream,
+.amber {
+  --card-tone: var(--f-amber);
+}
+
+.reconciled,
+.green {
+  --card-tone: var(--f-green);
+}
+
+/* No image column any more — the mascot moved to the hero headline, so the copy gets the card's
+   full width. That also gives the receipt states room to sit on one line again. */
+.reconciled {
+  overflow: hidden;
+  background: var(--f-success-inset);
+}
+
+.reconciled > div {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.reconciled h2 {
+  font-size: 1.375rem;
+}
+
+.reconciled > div > p:not(.cardLabel) {
+  margin-top: 0.8rem;
+  color: var(--f-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+/* Qualified with `code` so it outranks the `.root code` reset above, the same way
+   `.miniCode code` and `.codeLines code` do. A bare `.receiptStates` loses to it. */
+code.receiptStates {
+  display: flex;
+  align-items: center;
+  /* Allowed to wrap rather than forced onto one line. With the mascot gone from this card the
+     states fit on a single row again at full width, but wrapping keeps them from overrunning the
+     card at narrower breakpoints, and the slack above (margin-top: auto) makes a second row free. */
+  flex-wrap: wrap;
+  gap: 0.35rem 0.8rem;
+  margin-top: auto;
+  color: var(--f-success-copy);
+  font-family: var(--f-mono);
+  font-size: var(--f-type-micro);
+  line-height: 1.5;
+}
+
+.receiptStates > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.ownership,
+.storyBand,
+.reconcileBand,
+.ecosystem,
+.closing {
+  position: relative;
+  width: 100%;
+  padding-inline: max(clamp(1.5rem, 5vw, 5rem), calc((100% - 98.6875rem) / 2 + 5rem));
+}
+
+.ownership {
+  display: flex;
+  flex-direction: column;
+  gap: 3.25rem;
+  padding-block: 7rem 6.5rem;
+  background: var(--f-bg-deep);
+  border-bottom: 1px solid var(--f-line);
+}
+
+.ownershipHeader,
+.ecosystemHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 10.34rem 22.5rem;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.ownershipHeader > div,
+.ecosystemHeader > div {
+  min-width: 0;
+}
+
+.ownershipHeader h2,
+.ecosystemHeader h2,
+.closingCta h2 {
+  font-size: clamp(2.55rem, 3.7vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -0.032em;
+  line-height: 1.03;
+}
+
+.ownershipHeader img,
+.ecosystemHeader img {
+  width: var(--manny-figure);
+  height: auto;
+  object-fit: contain;
+}
+
+.ownershipHeader > p,
+.ecosystemHeader > p {
+  color: var(--f-muted);
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+
+.ownershipSteps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+  border-block: 1px solid var(--f-line-strong);
+  padding: 0;
+}
+
+.ownershipSteps li {
+  position: relative;
+  display: flex;
+  min-height: 15.625rem;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.75rem;
+  border-left: 1px solid var(--f-line);
+}
+
+.ownershipSteps li:first-child {
+  border-left: 0;
+}
+
+.ownershipSteps li::after {
+  position: absolute;
+  top: 1.95rem;
+  right: 1.75rem;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 50%;
+  background: var(--step-tone, var(--f-text));
+  content: "";
+}
+
+.ownershipSteps li > span {
+  color: var(--step-tone, var(--f-text));
+  font-family: var(--f-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.ownershipSteps h3 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.ownershipSteps p {
+  color: var(--f-copy-muted);
+  font-size: 0.9375rem;
+}
+
+.ownershipSteps .purple {
+  --step-tone: var(--f-indigo-label);
+}
+
+.ownershipSteps .white {
+  --step-tone: var(--f-text);
+}
+
+.ownershipSteps .amber {
+  --step-tone: var(--f-amber-bright);
+}
+
+.ownershipSteps .green {
+  --step-tone: var(--f-green-bright);
+}
+
+.storyBand {
+  min-height: 55rem;
+}
+
+.installBand {
+  display: grid;
+  grid-template-columns: minmax(21rem, 27.5rem) minmax(0, 1fr);
+  gap: clamp(3rem, 6vw, 6rem);
+  align-items: center;
+  padding-block: 8rem;
+  background: var(--f-indigo-canvas);
+}
+
+.installNarrative,
+.editNarrative {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+/* Same graze-not-cross placement as .editManny. The horizontal shift is doing as much work as the
+   lift: the headline's second line is short, so moving right takes his body off it entirely.
+   At -7rem/7.5rem the crossing measured 1.06:1; at -11rem/12rem it is 4.66:1 for the same 27px
+   of overlap, so no opacity concession is needed. */
+.installManny {
+  position: absolute;
+  z-index: -1;
+  top: -9.06rem;
+  left: 18.87rem;
+  width: var(--manny-scene);
+  height: auto;
+  opacity: 0.98;
+  object-fit: contain;
+}
+
+.installNarrative h2,
+.editNarrative h2,
+.reconcileHeader h2 {
+  max-width: 13ch;
+  font-size: clamp(2.65rem, 3.5vw, 3.625rem);
+  font-weight: 700;
+  letter-spacing: -0.032em;
+  line-height: 1.02;
+}
+
+.installNarrative > p,
+.editNarrative > p,
+.reconcileHeader > p {
+  color: var(--f-copy-strong);
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+
+.installNote {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.35rem 1.5rem;
+  border: 1px solid var(--f-line-strong);
+  border-radius: 0.625rem;
+  background: var(--f-note-panel);
+}
+
+.installNote strong {
+  font-size: 0.9375rem;
+}
+
+.installNote span {
+  color: var(--f-note-copy);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.guidance,
+.editGuide,
+.reconcileGuide {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.guidance {
+  margin-top: 1rem;
+}
+
+.guidance strong,
+.editGuide strong,
+.reconcileGuide strong {
+  color: var(--f-indigo-mark);
+  font-family: var(--f-mono);
+  font-size: var(--f-type-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.guidance span,
+.editGuide span,
+.reconcileGuide span {
+  color: var(--f-copy-strong);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.terminal,
+.codeArtifact {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--f-line-strong);
+  border-radius: 0.75rem;
+  background: var(--f-bg-deep);
+}
+
+.terminal > header,
+.codeArtifact > header {
+  display: flex;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 1.125rem;
+  border-bottom: 1px solid var(--f-line-strong);
+  background: var(--f-chrome);
+  color: var(--f-chrome-text);
+  font-family: var(--f-mono);
+  font-size: var(--f-type-micro);
+}
+
+.windowDots {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.windowDots i {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--f-green-bright);
+}
+
+.windowDots i:nth-child(2) {
+  background: var(--f-amber-bright);
+}
+
+.windowDots i:nth-child(3) {
+  background: var(--f-danger);
+}
+
+.terminalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.875rem;
+}
+
+.commandRow {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 1rem;
+}
+
+.commandRow > code {
+  min-width: 0;
+  flex: 1;
+  overflow-x: auto;
+  color: var(--f-text);
+  font-family: var(--f-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  scrollbar-width: thin;
+  white-space: nowrap;
+}
+
+.commandRow > code:focus-visible {
+  border-radius: 0.375rem;
+  outline: 2px solid var(--f-purple);
+  outline-offset: 3px;
+}
+
+.commandRow button {
+  display: inline-flex;
+  min-height: 2.25rem;
+  flex: none;
+  align-items: center;
+  gap: 0.4rem;
+  padding-inline: 0.75rem;
+  border: 1px solid var(--f-line-strong);
+  border-radius: 0.45rem;
+  background: var(--f-panel);
+  color: var(--f-muted);
+  font: 600 0.75rem var(--f-sans);
+  cursor: pointer;
+}
+
+.commandRow button:hover,
+.commandRow button[data-copied] {
+  border-color: var(--f-green);
+  color: var(--f-green);
+}
+
+.planGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16.875rem;
+  gap: 1.5rem;
+}
+
+.plannedFiles,
+.planReceipt {
+  display: flex;
+  flex-direction: column;
+}
+
+.plannedFiles {
+  gap: 0.55rem;
+}
+
+.plannedFiles > strong,
+.planReceipt > strong {
+  margin-bottom: 0.4rem;
+  color: var(--f-chrome-text);
+  font: 700 var(--f-type-micro) var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.plannedFiles code {
+  color: var(--f-text);
+  font: 400 0.75rem var(--f-mono);
+}
+
+.plannedFiles code span {
+  margin-right: 0.75rem;
+  color: var(--f-purple);
+}
+
+.planReceipt {
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border: 1px solid var(--f-plan-border);
+  border-radius: 0.4375rem;
+  background: var(--f-indigo-canvas);
+}
+
+.planReceipt > strong {
+  color: var(--f-green);
+}
+
+.planReceipt code {
+  color: var(--f-text);
+  font: 400 0.8125rem / 1.55 var(--f-mono);
+}
+
+.planReceipt span {
+  color: var(--f-copy-muted);
+  font-size: 0.75rem;
+}
+
+.editBand {
+  /* Overrides .storyBand's 55rem locally rather than lowering it, since the install band shares
+     that rule and its mascot bleeds upward out of the column, making the height load-bearing
+     there. Here the tallest column is the 514px artifact, so the band sizes to its content. */
+  min-height: 48rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 26.25rem;
+  gap: clamp(3rem, 6vw, 6rem);
+  align-items: center;
+  padding-block: 8rem;
+  background: var(--f-bg);
+  border-bottom: 1px solid var(--f-line);
+}
+
+.codeArtifact {
+  background: var(--f-code-bg);
+}
+
+.codeArtifact > header span {
+  color: var(--f-amber);
+}
+
+.codeLines {
+  display: flex;
+  flex-direction: column;
+  overflow-x: auto;
+  padding-block: 1.6rem;
+  scrollbar-width: thin;
+}
+
+.codeLines:focus-visible {
+  outline: 2px solid var(--f-amber-bright);
+  outline-offset: -3px;
+}
+
+.codeLines > div {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 1rem;
+  min-height: 2rem;
+  align-items: center;
+  padding-inline: 1.35rem;
+}
+
+.codeLines > div.add {
+  background: var(--f-success-wash);
+}
+
+.codeLines span {
+  color: var(--f-line-muted);
+  font: 400 var(--f-type-micro) var(--f-mono);
+  text-align: right;
+}
+
+.codeLines code {
+  min-width: 0;
+  overflow-x: auto;
+  color: var(--f-code-dim);
+  font: 400 0.75rem var(--f-mono);
+  white-space: nowrap;
+}
+
+.codeLines .add code {
+  color: var(--f-green-bright);
+}
+
+.codeArtifact > footer {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  padding: 0 1.35rem 1.5rem;
+}
+
+.codeArtifact > footer > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--f-line);
+  border-radius: 0.45rem;
+}
+
+.codeArtifact footer span {
+  color: var(--f-code-faint);
+  font: 400 var(--f-type-micro) var(--f-mono);
+}
+
+.codeArtifact footer code {
+  overflow: hidden;
+  color: var(--f-text);
+  font: 400 var(--f-type-micro) var(--f-mono);
+  text-overflow: ellipsis;
+}
+
+/* In the narrative's flex flow rather than absolutely placed: as a floating annotation it had no
+   anchor to the copy it qualifies, and it occupied the corner the mascot needs. */
+.editGuide {
+  max-width: 22rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--f-line);
+}
+
+.editGuide strong {
+  color: var(--f-amber-bright);
+}
+
+/* Mirrors .installManny: a child of the narrative, which is a stacking context, so z-index: -1
+   sits behind the type without dropping behind the section background. Crosses the display type
+   only — his bottom edge is held clear of the body copy below. */
+.editManny {
+  position: absolute;
+  z-index: -1;
+  /* Placement, not opacity, buys the legibility here. His body is light almost everywhere, so a
+     deep crossing cannot be legible at full strength: one rem lower the headline sits on 5.4%
+     sub-3:1 pixels (worst 1.39:1). At this height only his lower body edge — the dark underside —
+     meets the headline's cap-height, measuring 3.25:1, so he stays whole and vivid above the type
+     instead of being hidden behind it. */
+  top: -10.25rem;
+  right: 2.93rem;
+  width: var(--manny-scene);
+  height: auto;
+  opacity: 0.95;
+  object-fit: contain;
+}
+
+/* Was 71.875rem, which reserved ~440px of empty band below the content for an absolutely placed
+   mascot that overlapped nothing. The mascot now lives in the header, so the band sizes to its
+   content and this only guards the small-viewport case. */
+.reconcileBand {
+  min-height: 52rem;
+  padding-block: 8rem;
+  background: var(--f-reconcile-canvas);
+}
+
+.reconcileHeader {
+  display: grid;
+  grid-template-areas: "title art copy";
+  grid-template-columns: minmax(0, 1fr) minmax(8.5rem, var(--manny-scene)) minmax(18rem, 24.375rem);
+  gap: clamp(1.5rem, 3vw, 3rem);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.reconcileHeader > div {
+  grid-area: title;
+}
+
+.reconcileHeader > p {
+  grid-area: copy;
+}
+
+.reconcileHeader h2 {
+  max-width: none;
+}
+
+.mergeTrail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 0.875rem;
+  align-items: center;
+  margin-top: 4rem;
+}
+
+.mergeTrail article {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 14.375rem;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.375rem;
+  border: 1px solid var(--f-line-strong);
+  border-radius: 0.625rem;
+  background: var(--f-bg-deep);
+}
+
+.mergeTrail article.green {
+  border-color: var(--f-success-border);
+  background: var(--f-success-inset);
+}
+
+.mergeTrail article > p {
+  color: var(--card-tone, var(--f-purple));
+  font: 700 var(--f-type-micro) var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mergeTrail article > p::after {
+  position: absolute;
+  top: 1.55rem;
+  right: 1.375rem;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 50%;
+  background: var(--card-tone, var(--f-purple));
+  content: "";
+}
+
+.mergeTrail h3 {
+  font-size: 1.1875rem;
+  font-weight: 700;
+}
+
+.mergeTrail code {
+  color: var(--f-copy-muted);
+  font: 400 0.75rem / 1.5 var(--f-mono);
+}
+
+.mergeTrail .green code {
+  color: var(--f-success-copy);
+}
+
+.mergeArrow {
+  color: var(--f-merge-arrow);
+}
+
+.transaction {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 17.5rem;
+  gap: 1.75rem;
+  align-items: center;
+  margin-top: 2rem;
+  padding: 1.625rem 1.75rem;
+  border: 1px solid var(--f-line-strong);
+  border-radius: 0.625rem;
+  background: var(--f-bg-deep);
+}
+
+.transaction > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.transaction strong {
+  font-size: 0.9375rem;
+}
+
+.transaction > div:first-child strong {
+  color: var(--f-green-bright);
+  font: 700 var(--f-type-micro) var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.transaction code {
+  overflow-x: auto;
+  color: var(--f-text);
+  font: 400 0.8125rem var(--f-mono);
+  white-space: nowrap;
+}
+
+.transaction > div:last-child code {
+  color: var(--f-chrome-text);
+  font-size: var(--f-type-micro);
+}
+
+.destructiveNote {
+  display: flex;
+  max-inline-size: 52ch;
+  align-items: center;
+  gap: 1rem;
+  color: var(--f-copy-strong);
+  font-size: 0.875rem;
+}
+
+.destructiveNote svg {
+  flex: none;
+  color: var(--f-warning-copy);
+}
+
+/* Both closing annotations sit in one row under the transaction instead of floating absolutely.
+   The row is held to the left of the band so the mascot has the right-hand corner to itself. */
+.reconcileFooter {
+  display: grid;
+  max-width: 54rem;
+  grid-template-columns: minmax(0, 1fr) 17rem;
+  gap: 2.5rem;
+  align-items: start;
+  margin-top: 1.75rem;
+}
+
+.reconcileGuide {
+  width: auto;
+}
+
+.reconcileGuide strong {
+  color: var(--f-success-bright);
+}
+
+.reconcileManny {
+  position: static;
+  grid-area: art;
+  width: 100%;
+  height: auto;
+  justify-self: center;
+  object-fit: contain;
+}
+
+.ecosystem {
+  display: flex;
+  flex-direction: column;
+  gap: 4rem;
+  padding-block: 8rem;
+  background: var(--f-ecosystem-bg);
+}
+
+.ecosystemHeader h2 {
+  max-width: none;
+}
+
+.ecosystemHeader > p {
+  color: var(--f-ecosystem-copy);
+}
+
+.toolRoles {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  border-block: 1px solid var(--f-ecosystem-border);
+}
+
+.toolRoles > article {
+  min-width: 0;
+  padding: 2.375rem 2.625rem;
+}
+
+.toolRoles > article + article {
+  border-left: 1px solid var(--f-ecosystem-border);
+}
+
+.toolRoles header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.toolRoles h3 {
+  font-size: 2rem;
+  letter-spacing: -0.03em;
+}
+
+.toolRoles header span {
+  color: var(--role-tone, var(--f-purple-soft));
+  font: 700 var(--f-type-micro) var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.toolRoles article > p {
+  margin-top: 1.75rem;
+  color: var(--f-role-body);
+  font-size: 1.1875rem;
+  line-height: 1.48;
+}
+
+.toolRoles article > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.75rem;
+}
+
+.toolRoles article > div code {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--role-tone, var(--f-purple)) 35%, transparent);
+  border-radius: 0.375rem;
+  background: color-mix(in srgb, var(--role-tone, var(--f-purple)) 13%, transparent);
+  color: var(--role-copy, var(--f-role-indigo-copy));
+  font: 400 var(--f-type-micro) var(--f-mono);
+}
+
+.toolRoles .consumer {
+  --role-tone: var(--f-purple-soft);
+  --role-copy: var(--f-role-indigo-copy);
+}
+
+.toolRoles .registry {
+  --role-tone: var(--f-green-bright);
+  --role-copy: var(--f-role-green-copy);
+}
+
+.agentContract {
+  padding: 2rem 2.25rem;
+  border: 1px solid var(--f-ecosystem-border);
+  border-radius: 0.625rem;
+  background: var(--f-bg-deep);
+}
+
+.agentContract > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.agentContract h3 {
+  font-size: 1.5rem;
+}
+
+.agentContract > header span {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--f-success-border-soft);
+  border-radius: 99rem;
+  color: var(--f-green-bright);
+  font: 700 var(--f-type-micro) var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.agentContract > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 1.875rem;
+}
+
+.agentContract article {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding-right: 1.75rem;
+}
+
+.agentContract article + article {
+  padding-left: 1.75rem;
+  border-left: 1px solid var(--f-line);
+}
+
+.agentContract article strong {
+  color: var(--f-agent-label);
+  font: 700 var(--f-type-micro) var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.agentContract article code {
+  color: var(--f-text);
+  font: 400 0.8125rem var(--f-mono);
+}
+
+.agentContract article p {
+  color: var(--f-copy-muted);
+  font-size: 0.8125rem;
+  line-height: 1.42;
+}
+
+.closing {
+  min-height: 56.25rem;
+  padding-block: 8.75rem 3.25rem;
+  background: var(--f-bg);
+}
+
+.closingCta {
+  display: grid;
+  grid-template-columns: minmax(0, 51.25rem) 10.04rem 16.875rem;
+  gap: 2.5rem;
+  align-items: end;
+  justify-content: space-between;
+}
+
+.closingCta > div:first-child > p:last-child {
+  max-width: 40.625rem;
+  margin-top: 1.5rem;
+  color: var(--f-copy-strong);
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+
+.closingCta img {
+  width: var(--manny-figure);
+  height: auto;
+  object-fit: contain;
+}
+
+.closingActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.closingActions a {
+  justify-content: space-between;
+  padding-inline: 1.125rem;
+  border: 1px solid var(--f-line-strong);
+  background: var(--f-panel);
+}
+
+.closingActions a:first-child {
+  border-color: transparent;
+  background: var(--f-purple);
+  color: var(--f-bg-deep);
+}
+
+.closingActions a:hover {
+  border-color: var(--f-purple);
+}
+
+.closingTrail {
+  display: flex;
+  min-height: 3.25rem;
+  align-items: center;
+  gap: 0.875rem;
+  margin-top: 7rem;
+  border-block: 1px solid var(--f-line-strong);
+  color: var(--f-line-muted);
+}
+
+.closingTrail span {
+  font: 700 var(--f-type-micro) var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.closingTrail .purple {
+  color: var(--f-indigo-label);
+}
+
+.closingTrail .white {
+  color: var(--f-text);
+}
+
+.closingTrail .amber {
+  color: var(--f-warning-copy);
+}
+
+.closingTrail .green {
+  color: var(--f-green-bright);
+}
+
+.footer {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 4.5rem;
+  margin-top: 3.5rem;
+}
+
+.footerBrand {
+  display: flex;
+  align-items: end;
+  gap: 0.85rem;
+}
+
+.footerBrand img {
+  width: var(--manny-footer);
+  height: auto;
+  object-fit: contain;
+}
+
+.footerBrand > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding-bottom: 0.4rem;
+}
+
+.footerBrand strong {
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
+}
+
+.footerBrand span {
+  color: var(--f-chrome-text);
+  font-size: 0.8125rem;
+}
+
+.footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 1.75rem;
+  padding-bottom: 0.4rem;
+  color: var(--f-copy-strong);
+  font-size: 0.8125rem;
+}
+
+.footer nav a:hover {
+  color: var(--f-text);
+}
+
+.disclaimer {
+  max-inline-size: 65ch;
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--f-line);
+  color: var(--f-faint);
+  font-size: 0.75rem;
+}
+
+@media (max-width: 82rem) {
+  .heroIntro {
+    grid-template-areas:
+      "headline mascot"
+      "headline support";
+    grid-template-columns: minmax(0, 1fr) minmax(15rem, 22rem);
+    gap: 2rem clamp(1.5rem, 4vw, 3rem);
+    align-items: center;
+  }
+
+  .heroHeadline {
+    grid-area: headline;
+  }
+
+  .heroManny {
+    grid-area: mascot;
+    width: min(9rem, 15vw);
+  }
+
+  .heroSupport {
+    grid-area: support;
+    max-width: 22rem;
+  }
+
+  .sourceGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .reconciled {
+    grid-column: 1 / -1;
+  }
+
+  .reconcileHeader {
+    grid-template-areas:
+      "title art"
+      "copy copy";
+    grid-template-columns: minmax(0, 1fr) minmax(7rem, 10rem);
+    align-items: center;
+  }
+
+  .reconcileHeader > p {
+    max-width: 48rem;
+  }
+
+  .ownershipHeader,
+  .ecosystemHeader {
+    grid-template-columns: minmax(0, 1fr) 12rem 20rem;
+  }
+
+  .ownershipHeader img,
+  .ecosystemHeader img {
+    width: 7.94rem;
+    height: auto;
+  }
+
+  .closingCta {
+    grid-template-columns: minmax(0, 1fr) 12rem 15rem;
+  }
+
+  .closingCta img {
+    width: 7.87rem;
+    height: auto;
+  }
+}
+
+@media (max-width: 68rem) {
+  .hero {
+    min-height: auto;
+  }
+
+  .heroBody {
+    min-height: auto;
+  }
+
+  .sourceGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sourceCard:nth-child(3),
+  .reconciled {
+    border-top: 1px solid var(--f-line);
+  }
+
+  .sourceCard:nth-child(3) {
+    border-left: 0;
+  }
+
+  .reconciled {
+    grid-column: auto;
+    border-left: 1px solid var(--f-line);
+  }
+
+  .ownershipHeader,
+  .ecosystemHeader {
+    grid-template-columns: minmax(0, 1fr) 11rem;
+  }
+
+  .ownershipHeader > p,
+  .ecosystemHeader > p {
+    grid-column: 1 / -1;
+    max-width: 48rem;
+  }
+
+  .ownershipHeader img,
+  .ecosystemHeader img {
+    width: 7.28rem;
+    height: auto;
+  }
+
+  .ownershipSteps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ownershipSteps li:nth-child(3) {
+    border-left: 0;
+    border-top: 1px solid var(--f-line);
+  }
+
+  .ownershipSteps li:nth-child(4) {
+    border-top: 1px solid var(--f-line);
+  }
+
+  .installBand,
+  .editBand {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .installNarrative,
+  .editNarrative {
+    max-width: 38rem;
+  }
+
+  .installManny {
+    left: 19.87rem;
+  }
+
+  .editGuide,
+  .reconcileGuide {
+    position: static;
+    width: min(100%, 24rem);
+    margin-top: 3rem;
+  }
+
+  /* Split because the two assets trim to different proportions of their original frames, so one
+     shared width no longer renders them at matching sizes. */
+  .editManny {
+    width: 11.37rem;
+  }
+
+  .reconcileManny {
+    width: 12.73rem;
+  }
+
+  .editManny {
+    bottom: 2rem;
+  }
+
+  .reconcileBand {
+    min-height: auto;
+  }
+
+  .mergeTrail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mergeTrail .mergeArrow {
+    display: none;
+  }
+
+  .transaction {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .closingCta {
+    grid-template-columns: minmax(0, 1fr) 11rem;
+  }
+
+  .closingCta img {
+    width: 7.21rem;
+    height: auto;
+  }
+
+  .closingActions {
+    grid-column: 1 / -1;
+    width: min(100%, 22rem);
+  }
+}
+
+@media (max-width: 48rem) {
+  .nav {
+    align-items: center;
+    gap: 0.5rem;
+    padding-block: 0.5rem;
+  }
+
+  .navLinks {
+    max-width: none;
+    flex-wrap: nowrap;
+    justify-content: end;
+    gap: 0.2rem;
+  }
+
+  .navLinks a {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    padding-inline: 0.4rem;
+    border-radius: 0.375rem;
+  }
+
+  .version {
+    display: none;
+  }
+
+  .heroBody {
+    gap: 2.5rem;
+    padding-top: 3rem;
+  }
+
+  .category {
+    font-size: var(--f-type-micro);
+  }
+
+  .heroHeadline h1 {
+    max-width: none;
+    font-size: clamp(2.5rem, 11vw, 3.25rem);
+  }
+
+  .trailHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .ownershipSteps,
+  .toolRoles,
+  .agentContract > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ownership,
+  .storyBand,
+  .reconcileBand,
+  .ecosystem,
+  .closing {
+    padding-inline: 1.25rem;
+  }
+
+  .ownership {
+    padding-block: 5rem;
+  }
+
+  .ownershipHeader,
+  .ecosystemHeader {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ownershipHeader img,
+  .ecosystemHeader img {
+    width: 6.62rem;
+    height: auto;
+    justify-self: start;
+  }
+
+  .ownershipSteps li,
+  .ownershipSteps li:nth-child(3),
+  .ownershipSteps li:nth-child(4) {
+    min-height: 13rem;
+    border-top: 1px solid var(--f-line);
+    border-left: 0;
+  }
+
+  .ownershipSteps li:first-child {
+    border-top: 0;
+  }
+
+  .storyBand,
+  .reconcileBand,
+  .ecosystem,
+  .closing {
+    padding-block: 5.5rem;
+  }
+
+  .storyBand {
+    min-height: auto;
+  }
+
+  .installManny {
+    position: static;
+    z-index: auto;
+    order: -1;
+    width: min(6.52rem, 35.4vw);
+    /* Was -1.5rem/-0.5rem, pulling the frame's transparent padding back off the flow. The asset
+       is trimmed now, so a negative margin would crop into the neighbouring content instead. */
+    margin: 0 0 0 auto;
+  }
+
+  .planGrid,
+  .codeArtifact > footer {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .commandRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .commandRow > code {
+    width: 100%;
+    max-width: 100%;
+    flex: none;
+  }
+
+  .codeArtifact > header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding-block: 0.8rem;
+  }
+
+  .editBand {
+    padding-bottom: 5.5rem;
+  }
+
+  .editManny,
+  .reconcileManny {
+    position: static;
+    height: auto;
+    margin: 0 0 0 auto;
+    object-fit: contain;
+  }
+
+  .editManny {
+    width: min(8.53rem, 44.3vw);
+  }
+
+  .reconcileManny {
+    width: min(9.55rem, 49.6vw);
+  }
+
+  .editGuide,
+  .reconcileGuide {
+    margin-top: 0;
+  }
+
+  .reconcileManny {
+    display: block;
+    margin-top: 2.25rem;
+  }
+
+  .reconcileHeader {
+    grid-template-areas:
+      "title"
+      "art"
+      "copy";
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .mergeTrail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mergeTrail article {
+    min-height: 12rem;
+  }
+
+  .transaction {
+    padding: 1.25rem;
+  }
+
+  .transaction code {
+    overflow-x: visible;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .destructiveNote {
+    align-items: flex-start;
+  }
+
+  .toolRoles > article {
+    padding: 2rem 0;
+  }
+
+  .toolRoles > article + article {
+    border-top: 1px solid var(--f-ecosystem-border);
+    border-left: 0;
+  }
+
+  .toolRoles header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .agentContract {
+    padding: 1.5rem;
+  }
+
+  .agentContract > header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .agentContract article,
+  .agentContract article + article {
+    padding: 1.25rem 0;
+    border-top: 1px solid var(--f-line);
+    border-left: 0;
+  }
+
+  .agentContract article:first-child {
+    border-top: 0;
+  }
+
+  .closing {
+    min-height: auto;
+    padding-bottom: 2rem;
+  }
+
+  .closingCta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .closingCta img {
+    width: 6.56rem;
+    height: auto;
+  }
+
+  .closingTrail {
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 4rem;
+    padding-block: 1rem;
+  }
+
+  .footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .footer nav {
+    justify-content: start;
+  }
+}
+
+@media (max-width: 40rem) {
+  .heroIntro {
+    grid-template-areas:
+      "mascot"
+      "headline"
+      "support";
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+  .heroManny {
+    width: min(7.5rem, 32vw);
+  }
+
+  .sourceGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sourceCard,
+  .sourceCard:first-child {
+    min-height: 15rem;
+    border-top: 1px solid var(--f-line);
+    border-left: 0;
+  }
+
+  .sourceCard:first-child {
+    border-top: 0;
+  }
+
+  .reconciled {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 30rem) {
+  .brand span {
+    display: none;
+  }
+
+  .navLinks {
+    max-width: calc(100% - 3rem);
+    font-size: 0.75rem;
+  }
+
+  .version {
+    display: none;
+  }
+
+  .terminalBody {
+    padding: 1.25rem;
+  }
+
+  .codeLines > div {
+    grid-template-columns: 1.6rem minmax(0, 1fr);
+    gap: 0.65rem;
+    min-width: 25rem;
+    padding-inline: 0.8rem;
+  }
+
+  .codeLines code {
+    overflow-x: visible;
+  }
+
+  .closingTrail svg {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root :is(a, button) {
+    transition: none;
+  }
+}

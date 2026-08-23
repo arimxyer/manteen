@@ -10,10 +10,17 @@
    3. drops the `[data-has-sidebar]` trailing header padding that reserved space for the
       fixed button, so the header computes one width on every page. */
 const { hasSidebar } = Astro.locals.starlightRoute;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const routePath = Astro.url.pathname.startsWith(base)
+	? Astro.url.pathname.slice(base.length)
+	: Astro.url.pathname;
+// The landing page owns its product navigation. Keep Starlight's full docs header everywhere
+// else, while the home route starts at the top edge exactly like the approved canvas.
+const isLandingPage = routePath === "" || routePath === "/";
 ---
 
 <div class="page sl-flex">
-	<header class="header"><slot name="header" /></header>
+	{!isLandingPage && <header class="header"><slot name="header" /></header>}
 	{
 		hasSidebar && (
 			<nav class="sidebar print:hidden" aria-label={Astro.locals.t("sidebarNav.accessibleLabel")}>
@@ -25,7 +32,7 @@ const { hasSidebar } = Astro.locals.starlightRoute;
 			</nav>
 		)
 	}
-	<div class="main-frame"><slot /></div>
+	<div class="main-frame" data-home-landing={isLandingPage ? "true" : undefined}><slot /></div>
 </div>
 
 <style>
@@ -103,6 +110,10 @@ const { hasSidebar } = Astro.locals.starlightRoute;
 		.main-frame {
 			padding-top: calc(var(--sl-nav-height) + var(--sl-mobile-toc-height));
 			padding-inline-start: var(--sl-content-inline-start);
+		}
+
+		.main-frame[data-home-landing='true'] {
+			padding-top: 0;
 		}
 	}
 </style>

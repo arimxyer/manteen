@@ -1,3 +1,7 @@
+/* impeccable-disable design-system-font-size -- This module only renders inside the catalog's
+   aria-hidden thumbnail frame. Its miniature type is part of a uniformly scaled decorative
+   composition, not readable interface copy or the product typography ramp. */
+
 .preview {
   --manteen-demo-canvas: #111318;
   --manteen-demo-panel: #22252d;

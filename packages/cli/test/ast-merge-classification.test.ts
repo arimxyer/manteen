@@ -75,10 +75,12 @@ describe("D41 evidence-only AST merge classification", () => {
   test("machine and human reports are exact products of the committed corpus", () => {
     const report = evaluateAstMergeCorpus();
     expect(
-      JSON.parse(readFileSync(resolve(REPO_ROOT, "docs/ast-assisted-merge-spike.json"), "utf8")),
+      JSON.parse(
+        readFileSync(resolve(REPO_ROOT, "docs/research/ast-assisted-merge-spike.json"), "utf8"),
+      ),
     ).toEqual(report);
-    expect(readFileSync(resolve(REPO_ROOT, "docs/ast-assisted-merge-spike.md"), "utf8")).toBe(
-      renderAstMergeSpikeMarkdown(report),
-    );
+    expect(
+      readFileSync(resolve(REPO_ROOT, "docs/research/ast-assisted-merge-spike.md"), "utf8"),
+    ).toBe(renderAstMergeSpikeMarkdown(report));
   });
 });

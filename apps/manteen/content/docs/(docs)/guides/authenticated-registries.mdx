@@ -1,0 +1,117 @@
+---
+title: Authenticated registries
+description: Supply private registry credentials without storing or printing expanded secrets.
+---
+
+An authenticated registry is an ordinary configured namespace whose requests add headers or query
+parameters. Manteen keeps the configuration template redacted and expands environment references
+only immediately before a request leaves the process.
+
+## Configure the request shape, not the secret
+
+Use the object form of a registry entry:
+
+```json
+{
+  "registries": {
+    "@private": {
+      "url": "https://registry.example.com/r/{name}.json",
+      "index": "https://registry.example.com/r/registry.json",
+      "headers": {
+        "Authorization": "Bearer ${PRIVATE_REGISTRY_TOKEN}"
+      },
+      "params": {
+        "channel": "${PRIVATE_REGISTRY_CHANNEL}"
+      }
+    }
+  }
+}
+```
+
+Header and parameter values accept `${NAME}` references. Header names do not. Shell defaults such
+as `${NAME:-fallback}`, bare `$NAME`, and Windows `%NAME%` syntax are not expanded.
+
+<Callout title="Do not place the expanded token in manteen.json" type="warn">
+
+Keep the reference in configuration and supply the value through the project environment. Confirm
+that any local environment file containing a secret is ignored by the consumer repository.
+
+</Callout>
+
+## Choose where the value comes from
+
+Manteen loads environment values from the consumer root—the directory containing `manteen.json`—in
+this precedence order:
+
+1. The process environment that launched Manteen.
+2. `.env.local` in the consumer root.
+3. `.env` in the consumer root.
+
+An earlier source wins. This lets CI inject a credential without rewriting a developer's files and
+lets `.env.local` override non-secret project defaults in `.env`.
+
+```dotenv
+PRIVATE_REGISTRY_TOKEN=replace-with-a-local-token
+PRIVATE_REGISTRY_CHANNEL=stable
+```
+
+Unset and empty referenced values are treated as missing. Manteen emits `missing-env` before making
+the request and names the missing variables while leaving `${PRIVATE_REGISTRY_TOKEN}` redacted.
+
+## Understand which requests receive metadata
+
+Configured headers and parameters are sent to both item documents and the declared registry index.
+Parameters are URL encoded after expansion. The redacted URL used in plans, receipts, diagnostics,
+digests, and JSON output retains the literal environment references.
+
+### Direct URLs are intentionally different
+
+```bash
+manteen info https://registry.example.com/r/release-panel.json
+```
+
+A direct URL has no registry entry from which to obtain headers, parameters, an index, or a
+namespace for bare registry dependencies. If a server requires credentials, configure it under a
+consumer-chosen namespace and use the qualified item reference instead:
+
+```bash
+manteen info @private/release-panel
+```
+
+## What Manteen will and will not reveal
+
+The expanded request URL and header values exist only at the request boundary. Manteen does not
+store or print them in:
+
+- `manteen.lock.json` or pristine bases;
+- plan digests or dry-run output;
+- diagnostics and command envelopes;
+- configured-registry reports.
+
+Network failures are also rewritten from authored, bounded messages rather than echoing a runtime
+error that might contain a header value. For `401` or `403`, Manteen distinguishes “no headers were
+configured” from “the registry rejected the credentials it was given” without printing the
+credential or server-controlled status text.
+
+## Troubleshoot without exposing the token
+
+### `missing-env`
+
+Check the variable spelling, the selected consumer root, and the precedence list above. Do not paste
+the value into a diagnostic, issue, or agent transcript.
+
+### `401` or `403`
+
+Confirm that the registry entry—not a direct URL—was used, that the header scheme is correct, and
+that the process received the intended environment value. A cross-origin redirect can drop an
+`Authorization` header according to the web platform's redirect rules; verify the final registry
+origin without logging the token.
+
+### The index works but an item fails, or the reverse
+
+Verify that both `url` and `index` address the same authenticated service and that its policy allows
+both resources. Manteen sends the configured headers and parameters to each, but it does not infer
+an index URL from the item template.
+
+Return to [Configuration](/docs/reference/configuration#registries) for the complete registry entry,
+or read [Diagnostics and refusals](/docs/reference/diagnostics) before automating a retry.

@@ -28,5 +28,11 @@
   },
   "javascript": {
     "formatter": { "quoteStyle": "double", "trailingCommas": "all", "semicolons": "always" }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["apps/manteen/**/*.css"],
+      "css": { "parser": { "tailwindDirectives": true } }
+    }
+  ]
 }

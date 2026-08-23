@@ -154,13 +154,16 @@ An item in `@product` can declare `uses: ["@kit/callout", "@base/empty-state"]`,
 resolves across all of them in one install. `fixtures/` contains exactly this arrangement and
 the test suite exercises it.
 
-### Known limitation
+### Destination collisions
 
-Items are deduplicated by **destination path**, so two registries publishing an item of the
-same name collide — the last one installed wins, silently. If `@base/empty-state` and
-`@house/empty-state` have different prop signatures, install order decides which one your
-project gets. Namespace item names, or don't ship overlapping names across registries you
-expect to be installed together.
+The client deduplicates items by canonical id, not by destination path. If two distinct items such
+as `@base/empty-state` and `@house/empty-state` resolve to the same destination, planning refuses
+with `target-collision` before writing anything. A later command also refuses to replace a
+different owner recorded in `manteen.lock.json`.
+
+When overlapping names are intentional, choose a durable winner with a `resolutions` entry in
+`manteen.json`. Applying a resolution warns because dependents may have been authored against the
+other item's prop contract.
 
 ## License
 

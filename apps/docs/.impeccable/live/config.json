@@ -1,0 +1,6 @@
+{
+  "files": ["src/components/SiteHead.astro"],
+  "insertAfter": "<DefaultHead />",
+  "commentSyntax": "html",
+  "cspChecked": true
+}

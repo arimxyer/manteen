@@ -27,7 +27,8 @@ Any client that speaks the registry format can install from it today:
 gate, provider setup, theme-fragment composition, maintenance commands, and refusal when two
 registries would overwrite each other's component. `manteen` and `manteen-kit` are public on npm;
 see [packages/cli](packages/cli/README.md) for usage and [docs/roadmap.md](docs/roadmap.md) for the
-current content work.
+current program. Contributors and agents should start with the
+[repository context map](docs/project-context.md), which separates live contracts from historical evidence.
 
 ```bash
 manteen init --dry-run
@@ -75,7 +76,7 @@ The first Wc content milestone also curates eight MIT-licensed
 [Mantine UI](https://ui.mantine.dev/) examples into prop-driven registry items. Their source is
 pinned and attributed, and installing any of them brings one deduplicated upstream license notice
 with it. Carousel and Dropzone exercise the managed package-styles lifecycle across supported
-framework shapes. See the [Wc handoff](docs/wc-registry-content-handoff.md) for the selection,
+framework shapes. See the [Wc handoff](./docs/handoffs/wc-registry-content-handoff.md) for the selection,
 adaptation and verification boundary.
 
 ## Layout
@@ -88,6 +89,8 @@ registry/                    # the components themselves
 test/                        # smoke test for this catalog
 packages/registry-kit/       # → manteen-kit, the toolchain
 packages/cli/                # → manteen, init/install/maintenance client
+apps/docs/                   # deployed Astro/Starlight docs + Pages artifact
+apps/manteen/                # checked, undeployed Next.js/Fumadocs replacement candidate
 public/r/*.json              # build output (gitignored)
 ```
 
@@ -105,6 +108,18 @@ manteen-kit build <catalog.json> <outDir>            # or any other
 bun run typecheck
 bun test
 ```
+
+The documentation applications intentionally have separate commands and deployment status:
+
+```bash
+bun run build:site   # currently deployed Astro/Starlight artifact
+bun run site:check   # Next.js/Fumadocs replacement candidate
+bun run site:build
+```
+
+Only `.github/workflows/pages.yml` defines the public artifact; it currently uploads
+`apps/docs/dist` through a manual dispatch. Building `apps/manteen` locally or in CI does not deploy
+it or change the public registry.
 
 The build validates the catalog against our authoring schema *and* every emitted item
 against the vendored wire schema, exiting non-zero on either, so conformance can't silently
@@ -187,7 +202,7 @@ The reverse direction is also public proof now: `manteen@0.2.0` consumed a
 which has no Manteen authoring catalog or compile step. Its nested block and parent-local bare
 dependency passed under two consumer-selected namespaces, including discovery, install,
 production build, update and diff. The exact receipts and limitations are in the
-[second registry handoff](docs/second-registry-handoff.md).
+[second registry handoff](./docs/handoffs/second-registry-handoff.md).
 
 ### Gotchas worth keeping
 

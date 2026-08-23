@@ -1,0 +1,99 @@
+---
+title: Configuration
+description: Configure registries, destinations, theme composition, and project verification.
+---
+
+`manteen.json` lives at the consumer project root. Its directory defines the root used for source
+destinations, receipts, pristine bases, environment files, and project-owned checks.
+
+The installed schema is the authority for the accepted shape:
+
+```json
+{
+  "$schema": "./node_modules/manteen/schema/manteen.schema.json"
+}
+```
+
+Unknown fields are rejected rather than silently ignored.
+
+## Registries
+
+Registry keys are consumer-chosen namespaces. A string value supplies only an item URL template;
+the object form can also provide an index, request headers, and query parameters:
+
+```json
+{
+  "registries": {
+    "@house": {
+      "url": "https://example.com/r/{name}.json",
+      "index": "https://example.com/r/registry.json"
+    }
+  }
+}
+```
+
+The literal `{name}` is required in each item template. Manteen does not guess an emitted layout.
+Header, parameter, and URL values may contain `${VAR}` placeholders. Expansion occurs only while
+making a request; configuration, receipts, diagnostics, digests, and JSON output retain redacted
+templates instead of expanded secrets.
+
+See [Authenticated registries](/docs/guides/authenticated-registries) for environment precedence,
+request scope, direct-URL limitations, and safe troubleshooting.
+
+## Aliases and TypeScript paths
+
+Every configuration declares `components`, `ui`, `hooks`, and `lib` import prefixes:
+
+```json
+{
+  "aliases": {
+    "components": "@/components",
+    "ui": "@/components/ui",
+    "hooks": "@/hooks",
+    "lib": "@/lib"
+  }
+}
+```
+
+These are import prefixes, not filesystem paths. Each must be backed by a matching `paths` entry in
+the configured tsconfig. Manteen combines an alias with the emitted filename and refuses when the
+project cannot resolve the resulting import destination safely.
+
+## Project files
+
+| Field | Purpose |
+| --- | --- |
+| `theme` | Consumer theme module into which item theme files and fragments are folded. |
+| `styles` | Manteen-owned composed package stylesheet; project overrides load afterward. |
+| `tsconfig` | Exact tsconfig file whose `paths` back the aliases. |
+| `resolutions` | Durable choice of registry when more than one publishes the same bare name. |
+
+Paths are relative to `manteen.json`. Name the tsconfig file itself rather than its directory.
+
+## Verification
+
+Verification entries are `package.json` script names, not shell strings:
+
+```json
+{
+  "verification": {
+    "add": ["typecheck"],
+    "update": ["typecheck", "test"],
+    "remove": ["typecheck"]
+  }
+}
+```
+
+Authored order is execution order. Checks run after the mutation has produced coherent source,
+bases, and receipt state, while the owning rollback journal is still live. They stop at the first
+failure, and `timeoutMs` bounds each check rather than the complete sequence.
+
+A failed, timed-out, or state-mutating check restores captured Manteen-managed and control
+preimages. Manteen does not claim to reverse dependency installations, caches, snapshots, generated
+files, or other unowned verifier side effects.
+
+The plan records the chosen scripts and their definitions. If either changes before apply,
+`--expect-plan` refuses the stale plan instead of running a different check than the one reviewed.
+
+See [Maintaining installed source](/docs/guides/maintaining-source) for the update and removal
+workflow that consumes this configuration.

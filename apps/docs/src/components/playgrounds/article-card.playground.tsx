@@ -11,6 +11,8 @@ const IMAGE_BUNDLED = `${BASE_URL}registry-assets/article-card/article-card-prev
 // substitutes for the bundled asset.
 const IMAGE_BUNDLED_REMOTE =
   "https://images.unsplash.com/photo-1778084356053-40103587d24f?auto=format&fit=crop&w=1080&q=80";
+const IMAGE_CATALOG =
+  "https://images.unsplash.com/photo-1778084356053-40103587d24f?auto=format&fit=crop&w=360&q=55";
 const IMAGE_FOREST =
   "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1080&q=80";
 const IMAGE_LANDSCAPE =
@@ -48,9 +50,9 @@ const adapter: PlaygroundAdapter = {
     },
     { kind: "switch", prop: "actions", label: "Actions" },
   ],
-  render: (props, recordEvent) => (
+  render: (props, recordEvent, context) => (
     <ArticleCard
-      image={String(props.image)}
+      image={context.surface === "catalog" ? IMAGE_CATALOG : String(props.image)}
       title={String(props.title) || "Untitled article"}
       description={ARTICLE_DESCRIPTION}
       authorName={String(props.authorName) || "Unknown author"}

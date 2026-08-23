@@ -188,8 +188,12 @@ export function renderAstMergeSpikeMarkdown(report: AstMergeSpikeReport): string
 
   return `# AST-assisted merge classification spike
 
-Status: **complete as an evidence-only spike.** Production update and diff still use D41's exact
-line-oriented merge. This experiment adds no CLI flag, public API, AST printer or merge output.
+[Documentation map](../project-context.md) · [Research and audits](README.md)
+
+Status: **complete as an evidence-only precursor.** This experiment added no CLI flag, public API,
+AST printer, or merge output and initially recommended no integration. The later
+[\`ast-merge-integration-decision.md\`](../contracts/ast-merge-integration-decision.md) met additional output,
+corpus, runtime, built-Node, and public-consumer gates and now defines production behavior.
 
 ## Question and stopping condition
 
@@ -254,9 +258,11 @@ corpus has one source path and synthetic local sides. It also does not show that
 candidate can be combined while preserving comments, byte order, CRLF/BOM state, TypeScript
 semantics or cross-file intent.
 
-The production recommendation is therefore \`${report.summary.productionRecommendation}\`.
-D41 remains unchanged. A later integration proposal would need a separate contract for turning a
-candidate into exact preserved output, more source paths and independently authored local examples,
-plus built-Node and public-consumer proof before it could affect update behavior.
+The recommendation at this spike's stopping point was therefore
+\`${report.summary.productionRecommendation}\`. It required a later proposal to define exact preserved output,
+cover more source paths and independently authored local examples, and pass built-Node and
+public-consumer proof before affecting update behavior. The later integration decision satisfied
+that separate gate; this report remains the evidence and non-evidence record for the earlier
+read-only classifier only.
 `;
 }

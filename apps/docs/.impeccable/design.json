@@ -1,0 +1,461 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-11T18:40:00Z",
+  "title": "Design System: Manteen",
+  "extensions": {
+    "colorMeta": {
+      "ink-canvas": {
+        "role": "neutral",
+        "displayName": "Ink Canvas",
+        "canonical": "#111318",
+        "tonalRamp": [
+          "oklch(15% 0.008 265)",
+          "oklch(25% 0.008 265)",
+          "oklch(35% 0.008 265)",
+          "oklch(45% 0.008 265)",
+          "oklch(58% 0.008 265)",
+          "oklch(70% 0.008 265)",
+          "oklch(84% 0.008 265)",
+          "oklch(95% 0.008 265)"
+        ]
+      },
+      "graphite-panel": {
+        "role": "neutral",
+        "displayName": "Graphite Panel",
+        "canonical": "#1b1e26",
+        "tonalRamp": [
+          "oklch(15% 0.012 265)",
+          "oklch(25% 0.012 265)",
+          "oklch(35% 0.012 265)",
+          "oklch(45% 0.012 265)",
+          "oklch(58% 0.012 265)",
+          "oklch(70% 0.012 265)",
+          "oklch(84% 0.012 265)",
+          "oklch(95% 0.012 265)"
+        ]
+      },
+      "raised-graphite": {
+        "role": "neutral",
+        "displayName": "Raised Graphite",
+        "canonical": "#22252d",
+        "tonalRamp": [
+          "oklch(15% 0.012 265)",
+          "oklch(25% 0.012 265)",
+          "oklch(35% 0.012 265)",
+          "oklch(45% 0.012 265)",
+          "oklch(58% 0.012 265)",
+          "oklch(70% 0.012 265)",
+          "oklch(84% 0.012 265)",
+          "oklch(95% 0.012 265)"
+        ]
+      },
+      "active-graphite": {
+        "role": "neutral",
+        "displayName": "Active Graphite",
+        "canonical": "#242833",
+        "tonalRamp": [
+          "oklch(15% 0.018 265)",
+          "oklch(25% 0.018 265)",
+          "oklch(35% 0.018 265)",
+          "oklch(45% 0.018 265)",
+          "oklch(58% 0.018 265)",
+          "oklch(70% 0.018 265)",
+          "oklch(84% 0.018 265)",
+          "oklch(95% 0.018 265)"
+        ]
+      },
+      "structural-border": {
+        "role": "neutral",
+        "displayName": "Structural Border",
+        "canonical": "#363b48",
+        "tonalRamp": [
+          "oklch(15% 0.015 265)",
+          "oklch(25% 0.015 265)",
+          "oklch(35% 0.015 265)",
+          "oklch(45% 0.015 265)",
+          "oklch(58% 0.015 265)",
+          "oklch(70% 0.015 265)",
+          "oklch(84% 0.015 265)",
+          "oklch(95% 0.015 265)"
+        ]
+      },
+      "clear-text": {
+        "role": "neutral",
+        "displayName": "Clear Text",
+        "canonical": "#f5f7ff",
+        "tonalRamp": [
+          "oklch(15% 0.01 265)",
+          "oklch(25% 0.01 265)",
+          "oklch(35% 0.01 265)",
+          "oklch(45% 0.01 265)",
+          "oklch(58% 0.01 265)",
+          "oklch(70% 0.01 265)",
+          "oklch(84% 0.01 265)",
+          "oklch(95% 0.01 265)"
+        ]
+      },
+      "quiet-text": {
+        "role": "neutral",
+        "displayName": "Quiet Text",
+        "canonical": "#b8bfcc",
+        "tonalRamp": [
+          "oklch(15% 0.015 255)",
+          "oklch(25% 0.015 255)",
+          "oklch(35% 0.015 255)",
+          "oklch(45% 0.015 255)",
+          "oklch(58% 0.015 255)",
+          "oklch(70% 0.015 255)",
+          "oklch(84% 0.015 255)",
+          "oklch(95% 0.015 255)"
+        ]
+      },
+      "steward-indigo": {
+        "role": "primary",
+        "displayName": "Steward Indigo",
+        "canonical": "#8495ff",
+        "tonalRamp": [
+          "oklch(15% 0.07 275)",
+          "oklch(25% 0.10 275)",
+          "oklch(35% 0.13 275)",
+          "oklch(45% 0.16 275)",
+          "oklch(58% 0.18 275)",
+          "oklch(70% 0.15 275)",
+          "oklch(84% 0.09 275)",
+          "oklch(95% 0.03 275)"
+        ]
+      },
+      "verified-mint": {
+        "role": "secondary",
+        "displayName": "Verified Mint",
+        "canonical": "#65d6ad",
+        "tonalRamp": [
+          "oklch(15% 0.04 160)",
+          "oklch(25% 0.07 160)",
+          "oklch(35% 0.10 160)",
+          "oklch(45% 0.12 160)",
+          "oklch(58% 0.14 160)",
+          "oklch(70% 0.12 160)",
+          "oklch(84% 0.07 160)",
+          "oklch(95% 0.025 160)"
+        ]
+      },
+      "adaptation-amber": {
+        "role": "tertiary",
+        "displayName": "Adaptation Amber",
+        "canonical": "#e8b06a",
+        "tonalRamp": [
+          "oklch(15% 0.03 75)",
+          "oklch(25% 0.06 75)",
+          "oklch(35% 0.09 75)",
+          "oklch(48% 0.12 75)",
+          "oklch(62% 0.14 75)",
+          "oklch(74% 0.12 75)",
+          "oklch(86% 0.07 75)",
+          "oklch(95% 0.025 75)"
+        ]
+      },
+      "landing-ink": {
+        "role": "neutral",
+        "displayName": "Landing Ink",
+        "canonical": "#0d0e12",
+        "tonalRamp": [
+          "oklch(15% 0.006 265)",
+          "oklch(25% 0.006 265)",
+          "oklch(35% 0.006 265)",
+          "oklch(45% 0.006 265)",
+          "oklch(58% 0.006 265)",
+          "oklch(70% 0.006 265)",
+          "oklch(84% 0.006 265)",
+          "oklch(95% 0.006 265)"
+        ]
+      },
+      "landing-indigo": {
+        "role": "primary",
+        "displayName": "Steward Indigo, Landing",
+        "canonical": "#8f9bff",
+        "tonalRamp": [
+          "oklch(15% 0.07 278)",
+          "oklch(25% 0.10 278)",
+          "oklch(35% 0.13 278)",
+          "oklch(45% 0.16 278)",
+          "oklch(58% 0.18 278)",
+          "oklch(70% 0.15 278)",
+          "oklch(84% 0.09 278)",
+          "oklch(95% 0.03 278)"
+        ]
+      },
+      "landing-action": {
+        "role": "primary",
+        "displayName": "Pale Steward Indigo",
+        "canonical": "#aab3ff",
+        "tonalRamp": [
+          "oklch(15% 0.05 275)",
+          "oklch(25% 0.07 275)",
+          "oklch(35% 0.10 275)",
+          "oklch(45% 0.12 275)",
+          "oklch(58% 0.14 275)",
+          "oklch(70% 0.12 275)",
+          "oklch(84% 0.08 275)",
+          "oklch(95% 0.025 275)"
+        ]
+      },
+      "light-paper": {
+        "role": "neutral",
+        "displayName": "Light Paper",
+        "canonical": "#eef1f7",
+        "tonalRamp": [
+          "oklch(15% 0.01 255)",
+          "oklch(25% 0.01 255)",
+          "oklch(35% 0.01 255)",
+          "oklch(45% 0.01 255)",
+          "oklch(58% 0.01 255)",
+          "oklch(70% 0.01 255)",
+          "oklch(84% 0.01 255)",
+          "oklch(95% 0.01 255)"
+        ]
+      },
+      "light-panel": {
+        "role": "neutral",
+        "displayName": "Light Panel",
+        "canonical": "#f6f7fb",
+        "tonalRamp": [
+          "oklch(15% 0.007 255)",
+          "oklch(25% 0.007 255)",
+          "oklch(35% 0.007 255)",
+          "oklch(45% 0.007 255)",
+          "oklch(58% 0.007 255)",
+          "oklch(70% 0.007 255)",
+          "oklch(84% 0.007 255)",
+          "oklch(95% 0.007 255)"
+        ]
+      },
+      "light-ink": {
+        "role": "neutral",
+        "displayName": "Light Ink",
+        "canonical": "#171a22",
+        "tonalRamp": [
+          "oklch(15% 0.012 265)",
+          "oklch(25% 0.012 265)",
+          "oklch(35% 0.012 265)",
+          "oklch(45% 0.012 265)",
+          "oklch(58% 0.012 265)",
+          "oklch(70% 0.012 265)",
+          "oklch(84% 0.012 265)",
+          "oklch(95% 0.012 265)"
+        ]
+      },
+      "light-indigo": {
+        "role": "primary",
+        "displayName": "Steward Indigo, Light",
+        "canonical": "#364fc7",
+        "tonalRamp": [
+          "oklch(15% 0.07 275)",
+          "oklch(25% 0.10 275)",
+          "oklch(35% 0.13 275)",
+          "oklch(45% 0.16 275)",
+          "oklch(58% 0.18 275)",
+          "oklch(70% 0.15 275)",
+          "oklch(84% 0.09 275)",
+          "oklch(95% 0.03 275)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "landing-display": {
+        "displayName": "Landing Display",
+        "purpose": "The primary source-stewardship headline."
+      },
+      "landing-accent": {
+        "displayName": "Editorial Accent",
+        "purpose": "One emphasized phrase inside the landing display."
+      },
+      "docs-heading": {
+        "displayName": "Documentation Heading",
+        "purpose": "Scannable page and section titles."
+      },
+      "body": {
+        "displayName": "Technical Body",
+        "purpose": "Long-form documentation and explanatory copy."
+      },
+      "micro-label": {
+        "displayName": "Provenance Label",
+        "purpose": "Concise state, provenance, path, and receipt metadata at a 12px minimum."
+      }
+    },
+    "shadows": [
+      {
+        "name": "responsive-card-hover",
+        "value": "0 0.5rem 1.25rem color-mix(in srgb, #000 22%, transparent)",
+        "purpose": "Interactive catalog-card feedback only."
+      },
+      {
+        "name": "focus-halo",
+        "value": "0 0 0 2px color-mix(in srgb, var(--sl-color-accent) 28%, transparent)",
+        "purpose": "Shared focus reinforcement around complex controls and regions."
+      }
+    ],
+    "motion": [
+      {
+        "name": "fast-state",
+        "value": "140ms ease",
+        "purpose": "Landing links and button state changes."
+      },
+      {
+        "name": "responsive-lift",
+        "value": "150ms ease",
+        "purpose": "Catalog border, shadow, and two-pixel hover lift."
+      },
+      {
+        "name": "playground-feedback",
+        "value": "160ms ease",
+        "purpose": "Playground controls and short status feedback."
+      }
+    ],
+    "breakpoints": [
+      { "name": "compact", "value": "30rem" },
+      { "name": "catalog-single-column", "value": "40rem" },
+      { "name": "landing-mobile", "value": "48rem" },
+      { "name": "docs-shell", "value": "50rem" },
+      { "name": "landing-medium", "value": "68rem" },
+      { "name": "wide-docs", "value": "72rem" },
+      { "name": "landing-wide", "value": "82rem" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Landing Primary Action",
+      "kind": "button",
+      "refersTo": "landing-primary-action",
+      "description": "The compact pale-indigo action used to enter the getting-started path.",
+      "html": "<a class=\"ds-primary-action\" href=\"#\"><span aria-hidden=\"true\">$</span> Get started</a>",
+      "css": ".ds-primary-action { display:inline-flex; min-height:2.625rem; align-items:center; justify-content:center; gap:.55rem; padding:0 1.125rem; border-radius:.4375rem; background:#aab3ff; color:#08090c; font:700 .8125rem/1.4 \"Figtree Variable\",Inter,system-ui,sans-serif; text-decoration:none; transition:background-color 140ms ease,transform 140ms ease; } .ds-primary-action:hover { background:#a3acff; } .ds-primary-action:active { transform:translateY(1px); } .ds-primary-action:focus-visible { outline:2px solid #8f9bff; outline-offset:4px; } .ds-primary-action span { font-family:\"JetBrains Mono\",ui-monospace,monospace; }"
+    },
+    {
+      "name": "Documentation Navigation",
+      "kind": "nav",
+      "description": "Quiet semibold product navigation with a precise active underline.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Primary\"><a href=\"#\">Docs</a><a class=\"ds-nav-active\" href=\"#\" aria-current=\"page\">Registry</a></nav>",
+      "css": ".ds-nav { display:flex; align-items:center; gap:1.55rem; font-family:system-ui,sans-serif; } .ds-nav a { color:var(--manteen-text-muted,#b8bfcc); font-size:1rem; font-weight:600; text-decoration:none; } .ds-nav a:hover { color:var(--manteen-text,#f5f7ff); } .ds-nav .ds-nav-active { color:var(--manteen-text,#f5f7ff); text-decoration:underline; text-decoration-color:var(--sl-color-accent,#8495ff); text-decoration-thickness:2px; text-underline-offset:.45rem; } .ds-nav a:focus-visible { outline:2px solid var(--sl-color-accent,#8495ff); outline-offset:4px; border-radius:.375rem; }"
+    },
+    {
+      "name": "Registry Search Field",
+      "kind": "input",
+      "refersTo": "registry-search",
+      "description": "A compact whole-field control for filtering registry items.",
+      "html": "<label class=\"ds-search\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><path d=\"m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z\"/></svg><input type=\"search\" placeholder=\"Filter registry items\"></label>",
+      "css": ".ds-search { display:flex; height:2.25rem; align-items:center; gap:.7rem; padding:0 .8rem; border:1px solid var(--manteen-border,#363b48); border-radius:.625rem; background:var(--manteen-panel,#1b1e26); color:var(--manteen-text-faint,#858d9d); } .ds-search svg { width:1rem; height:1rem; fill:none; stroke:currentColor; stroke-width:2; } .ds-search input { width:16rem; border:0; outline:0; background:transparent; color:var(--manteen-text,#f5f7ff); font:400 .875rem/1.5 system-ui,sans-serif; } .ds-search:focus-within { border-color:var(--sl-color-accent,#8495ff); box-shadow:0 0 0 2px color-mix(in srgb,var(--sl-color-accent,#8495ff) 28%,transparent); }"
+    },
+    {
+      "name": "Registry Card",
+      "kind": "card",
+      "refersTo": "registry-card",
+      "description": "A raised graphite catalog card with restrained hover elevation.",
+      "html": "<article class=\"ds-registry-card\"><div class=\"ds-card-preview\">Preview</div><div class=\"ds-card-body\"><div class=\"ds-card-header\"><h3>Article Card</h3><span>component</span></div><p>A source-owned editorial card with a curated live preview.</p></div></article>",
+      "css": ".ds-registry-card { width:19rem; overflow:hidden; border:1px solid var(--manteen-border,#363b48); border-radius:.625rem; background:var(--manteen-panel-raised,#22252d); color:var(--manteen-text,#f5f7ff); font-family:system-ui,sans-serif; transition:border-color 150ms ease,box-shadow 150ms ease,transform 150ms ease; } .ds-card-preview { min-height:7rem; display:grid; place-items:center; margin:.8125rem .8125rem 0; border-radius:.375rem; background:var(--manteen-panel-active,#242833); color:var(--manteen-text-faint,#858d9d); font:700 .6875rem/1 ui-monospace,monospace; letter-spacing:.08em; text-transform:uppercase; } .ds-card-body { padding:.875rem .8125rem .8125rem; } .ds-card-header { display:flex; align-items:flex-start; justify-content:space-between; gap:.8rem; } .ds-card-header h3 { margin:0; font-size:1rem; line-height:1.3; } .ds-card-header span { padding:.125rem .25rem; border:1px solid var(--sl-color-accent,#8495ff); border-radius:.375rem; color:var(--manteen-text,#f5f7ff); background:var(--sl-color-accent-low,#172554); font:400 .7rem/1.2 ui-monospace,monospace; } .ds-card-body p { margin:.5rem 0 0; color:var(--manteen-text-muted,#b8bfcc); font-size:.8rem; line-height:1.45; } .ds-registry-card:hover { border-color:color-mix(in srgb,var(--sl-color-accent,#8495ff) 45%,var(--manteen-border,#363b48)); box-shadow:0 .5rem 1.25rem color-mix(in srgb,#000 22%,transparent); transform:translateY(-2px); } .ds-registry-card:focus-within { outline:2px solid var(--sl-color-accent,#8495ff); outline-offset:2px; }"
+    },
+    {
+      "name": "Registry Badge",
+      "kind": "chip",
+      "description": "Small mono metadata with restrained semantic coloring.",
+      "html": "<span class=\"ds-badge\">component</span>",
+      "css": ".ds-badge { display:inline-flex; align-items:center; padding:.125rem .25rem; border:1px solid var(--sl-color-accent,#8495ff); border-radius:.375rem; background:var(--sl-color-accent-low,#172554); color:var(--manteen-text,#f5f7ff); font:400 .7rem/1.2 ui-monospace,monospace; }"
+    },
+    {
+      "name": "Inline Code Chip",
+      "kind": "custom",
+      "refersTo": "inline-code",
+      "description": "Inline technical facts brought into the same panel and border language.",
+      "html": "<code class=\"ds-inline-code\">--expect-plan</code>",
+      "css": ".ds-inline-code { display:inline; padding:.15em .4em; border:1px solid var(--manteen-border,#363b48); border-radius:.375rem; background:var(--manteen-panel-active,#242833); color:var(--manteen-text,#f5f7ff); font:400 .8125rem/1.75 ui-monospace,monospace; }"
+    },
+    {
+      "name": "Documentation Aside",
+      "kind": "card",
+      "refersTo": "documentation-aside",
+      "description": "A graphite note panel with a semantic leading edge.",
+      "html": "<aside class=\"ds-aside\"><strong>Plan boundary</strong><p>Preview the exact mutation before applying it.</p></aside>",
+      "css": ".ds-aside { width:20rem; padding:1rem 1.15rem; border:1px solid var(--manteen-border,#363b48); border-left:3px solid var(--sl-color-accent,#8495ff); border-radius:.625rem; background:var(--manteen-panel,#1b1e26); color:var(--manteen-text-muted,#b8bfcc); font:400 1rem/1.75 system-ui,sans-serif; } .ds-aside strong { color:var(--manteen-text,#f5f7ff); } .ds-aside p { margin:.35rem 0 0; } .ds-aside a:focus-visible { outline:2px solid var(--sl-color-accent,#8495ff); outline-offset:2px; }"
+    },
+    {
+      "name": "Source Trail Card",
+      "kind": "custom",
+      "description": "The landing page's joined source-state record.",
+      "html": "<article class=\"ds-source-card\"><p class=\"ds-source-label\"><span>01</span> Installed</p><h3>Real source lands<br>in your repo.</h3><code>components/ui/<br><b>article-card.tsx</b></code><p>Editable by design.</p></article>",
+      "css": ".ds-source-card { width:16rem; min-height:15rem; display:flex; flex-direction:column; justify-content:space-between; padding:1.5rem; border:1px solid #272b35; background:#0d0e12; color:#f2f4f8; font-family:\"Figtree Variable\",Inter,system-ui,sans-serif; } .ds-source-label { margin:0; color:#8f9bff; font:700 .75rem/1.5 \"JetBrains Mono\",ui-monospace,monospace; letter-spacing:.08em; text-transform:uppercase; } .ds-source-label span { color:#798192; margin-right:.6rem; } .ds-source-card h3 { margin:2rem 0 0; font-size:1.1875rem; line-height:1.18; } .ds-source-card code { display:block; margin-top:1.5rem; padding:.85rem; background:#1a1d25; color:#a4abba; font:400 .75rem/1.5 \"JetBrains Mono\",ui-monospace,monospace; } .ds-source-card code b { color:#8f9bff; } .ds-source-card > p:last-child { margin:1rem 0 0; color:#9ba3b2; font-size:.75rem; }"
+    },
+    {
+      "name": "Terminal Frame",
+      "kind": "custom",
+      "description": "A restrained command artifact with literal window chrome and visible copy state.",
+      "html": "<div class=\"ds-terminal\"><header><span><i></i><i></i><i></i></span><small>registry / @house</small></header><div><code>$ npx manteen add @house/article-card --dry-run --json</code><button type=\"button\">Copy</button></div></div>",
+      "css": ".ds-terminal { width:32rem; overflow:hidden; border:1px solid #303442; border-radius:.75rem; background:#0b0c10; color:#f2f4f8; font-family:\"Figtree Variable\",Inter,system-ui,sans-serif; } .ds-terminal header { min-height:3.25rem; display:flex; align-items:center; justify-content:space-between; padding:0 1.125rem; border-bottom:1px solid #303442; background:#151720; color:#7e8495; font:400 .6875rem/1 \"JetBrains Mono\",ui-monospace,monospace; } .ds-terminal header span { display:flex; gap:.35rem; } .ds-terminal header i { width:.4rem; height:.4rem; border-radius:50%; background:#49e0a3; } .ds-terminal header i:nth-child(2) { background:#f3b54a; } .ds-terminal header i:nth-child(3) { background:#ef6b68; } .ds-terminal > div { display:flex; align-items:center; gap:1rem; padding:1.875rem; } .ds-terminal code { flex:1; overflow:hidden; color:#f2f4f8; font:400 .875rem/1.5 \"JetBrains Mono\",ui-monospace,monospace; white-space:nowrap; } .ds-terminal button { min-height:2.25rem; padding:0 .75rem; border:1px solid #303442; border-radius:.45rem; background:#14161c; color:#9ba3b2; font:600 .75rem \"Figtree Variable\",Inter,system-ui,sans-serif; } .ds-terminal button:hover,.ds-terminal button:focus-visible { border-color:#64d99a; color:#64d99a; outline:none; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Source Steward's Field Notebook",
+    "overview": "The Source Steward's Field Notebook treats every page as a maintained record: technically exact, editorially composed, and visibly connected to the source trail behind it. Graphite surfaces, measured rules, compact labels, code artifacts, and annotated state changes make the product feel inspectable rather than theatrical. Manny brings human warmth without weakening that precision.\n\nThe visual system operates at two tempos. The landing page is an expansive editorial narrative that explains source stewardship through sequential bands and artifacts. Documentation and catalog pages become quieter, denser instruments for reading and operating. Both expressions share the same restrained material logic, semantic state colors, sharp hierarchy, and evidence-first voice.",
+    "keyCharacteristics": [
+      "Editorial narrative over operational exactness.",
+      "Border-led graphite surfaces with restrained responsive elevation.",
+      "Steward Indigo for identity, Verified Mint for resolved state, and Adaptation Amber for change.",
+      "Dense mono metadata paired with highly legible sans-serif prose.",
+      "Manny illustrations used as purposeful guides and state markers."
+    ],
+    "rules": [
+      {
+        "name": "The Source State Rule",
+        "body": "Steward Indigo carries identity and planning; Verified Mint marks successful or reconciled state; Adaptation Amber marks local or incoming change. These roles do not trade places.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tonal Ladder Rule",
+        "body": "Canvas, panel, raised panel, and active panel must remain visually ordered in both themes; borders clarify structure without replacing that hierarchy.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Serif Phrase Rule",
+        "body": "Fraunces is a deliberate landing-page accent inside a Figtree display line, never a second body or heading system.",
+        "section": "typography"
+      },
+      {
+        "name": "The Continuous Record Rule",
+        "body": "Sections connect through aligned gutters, adjacent tonal fields, and visible state sequences; avoid isolated feature islands and ornamental continuity markers.",
+        "section": "layout"
+      },
+      {
+        "name": "The Responsive Elevation Rule",
+        "body": "Surfaces are flat at rest. Shadow and lift appear only when interaction needs feedback, never as ambient decoration.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Three-Radius Rule",
+        "body": "Documentation surfaces use the small, medium, and pill tokens; one-off landing geometry stays tight and never becomes soft SaaS bubble styling.",
+        "section": "shapes"
+      },
+      {
+        "name": "The Local Variant Rule",
+        "body": "Repeated landing palette variants are named once in the landing root and consumed through semantic tokens without changing the global source-state meanings.",
+        "section": "colors"
+      },
+      {
+        "name": "The Instrument Rule",
+        "body": "Controls should feel like precise instruments with human warmth: compact, legible, explicit in state, and never ornamental.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do use border-led tonal layering before reaching for shadow.",
+      "Do keep Steward Indigo, Verified Mint, and Adaptation Amber tied to their established source-state roles.",
+      "Do pair generous narrative bands with dense, legible evidence surfaces such as diffs, terminals, receipts, and metadata.",
+      "Do use Manny as a purposeful guide or state marker, with empty alternative text when the surrounding copy already carries the meaning.",
+      "Do preserve visible focus, reduced-motion behavior, responsive stacking, and overflow affordances."
+    ],
+    "donts": [
+      "Don't turn the catalog into a glossy marketplace or the docs into a generic SaaS dashboard.",
+      "Don't use neon hacker-terminal spectacle, glass effects, or decorative gradients as shortcuts for technical credibility.",
+      "Don't add ambient card shadows, oversized pill containers, or soft floating panels to surfaces that are currently structured by rules and tone.",
+      "Don't expand Fraunces beyond a deliberate editorial accent or replace mono metadata with decorative label type.",
+      "Don't imply interactivity, live behavior, or evidence that the rendered surface does not actually provide."
+    ]
+  }
+}

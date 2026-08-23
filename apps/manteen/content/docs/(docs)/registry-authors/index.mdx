@@ -1,0 +1,96 @@
+---
+title: Build a registry
+description: Compile a Mantine-native source catalog into installable registry documents.
+---
+
+import { File, Folder, Files } from "fumadocs-ui/components/files";
+
+`manteen-kit` is the author-side package. You describe normal source files with a
+`manteen.registry.json` catalog, then compile that catalog into static registry JSON.
+
+## Create an authoring project
+
+Use a Node.js version allowed by the installed `manteen-kit` package. Bun is not required:
+
+```npm
+mkdir my-manteen-registry
+cd my-manteen-registry
+npm init -y
+npm install --save-dev manteen-kit
+```
+
+Start with a catalog and ordinary source files:
+
+<Files>
+  <Folder name="my-manteen-registry" defaultOpen>
+    <File name="manteen.registry.json" />
+    <Folder name="src" defaultOpen>
+      <File name="release-panel.tsx" />
+    </Folder>
+  </Folder>
+</Files>
+
+## Describe the item
+
+```json
+{
+  "$schema": "./node_modules/manteen-kit/schema/manteen.registry.schema.json",
+  "name": "acme-registry",
+  "namespace": "@acme",
+  "items": [
+    {
+      "name": "release-panel",
+      "kind": "block",
+      "title": "Release Panel",
+      "description": "Release highlights composed with Mantine.",
+      "mantine": ">=9 <10",
+      "provider": true,
+      "npm": ["@mantine/core@^9"],
+      "files": [
+        {
+          "path": "src/release-panel.tsx",
+          "as": "component",
+          "target": "@ui/release-panel.tsx"
+        }
+      ]
+    }
+  ]
+}
+```
+
+The catalog uses Manteen's authoring vocabulary. `kind` describes the composition, `mantine` is a
+consumer compatibility gate, `npm` declares packages the item needs, and `target` selects a
+consumer alias destination.
+
+Unknown authoring fields are rejected rather than silently discarded. The [catalog
+reference](/docs/reference/catalog) defines theme fragments, package stylesheet imports, public
+Styles API declarations, props, usage examples, and the remaining authoring fields.
+
+## Compile and validate
+
+```npm
+npm exec --yes=false -- manteen-kit build
+```
+
+The defaults read `manteen.registry.json` and write:
+
+<Files>
+  <Folder name="public" defaultOpen>
+    <Folder name="r" defaultOpen>
+      <File name="registry.json" />
+      <File name="release-panel.json" />
+    </Folder>
+  </Folder>
+</Files>
+
+The build validates both the authoring catalog and every emitted interchange document. A failed
+validation is a refusal, not trustworthy partial output.
+
+The repository's
+[registry starter](https://github.com/arimxyer/manteen/tree/main/examples/registry-starter)
+contains a complete multi-file example with package styles and a theme fragment. Once the compiled
+files are hosted over HTTPS, consumers can choose a [direct URL or configured
+namespace](/docs/concepts/registry-references).
+
+Continue with [Publish and share](/docs/registry-authors/publish-and-share) to host the compiled
+documents, verify them, and choose how consumers opt into the registry.

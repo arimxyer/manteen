@@ -75,7 +75,7 @@ jobs:
             fi
 
             case "$path" in
-              README.md|docs/*|apps/docs/*|packages/cli/README.md|packages/cli/CHANGELOG.md|packages/registry-kit/README.md|packages/registry-kit/CHANGELOG.md)
+              README.md|docs/*|apps/docs/*|apps/manteen/*|packages/cli/README.md|packages/cli/CHANGELOG.md|packages/registry-kit/README.md|packages/registry-kit/CHANGELOG.md)
                 ;;
               *)
                 exit 0
@@ -97,6 +97,7 @@ jobs:
       - run: bun run test
       - run: bun run build:registry
       - run: bun run build:site
+      - run: bun run site:build
       - run: bun run typecheck
       - run: bun run lint
       - run: node scripts/guard-runtime-apis.mjs

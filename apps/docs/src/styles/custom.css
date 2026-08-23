@@ -13,6 +13,8 @@
   --manteen-text-faint: #858d9d;
   --manteen-success: #65d6ad;
   --manteen-accent-soft: #c9d4ff;
+  --manteen-shadow-ink: #000;
+  --manteen-mask-ink-soft: rgb(0 0 0 / 10%);
   /* H7 — the two surfaces Expressive Code's chrome is mapped onto (see the `.expressive-code`
      block below). Code
      frames appear on different backgrounds (the page canvas, panels), so the code well is set
@@ -34,7 +36,7 @@
   --manteen-text-sm: 0.8rem;
   --manteen-text-ui: 0.875rem;
   /* H9 — the uppercase micro-label role: one size, one weight, one tracking. */
-  --manteen-eyebrow-size: 0.6875rem;
+  --manteen-eyebrow-size: 0.75rem;
   --manteen-eyebrow-weight: 700;
   --manteen-eyebrow-tracking: 0.08em;
   --manteen-control-sm: 2.25rem;
@@ -135,6 +137,27 @@
   color: var(--manteen-text);
 }
 
+/* The docs canvas remains wide enough for source artifacts, while ordinary reading copy follows
+   the design system's 75-character ceiling. Component-owned regions may still choose a narrower
+   measure; code, tables, and other bounded artifacts retain the full 52rem canvas. */
+:where(.sl-markdown-content) :is(p, li) {
+  max-inline-size: 75ch;
+}
+
+/* Pagefind draws a tiny filter checkmark by animating its pseudo-element's width and height.
+   Keep the state feedback, but make the geometry immediate so the search UI does not animate
+   layout properties. The id gives this local override enough weight to beat Pagefind's generated
+   Svelte selector in both Vite's inline dev CSS and the extracted production stylesheet. */
+#starlight__search .pagefind-ui__filter-value.pagefind-ui__filter-value--checked::before {
+  transition: opacity 0.1s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #starlight__search .pagefind-ui__filter-value.pagefind-ui__filter-value--checked::before {
+    transition: none;
+  }
+}
+
 /* Code that already sits inside a control that owns its own treatment stays plain mono: a chip
    inside a chip is the same defect one level down. */
 :where(.home-overview__card, .registry-item-meta) code {
@@ -150,7 +173,7 @@
 .starlight-aside {
   padding: 1rem 1.15rem;
   border: 1px solid var(--manteen-border);
-  border-inline-start: 3px solid var(--sl-color-asides-border);
+  border-inline-start: 3px solid var(--sl-color-asides-border); /* impeccable-disable-line side-tab -- documented semantic aside edge */
   border-radius: var(--manteen-radius-md);
   background: var(--manteen-panel);
   color: var(--sl-color-text);
@@ -295,7 +318,7 @@
 .home-overview__tool-title {
   margin: 0;
   color: var(--manteen-text);
-  font-size: 1.15rem;
+  font-size: 1.125rem;
 }
 
 .home-overview__tool-name {
@@ -439,7 +462,7 @@
 
 .registry-card:hover {
   border-color: color-mix(in srgb, var(--sl-color-accent) 45%, var(--manteen-border));
-  box-shadow: 0 0.5rem 1.25rem color-mix(in srgb, #000 22%, transparent);
+  box-shadow: 0 0.5rem 1.25rem color-mix(in srgb, var(--manteen-shadow-ink) 22%, transparent);
   transform: translateY(-2px);
 }
 
@@ -834,13 +857,29 @@
    the moment the scroller reaches that end, so the fade is only ever painted while there is
    genuinely more content — never as permanent decoration on a scroller that fits. */
 [data-scroll-more-x] {
-  mask-image: linear-gradient(to right, #000 calc(100% - 2.75rem), rgb(0 0 0 / 10%));
-  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2.75rem), rgb(0 0 0 / 10%));
+  mask-image: linear-gradient(
+    to right,
+    var(--manteen-shadow-ink) calc(100% - 2.75rem),
+    var(--manteen-mask-ink-soft)
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    var(--manteen-shadow-ink) calc(100% - 2.75rem),
+    var(--manteen-mask-ink-soft)
+  );
 }
 
 [data-scroll-more-y] {
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 3.5rem), rgb(0 0 0 / 10%));
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 3.5rem), rgb(0 0 0 / 10%));
+  mask-image: linear-gradient(
+    to bottom,
+    var(--manteen-shadow-ink) calc(100% - 3.5rem),
+    var(--manteen-mask-ink-soft)
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    var(--manteen-shadow-ink) calc(100% - 3.5rem),
+    var(--manteen-mask-ink-soft)
+  );
 }
 
 /* A fade alone is ambiguous; the persistent thin bar is the affordance that says "scrollable".

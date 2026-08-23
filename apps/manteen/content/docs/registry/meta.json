@@ -1,0 +1,6 @@
+{
+  "title": "Registry",
+  "description": "Understand Manteen registry authoring and compiled output.",
+  "root": true,
+  "pages": ["index"]
+}

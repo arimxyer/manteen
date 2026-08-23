@@ -130,7 +130,7 @@ manteen add @interop/blocks/release-panel
 Hand-authored items may use a bare `registryDependencies` name. Manteen resolves it against the
 declaring item's namespace and prints `bare-dep-assumed-local` so that compatibility assumption is
 visible. The same live registry has been production-built as both `@alpha` and `@vendor`; see the
-[second registry receipt](../../docs/second-registry-handoff.md).
+[second registry receipt](../../docs/handoffs/second-registry-handoff.md).
 
 The remaining commands keep and inspect what was installed:
 

@@ -1,0 +1,111 @@
+---
+title: Install your first item
+description: Initialize a supported Mantine application and install registry source.
+---
+
+import { Step, Steps } from "fumadocs-ui/components/steps";
+
+Manteen installs source code into an existing application. The source remains visible and editable;
+Mantine itself stays an ordinary package dependency.
+
+## Requirements
+
+- A Node.js version satisfying the installed `manteen` package's `engines` requirement
+- A Vite, Next.js, or framework-mode React Router application
+- The package manager already used by that application
+
+## Set up your project
+
+<Steps>
+<Step>
+
+### Install Manteen
+
+Install the consumer CLI as a development dependency:
+
+```npm
+npm install --save-dev manteen
+```
+
+Confirm the project-local binary is available:
+
+```npm
+npm exec --yes=false -- manteen --version
+```
+
+</Step>
+
+<Step>
+
+### Initialize the project
+
+Run initialization from the application root. Preview the complete plan before applying it:
+
+```npm
+npm exec --yes=false -- manteen init --dry-run
+npm exec --yes=false -- manteen init
+```
+
+Manteen detects Vite, the Next.js App or Pages Router, a valid Next.js hybrid, or framework-mode
+React Router. It adds the shared Mantine setup while preserving the framework's generated entry
+structure.
+
+<Callout title="Complete reported manual work" type="warn">
+
+Read every required-work notice before calling initialization complete. For example, an existing
+Tailwind PostCSS pipeline can require a small project-owned integration step that Manteen reports
+without rewriting the file.
+
+</Callout>
+
+</Step>
+
+<Step>
+
+### Inspect and install an item
+
+Initialization configures the reference `@house` registry. Discover an item, inspect its contract,
+and preview the installation before writing source:
+
+```npm
+npm exec --yes=false -- manteen list --query article-card
+npm exec --yes=false -- manteen info @house/article-card
+npm exec --yes=false -- manteen add @house/article-card --dry-run
+npm exec --yes=false -- manteen add @house/article-card
+```
+
+The install can add multiple source files, npm dependencies, package stylesheet imports, and a
+theme contribution as one planned operation. It does not decide where your application should
+render the installed component.
+
+</Step>
+
+<Step>
+
+### Keep the maintenance state together
+
+Commit the installed source together with `manteen.lock.json` and `.manteen/bases/`. The receipt
+records ownership and the bases preserve exact pristine source for future comparisons and updates.
+
+Then verify both Manteen's state and the application itself:
+
+```npm
+npm exec --yes=false -- manteen status
+npm exec --yes=false -- manteen diff
+npm run build
+```
+
+<Callout title="Check the application too">
+
+`status` assesses Manteen's local configuration and ownership state. Continue with [source
+ownership](/docs/concepts/source-ownership#installation-is-not-application-integration) for the
+separate application-integration boundary, then run the checks required by the project.
+
+</Callout>
+
+</Step>
+</Steps>
+
+Continue with [source ownership](/docs/concepts/source-ownership) or review the
+[CLI command groups](/docs/reference/cli). Agents and automation harnesses should begin with the
+[agent guide](/docs/getting-started/agent-guide).

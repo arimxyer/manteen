@@ -1,0 +1,112 @@
+---
+title: Machine output
+description: Parse Manteen's versioned JSON envelope, output streams, and exit semantics.
+---
+
+Every recognized `--json` invocation produces one versioned JSON document on stdout. The envelope
+answers three separate questions without making an agent infer one from another:
+
+<Cards>
+  <Card title="Did the command succeed?">
+    Read `ok` and `exitCode`.
+  </Card>
+  <Card title="Did durable project state change?">
+    Read `mutated`; do not infer it from the command name.
+  </Card>
+  <Card title="What happened and what comes next?">
+    Read the command-specific `payload`, then `diagnostics`, `errors`, and `notes`.
+  </Card>
+</Cards>
+
+## The complete envelope
+
+The outer shape is stable at schema version 1. `payload` is the only command-specific field:
+
+```ts
+interface CommandEnvelope<T = unknown> {
+  schemaVersion: 1;
+  command: string;
+  root: string | null;
+  ok: boolean;
+  exitCode: number;
+  mutated: boolean;
+  payload: T | null;
+  diagnostics: Diagnostic[];
+  errors: CommandError[];
+  notes: string[];
+}
+```
+
+| Field | Contract |
+| --- | --- |
+| `schemaVersion` | Selects the outer envelope contract. Currently `1`. |
+| `command` | The recognized logical command, such as `add`, `status`, or `agent`. |
+| `root` | The absolute consumer root when the command has one; otherwise `null`. |
+| `ok` | Exactly `exitCode === 0`. It is command success, not a health verdict. |
+| `exitCode` | The process result described below. |
+| `mutated` | Whether durable project bytes remain changed when the invocation exits. |
+| `payload` | The command's typed result, plan, assessment, or outcome. |
+| `diagnostics` | Planned findings with severity, forceability, and remediation. |
+| `errors` | Execution or invocation failures not already represented by a blocking diagnostic. |
+| `notes` | Non-blocking explanatory guidance, not proof and not a refusal. |
+
+The published `command-envelope.schema.json` is the machine authority. It rejects unknown outer
+fields, requires every field above, and requires `ok: true` to pair with exit `0`.
+
+## One stdout document, separate operational output
+
+Machine mode reserves stdout for the envelope. Do not scan for a JSON-looking line inside a mixed
+transcript; parse the complete stdout stream as one document.
+
+### What remains on stderr
+
+Project verification output is intentionally streamed on stderr. Dependency-manager output is
+also kept away from machine stdout: successful noise is discarded, while failure evidence is
+retained in the structured result. A caller that combines stdout and stderr gives up the framing
+guarantee the mode provides.
+
+```bash
+manteen status --json >manteen-result.json
+```
+
+When a harness needs verifier output too, capture the streams independently and treat the JSON
+document as the command result.
+
+## Exit semantics
+
+| Exit | Meaning |
+| ---: | --- |
+| `0` | Applied, completed read-only work, or produced a clean dry-run. |
+| `1` | Refused from a plan, or failed during mutation, dependency work, or verification. |
+| `2` | Invalid usage or a project configuration problem found before a usable plan. |
+| `130` | Cancelled at an interactive prompt. |
+
+<Callout title="Two successful assessments that are easy to misread">
+
+`status` can exit `0` with `payload.healthy: false`: the command successfully assessed an unhealthy
+Manteen state. `diff` can exit `0` while reporting differences: a difference is data, not a failed
+comparison.
+
+</Callout>
+
+### Mutation truth survives failure
+
+`mutated` describes durable state at process exit, not whether the command attempted a write. A
+plan-time refusal and a dry-run report `false`. A failed transaction can also report `false` after
+its journal restores captured state. Conversely, an unowned side effect such as a dependency
+installation can remain even when Manteen restores its own captured bytes, so callers must read the
+field rather than equating a non-zero exit with no effects.
+
+## A safe parsing loop
+
+1. Parse all stdout as one JSON document and validate `schemaVersion`.
+2. Branch on `exitCode` or its exact convenience equivalent, `ok`.
+3. Record `mutated` independently from success.
+4. Inspect `diagnostics` before inventing a retry; blocking findings carry typed remediation or a
+   manual rationale.
+5. Treat `payload` as command-specific. Do not assume `status`, `add`, and `agent guide` return the
+   same inner shape.
+6. Preserve stderr separately when project verification evidence matters.
+
+Continue with [Diagnostics and refusals](/docs/reference/diagnostics) for remediation semantics, or
+use the [Agent guide](/docs/getting-started/agent-guide) for the preview-and-apply operating model.
