@@ -34,7 +34,7 @@ that originated in the brief itself twice.
 
 ## Guards, not vigilance
 
-Six checks encode rules that a reader could otherwise silently break:
+Seven checks encode rules that a reader could otherwise silently break:
 
 - `scripts/guard-workspace.mjs` — every symlink under a `node_modules` resolves
   and does not point at itself. Runs in front of `tsc` in the `typecheck` script
@@ -81,6 +81,17 @@ Six checks encode rules that a reader could otherwise silently break:
   the ban. Only the leading form: stripping from a mid-line `//` would blind it
   after any string containing `://`, and a false negative in a guard is worse
   than a flagged trailing comment.
+- `scripts/guard-house-styles-api-evidence.mjs` — every item/component claim in the house
+  catalog's `stylesApi` declarations has exactly one entry in
+  `house-styles-api-evidence.json`, and every map entry points back to a current claim. Evidence
+  paths must be canonical, repository-relative ordinary files, and one file cannot be reused for
+  several claims. Each path must also match the root's plain `bun test` discovery surface:
+  `*.test.*`, `*_test.*`, `*.spec.*`, or `*_spec.*` with a Bun-supported JavaScript or TypeScript
+  extension (`js`, `jsx`, `ts`, `tsx`, `mjs`, `cjs`, `mts`, or `cts`), outside hidden and
+  `node_modules` directories. The guard pins the root test script and absence of
+  discovery-changing `bunfig.toml` configuration so that invariant cannot silently drift. This
+  checks declaration/evidence ownership and test-runner inclusion only: it never reads test
+  contents or claims that their assertions passed. The normal test runner owns behavioral proof.
 - `packages/cli/scripts/guard-diagnostics.mjs` — every `DiagnosticCode` is
   emitted somewhere or explicitly listed as pending. A specified refusal with no
   emitter reads exactly like a forgotten one. The pending list is required to
