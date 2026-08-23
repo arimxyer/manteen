@@ -3,6 +3,7 @@
   "name": "manteen",
   "namespace": "@house",
   "homepage": "https://github.com/arimxyer/manteen",
+  "authorProfile": "house-styles-api-evidence.json",
   "items": [
     {
       "name": "theme",

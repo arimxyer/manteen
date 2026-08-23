@@ -38,6 +38,7 @@ const PACKAGES = [
       "dist/index.d.mts",
       "dist/index.mjs",
       "package.json",
+      "schema/manteen.author-profile.schema.json",
       "schema/manteen.registry.schema.json",
       "schema/wire/registry-item.schema.json",
     ],

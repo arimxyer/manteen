@@ -16,6 +16,13 @@ import { dirname, join, resolve } from "node:path";
 
 import Ajv, { type ValidateFunction } from "ajv";
 
+import {
+  type AuthorConformanceCatalog,
+  AuthorConformanceError,
+  type AuthorConformanceInspection,
+  inspectAuthorConformance,
+} from "./author-conformance";
+
 const ajv = () => new Ajv({ strict: false, allErrors: true });
 
 /**
@@ -65,6 +72,8 @@ export interface MantineRegistry {
   name: string;
   namespace: string;
   homepage?: string;
+  /** Author-only profile. Validated during compilation and never projected to wire output. */
+  authorProfile?: string;
   items: MantineItem[];
 }
 
@@ -75,6 +84,8 @@ export interface CompileResult {
   items: WireItem[];
   index: Record<string, unknown>;
   failures: { item: string; messages: string[] }[];
+  /** Author-side validation result. It is not part of item or index wire output. */
+  authorConformance?: AuthorConformanceInspection;
   /** Absolute catalog path. Output safety uses it to refuse the catalog directory
    * and its ancestors without changing the long-standing compile/write call shape. */
   catalogPath?: string;
@@ -218,6 +229,16 @@ export function compileRegistry(catalogPath: string): CompileResult {
   }
 
   const root = dirname(resolve(catalogPath));
+  const authorConformance = inspectAuthorConformance(
+    catalogPath,
+    source as AuthorConformanceCatalog,
+  );
+  if (authorConformance.failures.length > 0) {
+    throw new AuthorConformanceError(
+      source.authorProfile ?? "author profile",
+      authorConformance.failures,
+    );
+  }
   const validateWire = createWireValidator();
   const items: WireItem[] = [];
   const failures: { item: string; messages: string[] }[] = [];
@@ -229,9 +250,25 @@ export function compileRegistry(catalogPath: string): CompileResult {
     else items.push(wire);
   }
 
-  return { source, items, index: buildIndex(source), failures, catalogPath: resolve(catalogPath) };
+  return {
+    source,
+    items,
+    index: buildIndex(source),
+    failures,
+    ...(authorConformance.enabled ? { authorConformance } : {}),
+    catalogPath: resolve(catalogPath),
+  };
 }
 
+export {
+  AuthorConformanceError,
+  type AuthorConformanceFailure,
+  type AuthorConformanceFailureCode,
+  type AuthorConformanceInspection,
+  type AuthorProfile,
+  inspectAuthorConformance,
+  type StylesApiEvidenceMapping,
+} from "./author-conformance";
 export {
   planRegistryWrite,
   type RegistryOutputDiagnostic,

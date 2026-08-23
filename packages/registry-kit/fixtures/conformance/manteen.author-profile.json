@@ -1,0 +1,11 @@
+{
+  "$schema": "../../schema/manteen.author-profile.schema.json",
+  "schemaVersion": 1,
+  "stylesApi": [
+    {
+      "item": "callout",
+      "component": "WorkshopCallout",
+      "evidence": "evidence/styles-api-ownership.txt"
+    }
+  ]
+}
