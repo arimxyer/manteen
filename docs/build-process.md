@@ -34,7 +34,7 @@ that originated in the brief itself twice.
 
 ## Guards, not vigilance
 
-Six checks encode rules that a reader could otherwise silently break:
+Seven checks encode rules that a reader could otherwise silently break:
 
 - `scripts/guard-workspace.mjs` — every symlink under a `node_modules` resolves
   and does not point at itself. Runs in front of `tsc` in the `typecheck` script

@@ -109,6 +109,7 @@ for (const command of [
   "bun run typecheck",
   "bun run lint",
   "node scripts/guard-runtime-apis.mjs",
+  "node scripts/guard-house-styles-api-evidence.mjs",
   "node packages/cli/scripts/guard-diagnostics.mjs",
   "node scripts/guard-release.mjs",
   "node scripts/guard-ci.mjs",
