@@ -1,7 +1,8 @@
 # Mantine custom-component alignment plan
 
-Status: proposal for review; the `componentApi` deferral below is approved, while the remaining
-decision checkpoints are not yet an adopted product contract
+Status: superseded as implementation authority by the approved
+[Mantine component alignment contract](../contracts/mantine-component-alignment-plan.md). This
+document preserves the audit, alternatives, and detailed acceptance design.
 
 Prepared: 2026-08-23  
 Reference: Mantine 9.5.2 and the current
@@ -326,20 +327,17 @@ Add milestone-specific proof rather than treating the full gate as sufficient:
 - fresh consumers at both compatibility boundaries; and
 - hosted CI timing and portability receipts distinct from local success.
 
-## Questions for review
+## Resolved review questions
 
-1. Is the supported floor all of Mantine 9, 9.5.0, or 9.5.2? Evidence should choose it, not the
-   convenience of the current lockfile.
+1. The supported house band is `>=9.5.0 <10`, with fresh-consumer proof required at 9.5.0 and
+   9.5.2.
 2. Resolved 2026-08-23: do not include `componentApi` in the first implementation wave. Keep
    `stylesApi` authoritative and require evidence for its claims; reconsider broader fields only
    with concrete consumers.
-3. Is an evidence-path profile enough for the first generic conformance release, or should the kit
-   also define a pure assertion-helper API for author tests?
-4. Should scaffolding update the catalog in the first release, or initially generate a reviewed
-   catalog patch beside the source plan?
-5. Can the promoted homepage components replace all public prototype routes now?
-6. Does the theme builder stay independent, or should it wait for `themeSummary` so the catalog can
-   explain what the installed theme already controls?
-
-Those are decision checkpoints. They should not be answered implicitly by whichever implementation
-branch happens to land first.
+3. The first generic conformance release records explicit evidence paths only; no assertion-helper
+   API or arbitrary author command execution is included.
+4. The first scaffold release emits a reviewed catalog insertion beside its source plan and does
+   not mutate the catalog.
+5. The public prototype routes and unused `InteropStages` may be removed after direct import checks
+   confirm the promoted homepage components are independent.
+6. The theme builder stays independent of `themeSummary`.

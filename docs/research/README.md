@@ -12,4 +12,4 @@ evidence limits, but they do not define product behavior unless a contract expli
 | [`docs-audit-remediation-plan.md`](docs-audit-remediation-plan.md) | Completed local audit and remediation record for the deployed documentation site. |
 | [`authoring-descriptor-motion-retrospective.md`](authoring-descriptor-motion-retrospective.md) | Design-process evidence and repeatable workflow from the replacement site's authoring-descriptor motion study. |
 | [`interop-motion-concept-brief.md`](interop-motion-concept-brief.md) | Concept research and scored shortlist for the replacement site's interoperability illustration, with a rejection log. |
-| [`mantine-custom-component-improvement-plan.md`](mantine-custom-component-improvement-plan.md) | Proposed Mantine 9.5 custom-component alignment, dependency graph, decision checkpoints, and evidence requirements; not yet an adopted contract. |
+| [`mantine-custom-component-improvement-plan.md`](mantine-custom-component-improvement-plan.md) | Original Mantine 9.5 alignment audit, alternatives, and detailed acceptance design; superseded for implementation authority by the frozen contract. |
