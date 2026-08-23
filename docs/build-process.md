@@ -34,7 +34,7 @@ that originated in the brief itself twice.
 
 ## Guards, not vigilance
 
-Five checks encode rules that a reader could otherwise silently break:
+Six checks encode rules that a reader could otherwise silently break:
 
 - `scripts/guard-workspace.mjs` — every symlink under a `node_modules` resolves
   and does not point at itself. Runs in front of `tsc` in the `typecheck` script
@@ -93,6 +93,13 @@ Five checks encode rules that a reader could otherwise silently break:
   inspects the built `npm pack --dry-run` file surface before publication. It
   also keeps Pages on an explicit dispatch so a registry contract cannot deploy
   before the npm client that understands it.
+- `scripts/guard-ci.mjs` — the pull-request classifier remains fail-closed and
+  independent of quality, the portability jobs wait only for that classifier,
+  and the stable CI gate observes every result. It also freezes the complete
+  portability matrix, the two complete Windows e2e shards, and exact global Bun
+  package-cache keys while refusing any `node_modules` cache or fallback key.
+  This makes CI critical-path optimizations prove that they changed orchestration
+  rather than silently narrowing verification.
 
 Prefer a guard over a convention whenever the rule is mechanically checkable.
 
