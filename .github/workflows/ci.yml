@@ -13,10 +13,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality:
-    name: Source, types, lint, guards
+  classify:
+    name: Classify changed paths
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 5
     outputs:
       docs_only: ${{ steps.changed-paths.outputs.docs_only }}
     steps:
@@ -84,12 +84,26 @@ jobs:
           done
 
           echo "docs_only=true" >> "$GITHUB_OUTPUT"
+
+  quality:
+    name: Source, types, lint, guards
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: "22.12.0"
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.3.14"
+      # setup-bun caches the Bun executable, not packages. Keep the global
+      # package cache exact to this runner ABI, Bun version, and lockfile; never
+      # cache the repository's linked node_modules tree.
+      - uses: actions/cache@v5
+        with:
+          path: ~/.bun/install/cache
+          key: bun-install-${{ runner.os }}-${{ runner.arch }}-1.3.14-${{ hashFiles('bun.lock') }}
       - run: bun install --frozen-lockfile
       # Immediately after install, so a bad install is named as one rather than
       # surfacing later as several hundred type errors in untouched files.
@@ -103,15 +117,16 @@ jobs:
       - run: node scripts/guard-runtime-apis.mjs
       - run: node packages/cli/scripts/guard-diagnostics.mjs
       - run: node scripts/guard-release.mjs
+      - run: node scripts/guard-ci.mjs
       # Cannot fail here — the install above always produces a complete tree.
       # Listed so a manifest declaring something the lockfile cannot supply is
       # caught, and so CI and `bun run guard` stay the same set.
       - run: node scripts/guard-deps.mjs
 
   built-node:
-    name: Built Node ${{ matrix.node }} on ${{ matrix.os }}
-    needs: quality
-    if: needs.quality.outputs.docs_only != 'true'
+    name: Built Node ${{ matrix.node }} on ${{ matrix.os }} — e2e ${{ matrix.shard }}
+    needs: classify
+    if: needs.classify.outputs.docs_only != 'true'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 25
     strategy:
@@ -120,14 +135,22 @@ jobs:
         include:
           - os: ubuntu-latest
             node: "22.12.0"
+            shard: all
           - os: ubuntu-latest
             node: "24"
+            shard: all
           - os: ubuntu-latest
             node: "26"
+            shard: all
           - os: macos-latest
             node: "22.12.0"
+            shard: all
           - os: windows-latest
             node: "22.12.0"
+            shard: 1/2
+          - os: windows-latest
+            node: "22.12.0"
+            shard: 2/2
     steps:
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
@@ -136,6 +159,10 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
+      - uses: actions/cache@v5
+        with:
+          path: ~/.bun/install/cache
+          key: bun-install-${{ runner.os }}-${{ runner.arch }}-1.3.14-${{ hashFiles('bun.lock') }}
       - run: bun install --frozen-lockfile
       - run: node scripts/guard-workspace.mjs
       - run: bun run build:kit
@@ -144,11 +171,13 @@ jobs:
       - run: bun run build:registry
       - run: bun --cwd=packages/cli run build
       - run: node packages/cli/scripts/run-e2e.mjs
+        env:
+          MANTEEN_E2E_SHARD: ${{ matrix.shard }}
 
   packed-consumer:
     name: Packed consumer — ${{ matrix.manager }} on ${{ matrix.os }}
-    needs: quality
-    if: needs.quality.outputs.docs_only != 'true'
+    needs: classify
+    if: needs.classify.outputs.docs_only != 'true'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
@@ -175,6 +204,10 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: "22.12.0"
+      - uses: actions/cache@v5
+        with:
+          path: ~/.bun/install/cache
+          key: bun-install-${{ runner.os }}-${{ runner.arch }}-1.3.14-${{ hashFiles('bun.lock') }}
       - name: Provision the selected package manager
         shell: bash
         run: |
@@ -207,18 +240,23 @@ jobs:
   # intentionally skipped for a docs-only PR.
   ci-gate:
     name: CI gate
-    needs: [quality, built-node, packed-consumer]
+    needs: [classify, quality, built-node, packed-consumer]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - name: Verify required CI results
         env:
-          DOCS_ONLY: ${{ needs.quality.outputs.docs_only }}
+          DOCS_ONLY: ${{ needs.classify.outputs.docs_only }}
+          CLASSIFY_RESULT: ${{ needs.classify.result }}
           QUALITY_RESULT: ${{ needs.quality.result }}
           BUILT_NODE_RESULT: ${{ needs.built-node.result }}
           PACKED_CONSUMER_RESULT: ${{ needs.packed-consumer.result }}
         shell: bash
         run: |
+          if [[ "$CLASSIFY_RESULT" != "success" ]]; then
+            exit 1
+          fi
+
           if [[ "$QUALITY_RESULT" != "success" ]]; then
             exit 1
           fi
