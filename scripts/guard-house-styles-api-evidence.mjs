@@ -5,9 +5,9 @@
  *
  * This is deliberately an ownership guard, not a test parser. It proves that
  * the catalog claim and a unique, ordinary, repository-contained evidence file
- * are linked in both directions. The normal test runner remains responsible for
- * executing that file, and only the author-owned assertions establish runtime
- * behavior.
+ * are linked in both directions and that the pinned root test command will
+ * discover the file. The normal test runner remains responsible for executing
+ * it, and only the author-owned assertions establish runtime behavior.
  */
 import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
@@ -17,7 +17,10 @@ import { pathToFileURL } from "node:url";
 const DEFAULT_REPO_ROOT = resolve(import.meta.dirname, "..");
 const CATALOG_PATH = "manteen.registry.json";
 const EVIDENCE_MAP_PATH = "house-styles-api-evidence.json";
+const PACKAGE_PATH = "package.json";
 const MAP_ENTRY_KEYS = ["component", "evidence", "item"];
+const ROOT_TEST_SCRIPT = "bun run build:kit && bun test";
+const BUN_TEST_FILE = /(?:\.test|_test|\.spec|_spec)\.(?:js|jsx|ts|tsx|mjs|cjs|mts|cts)$/;
 
 function claimKey(item, component) {
   return JSON.stringify([item, component]);
@@ -38,6 +41,36 @@ function readJson(repoRoot, repositoryPath, failures) {
 
 function isRecord(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function inspectBunTestDiscovery(repoRoot, manifest, failures) {
+  if (!isRecord(manifest) || !isRecord(manifest.scripts)) {
+    failures.push(`${PACKAGE_PATH}: expected an object with a scripts object`);
+  } else if (manifest.scripts.test !== ROOT_TEST_SCRIPT) {
+    failures.push(
+      `${PACKAGE_PATH}: test script drifted from ${JSON.stringify(ROOT_TEST_SCRIPT)}; review the evidence discovery guard before changing the normal test surface`,
+    );
+  }
+
+  try {
+    lstatSync(resolve(repoRoot, "bunfig.toml"));
+    failures.push(
+      "bunfig.toml: the evidence guard only proves Bun's default discovery surface; review it before adding test discovery configuration",
+    );
+  } catch (error) {
+    if (error?.code !== "ENOENT") {
+      failures.push(`bunfig.toml: could not verify absence (${String(error)})`);
+    }
+  }
+}
+
+function isDiscoveredByRootBunTest(evidence) {
+  const segments = evidence.split("/");
+  const file = segments.pop();
+  const ignoredDirectory = segments.some(
+    (segment) => segment === "node_modules" || segment.startsWith("."),
+  );
+  return !ignoredDirectory && BUN_TEST_FILE.test(file);
 }
 
 function inspectCatalog(catalog, failures) {
@@ -142,6 +175,13 @@ function repositoryEvidencePath(repoRoot, evidence, failures) {
     return null;
   }
 
+  if (!isDiscoveredByRootBunTest(evidence)) {
+    failures.push(
+      `${EVIDENCE_MAP_PATH}: evidence ${JSON.stringify(evidence)} is outside the repository's plain bun test discovery surface`,
+    );
+    return null;
+  }
+
   const realRepoRoot = realpathSync(repoRoot);
   const realEvidence = realpathSync(fullPath);
   const realRelative = relative(realRepoRoot, realEvidence);
@@ -207,10 +247,12 @@ export function inspectHouseStylesApiEvidence(repoRoot = DEFAULT_REPO_ROOT) {
   const failures = [];
   const catalog = readJson(repoRoot, CATALOG_PATH, failures);
   const evidenceMap = readJson(repoRoot, EVIDENCE_MAP_PATH, failures);
-  if (catalog === null || evidenceMap === null) {
+  const manifest = readJson(repoRoot, PACKAGE_PATH, failures);
+  if (catalog === null || evidenceMap === null || manifest === null) {
     return { failures, claimCount: 0, evidenceCount: 0 };
   }
 
+  inspectBunTestDiscovery(repoRoot, manifest, failures);
   const { items, claims } = inspectCatalog(catalog, failures);
   const mappings = inspectEvidenceMap(repoRoot, evidenceMap, failures);
   const mappingsByClaim = new Map();
@@ -287,7 +329,7 @@ function main() {
   }
 
   console.log(
-    `guard-house-styles-api-evidence: clean — ${result.claimCount} stylesApi claim(s) own ${result.evidenceCount} unique repository-contained evidence file(s); test semantics and results are not inspected.`,
+    `guard-house-styles-api-evidence: clean — ${result.claimCount} stylesApi claim(s) own ${result.evidenceCount} unique repository-contained evidence file(s) on the root bun test discovery surface; test semantics and results are not inspected.`,
   );
 }
 

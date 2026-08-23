@@ -85,8 +85,13 @@ Six checks encode rules that a reader could otherwise silently break:
   catalog's `stylesApi` declarations has exactly one entry in
   `house-styles-api-evidence.json`, and every map entry points back to a current claim. Evidence
   paths must be canonical, repository-relative ordinary files, and one file cannot be reused for
-  several claims. This checks declaration/evidence ownership only: it never reads test contents or
-  claims that their assertions passed. The normal test runner owns behavioral proof.
+  several claims. Each path must also match the root's plain `bun test` discovery surface:
+  `*.test.*`, `*_test.*`, `*.spec.*`, or `*_spec.*` with a Bun-supported JavaScript or TypeScript
+  extension (`js`, `jsx`, `ts`, `tsx`, `mjs`, `cjs`, `mts`, or `cts`), outside hidden and
+  `node_modules` directories. The guard pins the root test script and absence of
+  discovery-changing `bunfig.toml` configuration so that invariant cannot silently drift. This
+  checks declaration/evidence ownership and test-runner inclusion only: it never reads test
+  contents or claims that their assertions passed. The normal test runner owns behavioral proof.
 - `packages/cli/scripts/guard-diagnostics.mjs` — every `DiagnosticCode` is
   emitted somewhere or explicitly listed as pending. A specified refusal with no
   emitter reads exactly like a forgotten one. The pending list is required to

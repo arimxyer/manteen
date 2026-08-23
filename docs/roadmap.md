@@ -153,9 +153,11 @@ That is repository evidence about `@house`, not generic kit verification: `mante
 carries arbitrary registry declarations without proving their source. The first Wm milestone closes
 the house durability gap with `house-styles-api-evidence.json` and a bidirectional guard: every
 item/component claim owns one unique repository-contained evidence file, and every mapping points
-back to a current claim. The guard deliberately does not inspect test semantics or claim that tests
-passed. Components without a declaration may keep editable internal CSS, but later catalog
-additions still need an explicit adopt-or-keep-internal decision rather than silence.
+back to a current claim. Evidence paths must also lie on the repository's root `bun test` discovery
+surface; an ordinary file that the normal runner will not execute is rejected. The guard
+deliberately does not inspect test semantics or claim that tests passed. Components without a
+declaration may keep editable internal CSS, but later catalog additions still need an explicit
+adopt-or-keep-internal decision rather than silence.
 
 ## The program
 

@@ -11,7 +11,14 @@ afterEach(() => {
   for (const root of temporaryRoots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
 
-function fixture({ catalog, evidenceMap, files = {}, directories = [], symlinks = {} }) {
+function fixture({
+  catalog,
+  evidenceMap,
+  files = {},
+  directories = [],
+  symlinks = {},
+  testScript = "bun run build:kit && bun test",
+}) {
   const temporaryRoot = mkdtempSync(join(tmpdir(), "manteen-house-styles-api-"));
   temporaryRoots.push(temporaryRoot);
   const repoRoot = join(temporaryRoot, "repo");
@@ -20,6 +27,10 @@ function fixture({ catalog, evidenceMap, files = {}, directories = [], symlinks 
   writeFileSync(
     join(repoRoot, "house-styles-api-evidence.json"),
     `${JSON.stringify(evidenceMap, null, 2)}\n`,
+  );
+  writeFileSync(
+    join(repoRoot, "package.json"),
+    `${JSON.stringify({ scripts: { test: testScript } }, null, 2)}\n`,
   );
 
   for (const directory of directories) mkdirSync(join(repoRoot, directory), { recursive: true });
@@ -59,6 +70,31 @@ describe("house Styles API evidence guard", () => {
       claimCount: 1,
       evidenceCount: 1,
     });
+  });
+
+  test("rejects an ordinary README because the root bun test runner will not discover it", () => {
+    const { repoRoot } = fixture({
+      catalog: alphaCatalog,
+      evidenceMap: [{ ...alphaMapping, evidence: "README.md" }],
+      files: { "README.md": "ordinary repository file, but not a test\n" },
+    });
+
+    expect(inspectHouseStylesApiEvidence(repoRoot).failures).toContain(
+      'house-styles-api-evidence.json: evidence "README.md" is outside the repository\'s plain bun test discovery surface',
+    );
+  });
+
+  test("fails closed if the repository's normal test command changes discovery", () => {
+    const { repoRoot } = fixture({
+      catalog: alphaCatalog,
+      evidenceMap: [alphaMapping],
+      files: { "test/alpha.test.ts": "evidence\n" },
+      testScript: "bun test test/other.test.ts",
+    });
+
+    expect(inspectHouseStylesApiEvidence(repoRoot).failures).toContain(
+      'package.json: test script drifted from "bun run build:kit && bun test"; review the evidence discovery guard before changing the normal test surface',
+    );
   });
 
   test("fails catalog-to-map drift when a declaration has no mapping", () => {
