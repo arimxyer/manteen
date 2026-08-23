@@ -115,6 +115,7 @@ jobs:
       - run: bun run typecheck
       - run: bun run lint
       - run: node scripts/guard-runtime-apis.mjs
+      - run: node scripts/guard-house-styles-api-evidence.mjs
       - run: node packages/cli/scripts/guard-diagnostics.mjs
       - run: node scripts/guard-release.mjs
       - run: node scripts/guard-ci.mjs

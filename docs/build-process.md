@@ -81,6 +81,12 @@ Six checks encode rules that a reader could otherwise silently break:
   the ban. Only the leading form: stripping from a mid-line `//` would blind it
   after any string containing `://`, and a false negative in a guard is worse
   than a flagged trailing comment.
+- `scripts/guard-house-styles-api-evidence.mjs` — every item/component claim in the house
+  catalog's `stylesApi` declarations has exactly one entry in
+  `house-styles-api-evidence.json`, and every map entry points back to a current claim. Evidence
+  paths must be canonical, repository-relative ordinary files, and one file cannot be reused for
+  several claims. This checks declaration/evidence ownership only: it never reads test contents or
+  claims that their assertions passed. The normal test runner owns behavioral proof.
 - `packages/cli/scripts/guard-diagnostics.mjs` — every `DiagnosticCode` is
   emitted somewhere or explicitly listed as pending. A specified refusal with no
   emitter reads exactly like a forgotten one. The pending list is required to
