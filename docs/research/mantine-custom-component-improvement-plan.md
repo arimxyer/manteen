@@ -1,6 +1,8 @@
 # Mantine custom-component alignment plan
 
-Status: proposal for review, not an adopted product contract  
+Status: proposal for review; the `componentApi` deferral below is approved, while the remaining
+decision checkpoints are not yet an adopted product contract
+
 Prepared: 2026-08-23  
 Reference: Mantine 9.5.2 and the current
 [custom-component guide](https://mantine.dev/guides/custom-components/)
@@ -128,8 +130,13 @@ independent registries must continue compiling.
 
 ### C. Describe richer public component capabilities
 
-Keep legacy `stylesApi` unchanged and add a new optional `componentApi` contract rather than
-silently changing the value type of an established field. Proposed shape:
+Decision (approved 2026-08-23): defer a broader `componentApi` contract. Keep legacy `stylesApi`
+authoritative and first add evidence that proves its selector claims. Do not add capability fields
+until a concrete CLI, documentation, scaffold, or machine-consumer use case justifies each one.
+
+If that need emerges later, add a new optional `componentApi` contract rather than silently
+changing the value type of the established `stylesApi` field. Candidate shape for future
+evaluation:
 
 ```json
 {
@@ -155,9 +162,9 @@ render it. The installer does not block on display-only capability metadata. Mal
 metadata follows the existing visible degrade-to-note policy rather than turning a cosmetic typo
 into permission to install incompatible source.
 
-Before adopting the exact field names, test them against the 9 current factory components and at
+Before adopting any field or exact name, test it against the 9 current factory components and at
 least one deliberately simple non-factory component. Avoid metadata that has no consumer or docs
-use case.
+use case. Workstream C is therefore outside the first implementation wave.
 
 ### D. Add safe author scaffolds
 
@@ -207,9 +214,10 @@ and truthful metadata states. Tabs with no trustworthy data are omitted or expli
 applicable. Curated previews follow item by item; arbitrary source is never evaluated to fabricate
 one.
 
-`componentApi` and `themeSummary` enrich this surface but should not block a first source/metadata
-route. The reader must consume generated `/r` bytes and share the same contract used by the live
-registry. A missing generated registry must fail the guard rather than skip with exit 0.
+Future `componentApi` metadata and `themeSummary` enrich this surface but should not block a first
+source/metadata route. The reader must consume generated `/r` bytes and share the same contract
+used by the live registry. A missing generated registry must fail the guard rather than skip with
+exit 0.
 
 Acceptance includes production build, route enumeration, base-path proof, exact generated-registry
 reads, missing-output failure, keyboard/accessibility checks for the tabs, and explicit separation
@@ -230,7 +238,7 @@ CI optimization (already delegated) ──────────────�
 MC1-MC10 contract freeze (one writer)                              │
   ├─ A1 house evidence guard ──> A2 generic author profile         │
   ├─ B compatibility semantics + boundary consumers                ├─> integration gate
-  ├─ C componentApi schema ─────> D safe scaffold                  │
+  ├─ D safe scaffold, after the conformance profile                │
   ├─ E themeSummary ────────────> F Fumadocs styling/detail data   │
   └─ F route shell can begin after its reader contract freezes     │
                                                                   │
@@ -244,12 +252,12 @@ those files.
 After that commit, use separate Herdr worktrees for A, B, E, F's route shell, and G because their
 owned files can be disjoint. Use stacked PRs only for real dependencies:
 
-1. `contract/mantine-component-api` — MC decisions, schemas, shared types, diagnostics;
+1. `contract/mantine-component-alignment` — MC decisions, shared types, and diagnostics;
 2. `feature/author-conformance` — house guard, then generic profile;
-3. `feature/component-scaffold` stacked on the conformance and component contracts;
+3. `feature/component-scaffold` stacked on the conformance contract;
 4. `feature/theme-summary` — AST analysis and metadata;
-5. `feature/fumadocs-registry-detail` stacked on the reader contract, with metadata enrichment
-   layered after C and E;
+5. `feature/fumadocs-registry-detail` stacked on the reader contract, with theme metadata
+   enrichment layered after E;
 6. `cleanup/retire-prototypes` independent; and
 7. `feature/theme-builder` independent unless its final design chooses to consume theme summaries.
 
@@ -261,9 +269,9 @@ them after the owning branch is stable.
 
 ### M0 — Approve the plan
 
-Freeze MC1-MC10, choose the supported Mantine floor, decide whether `componentApi` earns all six
-proposed capability fields, and confirm prototype retirement. No implementation begins before
-these choices are explicit.
+Freeze MC1-MC10, choose the supported Mantine floor, and confirm prototype retirement. The broader
+`componentApi` vocabulary is deferred until concrete consumers justify individual fields. No
+implementation that depends on an unresolved choice begins before that choice is explicit.
 
 ### M1 — Author truthfulness
 
@@ -271,10 +279,10 @@ Land A and B. At this point declarations have named evidence and compatibility/i
 cannot drift apart. Stop and validate the design against one independent registry before growing
 the metadata vocabulary.
 
-### M2 — Component and theme description
+### M2 — Theme description
 
-Land C and E. Prove backward compatibility with old item documents and visible degradation of bad
-optional metadata. Stop if any field lacks a concrete CLI or docs consumer.
+Land E. Preserve backward compatibility with old item documents and visible degradation of bad
+optional metadata. Reconsider C only as a later proposal backed by concrete CLI or docs consumers.
 
 ### M3 — Author ergonomics
 
@@ -322,8 +330,9 @@ Add milestone-specific proof rather than treating the full gate as sufficient:
 
 1. Is the supported floor all of Mantine 9, 9.5.0, or 9.5.2? Evidence should choose it, not the
    convenience of the current lockfile.
-2. Should the first `componentApi` release include every proposed capability, or only selectors,
-   CSS variables, variants, and theme extension?
+2. Resolved 2026-08-23: do not include `componentApi` in the first implementation wave. Keep
+   `stylesApi` authoritative and require evidence for its claims; reconsider broader fields only
+   with concrete consumers.
 3. Is an evidence-path profile enough for the first generic conformance release, or should the kit
    also define a pure assertion-helper API for author tests?
 4. Should scaffolding update the catalog in the first release, or initially generate a reviewed
