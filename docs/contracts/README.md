@@ -11,3 +11,4 @@ release receipts live in the sibling handoff and release groups.
 | [`client-build-plan.md`](client-build-plan.md) | Guarded refusal table and cumulative client decisions. |
 | [`agent-native-build-plan.md`](agent-native-build-plan.md) | Frozen machine interface, output ownership, plan digest, SDK, verification, and packaged-guidance contract. |
 | [`ast-merge-integration-decision.md`](ast-merge-integration-decision.md) | Current conservative TypeScript merge-fallback decision and its acceptance boundary. |
+| [`mantine-component-alignment-plan.md`](mantine-component-alignment-plan.md) | Frozen Mantine 9.5 component-authoring alignment, evidence, compatibility, metadata, documentation, and execution contract. |

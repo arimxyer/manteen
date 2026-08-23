@@ -1,0 +1,84 @@
+# Mantine component alignment contract
+
+[Documentation map](../project-context.md) · [Contracts](README.md) ·
+[Research proposal](../research/mantine-custom-component-improvement-plan.md)
+
+Status: frozen implementation contract, approved 2026-08-23.
+
+This contract aligns Manteen's authoring, metadata, and documentation surfaces with Mantine 9.5
+custom-component conventions without making Mantine's `factory` helpers a registry requirement.
+The linked research proposal preserves the audit, alternatives, and detailed acceptance notes.
+
+## Boundaries
+
+- Ordinary source-owned React components remain valid registry content. `factory`,
+  `polymorphicFactory`, `useStyles`, CSS variables, and compound exports are optional.
+- Public capabilities are author assertions backed by author-owned tests. Generic tooling does not
+  infer them from arbitrary source or claim to understand test semantics.
+- No install-time source execution, TypeScript evaluation, callback composition, or runtime import
+  of a consumer's Mantine installation is introduced.
+- Installed source remains the primary customization surface. Existing registries and legacy
+  `stylesApi` documents retain their meaning.
+- Generated-registry, local, built-Node, hosted CI, public-package, and deployed-site evidence stay
+  distinct. Tags, publication, deployment, and replacement of `apps/docs` require later approval.
+
+## Frozen decisions
+
+| ID | Decision |
+| --- | --- |
+| MC1 | Component capability metadata is optional and descriptive; simple and factory-based components are equally valid. |
+| MC2 | Generic tooling verifies catalog semantics and evidence ownership; only author tests prove runtime behavior. |
+| MC3 | The house registry supports `>=9.5.0 <10`. Acceptance must prove fresh consumers at 9.5.0 and 9.5.2; neither the current lockfile nor a single latest-version build is sufficient evidence. |
+| MC4 | An item's runtime `@mantine/*` ranges must have a non-empty common intersection and must be subsets of its declared Mantine compatibility band. An item with a Mantine runtime dependency must declare that band. |
+| MC5 | Theme summaries are syntax-only. Dynamic regions are reported as dynamic and source is never executed to derive metadata. |
+| MC6 | Scaffolding is explicit, dry-run first, collision refusing, and plan-digest bound. Its first release emits a reviewable catalog insertion beside the source plan; it does not mutate or reserialize `manteen.registry.json`. |
+| MC7 | Polymorphism is opt-in because its type and autocomplete cost is not justified for every component. |
+| MC8 | New author checks and scaffolds use the kit's versioned JSON command envelope and visible refusal codes. |
+| MC9 | Fumadocs item detail routes consume compiled `/r` documents and curated adapters. They do not scrape arbitrary source to invent API documentation or previews. |
+| MC10 | The three public `/prototypes/*` route suites and unused `InteropStages` comparison component may be removed once direct import checks confirm promoted homepage components are independent. Research records preserve the design evidence. |
+
+The first generic conformance release records explicit, unique, repository-relative evidence
+paths only. It does not add an assertion-helper API or execute author commands. The repository's
+normal test runner remains the authority that behavioral evidence passed.
+
+Legacy `stylesApi` remains authoritative. A broader `componentApi` vocabulary is deferred until a
+specific CLI, documentation, scaffold, or machine consumer justifies each field. No first-wave
+schema or implementation branch may add it speculatively.
+
+The existing theme-builder proposal remains independent. It does not wait for `themeSummary`, and
+the theme-summary work does not expand the theme builder implicitly.
+
+## Execution order
+
+1. Add a house guard binding every `stylesApi` declaration to exactly one explicit conformance
+   test, in both directions.
+2. Generalize that proven minimum into an optional registry-author evidence profile without
+   `@house` assumptions.
+3. Add Mantine range-coherence validation and prove the 9.5.0 and 9.5.2 consumer boundaries.
+4. Stop and validate steps 1-3 against an independent hand-authored registry.
+5. In disjoint worktrees, build the syntax-only theme summary, the first Fumadocs item-detail
+   surface, and prototype cleanup. Give schemas, the catalog, shared CLI types, and the Fumadocs
+   registry reader one writer at a time.
+6. Add scaffolding only after the conformance profile is stable. It emits a reviewed catalog patch
+   and never silently refreshes authored files.
+7. Treat curated previews as item-sized follow-ups. Reconsider broader component metadata only
+   when a concrete consumer is ready.
+
+Use stacked branches only where a later change actually depends on an earlier contract. Independent
+workstreams use separate Herdr worktrees and converge through sequential integration and review.
+
+## Acceptance boundary
+
+Shared-contract and release-candidate milestones run the repository gate, registry and CLI builds,
+the complete built-Node e2e glob, and both documentation builds. Milestone-specific evidence also
+includes:
+
+- fail-before/pass-after fixtures for evidence ownership and range coherence;
+- no-execution fixtures for theme summaries;
+- zero-write, collision, and stale-plan scaffold tests;
+- a hand-authored independent registry;
+- fresh consumers at Mantine 9.5.0 and 9.5.2; and
+- hosted CI and deployment receipts reported separately from local proof.
+
+No milestone in this contract authorizes a package version, tag, npm publication, GitHub release,
+Pages deployment, or replacement of the deployed Astro site.

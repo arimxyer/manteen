@@ -168,6 +168,7 @@ is a judgment call, which is exactly why they are separate runs.
 | W7 | [`Hardening`](./handoffs/w7-hardening-handoff.md) | complete: matrix-driven, findings-first, hosted retry | Real Windows and macOS CI exposed path and line-ending defects that local Linux could not. |
 | W8 | [`Release`](./releases/w8-release-handoff.md) | complete: both `0.1.1` packages published through tagged OIDC with provenance | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
 | Wc | [`Registry content`](./handoffs/wc-registry-content-handoff.md) | first eight-item tranche complete; later catalog growth summarized above | Independent of all of the above; doubles as client stress-testing without turning fixtures into product evidence. |
+| Wm | [`Mantine custom-component alignment`](./contracts/mantine-component-alignment-plan.md) | active: contract frozen; author truthfulness is first | Makes author assertions mechanically accountable and aligns Manteen metadata and tooling with Mantine 9.5 custom-component capabilities without requiring `factory`. |
 | Wt | [`Theme builder`](#wt--theme-builder-proposed) | proposed: one page, plan-first | Preview-then-install for the one registry item every consumer is expected to edit. Depends on nothing; blocked by nothing. |
 | Wu | [`Update merging`](./handoffs/update-merge-handoff.md) | complete and public in `0.3.0`: receipt v3, exact bases, three-way plan, explicit reset, three-axis diff, built-Node and controlled-revision acceptance | Changes ordinary source maintenance from skip-or-replace to reproducible three-way merging without weakening the existing plan/apply transaction. |
 | Wv | [`Update verification`](./handoffs/update-verification-handoff.md) | complete and public in `0.3.0`: post-apply orchestration, fail-fast bounded project scripts, drift detection, built-Node and fresh-consumer acceptance | Lets a consumer define what “the merged component still works here” means without placing arbitrary scripts inside Manteen's rollback journal. |
@@ -178,6 +179,20 @@ is a judgment call, which is exactly why they are separate runs.
 **Not workflow-shaped, do directly:** the hygiene set (LICENSE, linter, SECURITY, CONTRIBUTING,
 dependabot, README rename). Single-file, single-concern, no discovery — a workflow would be
 pure overhead.
+
+## Wm — Mantine custom-component alignment (active)
+
+The implementation contract is frozen in
+[`mantine-component-alignment-plan.md`](./contracts/mantine-component-alignment-plan.md); the
+original [research proposal](./research/mantine-custom-component-improvement-plan.md) preserves the
+audit and detailed alternatives.
+
+The first implementation milestone binds every house `stylesApi` declaration to explicit evidence,
+then generalizes only that proven evidence-path profile. Compatibility validation follows with a
+house band of `>=9.5.0 <10` and fresh-consumer proof at both 9.5.0 and 9.5.2. Broader
+`componentApi` metadata is deferred. Theme summary, the Fumadocs route shell, and prototype cleanup
+can use separate worktrees after their shared readers and schemas have one owner; scaffolding stays
+dependent on the conformance profile and initially emits a reviewed catalog patch.
 
 ## Wt — theme builder (proposed)
 
@@ -221,6 +236,7 @@ define).
 Phase 3 ✔ ─> W4 apply surface ✔ ─┬─> W5 command set ✔ ──┐
                                  └─> W6 init ✔ ─────────┴─> W7 hardening ✔ ─> W8 release ✔
 Wc registry content ......... any time, independent
+Wm component alignment ...... active; contract frozen, author truthfulness first
 Wt theme builder ............ any time, independent, not started
 Wu update merging ........... complete; public in client 0.3.0
 Wv update verification ...... complete; public in client 0.3.0

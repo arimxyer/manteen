@@ -58,6 +58,7 @@ supersession note and link the later authority.
 | --- | --- |
 | [`client-build-plan.md`](./contracts/client-build-plan.md) | Guarded refusal table and cumulative D1-D44 client decisions. Later numbered decisions override earlier prose. |
 | [`agent-native-build-plan.md`](./contracts/agent-native-build-plan.md) | Frozen machine JSON, generated-output ownership, expected-plan, verification, SDK, and packaged guidance contract. |
+| [`mantine-component-alignment-plan.md`](./contracts/mantine-component-alignment-plan.md) | Frozen Mantine 9.5 author-evidence, compatibility, metadata, documentation, and execution contract. |
 | [`w6-init-handoff.md`](./handoffs/w6-init-handoff.md) | Approved init ownership and framework-transform boundary. Its implementation evidence is historical; the contract remains relevant. |
 | [`build-process.md`](build-process.md) | Repository workflow, guards, workspace safety, and incident-derived engineering rules. |
 | [`roadmap.md`](roadmap.md) | Current completion summary, open work, sequencing, and release/deployment boundaries. |
