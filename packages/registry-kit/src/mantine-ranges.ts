@@ -42,7 +42,7 @@ function mantineDependencies(
     if (!trimmed.startsWith("@mantine/")) return [];
 
     const match = spec === trimmed ? MANTINE_NPM_SPEC.exec(spec) : null;
-    if (!match) {
+    if (!match || match[2] !== match[2]!.trim()) {
       failures.push({
         code: "mantine-range-invalid",
         item: item.name,

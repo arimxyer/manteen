@@ -325,11 +325,17 @@ describe("Mantine range coherence", () => {
       "@mantine/core @^9.5.0",
       " @mantine/core@^9.5.0",
       "@mantine/core@^9.5.0 ",
+      "@mantine/core@ ^9.5.0",
     ]) {
       expect(inspectMantineRanges(catalog({ mantine: ">=9.5.0 <10", npm: [directive] }))).toEqual([
         expect.objectContaining({ code: "mantine-range-invalid" }),
       ]);
     }
+    expect(
+      inspectMantineRanges(
+        catalog({ mantine: ">=9.5.0 <10 || >=10.1.0 <11", npm: ["@mantine/core@>=9.5.0 <10"] }),
+      ),
+    ).toEqual([]);
     expect(inspectMantineRanges(catalog({ mantine: ">=9 <10", npm: ["@mantine/core@ "] }))).toEqual(
       [expect.objectContaining({ code: "mantine-range-invalid" })],
     );
