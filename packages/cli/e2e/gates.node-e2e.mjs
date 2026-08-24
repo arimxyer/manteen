@@ -711,7 +711,7 @@ test("criterion: @mantine/core 8.2.1 against a conflicting ^9 exits 1 with ONE g
     / {2}read from {2}\S*node_modules[\\/]@mantine[\\/]core[\\/]package\.json/,
     result.all,
   );
-  assert.match(result.stderr, /^ {4}>=9\s+requires\s+.*@house\/data-table/m, result.all);
+  assert.match(result.stderr, /^ {4}>=9\.5\.0 <10\s+requires\s+.*@house\/data-table/m, result.all);
 
   // "Proves the gate reads the installed version, not the range." The consumer's
   // own package.json declares `^9`, which 8.2.1 also fails — so a gate that read

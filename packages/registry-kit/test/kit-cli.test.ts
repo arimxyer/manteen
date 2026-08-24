@@ -69,6 +69,41 @@ function invalidConformanceFixture(): { catalog: string; outDir: string; sentine
   return { catalog, outDir, sentinel };
 }
 
+function invalidRangeFixture(item: Record<string, unknown>): {
+  catalog: string;
+  outDir: string;
+  sentinel: string;
+} {
+  const root = temporaryRoot();
+  const catalog = join(root, "manteen.registry.json");
+  const outDir = join(root, "public/r");
+  const sentinel = join(outDir, "sentinel.txt");
+  mkdirSync(join(root, "src"), { recursive: true });
+  mkdirSync(outDir, { recursive: true });
+  writeFileSync(join(root, "src/alpha.tsx"), "export const Alpha = () => null;\n");
+  writeFileSync(sentinel, "unchanged\n");
+  writeFileSync(
+    catalog,
+    `${JSON.stringify(
+      {
+        name: "independent",
+        namespace: "@independent",
+        items: [
+          {
+            name: "alpha",
+            kind: "component",
+            files: [{ path: "src/alpha.tsx", as: "component" }],
+            ...item,
+          },
+        ],
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  return { catalog, outDir, sentinel };
+}
+
 afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
@@ -142,6 +177,48 @@ describe("kit JSON commands", () => {
         mutated: false,
         payload: null,
         errors: [{ code: "author-conformance-failed" }],
+      });
+      expect(readFileSync(created.sentinel, "utf8")).toBe("unchanged\n");
+      expect(readdirSync(created.outDir)).toEqual(["sentinel.txt"]);
+    }
+  });
+
+  test("range refusals are stable JSON and cannot mutate output", () => {
+    const cases = [
+      { item: { mantine: "not-a-range" }, code: "mantine-range-invalid" },
+      { item: { mantine: "  " }, code: "mantine-range-invalid" },
+      {
+        item: { mantine: ">=9 <10", npm: ["@mantine/core@ "] },
+        code: "mantine-range-invalid",
+      },
+      { item: { npm: ["@mantine/core@^9"] }, code: "mantine-gate-missing" },
+      {
+        item: { mantine: ">=9 <11", npm: ["@mantine/core@^9", "@mantine/hooks@^10"] },
+        code: "mantine-ranges-disjoint",
+      },
+      {
+        item: { mantine: ">=9.5.0 <10", npm: ["@mantine/core@^10"] },
+        code: "mantine-dependency-outside-gate",
+      },
+    ];
+
+    for (const { item, code } of cases) {
+      const created = invalidRangeFixture(item);
+      const result = run(["build", created.catalog, created.outDir, "--json"]);
+      const json = document(result);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr.toString()).toBe("");
+      expect(json).toMatchObject({
+        ok: false,
+        mutated: false,
+        payload: null,
+        errors: [
+          {
+            code: "mantine-range-validation-failed",
+            details: [expect.objectContaining({ code })],
+          },
+        ],
       });
       expect(readFileSync(created.sentinel, "utf8")).toBe("unchanged\n");
       expect(readdirSync(created.outDir)).toEqual(["sentinel.txt"]);

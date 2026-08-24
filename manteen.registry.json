@@ -10,9 +10,9 @@
       "kind": "theme",
       "title": "House Theme",
       "description": "Mantine theme with house defaults for Button, Card, Paper and Modal.",
-      "mantine": ">=9",
+      "mantine": ">=9.5.0 <10",
       "provider": true,
-      "npm": ["@mantine/core@^9", "@mantine/hooks@^9"],
+      "npm": ["@mantine/core@^9.5.0", "@mantine/hooks@^9.5.0"],
       "files": [{ "path": "registry/lib/theme.ts", "as": "lib" }],
       "usage": "registry/lib/theme.usage.tsx"
     },
@@ -21,8 +21,8 @@
       "kind": "component",
       "title": "Empty State",
       "description": "Centered empty/zero-data placeholder with an optional icon and call to action.",
-      "mantine": ">=9",
-      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "mantine": ">=9.5.0 <10",
+      "npm": ["@mantine/core@^9.5.0", "@tabler/icons-react@^3"],
       "files": [
         { "path": "registry/ui/empty-state.tsx", "as": "component" },
         {
@@ -75,8 +75,8 @@
       "kind": "component",
       "title": "Page Header",
       "description": "Page title, description and right-aligned action slot with an optional divider.",
-      "mantine": ">=9",
-      "npm": ["@mantine/core@^9"],
+      "mantine": ">=9.5.0 <10",
+      "npm": ["@mantine/core@^9.5.0"],
       "files": [
         { "path": "registry/ui/page-header.tsx", "as": "component" },
         {
@@ -137,8 +137,8 @@
       "kind": "component",
       "title": "Stat Card",
       "description": "Metric tile with label, value, optional icon and a trend row.",
-      "mantine": ">=9",
-      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "mantine": ">=9.5.0 <10",
+      "npm": ["@mantine/core@^9.5.0", "@tabler/icons-react@^3"],
       "files": [
         { "path": "registry/ui/stat-card.tsx", "as": "component" },
         {
@@ -190,8 +190,8 @@
       "kind": "block",
       "title": "Data Table",
       "description": "Sortable table with loading skeletons, click-through rows and an empty state.",
-      "mantine": ">=9",
-      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "mantine": ">=9.5.0 <10",
+      "npm": ["@mantine/core@^9.5.0", "@tabler/icons-react@^3"],
       "uses": ["empty-state"],
       "files": [
         { "path": "registry/blocks/data-table/data-table.tsx", "as": "component" },
@@ -270,9 +270,9 @@
       "kind": "component",
       "title": "Article Card",
       "description": "Prop-driven article preview with author, rating and action affordances.",
-      "mantine": ">=9",
+      "mantine": ">=9.5.0 <10",
       "provider": true,
-      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "npm": ["@mantine/core@^9.5.0", "@tabler/icons-react@^3"],
       "uses": ["mantine-ui-license"],
       "files": [
         {
@@ -360,12 +360,12 @@
       "kind": "block",
       "title": "Authentication Form",
       "description": "Login and registration form with validation and optional social callbacks.",
-      "mantine": ">=9",
+      "mantine": ">=9.5.0 <10",
       "provider": true,
       "npm": [
-        "@mantine/core@^9",
-        "@mantine/form@^9",
-        "@mantine/hooks@^9",
+        "@mantine/core@^9.5.0",
+        "@mantine/form@^9.5.0",
+        "@mantine/hooks@^9.5.0",
         "@tabler/icons-react@^3"
       ],
       "uses": ["mantine-ui-license"],
@@ -433,9 +433,9 @@
       "kind": "component",
       "title": "Progress Button",
       "description": "Button with an integrated timed progress layer and completion callback.",
-      "mantine": ">=9",
+      "mantine": ">=9.5.0 <10",
       "provider": true,
-      "npm": ["@mantine/core@^9", "@mantine/hooks@^9"],
+      "npm": ["@mantine/core@^9.5.0", "@mantine/hooks@^9.5.0"],
       "uses": ["mantine-ui-license"],
       "files": [
         {
@@ -502,14 +502,14 @@
       "kind": "component",
       "title": "Sortable List",
       "description": "Accessible pointer and keyboard sortable list with reorder callbacks.",
-      "mantine": ">=9",
+      "mantine": ">=9.5.0 <10",
       "provider": true,
       "npm": [
         "@dnd-kit/core@^6.3.1",
         "@dnd-kit/sortable@^10.0.0",
         "@dnd-kit/utilities@^3.2.2",
-        "@mantine/core@^9",
-        "@mantine/hooks@^9",
+        "@mantine/core@^9.5.0",
+        "@mantine/hooks@^9.5.0",
         "clsx@^2.1.1"
       ],
       "uses": ["mantine-ui-license"],
@@ -551,9 +551,9 @@
       "kind": "block",
       "title": "Stats Grid",
       "description": "Responsive metric grid with custom icons, comparison labels and trends.",
-      "mantine": ">=9",
+      "mantine": ">=9.5.0 <10",
       "provider": true,
-      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "npm": ["@mantine/core@^9.5.0", "@tabler/icons-react@^3"],
       "uses": ["mantine-ui-license"],
       "files": [
         {
@@ -584,9 +584,9 @@
       "kind": "block",
       "title": "Sortable Table",
       "description": "Searchable and sortable name, email and company table with an empty state.",
-      "mantine": ">=9",
+      "mantine": ">=9.5.0 <10",
       "provider": true,
-      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "npm": ["@mantine/core@^9.5.0", "@tabler/icons-react@^3"],
       "uses": ["mantine-ui-license"],
       "files": [
         {
@@ -637,9 +637,9 @@
       "kind": "component",
       "title": "Cards Carousel",
       "description": "Responsive image-card carousel with consumer-owned data and optional actions.",
-      "mantine": ">=9",
+      "mantine": ">=9.5.0 <10",
       "provider": true,
-      "npm": ["@mantine/carousel@^9", "@mantine/core@^9", "@mantine/hooks@^9"],
+      "npm": ["@mantine/carousel@^9.5.0", "@mantine/core@^9.5.0", "@mantine/hooks@^9.5.0"],
       "css": ["@mantine/carousel/styles.css"],
       "uses": ["mantine-ui-license"],
       "files": [
@@ -704,9 +704,9 @@
       "kind": "component",
       "title": "Dropzone Button",
       "description": "Drag-and-drop file input with explicit accept, reject and picker behavior.",
-      "mantine": ">=9",
+      "mantine": ">=9.5.0 <10",
       "provider": true,
-      "npm": ["@mantine/core@^9", "@mantine/dropzone@^9", "@tabler/icons-react@^3"],
+      "npm": ["@mantine/core@^9.5.0", "@mantine/dropzone@^9.5.0", "@tabler/icons-react@^3"],
       "css": ["@mantine/dropzone/styles.css"],
       "uses": ["mantine-ui-license"],
       "files": [
@@ -807,9 +807,9 @@
       "kind": "block",
       "title": "Header Mega Menu",
       "description": "Responsive site header with a hover-card feature mega-menu that collapses into a mobile drawer.",
-      "mantine": ">=9",
+      "mantine": ">=9.5.0 <10",
       "provider": true,
-      "npm": ["@mantine/core@^9", "@mantine/hooks@^9", "@tabler/icons-react@^3"],
+      "npm": ["@mantine/core@^9.5.0", "@mantine/hooks@^9.5.0", "@tabler/icons-react@^3"],
       "uses": ["mantine-ui-license"],
       "files": [
         {
@@ -899,9 +899,9 @@
       "kind": "block",
       "title": "Nested Navbar",
       "description": "Collapsible sidebar navigation with nested link groups and a user footer.",
-      "mantine": ">=9",
+      "mantine": ">=9.5.0 <10",
       "provider": true,
-      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "npm": ["@mantine/core@^9.5.0", "@tabler/icons-react@^3"],
       "uses": ["mantine-ui-license"],
       "files": [
         {
@@ -966,9 +966,9 @@
       "kind": "component",
       "title": "Floating Label Input",
       "description": "A TextInput whose label floats above the field on focus or fill, with an absorbed invalid/error state.",
-      "mantine": ">=9",
+      "mantine": ">=9.5.0 <10",
       "provider": true,
-      "npm": ["@mantine/core@^9", "@tabler/icons-react@^3"],
+      "npm": ["@mantine/core@^9.5.0", "@tabler/icons-react@^3"],
       "uses": ["mantine-ui-license"],
       "files": [
         {
@@ -1060,9 +1060,9 @@
       "kind": "component",
       "title": "Password Strength",
       "description": "PasswordInput with a four-segment strength meter and a live, overridable requirements checklist.",
-      "mantine": ">=9",
+      "mantine": ">=9.5.0 <10",
       "provider": true,
-      "npm": ["@mantine/core@^9", "@mantine/hooks@^9", "@tabler/icons-react@^3"],
+      "npm": ["@mantine/core@^9.5.0", "@mantine/hooks@^9.5.0", "@tabler/icons-react@^3"],
       "uses": ["mantine-ui-license"],
       "files": [
         {
@@ -1149,9 +1149,9 @@
       "kind": "component",
       "title": "Autocomplete Loading",
       "description": "Debounced async Autocomplete with a loading indicator and race-safe request handling.",
-      "mantine": ">=9",
+      "mantine": ">=9.5.0 <10",
       "provider": true,
-      "npm": ["@mantine/core@^9"],
+      "npm": ["@mantine/core@^9.5.0"],
       "uses": ["mantine-ui-license"],
       "files": [
         {
@@ -1236,9 +1236,9 @@
       "kind": "block",
       "title": "Hero Image Right",
       "description": "Full-bleed marketing hero with a gradient-highlighted headline, body copy, primary/optional-secondary CTAs, and an opt-in background photo revealed by a diagonal gradient on the right.",
-      "mantine": ">=9",
+      "mantine": ">=9.5.0 <10",
       "provider": true,
-      "npm": ["@mantine/core@^9"],
+      "npm": ["@mantine/core@^9.5.0"],
       "uses": ["mantine-ui-license"],
       "files": [
         {
@@ -1333,9 +1333,9 @@
       "kind": "block",
       "title": "Footer Links",
       "description": "Multi-column site footer with a brand block, titled link groups, copyright line and social icons — all consumer-supplied.",
-      "mantine": ">=9",
+      "mantine": ">=9.5.0 <10",
       "provider": true,
-      "npm": ["@mantine/core@^9"],
+      "npm": ["@mantine/core@^9.5.0"],
       "uses": ["mantine-ui-license"],
       "files": [
         {
@@ -1390,9 +1390,9 @@
       "kind": "block",
       "title": "FAQ Simple",
       "description": "Centered FAQ section with a separated accordion of consumer-supplied question/answer pairs.",
-      "mantine": ">=9",
+      "mantine": ">=9.5.0 <10",
       "provider": true,
-      "npm": ["@mantine/core@^9"],
+      "npm": ["@mantine/core@^9.5.0"],
       "uses": ["mantine-ui-license"],
       "files": [
         {
