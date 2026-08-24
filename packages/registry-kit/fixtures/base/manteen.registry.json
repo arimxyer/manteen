@@ -19,6 +19,7 @@
       "kind": "component",
       "title": "Empty State",
       "description": "Zero-data placeholder.",
+      "mantine": ">=9",
       "npm": ["@mantine/core@^9"],
       "files": [{ "path": "src/empty-state.tsx", "as": "component" }]
     },

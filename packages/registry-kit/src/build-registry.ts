@@ -22,6 +22,7 @@ import {
   type AuthorConformanceInspection,
   inspectAuthorConformance,
 } from "./author-conformance";
+import { inspectMantineRanges, MantineRangeError } from "./mantine-ranges";
 
 const ajv = () => new Ajv({ strict: false, allErrors: true });
 
@@ -228,6 +229,11 @@ export function compileRegistry(catalogPath: string): CompileResult {
     throw new Error(`${catalogPath} is not a valid catalog:\n  ${catalogErrors.join("\n  ")}`);
   }
 
+  const mantineRangeFailures = inspectMantineRanges(source);
+  if (mantineRangeFailures.length > 0) {
+    throw new MantineRangeError(mantineRangeFailures);
+  }
+
   const root = dirname(resolve(catalogPath));
   const authorConformance = inspectAuthorConformance(
     catalogPath,
@@ -269,6 +275,12 @@ export {
   inspectAuthorConformance,
   type StylesApiEvidenceMapping,
 } from "./author-conformance";
+export {
+  inspectMantineRanges,
+  MantineRangeError,
+  type MantineRangeFailure,
+  type MantineRangeFailureCode,
+} from "./mantine-ranges";
 export {
   planRegistryWrite,
   type RegistryOutputDiagnostic,

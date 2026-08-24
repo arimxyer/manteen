@@ -4,6 +4,7 @@ import { join, resolve } from "node:path";
 import {
   compileRegistry,
   createWireValidator,
+  inspectMantineRanges,
   type MantineRegistry,
   toWireItem,
   validateCatalog,
@@ -14,6 +15,7 @@ const FIXTURES = resolve(import.meta.dirname, "../fixtures");
 const BASE = join(FIXTURES, "base/manteen.registry.json");
 const KIT = join(FIXTURES, "kit/manteen.registry.json");
 const PRODUCT = join(FIXTURES, "product/manteen.registry.json");
+const ALIGNMENT = join(FIXTURES, "alignment/manteen.registry.json");
 
 function itemNamed(items: WireItem[], name: string): WireItem {
   const found = items.find((item) => item.name === name);
@@ -193,8 +195,11 @@ describe("index", () => {
     const entries = index.items as { name: string; meta?: { mantine: { requires?: string } } }[];
 
     expect(entries.find((entry) => entry.name === "theme")!.meta?.mantine.requires).toBe(">=9");
-    // empty-state declares no version gate, so it carries no meta at all.
-    expect(entries.find((entry) => entry.name === "empty-state")!.meta).toBeUndefined();
+    // Runtime Mantine dependencies now require an explicit gate, so every
+    // installable Mantine item is filterable from the index.
+    expect(entries.find((entry) => entry.name === "empty-state")!.meta?.mantine.requires).toBe(
+      ">=9",
+    );
     expect(entries).toHaveLength(3);
   });
 });
@@ -289,6 +294,97 @@ describe("validation", () => {
     expect(validateWire({ name: "x", type: "registry:ui", files: [] })).toBeNull();
     expect(validateWire({ name: "x", type: "mantine:component" })).not.toBeNull();
     expect(validateWire({ type: "registry:ui" })).not.toBeNull();
+  });
+});
+
+describe("Mantine range coherence", () => {
+  const catalog = (item: Partial<MantineRegistry["items"][number]>): MantineRegistry => ({
+    name: "independent",
+    namespace: "@independent",
+    items: [{ name: "range-test", kind: "component", files: [], ...item }],
+  });
+
+  test("accepts a coherent independent registry without the house band", () => {
+    expect(
+      inspectMantineRanges(
+        catalog({ mantine: ">=8 <11", npm: ["@mantine/core@>=8 <11", "@mantine/hooks@^9"] }),
+      ),
+    ).toEqual([]);
+  });
+
+  test("finds malformed gates and dependency ranges", () => {
+    expect(inspectMantineRanges(catalog({ mantine: "nope" }))).toEqual([
+      expect.objectContaining({ code: "mantine-range-invalid" }),
+    ]);
+    expect(
+      inspectMantineRanges(catalog({ mantine: ">=9 <10", npm: ["@mantine/core@not-a-range"] })),
+    ).toEqual([expect.objectContaining({ code: "mantine-range-invalid" })]);
+    expect(inspectMantineRanges(catalog({ mantine: "  " }))).toEqual([
+      expect.objectContaining({ code: "mantine-range-invalid" }),
+    ]);
+    for (const directive of [
+      "@mantine/core @^9.5.0",
+      " @mantine/core@^9.5.0",
+      "@mantine/core@^9.5.0 ",
+      "@mantine/core@ ^9.5.0",
+    ]) {
+      expect(inspectMantineRanges(catalog({ mantine: ">=9.5.0 <10", npm: [directive] }))).toEqual([
+        expect.objectContaining({ code: "mantine-range-invalid" }),
+      ]);
+    }
+    expect(
+      inspectMantineRanges(
+        catalog({ mantine: ">=9.5.0 <10 || >=10.1.0 <11", npm: ["@mantine/core@>=9.5.0 <10"] }),
+      ),
+    ).toEqual([]);
+    expect(inspectMantineRanges(catalog({ mantine: ">=9 <10", npm: ["@mantine/core@ "] }))).toEqual(
+      [expect.objectContaining({ code: "mantine-range-invalid" })],
+    );
+  });
+
+  test("requires a gate, a shared package band, and dependency subsets", () => {
+    expect(inspectMantineRanges(catalog({ npm: ["@mantine/core@^9"] }))).toEqual([
+      expect.objectContaining({ code: "mantine-gate-missing" }),
+    ]);
+    expect(
+      inspectMantineRanges(
+        catalog({ mantine: ">=9 <11", npm: ["@mantine/core@^9", "@mantine/hooks@^10"] }),
+      ),
+    ).toEqual([expect.objectContaining({ code: "mantine-ranges-disjoint" })]);
+    expect(
+      inspectMantineRanges(catalog({ mantine: ">=9.5.0 <10", npm: ["@mantine/core@^10"] })),
+    ).toEqual([expect.objectContaining({ code: "mantine-dependency-outside-gate" })]);
+  });
+
+  test("requires the house registry to exactly equal its proven band", () => {
+    const house = { ...catalog({ mantine: ">=9" }), namespace: "@house" };
+    expect(inspectMantineRanges(house)).toEqual([
+      expect.objectContaining({ code: "house-mantine-range-unsupported" }),
+    ]);
+    expect(
+      inspectMantineRanges({ ...catalog({ mantine: ">=9.6.0 <10" }), namespace: "@house" }),
+    ).toEqual([expect.objectContaining({ code: "house-mantine-range-unsupported" })]);
+    expect(
+      inspectMantineRanges({ ...catalog({ mantine: ">=9.6.0 <10" }), namespace: "@independent" }),
+    ).toEqual([]);
+  });
+});
+
+describe("independent alignment checkpoint", () => {
+  test("compiles @workshop without house assumptions and keeps author metadata out of wire output", () => {
+    const result = compileRegistry(ALIGNMENT);
+    const item = itemNamed(result.items, "workshop-panel");
+    const meta = (item.meta as { mantine: Record<string, unknown> }).mantine;
+
+    expect(result.source.namespace).toBe("@workshop");
+    expect(result.authorConformance?.enabled).toBe(true);
+    expect(item.dependencies).toEqual(["@mantine/core@^9.5.0", "@mantine/hooks@>=9.5.0 <10"]);
+    expect(meta.requires).toBe(">=8 <11");
+    expect(meta.stylesApi).toEqual({ WorkshopPanel: ["root"] });
+
+    const wire = JSON.stringify({ items: result.items, index: result.index });
+    expect(wire).not.toContain("authorProfile");
+    expect(wire).not.toContain("workshop-panel-contract.txt");
   });
 });
 

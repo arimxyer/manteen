@@ -1,0 +1,1 @@
+WorkshopPanel exposes the root selector documented by the catalog.

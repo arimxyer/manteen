@@ -7,6 +7,7 @@ import {
   RegistryOutputError,
   writeRegistry,
 } from "../build-registry";
+import { MantineRangeError } from "../mantine-ranges";
 import { kitEnvelope, writeJson } from "./json";
 
 export const BUILD_USAGE = `manteen-kit build [catalog.json] [outDir] [options]
@@ -94,7 +95,13 @@ export function build(argv: string[]): number {
                 message,
                 details: error.failures,
               }
-            : { code: "compile-failed", message },
+            : error instanceof MantineRangeError
+              ? {
+                  code: "mantine-range-validation-failed",
+                  message,
+                  details: error.failures,
+                }
+              : { code: "compile-failed", message },
         ]),
       );
     } else process.stderr.write(`${message}\n`);

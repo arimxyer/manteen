@@ -9,6 +9,7 @@
       "kind": "component",
       "title": "Empty State",
       "description": "Deliberately shares a name — and therefore a destination — with @base/empty-state.",
+      "mantine": ">=9",
       "npm": ["@mantine/core@^9"],
       "files": [{ "path": "src/empty-state.tsx", "as": "component" }]
     }
