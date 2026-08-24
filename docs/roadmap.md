@@ -190,14 +190,18 @@ The implementation contract is frozen in
 original [research proposal](./research/mantine-custom-component-improvement-plan.md) preserves the
 audit and detailed alternatives.
 
-The first three implementation steps now bind every house `stylesApi` declaration to explicit,
+The first four implementation steps now bind every house `stylesApi` declaration to explicit,
 unique evidence in both directions, generalize that invariant through the kit's optional
 author-only profile, and validate Mantine range coherence before output planning. The house catalog
 uses the exact `>=9.5.0 <10` band; full-house disposable production builds passed at both 9.5.0
-and 9.5.2. Broader
+and 9.5.2. The author-truthfulness stop checkpoint is complete: a hand-authored temporary
+`@workshop` catalog built under real Node 20.11 with a plain evidence file and the independent
+`>=8 <11` gate; its generated tree digest remained
+`06603a1038200f57dafed06867d035e2563c85defaf237e73a5a070bd54cebb8` across an invalid-range
+refusal. That temporary local proof was removed and is neither hosted nor public evidence. Broader
 `componentApi` metadata is deferred. Theme summary, the Fumadocs route shell, and prototype cleanup
-can use separate worktrees after their shared readers and schemas have one owner; scaffolding stays
-dependent on the conformance profile and initially emits a reviewed catalog patch.
+are the next parallel workstreams after their shared readers and schemas have one owner; scaffolding
+stays dependent on the conformance profile and initially emits a reviewed catalog patch.
 
 ## Wt — theme builder (proposed)
 

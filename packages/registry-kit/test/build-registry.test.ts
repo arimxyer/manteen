@@ -15,6 +15,7 @@ const FIXTURES = resolve(import.meta.dirname, "../fixtures");
 const BASE = join(FIXTURES, "base/manteen.registry.json");
 const KIT = join(FIXTURES, "kit/manteen.registry.json");
 const PRODUCT = join(FIXTURES, "product/manteen.registry.json");
+const ALIGNMENT = join(FIXTURES, "alignment/manteen.registry.json");
 
 function itemNamed(items: WireItem[], name: string): WireItem {
   const found = items.find((item) => item.name === name);
@@ -366,6 +367,24 @@ describe("Mantine range coherence", () => {
     expect(
       inspectMantineRanges({ ...catalog({ mantine: ">=9.6.0 <10" }), namespace: "@independent" }),
     ).toEqual([]);
+  });
+});
+
+describe("independent alignment checkpoint", () => {
+  test("compiles @workshop without house assumptions and keeps author metadata out of wire output", () => {
+    const result = compileRegistry(ALIGNMENT);
+    const item = itemNamed(result.items, "workshop-panel");
+    const meta = (item.meta as { mantine: Record<string, unknown> }).mantine;
+
+    expect(result.source.namespace).toBe("@workshop");
+    expect(result.authorConformance?.enabled).toBe(true);
+    expect(item.dependencies).toEqual(["@mantine/core@^9.5.0", "@mantine/hooks@>=9.5.0 <10"]);
+    expect(meta.requires).toBe(">=8 <11");
+    expect(meta.stylesApi).toEqual({ WorkshopPanel: ["root"] });
+
+    const wire = JSON.stringify({ items: result.items, index: result.index });
+    expect(wire).not.toContain("authorProfile");
+    expect(wire).not.toContain("workshop-panel-contract.txt");
   });
 });
 

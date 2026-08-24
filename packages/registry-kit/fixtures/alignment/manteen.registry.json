@@ -1,0 +1,16 @@
+{
+  "$schema": "../../schema/manteen.registry.schema.json",
+  "name": "workshop alignment",
+  "namespace": "@workshop",
+  "authorProfile": "manteen.author-profile.json",
+  "items": [
+    {
+      "name": "workshop-panel",
+      "kind": "component",
+      "mantine": ">=8 <11",
+      "npm": ["@mantine/core@^9.5.0", "@mantine/hooks@>=9.5.0 <10"],
+      "files": [{ "path": "src/workshop-panel.tsx", "as": "component" }],
+      "stylesApi": { "WorkshopPanel": ["root"] }
+    }
+  ]
+}

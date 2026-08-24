@@ -1,0 +1,11 @@
+{
+  "$schema": "../../schema/manteen.author-profile.schema.json",
+  "schemaVersion": 1,
+  "stylesApi": [
+    {
+      "item": "workshop-panel",
+      "component": "WorkshopPanel",
+      "evidence": "evidence/workshop-panel-contract.txt"
+    }
+  ]
+}
