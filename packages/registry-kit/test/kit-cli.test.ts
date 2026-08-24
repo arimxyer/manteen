@@ -191,6 +191,18 @@ describe("kit JSON commands", () => {
         item: { mantine: ">=9 <10", npm: ["@mantine/core@ "] },
         code: "mantine-range-invalid",
       },
+      {
+        item: { mantine: ">=9.5.0 <10", npm: ["@mantine/core @^9.5.0"] },
+        code: "mantine-range-invalid",
+      },
+      {
+        item: { mantine: ">=9.5.0 <10", npm: [" @mantine/core@^9.5.0"] },
+        code: "mantine-range-invalid",
+      },
+      {
+        item: { mantine: ">=9.5.0 <10", npm: ["@mantine/core@^9.5.0 "] },
+        code: "mantine-range-invalid",
+      },
       { item: { npm: ["@mantine/core@^9"] }, code: "mantine-gate-missing" },
       {
         item: { mantine: ">=9 <11", npm: ["@mantine/core@^9", "@mantine/hooks@^10"] },

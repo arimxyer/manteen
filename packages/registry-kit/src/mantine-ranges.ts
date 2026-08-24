@@ -31,16 +31,28 @@ interface MantineDependencyRange {
   range: string;
 }
 
-function mantineDependencies(item: MantineItem): MantineDependencyRange[] {
+const MANTINE_NPM_SPEC = /^(@mantine\/[a-z0-9][a-z0-9._-]*)@(.+)$/;
+
+function mantineDependencies(
+  item: MantineItem,
+  failures: MantineRangeFailure[],
+): MantineDependencyRange[] {
   return (item.npm ?? []).flatMap((spec) => {
-    if (!spec.startsWith("@mantine/")) return [];
-    const separator = spec.indexOf("@", 1);
-    return [
-      {
-        packageName: separator === -1 ? spec : spec.slice(0, separator),
-        range: separator === -1 ? "" : spec.slice(separator + 1),
-      },
-    ];
+    const trimmed = spec.trim();
+    if (!trimmed.startsWith("@mantine/")) return [];
+
+    const match = spec === trimmed ? MANTINE_NPM_SPEC.exec(spec) : null;
+    if (!match) {
+      failures.push({
+        code: "mantine-range-invalid",
+        item: item.name,
+        message: `Item \`${item.name}\` has an invalid @mantine/* runtime dependency directive.`,
+        details: { directive: spec },
+      });
+      return [];
+    }
+
+    return [{ packageName: match[1]!, range: match[2]! }];
   });
 }
 
@@ -97,7 +109,7 @@ export function inspectMantineRanges(source: MantineRegistry): MantineRangeFailu
   const failures: MantineRangeFailure[] = [];
 
   for (const item of source.items) {
-    const dependencies = mantineDependencies(item);
+    const dependencies = mantineDependencies(item, failures);
     const gate =
       item.mantine === undefined
         ? null
