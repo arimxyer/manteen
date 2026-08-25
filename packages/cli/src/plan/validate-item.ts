@@ -444,6 +444,7 @@ function readMeta(
   if (validateMeta(mantine)) {
     const meta = pick(mantine, new Set());
     readDisplayMeta(mantine, meta, new Set(), context, diagnostics);
+    dropOrphanThemeSummary(meta, context, diagnostics);
     return meta;
   }
 
@@ -490,7 +491,24 @@ function readMeta(
   const rejected = new Set(byKey.keys());
   const meta = pick(mantine, rejected);
   readDisplayMeta(mantine, meta, rejected, context, diagnostics);
+  dropOrphanThemeSummary(meta, context, diagnostics);
   return meta;
+}
+
+function dropOrphanThemeSummary(
+  meta: MantineMeta,
+  context: ValidateContext,
+  diagnostics: Diagnostic[],
+): void {
+  if (meta.themeSummary === undefined || meta.themeFragment !== undefined) return;
+  delete meta.themeSummary;
+  diagnostics.push(
+    diag(
+      "meta-degraded",
+      `${context.id} has meta.mantine.themeSummary without a usable meta.mantine.themeFragment; the derived summary was dropped.`,
+      { items: [context.id] },
+    ),
+  );
 }
 
 /** Validate the two display-only extensions that the intentionally-open

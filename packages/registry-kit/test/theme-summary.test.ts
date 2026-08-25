@@ -77,6 +77,9 @@ describe("theme summary", () => {
           ComputedChannel: {
             classNames: { [selector]: "computed" },
           },
+          InputWrapper: Input.Wrapper.extend({
+            classNames: { label: "label" },
+          }),
           SpreadChannel: {
             styles: { root: { color: "red" }, ...styleRest },
           },
@@ -101,6 +104,11 @@ describe("theme summary", () => {
           { name: "styles", dynamic: true },
           { name: "vars", dynamic: true },
         ],
+        dynamic: false,
+      },
+      {
+        name: "InputWrapper",
+        channels: [{ name: "classNames", dynamic: false }],
         dynamic: false,
       },
       {

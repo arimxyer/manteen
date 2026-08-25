@@ -113,6 +113,29 @@ describe("optional display metadata", () => {
     );
   });
 
+  test("drops a theme summary when its source fragment is absent or malformed", () => {
+    for (const themeFragment of [undefined, { path: "theme.ts", content: 42 }]) {
+      const result = createItemValidator()(
+        wire({
+          meta: {
+            mantine: {
+              ...(themeFragment === undefined ? {} : { themeFragment }),
+              themeSummary: THEME_SUMMARY,
+            },
+          },
+        }),
+        context,
+      );
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) continue;
+      expect(result.item.meta.themeSummary).toBeUndefined();
+      expect(result.diagnostics.map((diagnostic) => diagnostic.message).join("\n")).toContain(
+        "themeSummary without a usable meta.mantine.themeFragment",
+      );
+    }
+  });
+
   test("info JSON is complete while text expands props and usage only on request", () => {
     const validated = createItemValidator()(
       wire({

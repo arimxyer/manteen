@@ -169,7 +169,15 @@ function isDirectExtendCall(call: CallExpression): boolean {
   return (
     Node.isPropertyAccessExpression(expression) &&
     expression.getName() === "extend" &&
-    Node.isIdentifier(expression.getExpression())
+    isDirectMemberChain(expression.getExpression())
+  );
+}
+
+/** Identifier or non-computed property chain, such as `Input.Wrapper`. */
+function isDirectMemberChain(expression: Node): boolean {
+  if (Node.isIdentifier(expression)) return true;
+  return (
+    Node.isPropertyAccessExpression(expression) && isDirectMemberChain(expression.getExpression())
   );
 }
 

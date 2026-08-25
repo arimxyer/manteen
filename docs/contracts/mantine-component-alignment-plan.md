@@ -80,11 +80,11 @@ Identifier, string, and numeric property names are literal. Computed names and s
 owning level dynamic even when part of their syntax looks statically reducible.
 
 The `components` map must be a direct object literal. A component may be a direct object literal or
-a direct `Component.extend({ ... })` call whose receiver is an identifier. An alias, callback,
-other call, or non-object extend argument produces a known component with no channels and
-`dynamic: true`. Inside a direct component object, spreads and computed names make the component
-dynamic. Other literal-named component options remain known structure even though this summary
-does not list them.
+a direct `Component.extend({ ... })` call whose receiver is an identifier or non-computed property
+chain such as `Input.Wrapper`. An alias, callback, other call, computed receiver, or non-object
+extend argument produces a known component with no channels and `dynamic: true`. Inside a direct
+component object, spreads and computed names make the component dynamic. Other literal-named
+component options remain known structure even though this summary does not list them.
 
 A known channel is non-dynamic only when its value is a direct object literal made recursively of
 ordinary literal-named property assignments and literal primitive, array, or object values.
@@ -100,6 +100,10 @@ unrecognized. `themeFragment.path`, `themeFragment.content`, and all merge outpu
 unchanged. Older clients ignore the open metadata key; the current CLI validates it fail-open,
 drops only a malformed summary with a visible `meta-degraded` diagnostic, and never exposes the
 fragment source through `manteen info`.
+
+The current CLI also drops a summary when its sibling fragment is missing or malformed. Reporting
+derived structure without the source of truth it describes would otherwise make hand-authored wire
+metadata look authoritative; this cross-field degradation is visible and does not affect files.
 
 ## Execution order
 
