@@ -45,6 +45,7 @@ export {
 
 export {
   applyScaffold,
+  isScaffoldItemName,
   planScaffold,
   SCAFFOLD_ITEM_NAME,
   type ScaffoldApplyOutcome,

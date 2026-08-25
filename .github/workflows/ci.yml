@@ -167,6 +167,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: node scripts/guard-workspace.mjs
       - run: bun run build:kit
+      - run: node --test packages/registry-kit/e2e/*.node-e2e.mjs
       # The dist-shape e2e validates public/r/empty-state.json, which is generated
       # and gitignored — without this it is simply absent on a fresh checkout.
       - run: bun run build:registry
@@ -174,6 +175,30 @@ jobs:
       - run: node packages/cli/scripts/run-e2e.mjs
         env:
           MANTEEN_E2E_SHARD: ${{ matrix.shard }}
+
+  scaffold-proof:
+    name: Scaffold proof — Node 20.11 and Mantine consumers
+    needs: classify
+    if: needs.classify.outputs.docs_only != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "20.11.0"
+      - uses: actions/cache@v5
+        with:
+          path: ~/.bun/install/cache
+          key: bun-install-${{ runner.os }}-${{ runner.arch }}-1.3.14-${{ hashFiles('bun.lock') }}
+      - run: bun install --frozen-lockfile
+      - run: node scripts/guard-workspace.mjs
+      - run: bun run build:kit
+      - run: node --test packages/registry-kit/e2e/*.node-e2e.mjs
+      - run: node packages/registry-kit/scripts/verify-scaffold-consumers.mjs
 
   packed-consumer:
     name: Packed consumer — ${{ matrix.manager }} on ${{ matrix.os }}
@@ -241,7 +266,7 @@ jobs:
   # intentionally skipped for a docs-only PR.
   ci-gate:
     name: CI gate
-    needs: [classify, quality, built-node, packed-consumer]
+    needs: [classify, quality, built-node, scaffold-proof, packed-consumer]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
@@ -251,6 +276,7 @@ jobs:
           CLASSIFY_RESULT: ${{ needs.classify.result }}
           QUALITY_RESULT: ${{ needs.quality.result }}
           BUILT_NODE_RESULT: ${{ needs.built-node.result }}
+          SCAFFOLD_PROOF_RESULT: ${{ needs.scaffold-proof.result }}
           PACKED_CONSUMER_RESULT: ${{ needs.packed-consumer.result }}
         shell: bash
         run: |
@@ -263,7 +289,11 @@ jobs:
           fi
 
           if [[ "$DOCS_ONLY" == "true" ]]; then
-            [[ "$BUILT_NODE_RESULT" == "skipped" && "$PACKED_CONSUMER_RESULT" == "skipped" ]]
+            [[ "$BUILT_NODE_RESULT" == "skipped" &&
+               "$SCAFFOLD_PROOF_RESULT" == "skipped" &&
+               "$PACKED_CONSUMER_RESULT" == "skipped" ]]
           else
-            [[ "$BUILT_NODE_RESULT" == "success" && "$PACKED_CONSUMER_RESULT" == "success" ]]
+            [[ "$BUILT_NODE_RESULT" == "success" &&
+               "$SCAFFOLD_PROOF_RESULT" == "success" &&
+               "$PACKED_CONSUMER_RESULT" == "success" ]]
           fi

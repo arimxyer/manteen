@@ -1,12 +1,12 @@
 import { createHash } from "node:crypto";
 import {
-  existsSync,
   linkSync,
   lstatSync,
   mkdirSync,
   readdirSync,
   readFileSync,
   rmdirSync,
+  type Stats,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -17,12 +17,18 @@ import { inspectAuthorConformance, type MantineRegistry, validateCatalog } from 
 import { inspectMantineRanges } from "./mantine-ranges";
 import {
   renderScaffoldTemplate,
+  SCAFFOLD_TEMPLATES,
   type ScaffoldTemplate,
   type ScaffoldTemplateFile,
 } from "./scaffold-templates";
 
 const SHA256 = /^[a-f0-9]{64}$/;
-export const SCAFFOLD_ITEM_NAME = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
+export const SCAFFOLD_ITEM_NAME =
+  /^(?!(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$)[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
+
+export function isScaffoldItemName(value: string): boolean {
+  return SCAFFOLD_ITEM_NAME.test(value);
+}
 
 export interface ScaffoldDiagnostic {
   code: string;
@@ -79,14 +85,29 @@ export interface ScaffoldApplyOutcome {
 }
 
 export class ScaffoldError extends Error {
-  constructor(readonly diagnostics: ScaffoldDiagnostic[]) {
+  constructor(
+    readonly diagnostics: ScaffoldDiagnostic[],
+    readonly mutated = false,
+  ) {
     super(diagnostics.map((diagnostic) => diagnostic.message).join("\n"));
     this.name = "ScaffoldError";
   }
 }
 
+function lstatIfPresent(path: string): Stats | null {
+  try {
+    return lstatSync(path);
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+      return null;
+    }
+    throw error;
+  }
+}
+
 interface ScaffoldApplyHooks {
   afterCommit?: (path: string, committedCount: number) => void;
+  beforeTemporaryCleanup?: (paths: readonly string[]) => void;
 }
 
 function codeUnitCompare(left: string, right: string): number {
@@ -145,8 +166,8 @@ function inspectParents(root: string, repositoryPath: string): ScaffoldDiagnosti
   const rootParts = absoluteRoot.slice(filesystemRoot.length).split(sep).filter(Boolean);
   for (const part of rootParts) {
     rootCursor = join(rootCursor, part);
-    if (!existsSync(rootCursor)) continue;
-    const rootStatus = lstatSync(rootCursor);
+    const rootStatus = lstatIfPresent(rootCursor);
+    if (!rootStatus) continue;
     if (rootStatus.isSymbolicLink()) {
       diagnostics.push({
         code: "scaffold-parent-symlink",
@@ -165,8 +186,8 @@ function inspectParents(root: string, repositoryPath: string): ScaffoldDiagnosti
 
   for (const part of parts) {
     cursor = join(cursor, part);
-    if (!existsSync(cursor)) continue;
-    const status = lstatSync(cursor);
+    const status = lstatIfPresent(cursor);
+    if (!status) continue;
     if (status.isSymbolicLink()) {
       diagnostics.push({
         code: "scaffold-parent-symlink",
@@ -230,7 +251,8 @@ function inspectPlannedFile(
       content: file.content,
     };
   }
-  if (!existsSync(destination)) {
+  const status = lstatIfPresent(destination);
+  if (!status) {
     return {
       path: file.path,
       sha256: hash,
@@ -240,7 +262,6 @@ function inspectPlannedFile(
     };
   }
 
-  const status = lstatSync(destination);
   if (status.isSymbolicLink()) {
     diagnostics.push({
       code: "scaffold-file-symlink",
@@ -319,7 +340,8 @@ function inspectPreservedFile(
     );
     return { role, path, sha256: null };
   }
-  if (!existsSync(destination)) {
+  const status = lstatIfPresent(destination);
+  if (!status) {
     if (required) {
       diagnostics.push({
         code: `scaffold-${role}-missing`,
@@ -329,7 +351,6 @@ function inspectPreservedFile(
     }
     return { role, path, sha256: null };
   }
-  const status = lstatSync(destination);
   if (status.isSymbolicLink() || !status.isFile()) {
     diagnostics.push({
       code: `scaffold-${role}-not-ordinary`,
@@ -346,6 +367,16 @@ function digestBody(body: ScaffoldPlanBody): string {
 }
 
 export function planScaffold(input: ScaffoldInput): ScaffoldPlan {
+  if (!SCAFFOLD_TEMPLATES.includes(input.template)) {
+    throw new ScaffoldError([
+      {
+        code: "scaffold-template-invalid",
+        message: `Unknown scaffold template: ${String(input.template)}.`,
+        details: { template: input.template },
+      },
+    ]);
+  }
+
   const diagnostics: ScaffoldDiagnostic[] = [];
   const absoluteCatalog = resolve(input.catalogPath);
   const root = dirname(absoluteCatalog);
@@ -355,10 +386,10 @@ export function planScaffold(input: ScaffoldInput): ScaffoldPlan {
   let catalog: MantineRegistry | null = null;
   let catalogBytes = "";
 
-  if (!SCAFFOLD_ITEM_NAME.test(input.itemName)) {
+  if (!isScaffoldItemName(input.itemName)) {
     diagnostics.push({
       code: "scaffold-item-name-invalid",
-      message: `Scaffold item name must be strict kebab-case: ${JSON.stringify(input.itemName)}.`,
+      message: `Scaffold item name must be portable strict kebab-case: ${JSON.stringify(input.itemName)}.`,
       details: { itemName: input.itemName },
     });
   }
@@ -491,10 +522,8 @@ function verifyPreservedFiles(root: string, plan: ScaffoldPlan): ScaffoldDiagnos
   const diagnostics: ScaffoldDiagnostic[] = [];
   for (const preserved of plan.preservedFiles) {
     const destination = fullPath(root, preserved.path);
-    const current =
-      destination && existsSync(destination) && lstatSync(destination).isFile()
-        ? sha256(readFileSync(destination))
-        : null;
+    const status = destination ? lstatIfPresent(destination) : null;
+    const current = destination && status?.isFile() ? sha256(readFileSync(destination)) : null;
     if (current !== preserved.sha256) {
       diagnostics.push({
         code: `scaffold-${preserved.role}-drift`,
@@ -511,7 +540,7 @@ function createParentDirectories(root: string, files: ScaffoldPlannedFile[]): st
   for (const file of files) {
     let path = dirname(join(root, ...file.path.split("/")));
     while (path !== root && relative(root, path) !== "") {
-      if (!existsSync(path)) needed.add(path);
+      if (!lstatIfPresent(path)) needed.add(path);
       path = dirname(path);
     }
   }
@@ -521,7 +550,7 @@ function createParentDirectories(root: string, files: ScaffoldPlannedFile[]): st
   });
   const created: string[] = [];
   for (const path of ordered) {
-    if (existsSync(path)) continue;
+    if (lstatIfPresent(path)) continue;
     mkdirSync(path);
     created.push(path);
   }
@@ -530,7 +559,8 @@ function createParentDirectories(root: string, files: ScaffoldPlannedFile[]): st
 
 function removeEmptyDirectories(paths: string[]): void {
   for (const path of [...paths].reverse()) {
-    if (existsSync(path) && lstatSync(path).isDirectory() && readdirSync(path).length === 0) {
+    const status = lstatIfPresent(path);
+    if (status?.isDirectory() && readdirSync(path).length === 0) {
       rmdirSync(path);
     }
   }
@@ -586,7 +616,7 @@ export function applyScaffoldWithHooks(
       const parentDiagnostics = inspectParents(root, file.path);
       if (parentDiagnostics.length > 0) throw new ScaffoldError(parentDiagnostics);
       const destination = join(root, ...file.path.split("/"));
-      if (existsSync(destination)) {
+      if (lstatIfPresent(destination)) {
         throw new ScaffoldError([
           {
             code: "scaffold-file-preimage-stale",
@@ -618,11 +648,8 @@ export function applyScaffoldWithHooks(
     const postconditionDiagnostics = verifyPreservedFiles(root, plan);
     for (const file of plan.files) {
       const destination = join(root, ...file.path.split("/"));
-      if (
-        !existsSync(destination) ||
-        !lstatSync(destination).isFile() ||
-        sha256(readFileSync(destination)) !== file.sha256
-      ) {
+      const status = lstatIfPresent(destination);
+      if (!status?.isFile() || sha256(readFileSync(destination)) !== file.sha256) {
         postconditionDiagnostics.push({
           code: "scaffold-file-postcondition-failed",
           message: `Scaffold file does not match the plan after apply: ${file.path}.`,
@@ -632,15 +659,20 @@ export function applyScaffoldWithHooks(
     }
     if (postconditionDiagnostics.length > 0) throw new ScaffoldError(postconditionDiagnostics);
 
-    for (const temporary of temporaryFiles.splice(0)) unlinkSync(temporary);
+    hooks.beforeTemporaryCleanup?.([...temporaryFiles]);
+    while (temporaryFiles.length > 0) {
+      unlinkSync(temporaryFiles[0]!);
+      temporaryFiles.shift();
+    }
     return { plan, mutated: true, writtenPaths: creates.map((file) => file.path) };
   } catch (error) {
     const rollbackDiagnostics: ScaffoldDiagnostic[] = [];
     for (const file of [...committed].reverse()) {
       const destination = join(root, ...file.path.split("/"));
       try {
-        if (existsSync(destination)) {
-          if (sha256(readFileSync(destination)) === file.sha256) {
+        const status = lstatIfPresent(destination);
+        if (status) {
+          if (status.isFile() && sha256(readFileSync(destination)) === file.sha256) {
             unlinkSync(destination);
           } else {
             rollbackDiagnostics.push({
@@ -663,7 +695,7 @@ export function applyScaffoldWithHooks(
     }
     for (const temporary of temporaryFiles.splice(0)) {
       try {
-        if (existsSync(temporary)) unlinkSync(temporary);
+        if (lstatIfPresent(temporary)) unlinkSync(temporary);
       } catch (cleanupError) {
         rollbackDiagnostics.push({
           code: "scaffold-temporary-cleanup-failed",
@@ -694,7 +726,7 @@ export function applyScaffoldWithHooks(
               message: error instanceof Error ? error.message : String(error),
             },
           ];
-    throw new ScaffoldError([...original, ...rollbackDiagnostics]);
+    throw new ScaffoldError([...original, ...rollbackDiagnostics], rollbackDiagnostics.length > 0);
   }
 }
 

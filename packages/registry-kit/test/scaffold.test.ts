@@ -7,6 +7,7 @@ import {
   readFileSync,
   rmSync,
   symlinkSync,
+  unlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -168,6 +169,16 @@ describe("safe author scaffold planning", () => {
     expect(plans["component-polymorphic"].files[1]!.content).toContain('component="a"');
     expect(plans["component-basic"].files[0]!.content).not.toContain("polymorphicFactory");
     expect(plans["component-styles-api"].files[1]!.content).not.toContain("polymorphicFactory");
+
+    const digitName = planScaffold({
+      catalogPath: created.catalogPath,
+      template: "component-styles-api",
+      itemName: "chart-2d",
+    });
+    expect(digitName.safe).toBe(true);
+    expect(digitName.files.find((file) => file.path.endsWith(".tsx"))?.content).toContain(
+      'import classes from "./chart-2d.module.css"',
+    );
   });
 
   test("rejects catalog collisions, invalid names, and path normalization drift", () => {
@@ -196,6 +207,26 @@ describe("safe author scaffold planning", () => {
         itemName: "1-card",
       }).diagnostics.map((item) => item.code),
     ).toContain("scaffold-item-name-invalid");
+    for (const itemName of ["a--b", "con", "nul", "com1", "lpt9"]) {
+      const invalid = planScaffold({
+        catalogPath: created.catalogPath,
+        template: "component-basic",
+        itemName,
+      });
+      expect(invalid.safe).toBe(false);
+      expect(invalid.diagnostics.map((item) => item.code)).toContain("scaffold-item-name-invalid");
+    }
+
+    try {
+      planScaffold({
+        catalogPath: created.catalogPath,
+        template: "unknown-template" as ScaffoldTemplate,
+        itemName: "status-card",
+      });
+      throw new Error("unknown template unexpectedly planned");
+    } catch (error) {
+      expect(diagnostics(error)).toContain("scaffold-template-invalid");
+    }
   });
 });
 
@@ -290,6 +321,20 @@ describe("safe author scaffold apply", () => {
       planScaffold(input(linkedParent.catalogPath)).diagnostics.map((item) => item.code),
     ).toContain("scaffold-parent-symlink");
 
+    const danglingFile = fixture();
+    mkdirSync(join(danglingFile.root, "src/status-card"), { recursive: true });
+    symlinkSync("missing.tsx", join(danglingFile.root, "src/status-card/status-card.tsx"));
+    expect(
+      planScaffold(input(danglingFile.catalogPath)).diagnostics.map((item) => item.code),
+    ).toContain("scaffold-file-symlink");
+
+    const danglingParent = fixture();
+    mkdirSync(join(danglingParent.root, "src"));
+    symlinkSync("../missing", join(danglingParent.root, "src/status-card"));
+    expect(
+      planScaffold(input(danglingParent.catalogPath)).diagnostics.map((item) => item.code),
+    ).toContain("scaffold-parent-symlink");
+
     const escaping = fixture();
     const escaped = planScaffold({
       catalogPath: escaping.catalogPath,
@@ -316,6 +361,53 @@ describe("safe author scaffold apply", () => {
         },
       ),
     ).toThrow("injected multi-file failure");
+    expect(snapshot(created.root)).toEqual(before);
+  });
+
+  test("reports mutation truth when a drifted committed file cannot be safely rolled back", () => {
+    const created = fixture();
+    const planned = planScaffold(input(created.catalogPath));
+    let failure: unknown;
+
+    try {
+      applyScaffoldWithHooks(input(created.catalogPath), planned.planDigest, {
+        afterCommit: (path) => {
+          writePlannedFile(created.root, path, "externally drifted after commit\n");
+          throw new Error("injected drift after commit");
+        },
+      });
+    } catch (error) {
+      failure = error;
+    }
+
+    expect(failure).toBeInstanceOf(ScaffoldError);
+    expect((failure as ScaffoldError).mutated).toBe(true);
+    expect(diagnostics(failure)).toContain("scaffold-rollback-preimage-drift");
+    expect(readFileSync(join(created.root, planned.files[0]!.path), "utf8")).toBe(
+      "externally drifted after commit\n",
+    );
+  });
+
+  test("retains the complete staging inventory when success-path cleanup fails", () => {
+    const created = fixture({ profile: true, packageManifest: true });
+    const before = snapshot(created.root);
+    const planned = planScaffold(input(created.catalogPath, "component-styles-api"));
+    let failure: unknown;
+
+    try {
+      applyScaffoldWithHooks(
+        input(created.catalogPath, "component-styles-api"),
+        planned.planDigest,
+        {
+          beforeTemporaryCleanup: (paths) => unlinkSync(paths[0]!),
+        },
+      );
+    } catch (error) {
+      failure = error;
+    }
+
+    expect(failure).toBeInstanceOf(ScaffoldError);
+    expect((failure as ScaffoldError).mutated).toBe(false);
     expect(snapshot(created.root)).toEqual(before);
   });
 

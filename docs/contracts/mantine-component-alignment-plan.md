@@ -118,9 +118,10 @@ manteen-kit scaffold --template <template> --name <item> [--catalog <path>] --ap
 required; apply additionally requires one lowercase SHA-256 digest. `--template`, `--name`, and
 `--json` are required in both forms. Repeated, missing, unknown, positional, or otherwise ambiguous
 arguments are the usage failure `invalid-arguments` with exit code 2. Item names match
-`^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$`. The only templates are `component-basic`,
-`component-styles-api`, and `component-polymorphic`; polymorphism is generated only by the last
-explicit choice.
+`^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$` and exclude the Windows device basenames `con`, `prn`, `aux`,
+`nul`, `com1` through `com9`, and `lpt1` through `lpt9`. The only templates are
+`component-basic`, `component-styles-api`, and `component-polymorphic`; polymorphism is generated
+only by the last explicit choice.
 
 Both forms emit the schema-version 1 command envelope. Its `payload` is a schema-version 1 scaffold
 plan containing the template, item name, SHA-256 plan digest, catalog preimage hash, preserved-file
@@ -152,7 +153,8 @@ any unsafe plan member. Stale digest, catalog drift, or file drift is a refusal.
 creates, commits without overwriting occupied paths, and rolls back every scaffold-owned file it
 created if any commit or postcondition fails. Success and failure leave the catalog, author profile,
 and package manifest byte-identical. Apply is never interactive or inferred from omission of
-`--dry-run`; it reports mutation truth in the envelope.
+`--dry-run`; it reports mutation truth in the envelope, including `mutated: true` on a failure that
+cannot safely remove a scaffold-created file, staging file, or directory.
 
 ## Execution order
 

@@ -48,8 +48,9 @@ function json(result) {
   return value;
 }
 
-test("built CLI on the exact Node runtime preserves the scaffold plan/apply contract", () => {
-  assert.equal(process.versions.node, "20.11.0");
+test("built CLI on a supported Node runtime preserves the scaffold plan/apply contract", () => {
+  const [major, minor] = process.versions.node.split(".").map(Number);
+  assert.ok(major > 20 || (major === 20 && minor >= 11), process.versions.node);
   const created = fixture();
   try {
     const preserved = new Map(
@@ -100,6 +101,22 @@ test("built CLI on the exact Node runtime preserves the scaffold plan/apply cont
     const ambiguous = run(created.root, [...common, "--dry-run", "--name", "second-name"]);
     assert.equal(ambiguous.status, 2);
     assert.equal(json(ambiguous).errors[0].code, "invalid-arguments");
+
+    const malformedName = run(created.root, [
+      "scaffold",
+      "--template",
+      "component-basic",
+      "--name",
+      "a--b",
+      "--catalog",
+      created.catalogPath,
+      "--dry-run",
+      "--json",
+    ]);
+    assert.equal(malformedName.status, 2);
+    const malformedEnvelope = json(malformedName);
+    assert.equal(malformedEnvelope.mutated, false);
+    assert.equal(malformedEnvelope.errors[0].code, "invalid-arguments");
   } finally {
     rmSync(created.root, { recursive: true, force: true });
   }

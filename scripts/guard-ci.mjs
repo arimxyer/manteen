@@ -74,7 +74,8 @@ function validateBunInstallJob(name, source) {
 
 const classify = jobSource("classify", "quality");
 const quality = jobSource("quality", "built-node");
-const builtNode = jobSource("built-node", "packed-consumer");
+const builtNode = jobSource("built-node", "scaffold-proof");
+const scaffoldProof = jobSource("scaffold-proof", "packed-consumer");
 const packedConsumer = jobSource("packed-consumer", "ci-gate");
 const gate = jobSource("ci-gate");
 
@@ -120,6 +121,7 @@ for (const command of [
 
 for (const [name, source] of [
   ["built-node", builtNode],
+  ["scaffold-proof", scaffoldProof],
   ["packed-consumer", packedConsumer],
 ]) {
   expect(source.includes("needs: classify"), `${name} must wait only for classification`);
@@ -130,7 +132,7 @@ for (const [name, source] of [
 }
 
 expect(
-  gate.includes("needs: [classify, quality, built-node, packed-consumer]"),
+  gate.includes("needs: [classify, quality, built-node, scaffold-proof, packed-consumer]"),
   "CI gate must observe every verification job",
 );
 expect(
@@ -145,10 +147,23 @@ expect(
   gate.includes('if [[ "$QUALITY_RESULT" != "success" ]]'),
   "CI gate must require quality success",
 );
+expect(
+  gate.includes("SCAFFOLD_PROOF_RESULT: ${{ needs.scaffold-proof.result }}"),
+  "CI gate must inspect scaffold-proof result",
+);
+expect(
+  gate.includes('"$SCAFFOLD_PROOF_RESULT" == "skipped"'),
+  "docs-only CI gate must require scaffold-proof to skip",
+);
+expect(
+  gate.includes('"$SCAFFOLD_PROOF_RESULT" == "success"'),
+  "full CI gate must require scaffold-proof success",
+);
 
 for (const [name, source] of [
   ["quality", quality],
   ["built-node", builtNode],
+  ["scaffold-proof", scaffoldProof],
   ["packed-consumer", packedConsumer],
 ]) {
   validateBunInstallJob(name, source);
@@ -176,11 +191,26 @@ for (const command of [
   "bun install --frozen-lockfile",
   "node scripts/guard-workspace.mjs",
   "bun run build:kit",
+  "node --test packages/registry-kit/e2e/*.node-e2e.mjs",
   "bun run build:registry",
   "bun --cwd=packages/cli run build",
   "node packages/cli/scripts/run-e2e.mjs",
 ]) {
   expect(builtNode.includes(`- run: ${command}`), `built-node is missing ${command}`);
+}
+
+expect(
+  scaffoldProof.includes('node-version: "20.11.0"'),
+  "scaffold-proof must use the exact registry-kit Node floor 20.11.0",
+);
+for (const command of [
+  "bun install --frozen-lockfile",
+  "node scripts/guard-workspace.mjs",
+  "bun run build:kit",
+  "node --test packages/registry-kit/e2e/*.node-e2e.mjs",
+  "node packages/registry-kit/scripts/verify-scaffold-consumers.mjs",
+]) {
+  expect(scaffoldProof.includes(`- run: ${command}`), `scaffold-proof is missing ${command}`);
 }
 
 for (const lane of [

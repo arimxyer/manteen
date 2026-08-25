@@ -8,7 +8,7 @@ import { applyScaffold, compileRegistry, planScaffold } from "../dist/index.mjs"
 const MANTINE_VERSIONS = ["9.5.0", "9.5.2"];
 const templates = [
   ["component-basic", "proof-basic"],
-  ["component-styles-api", "proof-styles"],
+  ["component-styles-api", "proof-styles-2d"],
   ["component-polymorphic", "proof-polymorphic"],
 ];
 

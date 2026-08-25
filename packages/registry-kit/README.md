@@ -51,7 +51,9 @@ profile, both normal and `--check` builds validate it before any output mutation
 ### Safe component scaffolds
 
 Scaffolding is explicit and machine-first. Choose `component-basic`, `component-styles-api`, or
-`component-polymorphic`; the last is the only template that uses `polymorphicFactory`.
+`component-polymorphic`; the last is the only template that uses `polymorphicFactory`. Item names
+are portable strict kebab-case, begin with a letter, and cannot be Windows device basenames such as
+`con`, `nul`, `com1`, or `lpt1`.
 
 ```bash
 # Zero-write plan
@@ -76,7 +78,8 @@ and the exact catalog insertion object. The Styles API template also returns its
 profile evidence mapping. The command applies only scaffold-owned source files: it never mutates
 or reserializes `manteen.registry.json`, the author profile, or `package.json`. Differing occupied
 files, unsafe paths or links, catalog collisions, and stale plans are named refusals; exact existing
-scaffold bytes are a no-op.
+scaffold bytes are a no-op. A failed rollback reports `mutated: true` whenever a scaffold-created
+file, staging file, or directory could not be safely removed.
 
 ## Authoring format
 

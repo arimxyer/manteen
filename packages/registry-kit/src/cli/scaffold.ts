@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 
-import { applyScaffold, planScaffold, ScaffoldError } from "../scaffold";
+import { applyScaffold, isScaffoldItemName, planScaffold, ScaffoldError } from "../scaffold";
 import { SCAFFOLD_TEMPLATES, type ScaffoldTemplate } from "../scaffold-templates";
 import { kitEnvelope, writeJson } from "./json";
 
@@ -20,7 +20,7 @@ Required modes:
 
 Options:
   --template <template>  explicit scaffold template
-  --name <item>          strict kebab-case catalog item name
+  --name <item>          portable strict kebab-case catalog item name
   --catalog <path>       catalog path (default: ./manteen.registry.json)
   --dry-run              compute a zero-write plan
   --apply                apply only source files from a matching plan
@@ -92,6 +92,7 @@ function parseArgs(argv: string[]): ScaffoldArgs | null {
     template === null ||
     !SCAFFOLD_TEMPLATES.includes(template as ScaffoldTemplate) ||
     itemName === null ||
+    !isScaffoldItemName(itemName) ||
     dryRun === apply ||
     (dryRun && expectedPlan !== null) ||
     (apply && expectedPlan === null)
@@ -156,7 +157,15 @@ export function scaffold(argv: string[]): number {
               message: error instanceof Error ? error.message : String(error),
             },
           ];
-    writeJson(kitEnvelope("scaffold", 1, false, null, diagnostics));
+    writeJson(
+      kitEnvelope(
+        "scaffold",
+        1,
+        error instanceof ScaffoldError && error.mutated,
+        null,
+        diagnostics,
+      ),
+    );
     return 1;
   }
 }

@@ -30,6 +30,7 @@ export interface RenderedScaffoldTemplate {
 function componentName(itemName: string): string {
   return itemName
     .split("-")
+    .filter(Boolean)
     .map((part) => `${part[0]!.toUpperCase()}${part.slice(1)}`)
     .join("");
 }
@@ -37,6 +38,7 @@ function componentName(itemName: string): string {
 function title(itemName: string): string {
   return itemName
     .split("-")
+    .filter(Boolean)
     .map((part) => `${part[0]!.toUpperCase()}${part.slice(1)}`)
     .join(" ");
 }
@@ -59,7 +61,7 @@ export function ${name}({ label = "${displayName}", ...others }: ${name}Props) {
 `;
 }
 
-function stylesApiSource(name: string): string {
+function stylesApiSource(name: string, itemName: string): string {
   return `import {
   type BoxProps,
   type Factory,
@@ -72,7 +74,7 @@ function stylesApiSource(name: string): string {
 } from "@mantine/core";
 import type { ReactNode } from "react";
 
-import classes from "./${nameToItem(name)}.module.css";
+import classes from "./${itemName}.module.css";
 
 export type ${name}StylesNames = "root" | "label";
 
@@ -254,13 +256,6 @@ export namespace ${name} {
 `;
 }
 
-function nameToItem(name: string): string {
-  return name.replace(
-    /[A-Z]/g,
-    (character, index) => `${index === 0 ? "" : "-"}${character.toLowerCase()}`,
-  );
-}
-
 function splitComponentName(name: string): string {
   return name.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
 }
@@ -300,7 +295,7 @@ export function renderScaffoldTemplate(
     const evidencePath = `test/${itemName}-styles-api.test.tsx`;
     return {
       files: [
-        { path: componentPath, content: stylesApiSource(name) },
+        { path: componentPath, content: stylesApiSource(name, itemName) },
         { path: stylePath, content: stylesApiCss() },
         { path: usagePath, content: usageSource(name, itemName, false) },
         { path: evidencePath, content: stylesApiTest(name, itemName) },
@@ -333,23 +328,27 @@ export function renderScaffoldTemplate(
     };
   }
 
-  return {
-    files: [
-      { path: componentPath, content: polymorphicSource(name, displayName) },
-      { path: usagePath, content: usageSource(name, itemName, true) },
-    ],
-    catalogInsertion: {
-      name: itemName,
-      kind: "component",
-      title: displayName,
-      description: `Opt-in polymorphic ${displayName} component.`,
-      mantine: ">=9.5.0 <10",
-      provider: true,
-      npm: runtime,
-      files: [{ path: componentPath, as: "component" }],
-      usage: usagePath,
-    },
-    authorProfileMapping: null,
-    requiredPackages: { runtime, development: baseDevelopment },
-  };
+  if (template === "component-polymorphic") {
+    return {
+      files: [
+        { path: componentPath, content: polymorphicSource(name, displayName) },
+        { path: usagePath, content: usageSource(name, itemName, true) },
+      ],
+      catalogInsertion: {
+        name: itemName,
+        kind: "component",
+        title: displayName,
+        description: `Opt-in polymorphic ${displayName} component.`,
+        mantine: ">=9.5.0 <10",
+        provider: true,
+        npm: runtime,
+        files: [{ path: componentPath, as: "component" }],
+        usage: usagePath,
+      },
+      authorProfileMapping: null,
+      requiredPackages: { runtime, development: baseDevelopment },
+    };
+  }
+
+  throw new Error(`Unknown scaffold template: ${String(template)}`);
 }
