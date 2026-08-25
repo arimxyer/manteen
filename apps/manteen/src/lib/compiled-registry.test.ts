@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { afterEach, describe, test } from "node:test";
@@ -355,6 +355,7 @@ describe("compiled registry reader", () => {
       ["BEL", "\u0007"],
       ["ESC", "\u001b"],
       ["DEL", "\u007f"],
+      ["CSI", "\u009b"],
     ] as const) {
       const directory = await fixture({
         items: [
@@ -375,6 +376,37 @@ describe("compiled registry reader", () => {
         /must not contain raw terminal control characters/,
         label,
       );
+    }
+
+    const cssDirectory = await fixture({
+      items: [
+        detail("alpha", "registry:ui", {
+          css: { "@layer base": { ".alpha": `safe\u007funsafe` } },
+        }),
+      ],
+    });
+    await assert.rejects(
+      readCompiledRegistry({ directory: cssDirectory }),
+      /must not contain raw terminal control characters/,
+    );
+  });
+
+  test("clears a rejected default read so a later registry rebuild can recover", async () => {
+    const root = await temporaryDirectory();
+    const appDirectory = join(root, "apps/manteen");
+    const registryDirectory = join(root, "public/r");
+    await mkdir(appDirectory, { recursive: true });
+    const previousCwd = process.cwd();
+
+    try {
+      process.chdir(appDirectory);
+      await assert.rejects(readCompiledRegistry(), /Cannot read compiled registry index/);
+      await mkdir(registryDirectory, { recursive: true });
+      await writeFixture(registryDirectory, { items: [detail("alpha")] });
+
+      assert.equal((await readCompiledRegistry()).getItem("alpha")?.name, "alpha");
+    } finally {
+      process.chdir(previousCwd);
     }
   });
 });

@@ -33,7 +33,8 @@ const isDisplaySafeText = (value: string) =>
       codePoint === 9 ||
       codePoint === 10 ||
       codePoint === 13 ||
-      (codePoint >= 32 && codePoint !== 127)
+      (codePoint >= 32 && codePoint <= 126) ||
+      codePoint >= 160
     );
   });
 const displaySafeText = z
@@ -164,7 +165,7 @@ const compiledFileSchema = z
 
 type CssValue = string | { [key: string]: CssValue };
 const cssValueSchema: z.ZodType<CssValue> = z.lazy(() =>
-  z.union([z.string(), z.record(z.string(), cssValueSchema)]),
+  z.union([displaySafeText, z.record(nonEmptyString, cssValueSchema)]),
 );
 
 const registryDetailSchema = z
@@ -211,7 +212,11 @@ export function readCompiledRegistry(
   if (options.directory) return readRegistryDirectory(resolve(options.directory));
 
   defaultRegistryPromise ??= readRegistryDirectory(resolve(process.cwd(), "../../public/r"));
-  return defaultRegistryPromise;
+  const pending = defaultRegistryPromise;
+  return pending.catch((error) => {
+    if (defaultRegistryPromise === pending) defaultRegistryPromise = undefined;
+    throw error;
+  });
 }
 
 async function readRegistryDirectory(directory: string): Promise<CompiledRegistry> {
