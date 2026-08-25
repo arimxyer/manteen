@@ -35,11 +35,17 @@ import type {
   ReceiptUnreadable,
   ThemeSourceKind,
 } from "../plan/types";
-import type { MantineMeta, MantineProps, MantineUsage } from "../plan/validate-item";
+import type { MantineMeta, MantineProps, MantineUsage, ThemeSummary } from "../plan/validate-item";
 import type { VerificationOutcome } from "../verification/types";
 
 /** Re-exported so a command needs one import for the inspect vocabulary. */
-export type { MantineMeta, MantineProp, MantineProps, MantineUsage } from "../plan/validate-item";
+export type {
+  MantineMeta,
+  MantineProp,
+  MantineProps,
+  MantineUsage,
+  ThemeSummary,
+} from "../plan/validate-item";
 
 // ---- notes ------------------------------------------------------------------
 
@@ -267,11 +273,12 @@ export interface AvailableItem {
 /**
  * `meta.mantine` from an index ENTRY.
  *
- * `MantineMeta` minus `themeFragment`, and the exclusion is structural rather
+ * `MantineMeta` minus item-document-only theme metadata, and the exclusion is structural rather
  * than documentary on purpose: `themeFragment` inlines the FULL SOURCE of a
  * theme file, and a type that admits the field is a renderer one autocomplete
- * away from dumping it into a listing. The kit emits only `requires` and
- * `provider` in an index (`build-registry.ts` `buildIndex`), so nothing is lost.
+ * away from dumping it into a listing. `themeSummary` is derived only beside a
+ * fragment, so it is item-document metadata too. The kit emits only `requires`
+ * and `provider` in an index (`build-registry.ts` `buildIndex`), so nothing is lost.
  *
  * DISPLAY ONLY. Every string here has been through `sanitize`, which truncates
  * past a bound — a pathological 200-character `requires` comes back with an
@@ -279,7 +286,7 @@ export interface AvailableItem {
  * EVALUATES a range must read it off the item document (`ItemDetail.meta`, or
  * `PlanItem.requires`), never off a listing.
  */
-export type IndexMeta = Omit<MantineMeta, "themeFragment">;
+export type IndexMeta = Omit<MantineMeta, "themeFragment" | "themeSummary">;
 
 /** One registry's index, fetched and parsed. */
 export interface RegistryListing {
@@ -331,6 +338,7 @@ export interface DetailMeta {
   props?: MantineProps;
   usage?: MantineUsage;
   themeFragment?: { path: string; bytes: number };
+  themeSummary?: ThemeSummary;
 }
 
 /**

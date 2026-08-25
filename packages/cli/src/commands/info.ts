@@ -626,6 +626,7 @@ function metaRows(detail: ItemDetail): string[] {
       `theme      ${clean(meta.themeFragment.path)}  ${bytes(meta.themeFragment.bytes)} (folded, never written at that path)`,
     );
   }
+  if (meta.themeSummary !== undefined) rows.push(...themeSummaryRows(meta.themeSummary));
   if (meta.stylesApi !== undefined) {
     // Sorted: the wire is an object and its key order is the registry's choice.
     for (const [index, key] of Object.keys(meta.stylesApi).sort(byCodeUnit).entries()) {
@@ -649,6 +650,37 @@ function metaRows(detail: ItemDetail): string[] {
     );
   }
   return rows;
+}
+
+const THEME_CHANNEL_ORDER = ["defaultProps", "classNames", "styles", "vars"] as const;
+
+function themeSummaryRows(summary: NonNullable<ItemDetail["meta"]["themeSummary"]>): string[] {
+  const keys = [...summary.keys].sort(byCodeUnit).map(clean);
+  const items = [...summary.components.items].sort((left, right) =>
+    byCodeUnit(left.name, right.name),
+  );
+  const channelOrder = new Map(THEME_CHANNEL_ORDER.map((name, index) => [name, index]));
+  const rows = [
+    `summary    keys ${keys.length === 0 ? "(none)" : keys.join(", ")}; dynamic ${yesNo(summary.dynamic)}`,
+    `components ${items.length === 0 ? "(none)" : items.length}; map dynamic ${yesNo(summary.components.dynamic)}`,
+  ];
+
+  for (const item of items) {
+    const channels = [...item.channels]
+      .sort(
+        (left, right) => (channelOrder.get(left.name) ?? 0) - (channelOrder.get(right.name) ?? 0),
+      )
+      .map((channel) => `${clean(channel.name)} (${channel.dynamic ? "dynamic" : "static"})`);
+    rows.push(
+      `           ${clean(item.name)}: ${channels.length === 0 ? "(no known channels)" : channels.join(", ")}; config dynamic ${yesNo(item.dynamic)}`,
+    );
+  }
+
+  return rows;
+}
+
+function yesNo(value: boolean): "yes" | "no" {
+  return value ? "yes" : "no";
 }
 
 function propRows(detail: ItemDetail): string[] {

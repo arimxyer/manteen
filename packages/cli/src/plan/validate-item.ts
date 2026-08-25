@@ -11,7 +11,7 @@
  * The two halves fail in opposite directions, on purpose:
  *
  *   requires                      fails CLOSED — a blocking `meta-invalid-requires`
- *   provider/stylesApi/themeFragment  fail OPEN — `meta-degraded`, field dropped
+ *   provider/stylesApi/themeFragment/themeSummary  fail OPEN — field dropped
  *   docs/props/usage                  fail OPEN — `meta-degraded`, field dropped
  *   unknown keys                  ignored, so a newer kit does not break an older CLI
  *
@@ -25,7 +25,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import Ajv, { type ValidateFunction } from "ajv";
-import { createWireValidator } from "manteen-kit";
+import { createWireValidator, type ThemeSummary } from "manteen-kit";
 
 import { parseNpmSpec } from "./deps";
 import { diag } from "./diagnostics";
@@ -55,7 +55,7 @@ const SCHEMA_CANDIDATES = ["../schema", "../../schema"] as const;
  *  a Next.js pipeline consumes — so there is nothing for manteen to write. */
 const REFUSED_ITEM_TYPES = new Set(["registry:font"]);
 
-const META_KEYS = ["requires", "provider", "stylesApi", "themeFragment"] as const;
+const META_KEYS = ["requires", "provider", "stylesApi", "themeFragment", "themeSummary"] as const;
 type MetaKey = (typeof META_KEYS)[number];
 
 /** One author-documented public prop. Display metadata only: none of these
@@ -96,7 +96,10 @@ export interface MantineMeta {
   props?: MantineProps;
   usage?: MantineUsage;
   themeFragment?: { path: string; content: string };
+  themeSummary?: ThemeSummary;
 }
+
+export type { ThemeSummary } from "manteen-kit";
 
 export interface ValidatedItem {
   name: string;
@@ -441,6 +444,7 @@ function readMeta(
   if (validateMeta(mantine)) {
     const meta = pick(mantine, new Set());
     readDisplayMeta(mantine, meta, new Set(), context, diagnostics);
+    dropOrphanThemeSummary(meta, context, diagnostics);
     return meta;
   }
 
@@ -487,7 +491,24 @@ function readMeta(
   const rejected = new Set(byKey.keys());
   const meta = pick(mantine, rejected);
   readDisplayMeta(mantine, meta, rejected, context, diagnostics);
+  dropOrphanThemeSummary(meta, context, diagnostics);
   return meta;
+}
+
+function dropOrphanThemeSummary(
+  meta: MantineMeta,
+  context: ValidateContext,
+  diagnostics: Diagnostic[],
+): void {
+  if (meta.themeSummary === undefined || meta.themeFragment !== undefined) return;
+  delete meta.themeSummary;
+  diagnostics.push(
+    diag(
+      "meta-degraded",
+      `${context.id} has meta.mantine.themeSummary without a usable meta.mantine.themeFragment; the derived summary was dropped.`,
+      { items: [context.id] },
+    ),
+  );
 }
 
 /** Validate the two display-only extensions that the intentionally-open
@@ -582,6 +603,7 @@ function pick(mantine: Record<string, unknown>, rejected: Set<string>): MantineM
   if (keep("themeFragment")) {
     meta.themeFragment = mantine.themeFragment as { path: string; content: string };
   }
+  if (keep("themeSummary")) meta.themeSummary = mantine.themeSummary as ThemeSummary;
 
   return meta;
 }

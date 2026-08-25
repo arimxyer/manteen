@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/arimxyer/manteen/schema/manteen-item-meta.schema.json",
   "title": "meta.mantine",
-  "description": "The Mantine-specific block of a wire item's `meta`. The interchange schema declares `meta` as `additionalProperties: true`, so `{ requires: 12345 }` passes the wire validator untouched — every Mantine behaviour reads this object, so it gets a schema of its own. Strict on the four keys manteen acts on, open to everything else: a newer manteen-kit may add keys, and an older manteen must ignore them rather than refuse the item. Note the http:// dialect id: ajv registers draft-07 under that form, so nothing here needs the `delete schema.$schema` workaround the kit applies to the vendored (https://) wire schema.",
+  "description": "The Mantine-specific block of a wire item's `meta`. The interchange schema declares `meta` as `additionalProperties: true`, so `{ requires: 12345 }` passes the wire validator untouched — every Mantine behaviour reads this object, so it gets a schema of its own. Strict on the keys manteen acts on or displays, open to everything else: a newer manteen-kit may add keys, and an older manteen must ignore them rather than refuse the item. Note the http:// dialect id: ajv registers draft-07 under that form, so nothing here needs the `delete schema.$schema` workaround the kit applies to the vendored (https://) wire schema.",
   "type": "object",
   "additionalProperties": true,
   "properties": {
@@ -39,6 +39,53 @@
           "type": "string",
           "description": "The fragment source, folded into the project theme by mergeThemeSource."
         }
+      }
+    },
+    "themeSummary": {
+      "type": "object",
+      "description": "Syntax-only display summary derived from themeFragment. Fails OPEN: a malformed summary is dropped without affecting the fragment or installation.",
+      "required": ["keys", "components", "dynamic"],
+      "additionalProperties": false,
+      "properties": {
+        "keys": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "components": {
+          "type": "object",
+          "required": ["items", "dynamic"],
+          "additionalProperties": false,
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "channels", "dynamic"],
+                "additionalProperties": false,
+                "properties": {
+                  "name": { "type": "string" },
+                  "channels": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["name", "dynamic"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "name": {
+                          "enum": ["defaultProps", "classNames", "styles", "vars"]
+                        },
+                        "dynamic": { "type": "boolean" }
+                      }
+                    }
+                  },
+                  "dynamic": { "type": "boolean" }
+                }
+              }
+            },
+            "dynamic": { "type": "boolean" }
+          }
+        },
+        "dynamic": { "type": "boolean" }
       }
     }
   }

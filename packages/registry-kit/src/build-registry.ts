@@ -23,6 +23,7 @@ import {
   inspectAuthorConformance,
 } from "./author-conformance";
 import { inspectMantineRanges, MantineRangeError } from "./mantine-ranges";
+import { summarizeThemeFragment } from "./theme-summary";
 
 const ajv = () => new Ajv({ strict: false, allErrors: true });
 
@@ -154,7 +155,9 @@ export function toWireItem(item: MantineItem, namespace: string, root: string): 
     // Inlined rather than listed in `files`: a client that understands it merges
     // it into the project theme, and one that does not must not drop a stray
     // theme file into the project.
-    meta.themeFragment = { path: item.themeFragment, content: read(item.themeFragment) };
+    const content = read(item.themeFragment);
+    meta.themeFragment = { path: item.themeFragment, content };
+    meta.themeSummary = summarizeThemeFragment(content);
   }
 
   const wire: WireItem = {
@@ -292,3 +295,11 @@ export {
   recoverRegistryWrite,
   writeRegistry,
 } from "./registry-output";
+export {
+  summarizeThemeFragment,
+  THEME_CHANNELS,
+  type ThemeChannelName,
+  type ThemeSummary,
+  type ThemeSummaryChannel,
+  type ThemeSummaryComponent,
+} from "./theme-summary";
