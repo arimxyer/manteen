@@ -389,6 +389,45 @@ describe("compiled registry reader", () => {
       readCompiledRegistry({ directory: cssDirectory }),
       /must not contain raw terminal control characters/,
     );
+
+    for (let codePoint = 0x80; codePoint <= 0x9f; codePoint += 1) {
+      const character = String.fromCodePoint(codePoint);
+      const label = `U+${codePoint.toString(16).toUpperCase().padStart(4, "0")}`;
+      for (const field of ["dependencies", "devDependencies", "registryDependencies"] as const) {
+        const dependencyDirectory = await fixture({
+          items: [
+            detail("alpha", "registry:ui", {
+              [field]: [`runtime${character}dependency`],
+            }),
+          ],
+        });
+        await assert.rejects(
+          readCompiledRegistry({ directory: dependencyDirectory }),
+          /must be a non-empty single-line string/,
+          `${field} ${label}`,
+        );
+      }
+
+      const targetDirectory = await fixture({
+        items: [
+          detail("alpha", "registry:ui", {
+            files: [
+              {
+                path: "registry/ui/alpha.ts",
+                type: "registry:ui",
+                target: `@ui/alpha${character}.ts`,
+                content: "source",
+              },
+            ],
+          }),
+        ],
+      });
+      await assert.rejects(
+        readCompiledRegistry({ directory: targetDirectory }),
+        /must be a non-empty single-line string/,
+        `install target ${label}`,
+      );
+    }
   });
 
   test("clears a rejected default read so a later registry rebuild can recover", async () => {

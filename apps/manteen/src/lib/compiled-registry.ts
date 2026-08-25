@@ -54,7 +54,7 @@ const printableLine = z
     (value) =>
       [...value].every((character) => {
         const codePoint = character.codePointAt(0) ?? 0;
-        return codePoint >= 32 && codePoint !== 127;
+        return (codePoint >= 32 && codePoint <= 126) || codePoint >= 160;
       }),
     "must be a non-empty single-line string",
   );
@@ -405,7 +405,7 @@ function assertSafeRelativePath(value: string, label: string, documentPath: stri
     value.startsWith("/") ||
     [...value].some((character) => {
       const codePoint = character.codePointAt(0) ?? 0;
-      return codePoint < 32 || codePoint === 127;
+      return codePoint < 32 || (codePoint >= 127 && codePoint <= 159);
     }) ||
     segments.some((segment) => segment === "" || segment === "." || segment === "..")
   ) {
