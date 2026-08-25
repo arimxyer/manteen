@@ -39,6 +39,27 @@ const item = {
         path: "examples/card.usage.tsx",
         content: 'export const Example = () => <Card title="BUILT_NODE" />;\n',
       },
+      themeFragment: {
+        path: "src/card.theme.ts",
+        content: "export const theme = createTheme({ components: {} });\n",
+      },
+      themeSummary: {
+        keys: ["primaryColor", "components"],
+        components: {
+          items: [
+            {
+              name: "Card",
+              channels: [
+                { name: "styles", dynamic: true },
+                { name: "defaultProps", dynamic: false },
+              ],
+              dynamic: false,
+            },
+          ],
+          dynamic: false,
+        },
+        dynamic: false,
+      },
     },
   },
 };
@@ -134,11 +155,25 @@ test("built CLI keeps full metadata in JSON and expands text only on request", (
   assert.equal(envelope.payload.detail.docs, item.docs);
   assert.deepEqual(envelope.payload.detail.meta.props, item.meta.mantine.props);
   assert.equal(envelope.payload.detail.meta.usage.content, item.meta.mantine.usage.content);
+  assert.equal(envelope.payload.detail.meta.themeFragment.path, "src/card.theme.ts");
+  assert.equal("content" in envelope.payload.detail.meta.themeFragment, false);
+  assert.deepEqual(envelope.payload.detail.meta.themeSummary.keys, ["components", "primaryColor"]);
+  assert.deepEqual(
+    envelope.payload.detail.meta.themeSummary.components.items[0].channels.map(
+      (channel) => channel.name,
+    ),
+    ["defaultProps", "styles"],
+  );
 
   const compact = cli("info", "@house/card");
   assert.equal(compact.status, 0, `${compact.stdout}\n${compact.stderr}`);
   assert.match(compact.stdout, /use --props to expand/);
   assert.doesNotMatch(compact.stdout, /BUILT_NODE/);
+  assert.match(compact.stdout, /summary {4}keys components, primaryColor; dynamic no/);
+  assert.match(
+    compact.stdout,
+    /Card: defaultProps \(static\), styles \(dynamic\); config dynamic no/,
+  );
 
   const expanded = cli("info", "@house/card", "--props", "--usage");
   assert.equal(expanded.status, 0, `${expanded.stdout}\n${expanded.stderr}`);
@@ -155,6 +190,7 @@ test("built SDK exposes production-wired reads from its stable façade", async (
   assert.equal(report.detail.docs, item.docs);
   assert.deepEqual(report.detail.meta.props, item.meta.mantine.props);
   assert.equal(report.detail.meta.usage.content, item.meta.mantine.usage.content);
+  assert.deepEqual(report.detail.meta.themeSummary.keys, ["components", "primaryColor"]);
   assert.deepEqual(
     (await client.list()).groups.map((group) => group.registry),
     ["@house"],

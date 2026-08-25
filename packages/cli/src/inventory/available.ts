@@ -60,6 +60,8 @@ import type {
 const MAX_NAME = 128;
 const MAX_TEXT = 240;
 
+const compare = (left: string, right: string): number => (left < right ? -1 : left > right ? 1 : 0);
+
 /**
  * Characters that change what a terminal DOES rather than what it shows.
  *
@@ -632,6 +634,9 @@ export function toItemDetail(item: ValidatedItem, redactedUrl: string): ItemDeta
       bytes: Buffer.byteLength(item.meta.themeFragment.content, "utf8"),
     };
   }
+  if (item.meta.themeSummary !== undefined) {
+    meta.themeSummary = normalizeThemeSummary(item.meta.themeSummary);
+  }
 
   return {
     name: item.name,
@@ -644,6 +649,30 @@ export function toItemDetail(item: ValidatedItem, redactedUrl: string): ItemDeta
     registryDependencies: item.registryDependencies,
     cssImports: item.cssImports,
     meta,
+  };
+}
+
+const THEME_CHANNEL_ORDER = ["defaultProps", "classNames", "styles", "vars"] as const;
+
+/** Canonicalize registry-controlled arrays before either JSON or text renders them. */
+function normalizeThemeSummary(
+  summary: NonNullable<DetailMeta["themeSummary"]>,
+): NonNullable<DetailMeta["themeSummary"]> {
+  const order = new Map(THEME_CHANNEL_ORDER.map((name, index) => [name, index]));
+  return {
+    keys: [...summary.keys].sort(compare),
+    components: {
+      items: summary.components.items
+        .map((component) => ({
+          ...component,
+          channels: [...component.channels].sort(
+            (left, right) => (order.get(left.name) ?? 0) - (order.get(right.name) ?? 0),
+          ),
+        }))
+        .sort((left, right) => compare(left.name, right.name)),
+      dynamic: summary.components.dynamic,
+    },
+    dynamic: summary.dynamic,
   };
 }
 

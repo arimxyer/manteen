@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import {
@@ -6,10 +7,12 @@ import {
   createWireValidator,
   inspectMantineRanges,
   type MantineRegistry,
+  type ThemeSummary,
   toWireItem,
   validateCatalog,
   type WireItem,
 } from "../src/build-registry";
+import { mergeThemeSource } from "../src/merge-theme";
 
 const FIXTURES = resolve(import.meta.dirname, "../fixtures");
 const BASE = join(FIXTURES, "base/manteen.registry.json");
@@ -123,13 +126,46 @@ describe("meta.mantine", () => {
     // into the consumer's project instead of merging it.
     const dataGrid = itemNamed(compileRegistry(BASE).items, "data-grid");
     const meta = (
-      dataGrid.meta as { mantine: { themeFragment: { path: string; content: string } } }
+      dataGrid.meta as {
+        mantine: {
+          themeFragment: { path: string; content: string };
+          themeSummary: ThemeSummary;
+        };
+      }
     ).mantine;
     const files = dataGrid.files as { path: string }[];
 
     expect(meta.themeFragment.path).toBe("src/data-grid.theme.ts");
     expect(meta.themeFragment.content).toContain("createTheme");
+    expect(meta.themeSummary).toEqual({
+      keys: ["components"],
+      components: {
+        items: [
+          {
+            name: "Table",
+            channels: [{ name: "defaultProps", dynamic: false }],
+            dynamic: false,
+          },
+        ],
+        dynamic: false,
+      },
+      dynamic: false,
+    });
     expect(files.map((file) => file.path)).not.toContain("src/data-grid.theme.ts");
+  });
+
+  test("summary derivation preserves fragment and merge bytes", () => {
+    const dataGrid = itemNamed(compileRegistry(BASE).items, "data-grid");
+    const meta = (
+      dataGrid.meta as { mantine: { themeFragment: { path: string; content: string } } }
+    ).mantine;
+    const authored = readFileSync(join(FIXTURES, "base/src/data-grid.theme.ts"), "utf8");
+    const base = `import { createTheme } from "@mantine/core";\n\nexport const theme = createTheme({ primaryColor: "blue" });\n`;
+
+    expect(meta.themeFragment.content).toBe(authored);
+    expect(mergeThemeSource(base, meta.themeFragment.content).text).toBe(
+      mergeThemeSource(base, authored).text,
+    );
   });
 
   test("carries author-documented props verbatim", () => {
