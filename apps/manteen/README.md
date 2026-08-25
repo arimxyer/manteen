@@ -25,10 +25,12 @@ repository's root Biome configuration.
 - `src/app/docs` contains the documentation routes and search endpoint.
 - `content/docs` contains the clean-room documentation source.
 
-The authoring-descriptor prototype process and promotion boundary are recorded in the
-[`authoring descriptor motion retrospective`](../../docs/research/authoring-descriptor-motion-retrospective.md).
-The studies remain design references until one is integrated and verified in the production
-homepage separately.
+The promoted homepage implementations in this replacement candidate are independent of their
+former prototype sources. The three public `/prototypes/*` route suites and the unused
+`InteropStages` comparison were retired after direct import verification. The design process and
+promotion decisions remain preserved in the
+[`authoring descriptor motion retrospective`](../../docs/research/authoring-descriptor-motion-retrospective.md)
+and [`interop motion concept brief`](../../docs/research/interop-motion-concept-brief.md).
 
 No generator version is claimed because it was not captured when the scaffold was created.
 

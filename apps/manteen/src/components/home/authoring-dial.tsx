@@ -9,9 +9,8 @@ import { cn } from "@/lib/cn";
  * The authoring dial: three Mantine coordinates turning into register around a
  * source file that never moves.
  *
- * Adapted from the Dial study, which stays untouched at
- * `src/app/prototypes/authoring-descriptor/volvelle.tsx` as the comparison
- * artifact.
+ * Adapted from the Dial study. Its design and promotion process are preserved
+ * in `docs/research/authoring-descriptor-motion-retrospective.md`.
  */
 
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
