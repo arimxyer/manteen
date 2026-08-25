@@ -42,3 +42,17 @@ export {
   type MergeResult,
   mergeThemeSource,
 } from "./merge-theme";
+
+export {
+  applyScaffold,
+  planScaffold,
+  SCAFFOLD_ITEM_NAME,
+  type ScaffoldApplyOutcome,
+  type ScaffoldDiagnostic,
+  ScaffoldError,
+  type ScaffoldInput,
+  type ScaffoldPlan,
+  type ScaffoldPlannedFile,
+  type ScaffoldPreservedFile,
+} from "./scaffold";
+export { SCAFFOLD_TEMPLATES, type ScaffoldTemplate } from "./scaffold-templates";
