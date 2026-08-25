@@ -172,6 +172,32 @@ describe("theme summary", () => {
     expect(summarizeThemeFragment("Mantine.createTheme({ colors: {} })")).toEqual(empty);
   });
 
+  test("does not report optional-chain calls as statically direct", () => {
+    const empty = {
+      keys: [],
+      components: { items: [], dynamic: true },
+      dynamic: true,
+    };
+
+    expect(summarizeThemeFragment("createTheme?.({ colors: {} })")).toEqual(empty);
+
+    const summary = summarizeThemeFragment(`
+      createTheme({
+        components: {
+          OptionalReceiver: Button?.extend({ styles: { root: {} } }),
+          OptionalNestedReceiver: Input?.Wrapper.extend({ styles: { root: {} } }),
+          OptionalCall: Input.Wrapper.extend?.({ styles: { root: {} } }),
+        },
+      });
+    `);
+
+    expect(summary.components.items).toEqual([
+      { name: "OptionalCall", channels: [], dynamic: true },
+      { name: "OptionalNestedReceiver", channels: [], dynamic: true },
+      { name: "OptionalReceiver", channels: [], dynamic: true },
+    ]);
+  });
+
   test("never executes the source while deriving metadata", () => {
     const sentinel = "__manteenThemeSummaryExecuted";
     Reflect.deleteProperty(globalThis, sentinel);

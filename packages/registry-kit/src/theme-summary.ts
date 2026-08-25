@@ -84,7 +84,11 @@ export function summarizeThemeFragment(source: string): ThemeSummary {
 
 function isDirectCreateThemeCall(call: CallExpression): boolean {
   const expression = call.getExpression();
-  return Node.isIdentifier(expression) && expression.getText() === "createTheme";
+  return (
+    !call.hasQuestionDotToken() &&
+    Node.isIdentifier(expression) &&
+    expression.getText() === "createTheme"
+  );
 }
 
 function summarizeRoot(root: ObjectLiteralExpression): ThemeSummary {
@@ -167,7 +171,9 @@ function summarizeComponent(name: string, initializer: Node | undefined): ThemeS
 function isDirectExtendCall(call: CallExpression): boolean {
   const expression = call.getExpression();
   return (
+    !call.hasQuestionDotToken() &&
     Node.isPropertyAccessExpression(expression) &&
+    !expression.hasQuestionDotToken() &&
     expression.getName() === "extend" &&
     isDirectMemberChain(expression.getExpression())
   );
@@ -177,7 +183,9 @@ function isDirectExtendCall(call: CallExpression): boolean {
 function isDirectMemberChain(expression: Node): boolean {
   if (Node.isIdentifier(expression)) return true;
   return (
-    Node.isPropertyAccessExpression(expression) && isDirectMemberChain(expression.getExpression())
+    Node.isPropertyAccessExpression(expression) &&
+    !expression.hasQuestionDotToken() &&
+    isDirectMemberChain(expression.getExpression())
   );
 }
 
