@@ -83,10 +83,10 @@ export function RegistryItemDetail({
           <Usage item={item} />
         </Tab>
         <Tab value="props">
-          <Props item={item} />
+          <RegistryItemProps item={item} />
         </Tab>
         <Tab value="styling">
-          <Styling item={item} />
+          <RegistryItemStyling item={item} />
         </Tab>
         <Tab value="source">
           <Source item={item} />
@@ -160,13 +160,21 @@ function Usage({ item }: { item: RegistryItem }) {
   );
 }
 
-function Props({ item }: { item: RegistryItem }) {
+export function RegistryItemProps({ item }: { item: RegistryItem }) {
   const props = item.meta?.mantine?.props;
-  if (!props || Object.values(props).every((rows) => rows.length === 0)) {
+  if (!props) {
     return (
       <UnavailableState
         title="No authored props"
         description="This compiled item does not declare meta.mantine.props. Props are not inferred from TypeScript source."
+      />
+    );
+  }
+  if (Object.values(props).every((rows) => rows.length === 0)) {
+    return (
+      <UnavailableState
+        title="Authored props are empty"
+        description="This compiled item declares meta.mantine.props, but it contains no authored prop entries. Props are not inferred from TypeScript source."
       />
     );
   }
@@ -178,41 +186,45 @@ function Props({ item }: { item: RegistryItem }) {
           <h2 id={`props-component-${index}`} className="text-lg font-semibold">
             {component}
           </h2>
-          <div className="overflow-x-auto rounded-lg border">
-            <table className="m-0 w-full min-w-[42rem] border-collapse text-left text-sm">
-              <thead className="bg-fd-muted/50">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Prop</th>
-                  <th className="px-3 py-2 font-medium">Type</th>
-                  <th className="px-3 py-2 font-medium">Requirement</th>
-                  <th className="px-3 py-2 font-medium">Default</th>
-                  <th className="px-3 py-2 font-medium">Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((prop) => (
-                  <tr key={prop.name} className="border-t align-top">
-                    <td className="px-3 py-2 font-mono">{prop.name}</td>
-                    <td className="px-3 py-2 font-mono text-xs">{prop.type}</td>
-                    <td className="px-3 py-2">{requirementLabel(prop.required)}</td>
-                    <td className="px-3 py-2 font-mono text-xs">
-                      {prop.default ?? "Not authored"}
-                    </td>
-                    <td className="px-3 py-2 text-fd-muted-foreground">
-                      {prop.description ?? "Not authored"}
-                    </td>
+          {rows.length > 0 ? (
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="m-0 w-full min-w-[42rem] border-collapse text-left text-sm">
+                <thead className="bg-fd-muted/50">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">Prop</th>
+                    <th className="px-3 py-2 font-medium">Type</th>
+                    <th className="px-3 py-2 font-medium">Requirement</th>
+                    <th className="px-3 py-2 font-medium">Default</th>
+                    <th className="px-3 py-2 font-medium">Description</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {rows.map((prop) => (
+                    <tr key={prop.name} className="border-t align-top">
+                      <td className="px-3 py-2 font-mono">{prop.name}</td>
+                      <td className="px-3 py-2 font-mono text-xs">{prop.type}</td>
+                      <td className="px-3 py-2">{requirementLabel(prop.required)}</td>
+                      <td className="px-3 py-2 font-mono text-xs">
+                        {prop.default ?? "Not authored"}
+                      </td>
+                      <td className="px-3 py-2 text-fd-muted-foreground">
+                        {prop.description ?? "Not authored"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <NotApplicable>No props are authored for this component.</NotApplicable>
+          )}
         </section>
       ))}
     </div>
   );
 }
 
-function Styling({ item }: { item: RegistryItem }) {
+export function RegistryItemStyling({ item }: { item: RegistryItem }) {
   const mantine = item.meta?.mantine;
   const stylesApi = mantine?.stylesApi;
   const themeSummary = mantine?.themeSummary;
@@ -224,7 +236,12 @@ function Styling({ item }: { item: RegistryItem }) {
         <h2 id="styles-api-heading" className="text-lg font-semibold">
           Authored Styles API
         </h2>
-        {stylesApi && Object.keys(stylesApi).length > 0 ? (
+        {stylesApi === undefined ? (
+          <NotApplicable>
+            No meta.mantine.stylesApi declaration is present; internal class names are not treated
+            as a public styling contract.
+          </NotApplicable>
+        ) : Object.keys(stylesApi).length > 0 ? (
           <div className="space-y-4">
             {Object.entries(stylesApi).map(([component, selectors]) => (
               <div key={component} className="rounded-lg border p-4">
@@ -245,8 +262,7 @@ function Styling({ item }: { item: RegistryItem }) {
           </div>
         ) : (
           <NotApplicable>
-            No meta.mantine.stylesApi declaration is present; internal class names are not treated
-            as a public styling contract.
+            meta.mantine.stylesApi is authored but contains no component entries.
           </NotApplicable>
         )}
       </section>
