@@ -19,6 +19,15 @@ The scaffold was created with the Next.js Fumadocs MDX template, a `src` directo
 and `next/og`. AI chat was not enabled. Its generated Biome setup is intentionally replaced by the
 repository's root Biome configuration.
 
+Registry item-detail pages are statically generated from the repository's compiled `public/r`
+index and item documents. They display authored metadata and exact compiled source without
+importing or evaluating it. Rebuild the artifact with `bun run build:registry` before checking or
+building the site. `MANTEEN_BASE_PATH=/manteen bun run site:build` exercises a sub-path build;
+internal registry navigation uses `next/link` so Next.js owns prefixing.
+
+These pages remain local/CI evidence for the replacement candidate. They do not change the live
+`/r` artifact, prove that an item installs or previews successfully, or deploy this application.
+
 ## Structure
 
 - `src/lib/source.ts` defines the Fumadocs MDX collection through its Macro API.
