@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
-import { access, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { afterEach, describe, test } from "node:test";
-import { readCompiledRegistry } from "./compiled-registry";
+import { fileURLToPath } from "node:url";
+import {
+  REGISTRY_FILE_TYPES,
+  REGISTRY_ITEM_TYPES,
+  readCompiledRegistry,
+} from "./compiled-registry";
 
 const temporaryDirectories: string[] = [];
 
@@ -16,6 +21,26 @@ afterEach(async () => {
 });
 
 describe("compiled registry reader", () => {
+  test("keeps rendered item and file types aligned with the current wire schema", async () => {
+    const schema = JSON.parse(
+      await readFile(
+        resolve(
+          dirname(fileURLToPath(import.meta.url)),
+          "../../../../packages/registry-kit/schema/wire/registry-item.schema.json",
+        ),
+        "utf8",
+      ),
+    ) as {
+      properties: {
+        type: { enum: string[] };
+        files: { items: { properties: { type: { enum: string[] } } } };
+      };
+    };
+
+    assert.deepEqual([...REGISTRY_ITEM_TYPES], schema.properties.type.enum);
+    assert.deepEqual([...REGISTRY_FILE_TYPES], schema.properties.files.items.properties.type.enum);
+  });
+
   test("preserves exact source, usage, and theme-fragment bytes", async () => {
     const source = 'export const message = "π";\r\n// exact trailing line\r\n';
     const usage = "export function Example() {\n  return <>✓</>;\n}\n";
@@ -43,12 +68,12 @@ describe("compiled registry reader", () => {
     const item = registry.getItem("alpha");
 
     assert.equal(item?.files[0]?.content, source);
-    assert.equal(item?.meta?.mantine.usage?.content, usage);
-    assert.equal(item?.meta?.mantine.themeFragment?.content, themeFragment);
+    assert.equal(item?.meta?.mantine?.usage?.content, usage);
+    assert.equal(item?.meta?.mantine?.themeFragment?.content, themeFragment);
     assert.deepEqual(Buffer.from(item?.files[0]?.content ?? ""), Buffer.from(source));
-    assert.deepEqual(Buffer.from(item?.meta?.mantine.usage?.content ?? ""), Buffer.from(usage));
+    assert.deepEqual(Buffer.from(item?.meta?.mantine?.usage?.content ?? ""), Buffer.from(usage));
     assert.deepEqual(
-      Buffer.from(item?.meta?.mantine.themeFragment?.content ?? ""),
+      Buffer.from(item?.meta?.mantine?.themeFragment?.content ?? ""),
       Buffer.from(themeFragment),
     );
   });
@@ -184,6 +209,42 @@ describe("compiled registry reader", () => {
     assert.equal(item?.registryDependencies, undefined);
   });
 
+  test("accepts wire-valid optional and open fields without dropping rendered data", async () => {
+    const directory = await fixture({
+      items: [
+        detail("alpha", "registry:ui", {
+          title: undefined,
+          description: undefined,
+          files: [],
+          devDependencies: ["typescript@^6"],
+          categories: ["future-wire-field"],
+          meta: {
+            futureClient: { enabled: true },
+            mantine: {
+              futureDisplayField: "ignored by this reader",
+              props: { Alpha: [] },
+            },
+          },
+        }),
+      ],
+      indexItems: [
+        {
+          name: "alpha",
+          type: "registry:ui",
+          futureIndexField: true,
+          meta: { futureClient: true },
+        },
+      ],
+    });
+
+    const item = (await readCompiledRegistry({ directory })).getItem("alpha");
+    assert.equal(item?.title, undefined);
+    assert.equal(item?.description, undefined);
+    assert.deepEqual(item?.files, []);
+    assert.deepEqual(item?.devDependencies, ["typescript@^6"]);
+    assert.deepEqual(item?.meta?.mantine?.props, { Alpha: [] });
+  });
+
   test("refuses malformed rendered metadata and unsafe compiled paths", async () => {
     const malformedDirectory = await fixture({
       items: [
@@ -214,6 +275,107 @@ describe("compiled registry reader", () => {
       readCompiledRegistry({ directory: unsafePathDirectory }),
       /Unsafe compiled file path/,
     );
+
+    const controlPathDirectory = await fixture({
+      items: [
+        detail("alpha", "registry:ui", {
+          files: [{ path: "registry/ui/alpha\n.ts", type: "registry:ui", content: "source" }],
+        }),
+      ],
+    });
+    await assert.rejects(
+      readCompiledRegistry({ directory: controlPathDirectory }),
+      /Unsafe compiled file path/,
+    );
+
+    const unknownTypeDirectory = await fixture({
+      items: [detail("alpha", "registry:not-real")],
+      indexItems: [indexItem("alpha", "registry:not-real")],
+    });
+    await assert.rejects(
+      readCompiledRegistry({ directory: unknownTypeDirectory }),
+      /Invalid option: expected one of/,
+    );
+
+    const unsafeTargetDirectory = await fixture({
+      items: [
+        detail("alpha", "registry:ui", {
+          files: [
+            {
+              path: "registry/ui/alpha.ts",
+              type: "registry:ui",
+              target: "../../outside.ts",
+              content: "source",
+            },
+          ],
+        }),
+      ],
+    });
+    await assert.rejects(
+      readCompiledRegistry({ directory: unsafeTargetDirectory }),
+      /Unsafe install target/,
+    );
+
+    const driveTargetDirectory = await fixture({
+      items: [
+        detail("alpha", "registry:ui", {
+          files: [
+            {
+              path: "registry/ui/alpha.ts",
+              type: "registry:ui",
+              target: "C:/outside.ts",
+              content: "source",
+            },
+          ],
+        }),
+      ],
+    });
+    await assert.rejects(
+      readCompiledRegistry({ directory: driveTargetDirectory }),
+      /Unsafe install target/,
+    );
+
+    const missingTargetDirectory = await fixture({
+      items: [
+        detail("alpha", "registry:file", {
+          files: [{ path: "registry/file/alpha.txt", type: "registry:file", content: "source" }],
+        }),
+      ],
+      indexItems: [indexItem("alpha", "registry:file")],
+    });
+    await assert.rejects(
+      readCompiledRegistry({ directory: missingTargetDirectory }),
+      /has no install target/,
+    );
+  });
+
+  test("refuses raw terminal controls before rendered registry text reaches HTML", async () => {
+    for (const [label, character] of [
+      ["NUL", "\u0000"],
+      ["BEL", "\u0007"],
+      ["ESC", "\u001b"],
+      ["DEL", "\u007f"],
+    ] as const) {
+      const directory = await fixture({
+        items: [
+          detail("alpha", "registry:ui", {
+            files: [
+              {
+                path: "registry/ui/alpha.ts",
+                type: "registry:ui",
+                content: `safe${character}unsafe`,
+              },
+            ],
+          }),
+        ],
+      });
+
+      await assert.rejects(
+        readCompiledRegistry({ directory }),
+        /must not contain raw terminal control characters/,
+        label,
+      );
+    }
   });
 });
 

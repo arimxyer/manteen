@@ -1,9 +1,16 @@
 import { ServerCodeBlock } from "fumadocs-ui/components/codeblock.rsc";
-import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+import { Tab, Tabs, TabsList, TabsTrigger } from "fumadocs-ui/components/tabs";
 import Link from "next/link";
+import { ExactCopyButton } from "@/components/exact-copy-button";
 import type { CompiledRegistry, RegistryItem, RegistryTypeGroup } from "@/lib/compiled-registry";
 
-const detailTabs = ["Preview", "Usage", "Props", "Styling", "Source"];
+const detailTabs = [
+  { label: "Preview", value: "preview" },
+  { label: "Usage", value: "usage" },
+  { label: "Props", value: "props" },
+  { label: "Styling", value: "styling" },
+  { label: "Source", value: "source" },
+] as const;
 
 export function RegistryItemDetail({
   item,
@@ -23,9 +30,9 @@ export function RegistryItemDetail({
             <dt className="text-fd-muted-foreground">Type</dt>
             <dd className="m-0 font-mono">{item.type}</dd>
             <dt className="text-fd-muted-foreground">Mantine</dt>
-            <dd className="m-0 font-mono">{item.meta?.mantine.requires ?? "Not declared"}</dd>
+            <dd className="m-0 font-mono">{item.meta?.mantine?.requires ?? "Not declared"}</dd>
             <dt className="text-fd-muted-foreground">Provider</dt>
-            <dd className="m-0">{item.meta?.mantine.provider ?? "Not declared"}</dd>
+            <dd className="m-0">{item.meta?.mantine?.provider ?? "Not declared"}</dd>
           </dl>
         </div>
         <div>
@@ -57,23 +64,31 @@ export function RegistryItemDetail({
 
       <RegistryNavigation groups={registry.groups} currentItem={item.name} />
 
-      <Tabs items={detailTabs} defaultIndex={0} label="Item detail">
-        <Tab>
+      <Tabs defaultValue="preview">
+        <TabsList aria-label="Item detail">
+          <span className="my-auto me-auto text-sm font-medium">Item detail</span>
+          {detailTabs.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value}>
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        <Tab value="preview">
           <UnavailableState
             title="Live preview unavailable"
             description="This static milestone does not import, evaluate, transpile, or render compiled registry source. Install the item into an application you control to evaluate its runtime behavior."
           />
         </Tab>
-        <Tab>
+        <Tab value="usage">
           <Usage item={item} />
         </Tab>
-        <Tab>
+        <Tab value="props">
           <Props item={item} />
         </Tab>
-        <Tab>
+        <Tab value="styling">
           <Styling item={item} />
         </Tab>
-        <Tab>
+        <Tab value="source">
           <Source item={item} />
         </Tab>
       </Tabs>
@@ -108,7 +123,7 @@ function RegistryNavigation({
                     aria-current={groupedItem.name === currentItem ? "page" : undefined}
                     className="block rounded-md px-2 py-1.5 text-sm text-fd-muted-foreground transition-colors hover:bg-fd-accent hover:text-fd-accent-foreground aria-[current=page]:bg-fd-accent aria-[current=page]:font-medium aria-[current=page]:text-fd-accent-foreground"
                   >
-                    {groupedItem.title}
+                    {groupedItem.title ?? groupedItem.name}
                   </Link>
                 </li>
               ))}
@@ -121,7 +136,7 @@ function RegistryNavigation({
 }
 
 function Usage({ item }: { item: RegistryItem }) {
-  const usage = item.meta?.mantine.usage;
+  const usage = item.meta?.mantine?.usage;
   if (!usage) {
     return (
       <UnavailableState
@@ -137,20 +152,17 @@ function Usage({ item }: { item: RegistryItem }) {
         Authored usage
       </h2>
       <p className="text-sm text-fd-muted-foreground">
-        Exact compiled metadata from <code>{usage.path}</code>. It is displayed, not executed.
+        Compiled metadata from <code>{usage.path}</code>. It is displayed, not executed. Copy exact
+        writes the preserved registry string rather than the highlighted DOM text.
       </p>
-      <ServerCodeBlock
-        code={usage.content}
-        lang={languageForPath(usage.path)}
-        codeblock={{ title: usage.path, className: "mb-0" }}
-      />
+      <ExactSourceCodeBlock code={usage.content} path={usage.path} />
     </section>
   );
 }
 
 function Props({ item }: { item: RegistryItem }) {
-  const props = item.meta?.mantine.props;
-  if (!props) {
+  const props = item.meta?.mantine?.props;
+  if (!props || Object.values(props).every((rows) => rows.length === 0)) {
     return (
       <UnavailableState
         title="No authored props"
@@ -161,9 +173,9 @@ function Props({ item }: { item: RegistryItem }) {
 
   return (
     <div className="space-y-8">
-      {Object.entries(props).map(([component, rows]) => (
-        <section key={component} aria-labelledby={`props-${component}`}>
-          <h2 id={`props-${component}`} className="text-lg font-semibold">
+      {Object.entries(props).map(([component, rows], index) => (
+        <section key={component} aria-labelledby={`props-component-${index}`}>
+          <h2 id={`props-component-${index}`} className="text-lg font-semibold">
             {component}
           </h2>
           <div className="overflow-x-auto rounded-lg border">
@@ -212,17 +224,21 @@ function Styling({ item }: { item: RegistryItem }) {
         <h2 id="styles-api-heading" className="text-lg font-semibold">
           Authored Styles API
         </h2>
-        {stylesApi ? (
+        {stylesApi && Object.keys(stylesApi).length > 0 ? (
           <div className="space-y-4">
             {Object.entries(stylesApi).map(([component, selectors]) => (
               <div key={component} className="rounded-lg border p-4">
                 <h3 className="m-0 text-base font-medium">{component}</h3>
                 <ul className="mb-0 mt-3 flex list-none flex-wrap gap-2 p-0">
-                  {selectors.map((selector) => (
-                    <li key={selector}>
-                      <code className="rounded-md bg-fd-muted px-2 py-1 text-xs">{selector}</code>
-                    </li>
-                  ))}
+                  {selectors.length > 0 ? (
+                    selectors.map((selector) => (
+                      <li key={selector}>
+                        <code className="rounded-md bg-fd-muted px-2 py-1 text-xs">{selector}</code>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-sm text-fd-muted-foreground">No selectors authored.</li>
+                  )}
                 </ul>
               </div>
             ))}
@@ -287,13 +303,14 @@ function Styling({ item }: { item: RegistryItem }) {
         {themeFragment ? (
           <>
             <p className="text-sm text-fd-muted-foreground">
-              Authored source from <code>{themeFragment.path}</code>. It is displayed verbatim and
-              never imported or executed by this site.
+              Authored source from <code>{themeFragment.path}</code>. It is never imported or
+              executed. Copy exact writes the preserved registry string rather than the highlighted
+              DOM text.
             </p>
-            <ServerCodeBlock
+            <ExactSourceCodeBlock
               code={themeFragment.content}
-              lang={languageForPath(themeFragment.path)}
-              codeblock={{ title: `Authored source · ${themeFragment.path}`, className: "mb-0" }}
+              path={themeFragment.path}
+              title={`Authored source · ${themeFragment.path}`}
             />
           </>
         ) : (
@@ -314,6 +331,7 @@ function Source({ item }: { item: RegistryItem }) {
           Compiled dependencies
         </h2>
         <DependencyList label="Packages" values={item.dependencies} />
+        <DependencyList label="Development packages" values={item.devDependencies} />
         <DependencyList label="Registry items" values={item.registryDependencies} />
         <CssDefinitions css={item.css} />
       </section>
@@ -323,32 +341,33 @@ function Source({ item }: { item: RegistryItem }) {
           Compiled source files
         </h2>
         <p className="text-sm text-fd-muted-foreground">
-          Every file below is read from the compiled item document. Content is displayed exactly;
-          this site does not import, transpile, or evaluate it.
+          Every file below is read from the compiled item document. The highlighted view may
+          normalize visual line endings; Copy exact writes the preserved registry string. This site
+          does not import, transpile, or evaluate source.
         </p>
-        <div className="space-y-6">
-          {item.files.map((file) => (
-            <article key={file.path} className="rounded-lg border p-4">
-              <dl className="mb-3 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">
-                <dt className="text-fd-muted-foreground">Path</dt>
-                <dd className="m-0 font-mono">{file.path}</dd>
-                <dt className="text-fd-muted-foreground">Type</dt>
-                <dd className="m-0 font-mono">{file.type}</dd>
-                {file.target ? (
-                  <>
-                    <dt className="text-fd-muted-foreground">Install target</dt>
-                    <dd className="m-0 font-mono">{file.target}</dd>
-                  </>
-                ) : null}
-              </dl>
-              <ServerCodeBlock
-                code={file.content}
-                lang={languageForPath(file.path)}
-                codeblock={{ title: file.path, className: "mb-0" }}
-              />
-            </article>
-          ))}
-        </div>
+        {item.files.length > 0 ? (
+          <div className="space-y-6">
+            {item.files.map((file) => (
+              <article key={file.path} className="rounded-lg border p-4">
+                <dl className="mb-3 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">
+                  <dt className="text-fd-muted-foreground">Path</dt>
+                  <dd className="m-0 font-mono">{file.path}</dd>
+                  <dt className="text-fd-muted-foreground">Type</dt>
+                  <dd className="m-0 font-mono">{file.type}</dd>
+                  {file.target ? (
+                    <>
+                      <dt className="text-fd-muted-foreground">Install target</dt>
+                      <dd className="m-0 font-mono">{file.target}</dd>
+                    </>
+                  ) : null}
+                </dl>
+                <ExactSourceCodeBlock code={file.content} path={file.path} />
+              </article>
+            ))}
+          </div>
+        ) : (
+          <NotApplicable>No compiled source files are attached to this item.</NotApplicable>
+        )}
       </section>
     </div>
   );
@@ -404,6 +423,33 @@ function NotApplicable({ children }: { children: React.ReactNode }) {
     <p className="rounded-lg border border-dashed p-4 text-sm text-fd-muted-foreground">
       Not applicable: {children}
     </p>
+  );
+}
+
+function ExactSourceCodeBlock({
+  code,
+  path,
+  title = path,
+}: {
+  code: string;
+  path: string;
+  title?: string;
+}) {
+  return (
+    <ServerCodeBlock
+      code={code}
+      lang={languageForPath(path)}
+      codeblock={{
+        allowCopy: false,
+        className: "mb-0",
+        title: (
+          <span className="flex min-w-0 items-center">
+            <span className="truncate">{title}</span>
+            <ExactCopyButton code={code} label={`Copy exact source for ${path}`} />
+          </span>
+        ),
+      }}
+    />
   );
 }
 

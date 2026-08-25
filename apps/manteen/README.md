@@ -20,10 +20,13 @@ and `next/og`. AI chat was not enabled. Its generated Biome setup is intentional
 repository's root Biome configuration.
 
 Registry item-detail pages are statically generated from the repository's compiled `public/r`
-index and item documents. They display authored metadata and exact compiled source without
-importing or evaluating it. Rebuild the artifact with `bun run build:registry` before checking or
-building the site. `MANTEEN_BASE_PATH=/manteen bun run site:build` exercises a sub-path build;
-internal registry navigation uses `next/link` so Next.js owns prefixing.
+index and item documents. The reader preserves compiled source strings without importing or
+evaluating them and refuses raw terminal-control bytes before rendering. Syntax-highlighted views
+can normalize visual line endings, so their explicit **Copy exact** action writes the preserved
+registry string instead of copying rendered DOM text. Rebuild the artifact with
+`bun run build:registry` before checking or building the site. `MANTEEN_BASE_PATH=/manteen bun run
+site:build` exercises a sub-path build; internal registry navigation uses `next/link` so Next.js
+owns prefixing.
 
 These pages remain local/CI evidence for the replacement candidate. They do not change the live
 `/r` artifact, prove that an item installs or previews successfully, or deploy this application.

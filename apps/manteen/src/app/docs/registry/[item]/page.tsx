@@ -16,11 +16,13 @@ export default async function Page(props: PageProps<"/docs/registry/[item]">) {
   const registry = await readCompiledRegistry();
   const item = registry.getItem(itemName);
   if (!item) notFound();
+  const title = item.title ?? item.name;
+  const description = item.description ?? "No authored description is present for this item.";
 
   return (
     <DocsPage toc={[]} full>
-      <DocsTitle>{item.title}</DocsTitle>
-      <DocsDescription>{item.description}</DocsDescription>
+      <DocsTitle>{title}</DocsTitle>
+      <DocsDescription>{description}</DocsDescription>
       <DocsBody className="max-w-none">
         <RegistryItemDetail item={item} registry={registry} />
       </DocsBody>
@@ -35,9 +37,10 @@ export async function generateMetadata(
   const registry = await readCompiledRegistry();
   const item = registry.getItem(itemName);
   if (!item) notFound();
+  const title = item.title ?? item.name;
 
   return {
-    title: `${item.title} registry item`,
-    description: item.description,
+    title: `${title} registry item`,
+    description: item.description ?? "Compiled Manteen registry item.",
   };
 }

@@ -3,12 +3,49 @@ import { resolve } from "node:path";
 import { z } from "zod";
 
 const itemNamePattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const registryTypePattern = /^registry:[a-z][a-z0-9-]*$/;
+export const REGISTRY_ITEM_TYPES = [
+  "registry:lib",
+  "registry:block",
+  "registry:component",
+  "registry:ui",
+  "registry:hook",
+  "registry:theme",
+  "registry:page",
+  "registry:file",
+  "registry:style",
+  "registry:base",
+  "registry:font",
+  "registry:item",
+] as const;
+export const REGISTRY_FILE_TYPES = REGISTRY_ITEM_TYPES.filter(
+  (type) => type !== "registry:font",
+) as [
+  Exclude<(typeof REGISTRY_ITEM_TYPES)[number], "registry:font">,
+  ...Exclude<(typeof REGISTRY_ITEM_TYPES)[number], "registry:font">[],
+];
+const targetPrefixes = ["@components/", "@ui/", "@lib/", "@hooks/"] as const;
 const channelOrder = ["defaultProps", "classNames", "styles", "vars"] as const;
 
-const nonEmptyString = z.string().min(1);
+const isDisplaySafeText = (value: string) =>
+  [...value].every((character) => {
+    const codePoint = character.codePointAt(0) ?? 0;
+    return (
+      codePoint === 9 ||
+      codePoint === 10 ||
+      codePoint === 13 ||
+      (codePoint >= 32 && codePoint !== 127)
+    );
+  });
+const displaySafeText = z
+  .string()
+  .refine(isDisplaySafeText, "must not contain raw terminal control characters");
+const nonEmptyString = z
+  .string()
+  .min(1)
+  .refine(isDisplaySafeText, "must not contain raw terminal control characters");
 const itemName = z.string().regex(itemNamePattern, "must be a safe lowercase item name");
-const registryType = z.string().regex(registryTypePattern, "must be a registry:* type");
+const registryItemType = z.enum(REGISTRY_ITEM_TYPES);
+const registryFileType = z.enum(REGISTRY_FILE_TYPES);
 const printableLine = z
   .string()
   .min(1)
@@ -26,47 +63,47 @@ const indexMantineSchema = z
     requires: nonEmptyString.optional(),
     provider: nonEmptyString.optional(),
   })
-  .strict();
+  .passthrough();
 
 const indexMetaSchema = z
   .object({
-    mantine: indexMantineSchema,
+    mantine: indexMantineSchema.optional(),
   })
-  .strict();
+  .passthrough();
 
 const indexItemSchema = z
   .object({
     name: itemName,
-    type: registryType,
-    title: nonEmptyString,
-    description: nonEmptyString,
+    type: registryItemType,
+    title: nonEmptyString.optional(),
+    description: displaySafeText.optional(),
     meta: indexMetaSchema.optional(),
   })
-  .strict();
+  .passthrough();
 
 const registryIndexSchema = z
   .object({
     $schema: nonEmptyString.optional(),
     name: nonEmptyString,
-    homepage: z.string().url().optional(),
-    items: z.array(indexItemSchema).min(1),
+    homepage: displaySafeText.optional(),
+    items: z.array(indexItemSchema),
   })
-  .strict();
+  .passthrough();
 
 const sourceDocumentSchema = z
   .object({
     path: nonEmptyString,
-    content: z.string(),
+    content: displaySafeText,
   })
-  .strict();
+  .passthrough();
 
 const propSchema = z
   .object({
     name: nonEmptyString,
     type: nonEmptyString,
     required: z.boolean().optional(),
-    default: z.string().optional(),
-    description: z.string().optional(),
+    default: displaySafeText.optional(),
+    description: displaySafeText.optional(),
   })
   .strict();
 
@@ -79,7 +116,7 @@ const themeChannelSchema = z
 
 const themeComponentSchema = z
   .object({
-    name: z.string(),
+    name: displaySafeText,
     channels: z.array(themeChannelSchema),
     dynamic: z.boolean(),
   })
@@ -87,7 +124,7 @@ const themeComponentSchema = z
 
 const themeSummarySchema = z
   .object({
-    keys: z.array(z.string()),
+    keys: z.array(displaySafeText),
     components: z
       .object({
         items: z.array(themeComponentSchema),
@@ -102,28 +139,28 @@ const mantineMetaSchema = z
   .object({
     requires: nonEmptyString.optional(),
     provider: nonEmptyString.optional(),
-    stylesApi: z.record(nonEmptyString, z.array(nonEmptyString).min(1)).optional(),
-    props: z.record(nonEmptyString, z.array(propSchema).min(1)).optional(),
+    stylesApi: z.record(nonEmptyString, z.array(nonEmptyString)).optional(),
+    props: z.record(nonEmptyString, z.array(propSchema)).optional(),
     usage: sourceDocumentSchema.optional(),
     themeFragment: sourceDocumentSchema.optional(),
     themeSummary: themeSummarySchema.optional(),
   })
-  .strict();
+  .passthrough();
 
 const detailMetaSchema = z
   .object({
-    mantine: mantineMetaSchema,
+    mantine: mantineMetaSchema.optional(),
   })
-  .strict();
+  .passthrough();
 
 const compiledFileSchema = z
   .object({
     path: nonEmptyString,
-    type: registryType,
+    type: registryFileType,
     target: printableLine.optional(),
-    content: z.string(),
+    content: displaySafeText,
   })
-  .strict();
+  .passthrough();
 
 type CssValue = string | { [key: string]: CssValue };
 const cssValueSchema: z.ZodType<CssValue> = z.lazy(() =>
@@ -134,17 +171,18 @@ const registryDetailSchema = z
   .object({
     $schema: nonEmptyString.optional(),
     name: itemName,
-    type: registryType,
-    title: nonEmptyString,
-    description: nonEmptyString,
-    docs: z.string().optional(),
-    files: z.array(compiledFileSchema).min(1),
+    type: registryItemType,
+    title: nonEmptyString.optional(),
+    description: displaySafeText.optional(),
+    docs: displaySafeText.optional(),
+    files: z.array(compiledFileSchema),
     dependencies: z.array(printableLine).optional(),
+    devDependencies: z.array(printableLine).optional(),
     registryDependencies: z.array(printableLine).optional(),
     css: z.record(nonEmptyString, cssValueSchema).optional(),
     meta: detailMetaSchema.optional(),
   })
-  .strict();
+  .passthrough();
 
 export type RegistryIndexItem = z.infer<typeof indexItemSchema>;
 export type RegistryItem = z.infer<typeof registryDetailSchema>;
@@ -278,10 +316,21 @@ function validateDetail(index: RegistryIndexItem, detail: RegistryItem, path: st
     `compiled file paths for ${detail.name}`,
     path,
   );
-  for (const file of detail.files) assertSafeRelativePath(file.path, "compiled file path", path);
+  for (const file of detail.files) {
+    assertSafeRelativePath(file.path, "compiled file path", path);
+    if ((file.type === "registry:file" || file.type === "registry:page") && !file.target) {
+      throw new Error(
+        `Compiled ${file.type} file ${JSON.stringify(file.path)} has no install target at ${path}`,
+      );
+    }
+    if (file.target) assertSafeInstallTarget(file.target, path);
+  }
 
   if (detail.dependencies) {
     assertUnique(detail.dependencies, `dependencies for ${detail.name}`, path);
+  }
+  if (detail.devDependencies) {
+    assertUnique(detail.devDependencies, `development dependencies for ${detail.name}`, path);
   }
   if (detail.registryDependencies) {
     assertUnique(detail.registryDependencies, `registry dependencies for ${detail.name}`, path);
@@ -321,7 +370,7 @@ function validateDetail(index: RegistryIndexItem, detail: RegistryItem, path: st
 }
 
 function validateThemeSummary(
-  summary: NonNullable<NonNullable<RegistryItem["meta"]>["mantine"]["themeSummary"]>,
+  summary: NonNullable<NonNullable<NonNullable<RegistryItem["meta"]>["mantine"]>["themeSummary"]>,
   path: string,
 ): void {
   assertSortedUnique(summary.keys, "theme summary keys", path);
@@ -349,10 +398,33 @@ function assertSafeRelativePath(value: string, label: string, documentPath: stri
     value.includes("\\") ||
     value.includes("\0") ||
     value.startsWith("/") ||
+    [...value].some((character) => {
+      const codePoint = character.codePointAt(0) ?? 0;
+      return codePoint < 32 || codePoint === 127;
+    }) ||
     segments.some((segment) => segment === "" || segment === "." || segment === "..")
   ) {
     throw new Error(`Unsafe ${label} ${JSON.stringify(value)} in ${documentPath}`);
   }
+}
+
+function assertSafeInstallTarget(value: string, documentPath: string): void {
+  if (/^[a-z]:/i.test(value)) {
+    throw new Error(`Unsafe install target ${JSON.stringify(value)} in ${documentPath}`);
+  }
+
+  let relativeTarget = value;
+  if (value.startsWith("~/")) {
+    relativeTarget = value.slice(2);
+  } else {
+    const prefix = targetPrefixes.find((candidate) => value.startsWith(candidate));
+    if (prefix) relativeTarget = value.slice(prefix.length);
+    else if (value.startsWith("@")) {
+      throw new Error(`Unsafe install target ${JSON.stringify(value)} in ${documentPath}`);
+    }
+  }
+
+  assertSafeRelativePath(relativeTarget, "install target", documentPath);
 }
 
 function assertSortedUnique(values: string[], label: string, path: string): void {
