@@ -7,7 +7,10 @@ const failures = [];
 const bunVersion = "1.3.14";
 const bunInstallCommand = "- run: bun install --frozen-lockfile";
 const setupBunPattern = /- uses: oven-sh\/setup-bun@v2\n(?<body>(?: {8,10}.+\n)+)/g;
+const setupNodePattern = /- uses: actions\/setup-node@v7\n(?<body>(?: {8,10}.+\n)+)/g;
 const bunCachePattern = /- uses: actions\/cache@v5\n(?<body>(?: {8,10}.+\n)+)/g;
+const exactScaffoldRuntimeCheck =
+  "node -e \"const assert = require('node:assert/strict'); assert.equal(process.versions.node, '20.11.0')\"";
 
 function expect(condition, message) {
   if (!condition) failures.push(message);
@@ -199,10 +202,6 @@ for (const command of [
   expect(builtNode.includes(`- run: ${command}`), `built-node is missing ${command}`);
 }
 
-expect(
-  scaffoldProof.includes('node-version: "20.11.0"'),
-  "scaffold-proof must use the exact registry-kit Node floor 20.11.0",
-);
 for (const command of [
   "bun install --frozen-lockfile",
   "node scripts/guard-workspace.mjs",
@@ -212,6 +211,62 @@ for (const command of [
 ]) {
   expect(scaffoldProof.includes(`- run: ${command}`), `scaffold-proof is missing ${command}`);
 }
+
+const scaffoldSetupNodeBlocks = [...scaffoldProof.matchAll(setupNodePattern)];
+expect(
+  scaffoldSetupNodeBlocks.length === 2,
+  "scaffold-proof must contain exactly one build-Node setup and one runtime-Node setup",
+);
+const scaffoldBuildNode = scaffoldSetupNodeBlocks[0];
+const scaffoldRuntimeNode = scaffoldSetupNodeBlocks[1];
+if (scaffoldBuildNode !== undefined) {
+  expect(
+    scaffoldBuildNode.groups?.body.includes('node-version: "22.12.0"') === true,
+    "scaffold-proof must install and build with repository Node 22.12.0",
+  );
+}
+if (scaffoldRuntimeNode !== undefined) {
+  expect(
+    scaffoldRuntimeNode.groups?.body.includes('node-version: "20.11.0"') === true,
+    "scaffold-proof runtime setup must select exact Node 20.11.0",
+  );
+}
+
+const scaffoldInstallIndex = scaffoldProof.indexOf(bunInstallCommand);
+const scaffoldBuildIndex = scaffoldProof.indexOf("- run: bun run build:kit");
+const scaffoldRuntimeCheckIndex = scaffoldProof.indexOf(`- run: ${exactScaffoldRuntimeCheck}`);
+const scaffoldE2eIndex = scaffoldProof.indexOf(
+  "- run: node --test packages/registry-kit/e2e/*.node-e2e.mjs",
+);
+const scaffoldConsumerIndex = scaffoldProof.indexOf(
+  "- run: node packages/registry-kit/scripts/verify-scaffold-consumers.mjs",
+);
+const scaffoldOrderedIndexes = [
+  scaffoldBuildNode?.index ?? -1,
+  scaffoldInstallIndex,
+  scaffoldBuildIndex,
+  scaffoldRuntimeNode?.index ?? -1,
+  scaffoldRuntimeCheckIndex,
+  scaffoldE2eIndex,
+  scaffoldConsumerIndex,
+];
+expect(
+  scaffoldOrderedIndexes.every((index) => index !== -1) &&
+    scaffoldOrderedIndexes.every(
+      (index, position) => position === 0 || scaffoldOrderedIndexes[position - 1] < index,
+    ),
+  "scaffold-proof must install and build on Node 22.12.0 before switching to exact Node 20.11.0 for runtime proofs",
+);
+expect(
+  scaffoldProof.includes(`      - run: bun run build:kit
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "20.11.0"
+      - run: ${exactScaffoldRuntimeCheck}
+      - run: node --test packages/registry-kit/e2e/*.node-e2e.mjs
+      - run: node packages/registry-kit/scripts/verify-scaffold-consumers.mjs`),
+  "scaffold-proof must switch runtimes immediately after build, assert exact Node 20.11.0, then run both runtime proofs",
+);
 
 for (const lane of [
   "os: ubuntu-latest\n            manager: npm",

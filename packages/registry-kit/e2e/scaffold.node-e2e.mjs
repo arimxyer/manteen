@@ -1,16 +1,16 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CLI = join(PACKAGE_ROOT, "dist/cli.mjs");
 
 function fixture() {
-  const root = mkdtempSync(join(tmpdir(), "manteen-scaffold-node-"));
+  const root = realpathSync.native(mkdtempSync(join(tmpdir(), "manteen-scaffold-node-")));
   const catalogPath = join(root, "manteen.registry.json");
   const profilePath = join(root, "manteen.author-profile.json");
   const manifestPath = join(root, "package.json");
@@ -123,7 +123,7 @@ test("built CLI on a supported Node runtime preserves the scaffold plan/apply co
 });
 
 test("built package exports the public scaffold planner", async () => {
-  const kit = await import(join(PACKAGE_ROOT, "dist/index.mjs"));
+  const kit = await import(pathToFileURL(join(PACKAGE_ROOT, "dist/index.mjs")).href);
   assert.equal(typeof kit.planScaffold, "function");
   assert.equal(typeof kit.applyScaffold, "function");
   assert.deepEqual(kit.SCAFFOLD_TEMPLATES, [
