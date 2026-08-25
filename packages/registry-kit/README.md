@@ -41,11 +41,45 @@ authoring layer entirely Mantine-shaped.
 ```bash
 manteen-kit build [catalog.json] [outDir]      # default: ./manteen.registry.json → ./public/r
 manteen-kit merge-theme <base.ts> <fragment.ts> [--write] [--prefer incoming] [--json]
+manteen-kit scaffold --template <template> --name <item> --dry-run --json
 ```
 
 `build` validates the catalog against the authoring schema **and** every emitted item against
 the vendored interchange schema, exiting non-zero on either. If the catalog opts into an author
 profile, both normal and `--check` builds validate it before any output mutation.
+
+### Safe component scaffolds
+
+Scaffolding is explicit and machine-first. Choose `component-basic`, `component-styles-api`, or
+`component-polymorphic`; the last is the only template that uses `polymorphicFactory`. Item names
+are portable strict kebab-case, begin with a letter, and cannot be Windows device basenames such as
+`con`, `nul`, `com1`, or `lpt1`.
+
+```bash
+# Zero-write plan
+manteen-kit scaffold \
+  --template component-styles-api \
+  --name status-card \
+  --dry-run \
+  --json
+
+# Source-only apply, using planDigest from an equivalent dry run
+manteen-kit scaffold \
+  --template component-styles-api \
+  --name status-card \
+  --apply \
+  --expect-plan <sha256> \
+  --json
+```
+
+Use `--catalog path/to/manteen.registry.json` for another registry. Plans contain canonical
+catalog-root-relative paths, complete source contents and hashes, required package declarations,
+and the exact catalog insertion object. The Styles API template also returns its exact author
+profile evidence mapping. The command applies only scaffold-owned source files: it never mutates
+or reserializes `manteen.registry.json`, the author profile, or `package.json`. Differing occupied
+files, unsafe paths or links, catalog collisions, and stale plans are named refusals; exact existing
+scaffold bytes are a no-op. A failed rollback reports `mutated: true` whenever a scaffold-created
+file, staging file, or directory could not be safely removed.
 
 ## Authoring format
 

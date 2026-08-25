@@ -105,6 +105,57 @@ The current CLI also drops a summary when its sibling fragment is missing or mal
 derived structure without the source of truth it describes would otherwise make hand-authored wire
 metadata look authoritative; this cross-field degradation is visible and does not affect files.
 
+### Safe scaffold wire and CLI contract
+
+The first scaffold release has exactly these machine-oriented forms:
+
+```text
+manteen-kit scaffold --template <template> --name <item> [--catalog <path>] --dry-run --json
+manteen-kit scaffold --template <template> --name <item> [--catalog <path>] --apply --expect-plan <sha256> --json
+```
+
+`--catalog` defaults to `./manteen.registry.json`. Exactly one of `--dry-run` and `--apply` is
+required; apply additionally requires one lowercase SHA-256 digest. `--template`, `--name`, and
+`--json` are required in both forms. Repeated, missing, unknown, positional, or otherwise ambiguous
+arguments are the usage failure `invalid-arguments` with exit code 2. Item names match
+`^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$` and exclude the Windows device basenames `con`, `prn`, `aux`,
+`nul`, `com1` through `com9`, and `lpt1` through `lpt9`. The only templates are
+`component-basic`, `component-styles-api`, and `component-polymorphic`; polymorphism is generated
+only by the last explicit choice.
+
+Both forms emit the schema-version 1 command envelope. Its `payload` is a schema-version 1 scaffold
+plan containing the template, item name, SHA-256 plan digest, catalog preimage hash, preserved-file
+preimages, required runtime and development package declarations, diagnostics, and the exact
+catalog insertion object. The Styles API plan also contains the exact evidence mapping insertion
+and its current author-profile path when one is declared. Profile and catalog insertions are
+review data only. The command never edits the catalog, author profile, or package manifest.
+
+The default catalog contract is `mantine: ">=9.5.0 <10"` with
+`npm: ["@mantine/core@^9.5.0"]`. The fixed catalog-root-relative layout is
+`src/<item>/<item>.tsx`; templates add only `<item>.module.css`, `<item>.usage.tsx`, and
+`test/<item>-styles-api.test.tsx` when their behavior requires them. Catalog `files` includes only
+installable component and style source; `usage` names the authored usage module; conformance
+evidence remains author-only. All plan paths are canonical catalog-root-relative POSIX paths,
+sorted by JavaScript code-unit order. Each planned source carries its exact UTF-8 content and
+SHA-256 hash plus its absent-or-exact preimage, so the plan is complete and secret-independent.
+The digest is SHA-256 over the canonical JSON plan with the digest field omitted.
+
+Planning performs no writes. It parses and validates the current catalog, refuses an existing item
+name, and classifies every source as a create, an exact no-op, or an unsafe collision. A differing
+ordinary file is `scaffold-file-collision`; directories, links, linked parents, invalid or escaping
+paths, and invalid catalog/profile state have distinct visible `scaffold-*` codes. Exact scaffold
+bytes are a truthful no-op. Differing authored bytes are never refreshed or overwritten.
+
+Apply recomputes the complete plan and requires it to be safe and byte-for-byte equivalent to the
+expected digest. Before its first write it rechecks every path and preimage, catalog item-name
+absence and catalog hash, profile and package-manifest preservation preimages, and the absence of
+any unsafe plan member. Stale digest, catalog drift, or file drift is a refusal. It stages all
+creates, commits without overwriting occupied paths, and rolls back every scaffold-owned file it
+created if any commit or postcondition fails. Success and failure leave the catalog, author profile,
+and package manifest byte-identical. Apply is never interactive or inferred from omission of
+`--dry-run`; it reports mutation truth in the envelope, including `mutated: true` on a failure that
+cannot safely remove a scaffold-created file, staging file, or directory.
+
 ## Execution order
 
 1. Add a house guard binding every `stylesApi` declaration to exactly one explicit conformance

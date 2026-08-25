@@ -2,6 +2,7 @@
 import { BUILD_USAGE, build } from "./build";
 import { kitEnvelope, writeJson } from "./json";
 import { MERGE_USAGE, mergeTheme } from "./merge-theme";
+import { SCAFFOLD_USAGE, scaffold } from "./scaffold";
 
 const USAGE = `manteen-kit — tooling for Mantine component registries
 
@@ -11,6 +12,8 @@ Usage:
 Commands:
   build [catalog] [outDir]              compile a catalog to the wire format
   merge-theme <base> <fragment>         compose a theme fragment into a theme
+  scaffold --template <kind> --name <item>
+                                        plan or apply source-owned author files
 
 Run a command with --help for its options.
 `;
@@ -29,6 +32,8 @@ function run(command: string | undefined, rest: string[]): number {
       return build(rest);
     case "merge-theme":
       return mergeTheme(rest);
+    case "scaffold":
+      return scaffold(rest);
     case "-h":
     case "--help":
     case undefined:
@@ -48,7 +53,7 @@ function run(command: string | undefined, rest: string[]): number {
         );
       } else {
         process.stderr.write(`Unknown command: ${command}\n\n${USAGE}`);
-        process.stderr.write(`\n${BUILD_USAGE}\n${MERGE_USAGE}`);
+        process.stderr.write(`\n${BUILD_USAGE}\n${MERGE_USAGE}\n${SCAFFOLD_USAGE}`);
       }
       return 2;
   }

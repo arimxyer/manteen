@@ -36,6 +36,8 @@
   "scripts": {
     "build": "tsdown --config-loader native",
     "test": "bun test",
+    "test:node": "node --test e2e/*.node-e2e.mjs",
+    "verify:scaffold-consumers": "node scripts/verify-scaffold-consumers.mjs",
     "//prepare": "Runs on both install and publish, so a fresh clone has dist/ and the package-name import resolves without a manual build. It does NOT fix the bin symlink on that first install — bun links bins before running prepare, and skips any whose target is missing — but local work goes through the root scripts, which run the TS sources directly.",
     "prepare": "tsdown --config-loader native"
   },
