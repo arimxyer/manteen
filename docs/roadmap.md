@@ -140,10 +140,12 @@ acceptance remains. Every new item exercises the client harder than a fixture do
 **Catalog detail and Styles API follow-on.** The completed documentation-site milestone remains
 closed; the richer registry browser is a separate additive track. Its detail contract is
 `Preview · Usage · Props · Styling · Source`, with tabs omitted or given an explicit not-applicable
-state when the item has no trustworthy data. The first implementation stage adds base-path-safe
-item routes, grouped navigation, copyable install commands and source/metadata views without
-requiring a live preview runtime or a registry-protocol change. Curated previews and prop
-descriptors follow one item at a time rather than being inferred from arbitrary source.
+state when the item has no trustworthy data. The first implementation stage is complete in the
+undeployed Fumadocs candidate: base-path-safe static item routes, grouped navigation, copyable
+install commands, and exact source/metadata views all consume compiled registry documents without
+requiring a live preview runtime or a registry-protocol change. Curated previews and additional
+prop descriptors remain item-sized follow-ups rather than generic platform work; none was selected
+without a concrete adapter or consumer need.
 
 Styles API support runs beside that work as a bounded contract milestone; it does not pause the
 site and is not implied by an editable CSS module. Every current catalog declaration now has a
@@ -171,7 +173,7 @@ is a judgment call, which is exactly why they are separate runs.
 | W7 | [`Hardening`](./handoffs/w7-hardening-handoff.md) | complete: matrix-driven, findings-first, hosted retry | Real Windows and macOS CI exposed path and line-ending defects that local Linux could not. |
 | W8 | [`Release`](./releases/w8-release-handoff.md) | complete: both `0.1.1` packages published through tagged OIDC with provenance | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
 | Wc | [`Registry content`](./handoffs/wc-registry-content-handoff.md) | first eight-item tranche complete; later catalog growth summarized above | Independent of all of the above; doubles as client stress-testing without turning fixtures into product evidence. |
-| Wm | [`Mantine custom-component alignment`](./contracts/mantine-component-alignment-plan.md) | active: author-conformance and range coherence complete; theme summary next | Makes author assertions mechanically accountable and aligns Manteen metadata and tooling with Mantine 9.5 custom-component capabilities without requiring `factory`. |
+| Wm | [`Mantine custom-component alignment`](./contracts/mantine-component-alignment-plan.md) | complete on `main`: evidence ownership, generic author conformance, range proof, theme summary, candidate item detail, prototype cleanup, and safe scaffolds | Makes author assertions mechanically accountable and aligns Manteen metadata and tooling with Mantine 9.5 custom-component capabilities without requiring `factory`. |
 | Wt | [`Theme builder`](#wt--theme-builder-proposed) | proposed: one page, plan-first | Preview-then-install for the one registry item every consumer is expected to edit. Depends on nothing; blocked by nothing. |
 | Wu | [`Update merging`](./handoffs/update-merge-handoff.md) | complete and public in `0.3.0`: receipt v3, exact bases, three-way plan, explicit reset, three-axis diff, built-Node and controlled-revision acceptance | Changes ordinary source maintenance from skip-or-replace to reproducible three-way merging without weakening the existing plan/apply transaction. |
 | Wv | [`Update verification`](./handoffs/update-verification-handoff.md) | complete and public in `0.3.0`: post-apply orchestration, fail-fast bounded project scripts, drift detection, built-Node and fresh-consumer acceptance | Lets a consumer define what “the merged component still works here” means without placing arbitrary scripts inside Manteen's rollback journal. |
@@ -183,25 +185,47 @@ is a judgment call, which is exactly why they are separate runs.
 dependabot, README rename). Single-file, single-concern, no discovery — a workflow would be
 pure overhead.
 
-## Wm — Mantine custom-component alignment (active)
+## Wm — Mantine custom-component alignment (complete)
 
 The implementation contract is frozen in
 [`mantine-component-alignment-plan.md`](./contracts/mantine-component-alignment-plan.md); the
 original [research proposal](./research/mantine-custom-component-improvement-plan.md) preserves the
 audit and detailed alternatives.
 
-The first four implementation steps now bind every house `stylesApi` declaration to explicit,
-unique evidence in both directions, generalize that invariant through the kit's optional
-author-only profile, and validate Mantine range coherence before output planning. The house catalog
-uses the exact `>=9.5.0 <10` band; full-house disposable production builds passed at both 9.5.0
-and 9.5.2. The author-truthfulness stop checkpoint is complete: a hand-authored temporary
-`@workshop` catalog built under real Node 20.11 with a plain evidence file and the independent
-`>=8 <11` gate; its generated tree digest remained
-`06603a1038200f57dafed06867d035e2563c85defaf237e73a5a070bd54cebb8` across an invalid-range
-refusal. That temporary local proof was removed and is neither hosted nor public evidence. Broader
-`componentApi` metadata is deferred. Theme summary, the Fumadocs route shell, and prototype cleanup
-are the next parallel workstreams after their shared readers and schemas have one owner; scaffolding
-stays dependent on the conformance profile and initially emits a reviewed catalog patch.
+The completed train binds every house `stylesApi` declaration to explicit, unique evidence in both
+directions, generalizes that invariant through the kit's optional author-only profile, and validates
+Mantine range coherence before output planning. The house catalog uses the exact `>=9.5.0 <10`
+band; full-house disposable production builds passed at both 9.5.0 and 9.5.2. The independent
+author-truthfulness checkpoint also passed: a hand-authored temporary `@workshop` catalog built
+under real Node 20.11 with a plain evidence file and its own `>=8 <11` gate; its generated tree
+digest remained `06603a1038200f57dafed06867d035e2563c85defaf237e73a5a070bd54cebb8`
+across an invalid-range refusal. That temporary local proof was removed and is neither hosted nor
+public evidence.
+
+The later milestones add a syntax-only theme summary, retire the superseded prototype routes, build
+the first compiled-registry item-detail surface in the undeployed Fumadocs candidate, and add
+source-only author scaffolds with exact JSON dry-run/apply plans, stale-plan protection, guarded
+filesystem transactions, and pinned Node 20.11 plus Mantine 9.5.0/9.5.2 consumer proof. Hosted CI
+closed through [PR #32](https://github.com/arimxyer/manteen/pull/32) run
+[`32671203617`](https://github.com/arimxyer/manteen/actions/runs/32671203617),
+[PR #33](https://github.com/arimxyer/manteen/pull/33) run
+[`32672920515`](https://github.com/arimxyer/manteen/actions/runs/32672920515),
+[PR #34](https://github.com/arimxyer/manteen/pull/34) run
+[`32676695010`](https://github.com/arimxyer/manteen/actions/runs/32676695010),
+[PR #35](https://github.com/arimxyer/manteen/pull/35) run
+[`32884150486`](https://github.com/arimxyer/manteen/actions/runs/32884150486),
+[PR #36](https://github.com/arimxyer/manteen/pull/36) run
+[`32887672760`](https://github.com/arimxyer/manteen/actions/runs/32887672760),
+[PR #37](https://github.com/arimxyer/manteen/pull/37) run
+[`32895657010`](https://github.com/arimxyer/manteen/actions/runs/32895657010), and
+[PR #38](https://github.com/arimxyer/manteen/pull/38) run
+[`32899596122`](https://github.com/arimxyer/manteen/actions/runs/32899596122).
+
+Broader `componentApi` metadata remains deliberately deferred until a concrete CLI,
+documentation, scaffold, or machine consumer justifies its fields. Curated live previews follow the
+same demand-driven rule, one item at a time. Wt remains a separate proposed product track. No Wm
+receipt publishes packages, creates a tag or release, deploys either documentation application, or
+replaces the deployed Astro/Starlight site.
 
 ## Wt — theme builder (proposed)
 
@@ -245,7 +269,7 @@ define).
 Phase 3 ✔ ─> W4 apply surface ✔ ─┬─> W5 command set ✔ ──┐
                                  └─> W6 init ✔ ─────────┴─> W7 hardening ✔ ─> W8 release ✔
 Wc registry content ......... any time, independent
-Wm component alignment ...... active; contract frozen, author truthfulness first
+Wm component alignment ...... complete on main; no publish, release, or deployment implied
 Wt theme builder ............ any time, independent, not started
 Wu update merging ........... complete; public in client 0.3.0
 Wv update verification ...... complete; public in client 0.3.0
