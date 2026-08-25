@@ -5,6 +5,7 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  renameSync,
   rmSync,
   symlinkSync,
   unlinkSync,
@@ -87,6 +88,44 @@ function writePlannedFile(root: string, path: string, content: string): void {
   const destination = join(root, ...path.split("/"));
   mkdirSync(dirname(destination), { recursive: true });
   writeFileSync(destination, content);
+}
+
+function outsideFixture() {
+  const root = mkdtempSync(join(tmpdir(), "manteen-scaffold-outside-"));
+  roots.push(root);
+  return root;
+}
+
+function substituteParentWithLink(
+  catalogRoot: string,
+  operationPath: string,
+  outsideRoot: string,
+  label: string,
+) {
+  const parent = dirname(join(catalogRoot, ...operationPath.split("/")));
+  const held = join(outsideRoot, `${label}-held`);
+  const redirect = join(outsideRoot, `${label}-redirect`);
+  renameSync(parent, held);
+  mkdirSync(redirect);
+  const sentinel = join(redirect, "sentinel.txt");
+  writeFileSync(sentinel, "outside unchanged\n");
+  symlinkSync(redirect, parent);
+  return { held, redirect, sentinel };
+}
+
+function preservedBytes(root: string): Map<string, string> {
+  return new Map(
+    ["manteen.registry.json", "manteen.author-profile.json", "package.json"].map((path) => [
+      path,
+      readFileSync(join(root, path), "utf8"),
+    ]),
+  );
+}
+
+function expectPreservedBytes(root: string, preserved: Map<string, string>): void {
+  for (const [path, bytes] of preserved) {
+    expect(readFileSync(join(root, path), "utf8")).toBe(bytes);
+  }
 }
 
 afterEach(() => {
@@ -362,6 +401,128 @@ describe("safe author scaffold apply", () => {
       ),
     ).toThrow("injected multi-file failure");
     expect(snapshot(created.root)).toEqual(before);
+  });
+
+  test("revalidates unsafe parents immediately before every stage write and commit link", () => {
+    for (const boundary of ["stage", "commit"] as const) {
+      const created = fixture({ profile: true, packageManifest: true });
+      const outside = outsideFixture();
+      const preserved = preservedBytes(created.root);
+      const planned = planScaffold(input(created.catalogPath));
+      let substitution: ReturnType<typeof substituteParentWithLink> | undefined;
+      let failure: unknown;
+
+      try {
+        applyScaffoldWithHooks(input(created.catalogPath), planned.planDigest, {
+          ...(boundary === "stage"
+            ? {
+                beforeStageWrite: (_path, temporaryPath) => {
+                  substitution = substituteParentWithLink(
+                    created.root,
+                    temporaryPath,
+                    outside,
+                    boundary,
+                  );
+                },
+              }
+            : {
+                beforeCommitLink: (path) => {
+                  substitution = substituteParentWithLink(created.root, path, outside, boundary);
+                },
+              }),
+        });
+      } catch (error) {
+        failure = error;
+      }
+
+      expect(failure).toBeInstanceOf(ScaffoldError);
+      expect((failure as ScaffoldError).mutated).toBe(true);
+      expect(diagnostics(failure)).toEqual(
+        expect.arrayContaining(["scaffold-parent-symlink", "scaffold-cleanup-path-unsafe"]),
+      );
+      expect(substitution).toBeDefined();
+      expect(readFileSync(substitution!.sentinel, "utf8")).toBe("outside unchanged\n");
+      expect(readdirSync(substitution!.redirect)).toEqual(["sentinel.txt"]);
+      expectPreservedBytes(created.root, preserved);
+    }
+  });
+
+  test("revalidates occupied leaves immediately before stage and commit operations", () => {
+    for (const boundary of ["stage", "commit"] as const) {
+      const created = fixture({ profile: true, packageManifest: true });
+      const outside = outsideFixture();
+      const outsideFile = join(outside, `${boundary}-outside.txt`);
+      writeFileSync(outsideFile, "outside unchanged\n");
+      const preserved = preservedBytes(created.root);
+      const planned = planScaffold(input(created.catalogPath));
+      let failure: unknown;
+
+      try {
+        applyScaffoldWithHooks(input(created.catalogPath), planned.planDigest, {
+          ...(boundary === "stage"
+            ? {
+                beforeStageWrite: (_path, temporaryPath) => {
+                  symlinkSync(outsideFile, join(created.root, ...temporaryPath.split("/")));
+                },
+              }
+            : {
+                beforeCommitLink: (path) => {
+                  symlinkSync(outsideFile, join(created.root, ...path.split("/")));
+                },
+              }),
+        });
+      } catch (error) {
+        failure = error;
+      }
+
+      expect(failure).toBeInstanceOf(ScaffoldError);
+      expect(diagnostics(failure)).toContain(
+        boundary === "stage"
+          ? "scaffold-staging-file-preimage-stale"
+          : "scaffold-file-preimage-stale",
+      );
+      expect((failure as ScaffoldError).mutated).toBe(true);
+      expect(readFileSync(outsideFile, "utf8")).toBe("outside unchanged\n");
+      expectPreservedBytes(created.root, preserved);
+    }
+  });
+
+  test("refuses unsafe rollback, staging, success, and directory cleanup paths", () => {
+    for (const boundary of ["rollback", "success-staging"] as const) {
+      const created = fixture({ profile: true, packageManifest: true });
+      const outside = outsideFixture();
+      const preserved = preservedBytes(created.root);
+      const planned = planScaffold(input(created.catalogPath));
+      let substitution: ReturnType<typeof substituteParentWithLink> | undefined;
+      let failure: unknown;
+
+      try {
+        applyScaffoldWithHooks(input(created.catalogPath), planned.planDigest, {
+          afterCommit: () => {
+            if (boundary === "rollback") throw new Error("injected rollback boundary");
+          },
+          beforeCleanup: (phase, path) => {
+            if (phase === boundary && !substitution) {
+              substitution = substituteParentWithLink(created.root, path, outside, boundary);
+            }
+          },
+        });
+      } catch (error) {
+        failure = error;
+      }
+
+      expect(failure).toBeInstanceOf(ScaffoldError);
+      expect((failure as ScaffoldError).mutated).toBe(true);
+      const phases = (failure as ScaffoldError).diagnostics
+        .filter((diagnostic) => diagnostic.code === "scaffold-cleanup-path-unsafe")
+        .map((diagnostic) => diagnostic.details?.phase);
+      expect(phases).toEqual(
+        expect.arrayContaining([boundary, "rollback", "failure-staging", "created-directory"]),
+      );
+      expect(readFileSync(substitution!.sentinel, "utf8")).toBe("outside unchanged\n");
+      expect(readdirSync(substitution!.redirect)).toEqual(["sentinel.txt"]);
+      expectPreservedBytes(created.root, preserved);
+    }
   });
 
   test("reports mutation truth when a drifted committed file cannot be safely rolled back", () => {

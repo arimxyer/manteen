@@ -108,6 +108,21 @@ function lstatIfPresent(path: string): Stats | null {
 interface ScaffoldApplyHooks {
   afterCommit?: (path: string, committedCount: number) => void;
   beforeTemporaryCleanup?: (paths: readonly string[]) => void;
+  beforeStageWrite?: (path: string, temporaryPath: string, index: number) => void;
+  beforeCommitLink?: (path: string, temporaryPath: string, index: number) => void;
+  beforeCleanup?: (phase: ScaffoldCleanupPhase, path: string) => void;
+}
+
+type ScaffoldCleanupPhase =
+  | "rollback"
+  | "success-staging"
+  | "failure-staging"
+  | "created-directory";
+
+interface ScaffoldTemporaryFile {
+  absolutePath: string;
+  repositoryPath: string;
+  sha256: string;
 }
 
 function codeUnitCompare(left: string, right: string): number {
@@ -153,6 +168,10 @@ function fullPath(root: string, repositoryPath: string): string | null {
     return null;
   }
   return candidate;
+}
+
+function repositoryPath(root: string, absolutePath: string): string {
+  return relative(root, absolutePath).split(sep).join("/");
 }
 
 function inspectParents(root: string, repositoryPath: string): ScaffoldDiagnostic[] {
@@ -206,6 +225,22 @@ function inspectParents(root: string, repositoryPath: string): ScaffoldDiagnosti
     }
   }
   return diagnostics;
+}
+
+function cleanupPathDiagnostics(
+  root: string,
+  path: string,
+  phase: ScaffoldCleanupPhase,
+): ScaffoldDiagnostic[] {
+  const causes = inspectParents(root, path);
+  if (causes.length === 0) return [];
+  return [
+    {
+      code: "scaffold-cleanup-path-unsafe",
+      message: `Refusing ${phase} cleanup through an unsafe parent chain: ${path}.`,
+      details: { path, phase, causes: causes.map((cause) => cause.code) },
+    },
+  ];
 }
 
 function inspectPlannedFile(
@@ -557,16 +592,99 @@ function createParentDirectories(root: string, files: ScaffoldPlannedFile[]): st
   return created;
 }
 
-function removeEmptyDirectories(paths: string[]): void {
-  for (const path of [...paths].reverse()) {
-    const status = lstatIfPresent(path);
-    if (status?.isDirectory() && readdirSync(path).length === 0) {
-      rmdirSync(path);
-    }
-  }
+function unsafeCleanupLeafDiagnostic(
+  path: string,
+  phase: ScaffoldCleanupPhase,
+  reason: string,
+): ScaffoldDiagnostic {
+  return {
+    code: "scaffold-cleanup-path-unsafe",
+    message: `Refusing ${phase} cleanup at an unsafe leaf: ${path}.`,
+    details: { path, phase, reason },
+  };
 }
 
-/** Internal hook exists only so tests can prove rollback after a mid-commit failure. */
+function cleanupTemporaryFile(
+  root: string,
+  temporary: ScaffoldTemporaryFile,
+  phase: "success-staging" | "failure-staging",
+  hooks: ScaffoldApplyHooks,
+): ScaffoldDiagnostic[] {
+  hooks.beforeCleanup?.(phase, temporary.repositoryPath);
+  const diagnostics = cleanupPathDiagnostics(root, temporary.repositoryPath, phase);
+  if (diagnostics.length > 0) return diagnostics;
+
+  const status = lstatIfPresent(temporary.absolutePath);
+  if (!status) {
+    return phase === "success-staging"
+      ? [
+          {
+            code: "scaffold-temporary-cleanup-failed",
+            message: `A scaffold staging file disappeared before success cleanup: ${temporary.repositoryPath}.`,
+            details: { path: temporary.repositoryPath, phase },
+          },
+        ]
+      : [];
+  }
+  if (!status.isFile()) {
+    return [
+      unsafeCleanupLeafDiagnostic(
+        temporary.repositoryPath,
+        phase,
+        "staging leaf is not an ordinary file",
+      ),
+    ];
+  }
+  if (sha256(readFileSync(temporary.absolutePath)) !== temporary.sha256) {
+    return [
+      {
+        code: "scaffold-temporary-cleanup-failed",
+        message: `A scaffold staging file changed before cleanup: ${temporary.repositoryPath}.`,
+        details: { path: temporary.repositoryPath, phase },
+      },
+    ];
+  }
+  unlinkSync(temporary.absolutePath);
+  return [];
+}
+
+function cleanupCreatedDirectories(
+  root: string,
+  paths: string[],
+  hooks: ScaffoldApplyHooks,
+): ScaffoldDiagnostic[] {
+  const diagnostics: ScaffoldDiagnostic[] = [];
+  for (const absolutePath of [...paths].reverse()) {
+    const path = repositoryPath(root, absolutePath);
+    hooks.beforeCleanup?.("created-directory", path);
+    const pathDiagnostics = cleanupPathDiagnostics(root, path, "created-directory");
+    if (pathDiagnostics.length > 0) {
+      diagnostics.push(...pathDiagnostics);
+      continue;
+    }
+
+    const status = lstatIfPresent(absolutePath);
+    if (!status) continue;
+    if (!status.isDirectory()) {
+      diagnostics.push(
+        unsafeCleanupLeafDiagnostic(path, "created-directory", "created directory was replaced"),
+      );
+      continue;
+    }
+    if (readdirSync(absolutePath).length > 0) {
+      diagnostics.push({
+        code: "scaffold-directory-cleanup-failed",
+        message: `A scaffold-created directory is not empty after cleanup: ${path}.`,
+        details: { path },
+      });
+      continue;
+    }
+    rmdirSync(absolutePath);
+  }
+  return diagnostics;
+}
+
+/** Internal hooks exist only so tests can prove deterministic operation-boundary failures. */
 export function applyScaffoldWithHooks(
   input: ScaffoldInput,
   expectedPlan: string,
@@ -608,7 +726,7 @@ export function applyScaffoldWithHooks(
   if (creates.length === 0) return { plan, mutated: false, writtenPaths: [] };
 
   const createdDirectories: string[] = [];
-  const temporaryFiles: string[] = [];
+  const temporaryFiles: ScaffoldTemporaryFile[] = [];
   const committed: ScaffoldPlannedFile[] = [];
   try {
     createdDirectories.push(...createParentDirectories(root, creates));
@@ -629,18 +747,59 @@ export function applyScaffoldWithHooks(
 
     for (const [index, file] of creates.entries()) {
       const destination = join(root, ...file.path.split("/"));
-      const temporary = join(
+      const absolutePath = join(
         dirname(destination),
         `.${basename(destination)}.manteen-kit-${process.pid}-${index}.tmp`,
       );
-      writeFileSync(temporary, file.content, { flag: "wx" });
-      temporaryFiles.push(temporary);
+      const temporaryPath = repositoryPath(root, absolutePath);
+      hooks.beforeStageWrite?.(file.path, temporaryPath, index);
+      const parentDiagnostics = inspectParents(root, temporaryPath);
+      if (parentDiagnostics.length > 0) throw new ScaffoldError(parentDiagnostics);
+      if (lstatIfPresent(absolutePath)) {
+        throw new ScaffoldError([
+          {
+            code: "scaffold-staging-file-preimage-stale",
+            message: `Scaffold staging destination became occupied: ${temporaryPath}.`,
+            details: { path: temporaryPath },
+          },
+        ]);
+      }
+      writeFileSync(absolutePath, file.content, { flag: "wx" });
+      temporaryFiles.push({ absolutePath, repositoryPath: temporaryPath, sha256: file.sha256 });
     }
 
     for (const [index, file] of creates.entries()) {
       const destination = join(root, ...file.path.split("/"));
       const temporary = temporaryFiles[index]!;
-      linkSync(temporary, destination);
+      hooks.beforeCommitLink?.(file.path, temporary.repositoryPath, index);
+      const parentDiagnostics = [
+        ...inspectParents(root, file.path),
+        ...inspectParents(root, temporary.repositoryPath),
+      ];
+      if (parentDiagnostics.length > 0) throw new ScaffoldError(parentDiagnostics);
+      const temporaryStatus = lstatIfPresent(temporary.absolutePath);
+      if (
+        !temporaryStatus?.isFile() ||
+        sha256(readFileSync(temporary.absolutePath)) !== temporary.sha256
+      ) {
+        throw new ScaffoldError([
+          {
+            code: "scaffold-staging-file-drift",
+            message: `Scaffold staging file changed before commit: ${temporary.repositoryPath}.`,
+            details: { path: temporary.repositoryPath },
+          },
+        ]);
+      }
+      if (lstatIfPresent(destination)) {
+        throw new ScaffoldError([
+          {
+            code: "scaffold-file-preimage-stale",
+            message: `Scaffold destination became occupied before commit: ${file.path}.`,
+            details: { path: file.path },
+          },
+        ]);
+      }
+      linkSync(temporary.absolutePath, destination);
       committed.push(file);
       hooks.afterCommit?.(file.path, committed.length);
     }
@@ -659,9 +818,15 @@ export function applyScaffoldWithHooks(
     }
     if (postconditionDiagnostics.length > 0) throw new ScaffoldError(postconditionDiagnostics);
 
-    hooks.beforeTemporaryCleanup?.([...temporaryFiles]);
+    hooks.beforeTemporaryCleanup?.(temporaryFiles.map((temporary) => temporary.absolutePath));
     while (temporaryFiles.length > 0) {
-      unlinkSync(temporaryFiles[0]!);
+      const cleanupDiagnostics = cleanupTemporaryFile(
+        root,
+        temporaryFiles[0]!,
+        "success-staging",
+        hooks,
+      );
+      if (cleanupDiagnostics.length > 0) throw new ScaffoldError(cleanupDiagnostics);
       temporaryFiles.shift();
     }
     return { plan, mutated: true, writtenPaths: creates.map((file) => file.path) };
@@ -670,6 +835,12 @@ export function applyScaffoldWithHooks(
     for (const file of [...committed].reverse()) {
       const destination = join(root, ...file.path.split("/"));
       try {
+        hooks.beforeCleanup?.("rollback", file.path);
+        const pathDiagnostics = cleanupPathDiagnostics(root, file.path, "rollback");
+        if (pathDiagnostics.length > 0) {
+          rollbackDiagnostics.push(...pathDiagnostics);
+          continue;
+        }
         const status = lstatIfPresent(destination);
         if (status) {
           if (status.isFile() && sha256(readFileSync(destination)) === file.sha256) {
@@ -693,21 +864,25 @@ export function applyScaffoldWithHooks(
         });
       }
     }
-    for (const temporary of temporaryFiles.splice(0)) {
+    for (const temporary of temporaryFiles) {
       try {
-        if (lstatIfPresent(temporary)) unlinkSync(temporary);
+        rollbackDiagnostics.push(
+          ...cleanupTemporaryFile(root, temporary, "failure-staging", hooks),
+        );
       } catch (cleanupError) {
         rollbackDiagnostics.push({
           code: "scaffold-temporary-cleanup-failed",
           message: "A scaffold staging file could not be removed after failure.",
           details: {
+            path: temporary.repositoryPath,
             error: cleanupError instanceof Error ? cleanupError.message : String(cleanupError),
           },
         });
       }
     }
+    temporaryFiles.length = 0;
     try {
-      removeEmptyDirectories(createdDirectories);
+      rollbackDiagnostics.push(...cleanupCreatedDirectories(root, createdDirectories, hooks));
     } catch (cleanupError) {
       rollbackDiagnostics.push({
         code: "scaffold-directory-cleanup-failed",
