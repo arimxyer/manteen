@@ -1,8 +1,7 @@
 # Manteen site
 
-Status: checked replacement candidate, not the deployed documentation application. CI runs its
-type and production builds; the manual Pages workflow still publishes `apps/docs/dist` and the
-generated `/r` registry from the Astro/Starlight application.
+Status: checked, undeployed documentation application. CI runs its type and production builds, but
+no repository workflow currently publishes the site or generated `/r` registry.
 
 This clean-room documentation site is a Next.js application generated with
 [Create Fumadocs](https://github.com/fuma-nama/fumadocs) and adapted to the Manteen monorepo.
@@ -19,17 +18,13 @@ The scaffold was created with the Next.js Fumadocs MDX template, a `src` directo
 and `next/og`. AI chat was not enabled. Its generated Biome setup is intentionally replaced by the
 repository's root Biome configuration.
 
-Registry item-detail pages are statically generated from the repository's compiled `public/r`
-index and item documents. The reader preserves compiled source strings without importing or
-evaluating them and refuses raw terminal-control bytes before rendering. Syntax-highlighted views
-can normalize visual line endings, so their explicit **Copy exact** action writes the preserved
-registry string instead of copying rendered DOM text. Rebuild the artifact with
-`bun run build:registry` before checking or building the site. `MANTEEN_BASE_PATH=/manteen bun run
-site:build` exercises a sub-path build; internal registry navigation uses `next/link` so Next.js
-owns prefixing.
+The registry overview is ordinary Fumadocs MDX. The former parallel item route, compiled-registry
+reader, navigation, and detail UI were removed on 2026-08-31. Per-item registry pages are
+intentionally absent until a fresh design puts them inside Fumadocs' normal content, page-tree,
+navigation, and search model.
 
-These pages remain local/CI evidence for the replacement candidate. They do not change the live
-`/r` artifact, prove that an item installs or previews successfully, or deploy this application.
+`MANTEEN_BASE_PATH=/manteen bun run site:build` exercises a sub-path build. Local and CI builds do
+not publish `/r`, prove that an item installs successfully, or deploy this application.
 
 ## Structure
 

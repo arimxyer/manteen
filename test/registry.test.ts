@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { compileRegistry } from "manteen-kit";
 
@@ -82,14 +82,6 @@ describe("house catalog", () => {
 
       const usage = readFileSync(resolve(import.meta.dirname, "..", item.usage), "utf8");
       expect(usage).not.toMatch(registryOnlyAlias);
-    }
-
-    const playgroundRoot = resolve(import.meta.dirname, "../apps/docs/src/components/playgrounds");
-    for (const entry of readdirSync(playgroundRoot, { withFileTypes: true })) {
-      if (!entry.isFile() || !entry.name.endsWith(".tsx")) continue;
-
-      const playground = readFileSync(resolve(playgroundRoot, entry.name), "utf8");
-      expect(playground).not.toMatch(registryOnlyAlias);
     }
   });
 });

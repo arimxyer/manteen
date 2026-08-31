@@ -6,21 +6,21 @@ When two documents appear to disagree, use the authority order below rather than
 
 ## Current snapshot
 
-Snapshot date: 2026-08-18. These claims are repository-derived unless a linked handoff records
+Snapshot date: 2026-08-31. These claims are repository-derived unless a linked handoff records
 separate public evidence.
 
 | Area | Current state | Authority or evidence |
 | --- | --- | --- |
 | Packages | This tree holds `manteen-kit@0.2.1` and `manteen@0.8.0`; their manifests are authoritative. | `packages/*/package.json` |
 | Public package proof | Both versions above have accepted public release receipts. | [`agent-native-release-handoff.md`](./releases/agent-native-release-handoff.md), [`v0.8-release-handoff.md`](./releases/v0.8-release-handoff.md) |
-| Registry | The source and accepted Pages registry contain 22 items. Generated `public/r/` is local build output and must be rebuilt before use. | [`roadmap.md`](roadmap.md), `manteen.registry.json` |
-| Deployed documentation | `apps/docs` is the Astro/Starlight Pages source and deployment artifact. Pages is manual-dispatch only. | [`.github/workflows/pages.yml`](../.github/workflows/pages.yml), [`docs-site-handoff.md`](./handoffs/docs-site-handoff.md) |
-| Replacement site | `apps/manteen` is an active Next.js/Fumadocs replacement candidate. CI checks and builds it; no workflow deploys it. | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), [`apps/manteen/README.md`](../apps/manteen/README.md) |
+| Registry | The source catalog contains 22 items. Generated `public/r/` is local build output and must be rebuilt before use; no repository workflow currently publishes it. | [`roadmap.md`](roadmap.md), `manteen.registry.json` |
+| Documentation | `apps/manteen` is the sole Next.js/Fumadocs application. CI checks and builds it; no workflow deploys it. | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), [`apps/manteen/README.md`](../apps/manteen/README.md) |
+| Retired site | The Astro/Starlight application and its Pages workflow were removed on 2026-08-31 without migrating their implementation or content. Earlier deployment receipts remain historical evidence only. | [`docs-site-handoff.md`](./handoffs/docs-site-handoff.md) |
 | Open direction | The roadmap is the only backlog/status narrative. Historical handoffs do not become active work merely because they preserve a once-open question. | [`roadmap.md`](roadmap.md) |
 
-No local build, screenshot, browser probe, or green CI run proves that the replacement site is
-public. Replacing `apps/docs` in Pages requires a separate reviewed deployment decision after the
-registry artifact and base-path behavior are verified.
+No local build, screenshot, browser probe, or green CI run proves that the Fumadocs site or a local
+registry artifact is public. Any future publication requires a fresh, separately reviewed
+deployment design and explicit approval.
 
 ## Folder layout
 
@@ -86,23 +86,22 @@ These documents are receipts, not competing roadmaps:
 
 ## Documentation-site evidence
 
-- [`docs-site-handoff.md`](./handoffs/docs-site-handoff.md) records the currently deployed Starlight site's
-  architecture and public acceptance.
+- [`docs-site-handoff.md`](./handoffs/docs-site-handoff.md) records the retired Starlight site's
+  architecture and its point-in-time public acceptance. It is not current implementation guidance.
 - [`docs-audit-remediation-plan.md`](./research/docs-audit-remediation-plan.md) is a completed, local audit of
-  that site, not a release receipt and not design authority for the clean-room replacement.
+  that retired site, not a release receipt or design authority for Fumadocs.
 - [`authoring-descriptor-motion-retrospective.md`](./research/authoring-descriptor-motion-retrospective.md)
-  records local design-process evidence from the replacement site's prototype work. It is a
+  records local design-process evidence from the Fumadocs site's prototype work. It is a
   reusable method and bounded retrospective, not a production decision or deployment receipt.
 - [`interop-motion-concept-brief.md`](./research/interop-motion-concept-brief.md) is concept
-  research for the replacement site's interoperability illustration. It grounds its product claims
+  research for the Fumadocs site's interoperability illustration. It grounds its product claims
   in the kit and client sources, scores eight explanatory models against a stated threshold, and
   records rejected metaphors. Its later selection note records Study F's local promotion to
   `InteropPublication`; `InteropStages` remains checked in as a comparison. Neither the brief nor
   the local integration is deployment evidence.
-- `apps/docs/DESIGN.md` and `apps/docs/PRODUCT.md` apply only to the deployed Starlight application.
-- `apps/manteen/README.md` describes the replacement application's integration and commands. Its
-  UI should follow its own checked-in source and current product contract, not the retired site's
-  visual implementation.
+- `apps/manteen/README.md` describes the remaining application's current integration and commands.
+  Future design work starts from a fresh Fumadocs product direction, not the deleted site's content
+  or visual implementation.
 
 ## Superseded experiments
 

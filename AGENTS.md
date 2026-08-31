@@ -15,14 +15,12 @@ current status, historical decision records, and release evidence. Before substa
 implementation work, read the documents it marks as authoritative for that scope; do not
 reconstruct a documented decision from implementation details.
 
-The two documentation applications have different roles:
+`apps/manteen` is the repository's only documentation application. It uses Next.js and Fumadocs,
+is checked in CI, and has no deployment workflow. The retired Astro/Starlight application was
+deleted without migrating its implementation or content into Fumadocs.
 
-- `apps/docs` is the currently deployed Astro/Starlight site and owns the Pages `/r` artifact.
-- `apps/manteen` is the Next.js/Fumadocs replacement candidate. CI checks it, but Pages does not
-  deploy it yet.
-
-Preserve that evidence boundary. A local or CI build of `apps/manteen` is not public deployment
-proof, and changing it does not change the live `/r` contract.
+Preserve the evidence boundary: a local or CI site build is not public deployment proof, and a
+generated `public/r/` tree is not proof that those bytes are hosted anywhere.
 
 ## Work in verified milestones
 
@@ -43,13 +41,12 @@ bun --cwd=packages/cli run build
 node --test packages/cli/e2e/*.node-e2e.mjs
 ```
 
-The e2e tier must run the built bundle under real Node. The glob is required. Documentation sites
-have separate commands:
+The e2e tier must run the built bundle under real Node. The glob is required. The documentation
+application has separate commands:
 
 ```bash
-bun run build:site   # deployed Astro/Starlight artifact
-bun run site:check   # Next/Fumadocs candidate type generation + TypeScript
-bun run site:build   # Next/Fumadocs candidate production build
+bun run site:check   # Next/Fumadocs type generation + TypeScript
+bun run site:build   # Next/Fumadocs production build
 ```
 
 ## Protect the workspace and user data
@@ -80,5 +77,5 @@ bun run site:build   # Next/Fumadocs candidate production build
 Do not copy volatile counts, versions, phase lists, or file inventories into agent instructions.
 Point to the owning source instead so one update cannot leave several plausible truths behind.
 
-Signed tags, npm publication, GitHub releases, Pages deployment, and replacement of the currently
-deployed documentation application require separate explicit approval.
+Signed tags, npm publication, GitHub releases, and any documentation or registry deployment require
+separate explicit approval.

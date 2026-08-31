@@ -11,7 +11,7 @@ behavior.
 | [`w6-init-handoff.md`](w6-init-handoff.md) | Project initialization contract freeze, implementation, and built-Node evidence. |
 | [`w7-hardening-handoff.md`](w7-hardening-handoff.md) | Runtime, operating-system, package-manager, and prompt hardening. |
 | [`wc-registry-content-handoff.md`](wc-registry-content-handoff.md) | First curated registry-content tranche and its proof limits. |
-| [`docs-site-handoff.md`](docs-site-handoff.md) | Deployed Astro/Starlight documentation-site milestone. |
+| [`docs-site-handoff.md`](docs-site-handoff.md) | Historical Astro/Starlight deployment receipt; the application and workflow were retired on 2026-08-31. |
 | [`global-styles-handoff.md`](global-styles-handoff.md) | Required package stylesheet ownership and lifecycle. |
 | [`second-registry-handoff.md`](second-registry-handoff.md) | Independent hand-authored registry interoperability. |
 | [`update-merge-handoff.md`](update-merge-handoff.md) | Receipt-v3 bases and three-way source maintenance. |

@@ -23,13 +23,15 @@ historical receipts, start with [`project-context.md`](project-context.md).
 Today: all six criteria are public through `manteen-kit@0.2.1` and `manteen@0.8.0`, including the
 agent-native authoring, machine-command, SDK, verification, and guidance surfaces. W6 `init` is
 complete through its built-Node acceptance tier, W7 closed with a green hosted runtime, OS and
-package-manager matrix, and W8 established provenance-bearing releases. The latest accepted
-Pages deployment is commit `a695c0052c2429adba79be540646b25b4ca19bc6`, run
+package-manager matrix, and W8 established provenance-bearing releases. The final accepted
+Astro/Pages deployment was commit `a695c0052c2429adba79be540646b25b4ca19bc6`, run
 [`31421895691`](https://github.com/arimxyer/manteen/actions/runs/31421895691); it serves the public
 Agent Guide, both LLM context files, and the complete 22-item catalog with corrected consumer usage
 metadata. The
 catalog-content milestone itself remains commit `8853a720352c8842ce6957a494f919ec7cccda67`, run
-[`31198437310`](https://github.com/arimxyer/manteen/actions/runs/31198437310).
+[`31198437310`](https://github.com/arimxyer/manteen/actions/runs/31198437310). That deployment is
+historical: the Astro application and Pages workflow were removed on 2026-08-31, and the repository
+currently has no site or registry deployment path.
 
 The agent-native release is public at `manteen-kit@0.2.1` and `manteen@0.7.0`. It adds
 transactional generated registry ownership, one stable JSON command envelope, complete display
@@ -117,12 +119,11 @@ follow-on is recorded in the [`0.8 release handoff`](./releases/v0.8-release-han
 `SECURITY.md` and contributor ceremony remain deliberately deferred until the repository has
 outside contributors.
 
-**Documentation applications.** `apps/docs` remains the deployed Astro/Starlight Pages source and
-owns the public `/r` artifact. `apps/manteen` is the clean-room Next.js/Fumadocs replacement
-candidate: CI checks and builds it, but no workflow deploys it. A replacement decision must retain
-the manual deployment gate, regenerate and verify `/r`, and prove the GitHub Pages base path before
-changing `.github/workflows/pages.yml`. Local or CI acceptance of the candidate is not deployed-site
-evidence.
+**Documentation.** `apps/manteen` is the sole documentation application. CI checks and builds it,
+but no workflow deploys the site or `public/r`. The Astro/Starlight application was deleted without
+migrating its implementation or content. Future Fumadocs design starts fresh; any future deployment
+must separately define and verify the site artifact, registry publication, base path, and manual
+release boundary. Local or CI acceptance is not deployed-site evidence.
 
 **Content.** The source catalog and separately deployed public Pages registry now both have 22
 items. All 22 item endpoints and the index passed exact-byte public HTTP acceptance in Pages run
@@ -137,15 +138,12 @@ through a fresh public npm-plus-HTTPS Vite consumer. A
 build and maintenance under two consumer-selected namespaces. Broader cross-framework visual
 acceptance remains. Every new item exercises the client harder than a fixture does.
 
-**Catalog detail and Styles API follow-on.** The completed documentation-site milestone remains
-closed; the richer registry browser is a separate additive track. Its detail contract is
-`Preview · Usage · Props · Styling · Source`, with tabs omitted or given an explicit not-applicable
-state when the item has no trustworthy data. The first implementation stage is complete in the
-undeployed Fumadocs candidate: base-path-safe static item routes, grouped navigation, copyable
-install commands, and exact source/metadata views all consume compiled registry documents without
-requiring a live preview runtime or a registry-protocol change. Curated previews and additional
-prop descriptors remain item-sized follow-ups rather than generic platform work; none was selected
-without a concrete adapter or consumer need.
+**Catalog detail and Styles API follow-on.** The parallel Fumadocs registry route, compiled reader,
+navigation, detail UI, and island-only tests were removed on 2026-08-31. The ordinary Fumadocs MDX
+registry overview remains. A fresh per-item design must participate in Fumadocs' normal content,
+page-tree, navigation, and search model while preserving independently valuable truth boundaries,
+such as not executing source or inventing documentation. Curated previews and additional prop
+descriptors remain item-sized follow-ups rather than generic platform work.
 
 Styles API support runs beside that work as a bounded contract milestone; it does not pause the
 site and is not implied by an editable CSS module. Every current catalog declaration now has a
@@ -173,7 +171,7 @@ is a judgment call, which is exactly why they are separate runs.
 | W7 | [`Hardening`](./handoffs/w7-hardening-handoff.md) | complete: matrix-driven, findings-first, hosted retry | Real Windows and macOS CI exposed path and line-ending defects that local Linux could not. |
 | W8 | [`Release`](./releases/w8-release-handoff.md) | complete: both `0.1.1` packages published through tagged OIDC with provenance | Publish ordering, provenance, changelog, docs. Little to parallelise and high blast radius. |
 | Wc | [`Registry content`](./handoffs/wc-registry-content-handoff.md) | first eight-item tranche complete; later catalog growth summarized above | Independent of all of the above; doubles as client stress-testing without turning fixtures into product evidence. |
-| Wm | [`Mantine custom-component alignment`](./contracts/mantine-component-alignment-plan.md) | complete on `main`: evidence ownership, generic author conformance, range proof, theme summary, candidate item detail, prototype cleanup, and safe scaffolds | Makes author assertions mechanically accountable and aligns Manteen metadata and tooling with Mantine 9.5 custom-component capabilities without requiring `factory`. |
+| Wm | [`Mantine custom-component alignment`](./contracts/mantine-component-alignment-plan.md) | toolchain work complete on `main`; the rejected candidate item-detail architecture survives only in historical evidence after its code removal | Makes author assertions mechanically accountable and aligns Manteen metadata and tooling with Mantine 9.5 custom-component capabilities without requiring `factory`. |
 | Wt | [`Theme builder`](#wt--theme-builder-proposed) | proposed: one page, plan-first | Preview-then-install for the one registry item every consumer is expected to edit. Depends on nothing; blocked by nothing. |
 | Wu | [`Update merging`](./handoffs/update-merge-handoff.md) | complete and public in `0.3.0`: receipt v3, exact bases, three-way plan, explicit reset, three-axis diff, built-Node and controlled-revision acceptance | Changes ordinary source maintenance from skip-or-replace to reproducible three-way merging without weakening the existing plan/apply transaction. |
 | Wv | [`Update verification`](./handoffs/update-verification-handoff.md) | complete and public in `0.3.0`: post-apply orchestration, fail-fast bounded project scripts, drift detection, built-Node and fresh-consumer acceptance | Lets a consumer define what “the merged component still works here” means without placing arbitrary scripts inside Manteen's rollback journal. |
@@ -202,8 +200,8 @@ digest remained `06603a1038200f57dafed06867d035e2563c85defaf237e73a5a070bd54cebb
 across an invalid-range refusal. That temporary local proof was removed and is neither hosted nor
 public evidence.
 
-The later milestones add a syntax-only theme summary, retire the superseded prototype routes, build
-the first compiled-registry item-detail surface in the undeployed Fumadocs candidate, and add
+The later milestones added a syntax-only theme summary, retired the superseded prototype routes,
+built the first compiled-registry item-detail experiment (removed on 2026-08-31), and added
 source-only author scaffolds with exact JSON dry-run/apply plans, stale-plan protection, guarded
 filesystem transactions, and pinned Node 20.11 plus Mantine 9.5.0/9.5.2 consumer proof. Hosted CI
 closed through [PR #32](https://github.com/arimxyer/manteen/pull/32) run
@@ -224,8 +222,7 @@ closed through [PR #32](https://github.com/arimxyer/manteen/pull/32) run
 Broader `componentApi` metadata remains deliberately deferred until a concrete CLI,
 documentation, scaffold, or machine consumer justifies its fields. Curated live previews follow the
 same demand-driven rule, one item at a time. Wt remains a separate proposed product track. No Wm
-receipt publishes packages, creates a tag or release, deploys either documentation application, or
-replaces the deployed Astro/Starlight site.
+receipt publishes packages, creates a tag or release, or deploys documentation or registry output.
 
 ## Wt — theme builder (proposed)
 
@@ -237,10 +234,9 @@ modified one without hand-editing a file you have never previewed. The shape: on
 that lifts `createTheme` input into user-controlled state, renders the real catalog underneath
 it, and emits the `theme.ts` you would install.
 
-**Why it is cheap now and would not have been a week ago.** The source playground adapter contract
-covers 20 of 22 items, and each adapter already renders a real registry component at default
-props inside a provider — `LiveMini` is exactly that composition at mini scale. The preview
-surface is assembly of things that exist, not new infrastructure.
+The retired Astro playground adapters no longer exist and must not be ported into Fumadocs. This
+proposal needs a fresh product and implementation review before it can be scheduled; its earlier
+"cheap assembly" assumption is no longer current.
 
 Scope notes, so the plan does not have to rediscover them:
 

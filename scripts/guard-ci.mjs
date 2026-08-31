@@ -108,7 +108,6 @@ for (const command of [
   "node scripts/guard-workspace.mjs",
   "bun run test",
   "bun run build:registry",
-  "bun run build:site",
   "bun run site:build",
   "bun run typecheck",
   "bun run lint",

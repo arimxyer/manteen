@@ -29,7 +29,7 @@ const toneClass = {
 /**
  * The clock, and the reason this reads as a demonstration rather than an effect.
  *
- * Ported from fumadocs' own homepage — `apps/docs/app/(home)/page.client.tsx`,
+ * Ported from Fumadocs' upstream homepage — `fuma-nama/fumadocs/apps/docs/app/(home)/page.client.tsx`,
  * `CreateAppAnimation`, MIT. Three things there are load-bearing, and all three are
  * theirs rather than ours:
  *

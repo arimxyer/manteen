@@ -3,7 +3,7 @@
 [Documentation map](../project-context.md) · [Contracts](README.md) ·
 [Research proposal](../research/mantine-custom-component-improvement-plan.md)
 
-Status: frozen implementation contract, approved 2026-08-23.
+Status: implementation contract approved 2026-08-23; MC9 superseded 2026-08-31.
 
 This contract aligns Manteen's authoring, metadata, and documentation surfaces with Mantine 9.5
 custom-component conventions without making Mantine's `factory` helpers a registry requirement.
@@ -20,7 +20,7 @@ The linked research proposal preserves the audit, alternatives, and detailed acc
 - Installed source remains the primary customization surface. Existing registries and legacy
   `stylesApi` documents retain their meaning.
 - Generated-registry, local, built-Node, hosted CI, public-package, and deployed-site evidence stay
-  distinct. Tags, publication, deployment, and replacement of `apps/docs` require later approval.
+  distinct. Tags, publication, and deployment require later approval.
 
 ## Frozen decisions
 
@@ -34,7 +34,7 @@ The linked research proposal preserves the audit, alternatives, and detailed acc
 | MC6 | Scaffolding is explicit, dry-run first, collision refusing, and plan-digest bound. Its first release emits a reviewable catalog insertion beside the source plan; it does not mutate or reserialize `manteen.registry.json`. |
 | MC7 | Polymorphism is opt-in because its type and autocomplete cost is not justified for every component. |
 | MC8 | New author checks and scaffolds use the kit's versioned JSON command envelope and visible refusal codes. |
-| MC9 | Fumadocs item detail routes consume compiled `/r` documents and curated adapters. They do not scrape arbitrary source to invent API documentation or previews. |
+| MC9 | **Superseded 2026-08-31.** Registry pages belong inside Fumadocs' normal content, page-tree, navigation, and search model. A future thin adapter may consume compiled data, but it must not create a parallel registry application or invent documentation and previews from arbitrary source. |
 | MC10 | The three public `/prototypes/*` route suites and unused `InteropStages` comparison component may be removed once direct import checks confirm promoted homepage components are independent. Research records preserve the design evidence. |
 
 The first generic conformance release records explicit, unique, repository-relative evidence
@@ -178,7 +178,7 @@ workstreams use separate Herdr worktrees and converge through sequential integra
 ## Acceptance boundary
 
 Shared-contract and release-candidate milestones run the repository gate, registry and CLI builds,
-the complete built-Node e2e glob, and both documentation builds. Milestone-specific evidence also
+the complete built-Node e2e glob, and the documentation build. Milestone-specific evidence also
 includes:
 
 - fail-before/pass-after fixtures for evidence ownership and range coherence;
@@ -189,4 +189,4 @@ includes:
 - hosted CI and deployment receipts reported separately from local proof.
 
 No milestone in this contract authorizes a package version, tag, npm publication, GitHub release,
-Pages deployment, or replacement of the deployed Astro site.
+or documentation or registry deployment.

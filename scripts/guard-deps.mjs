@@ -26,7 +26,7 @@
  * CSS `@import` does not: nothing in `test`, `typecheck`, `lint` or `guard`
  * resolved those specifiers, so `@fontsource-variable/figtree` cleared every
  * check and surfaced only as an opaque 500 from the dev server, with the real
- * error reachable only through `astro dev logs`. Half an hour went into reading
+ * error reachable only through the development server logs. Half an hour went into reading
  * that as a code defect.
  *
  * CI cannot cover this. Every job begins with `bun install --frozen-lockfile`
@@ -132,8 +132,8 @@ console.error(
     "Frozen relinks without re-resolving, so a repair cannot drift the lockfile.",
     "",
     "Do this before trusting the docs site: a missing package reached only from a",
-    "CSS @import is invisible to tsc and astro check, and shows up as a bare 500",
-    "whose real error is only in `astro dev logs`.",
+    "CSS @import can be invisible to TypeScript and show up only as a bundler error",
+    "in the development server logs.",
   ].join("\n"),
 );
 process.exit(1);
