@@ -157,6 +157,23 @@ describe("optional author conformance", () => {
       profileContents: `${JSON.stringify({ schemaVersion: 1, stylesApi: [] })}\n`,
     });
     expect(failureCodes(unsupported)).toContain("author-profile-schema-invalid");
+
+    const emptyOptionalSections = fixture({
+      profileContents: `${JSON.stringify({
+        schemaVersion: 2,
+        stylesApi: [],
+        props: [],
+        usage: [],
+        verification: { scripts: ["test"] },
+      })}\n`,
+    });
+    const inspected = inspectAuthorConformance(
+      emptyOptionalSections.catalogPath,
+      emptyOptionalSections.catalog,
+    );
+    expect(inspected.failures[0]?.message).toContain(
+      "omit the section entirely when the catalog has no claims",
+    );
   });
 
   test("author profile data and evidence paths never enter item or index wire JSON", () => {

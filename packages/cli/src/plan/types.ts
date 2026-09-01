@@ -401,6 +401,9 @@ export type WriteResult = "written" | "identical" | "skipped";
 export interface ApplyOptions {
   interactive: boolean;
   overwrite?: boolean | "no";
+  /** Whether dependency-manager output may inherit the caller's terminal.
+   * Machine callers capture child output so stdout remains one JSON document. */
+  dependencyOutput?: "inherit" | "capture";
   /** D19: run plan() plus apply's read-only phases 0 and 1, then stop before
    *  phase 2. Never reaches the receipt write. */
   dryRun?: boolean;
@@ -418,8 +421,10 @@ export type ApplyFailureKind =
   | "stale-plan"
   /** A write failed; the journal unwound and the tree is back to its pre-images. */
   | "write-failed"
-  /** The unwind itself failed. The tree may be inconsistent; the message points
-   *  at `git checkout -- <paths>`. */
+  /** Project verification rejected the transaction and every captured pre-image was restored. */
+  | "verification-failed"
+  /** The unwind itself failed. The tree may be inconsistent; `paths` names what
+   *  must be restored from version control or another trusted pre-run copy. */
   | "rollback-failed"
   /** Phase 2 failed. Deliberately not rolled back (D18), and nothing was written. */
   | "install-failed";

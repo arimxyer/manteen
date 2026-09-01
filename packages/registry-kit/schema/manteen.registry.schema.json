@@ -77,7 +77,9 @@
               "as": { "enum": ["component", "hook", "lib", "style", "file"] },
               "target": {
                 "type": "string",
-                "description": "Explicit destination. Omit to let the client place it by `as`."
+                "minLength": 1,
+                "pattern": "^(?:@(?:components|ui|hooks|lib)/|~/|[^@])",
+                "description": "Explicit destination. Alias-like targets must start with @components/, @ui/, @hooks/, or @lib/. Use ~/ for the project root or an ordinary relative path; omit to let the client place it by `as`."
               }
             }
           }

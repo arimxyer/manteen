@@ -136,6 +136,10 @@ function outcomeFiles(
   });
 }
 
+function uniquePaths(paths: readonly string[]): string[] {
+  return [...new Set(paths)];
+}
+
 /*
  * WHY EVERY FAILURE RETURN BELOW SETS `files: []`.
  *
@@ -171,8 +175,8 @@ function outcomeFiles(
  * same reason — as the cancel return: no decision was carried out. Nothing is
  * lost. `ApplyFailure.paths` still carries the touched set (`write-failed`) and
  * the unrestored set (`rollback-failed`), and only the failure channel can say
- * "this one is now indeterminate, run `git checkout --` on it", which is the
- * sentence a `WriteResult` cannot form.
+ * "this one is now indeterminate; restore it from a trusted pre-run copy",
+ * which is the sentence a `WriteResult` cannot form and does not assume Git.
  */
 
 /**
@@ -336,12 +340,14 @@ async function applyPlan(
         failure: {
           kind: "rollback-failed",
           message:
-            `${detail}\nThe rollback then failed, so the tree may be inconsistent: ` +
-            `${unwound.detail ?? "no detail"}\nRestore with: git checkout -- ${unwound.unrestored.join(" ")}`,
-          paths: unwound.unrestored,
+            `${detail}\nThe rollback then failed, so the tree may be inconsistent.\n` +
+            "Restore the paths listed below from version control or another trusted pre-run copy before retrying.",
+          paths: uniquePaths(unwound.unrestored),
         },
       };
     }
+
+    const verificationFailed = verification?.status === "failed";
 
     return {
       ...emptyOutcome(plan, options),
@@ -350,9 +356,9 @@ async function applyPlan(
       dependencies,
       ...(verification === undefined ? {} : { verification }),
       failure: {
-        kind: "write-failed",
+        kind: verificationFailed ? "verification-failed" : "write-failed",
         message: `${detail}\nEvery file written by this run was restored to its previous contents.`,
-        paths: touched,
+        ...(verificationFailed ? {} : { paths: uniquePaths(touched) }),
       },
     };
   }

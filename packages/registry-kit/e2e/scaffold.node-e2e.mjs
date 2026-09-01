@@ -9,6 +9,14 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CLI = join(PACKAGE_ROOT, "dist/cli.mjs");
 
+test("built CLI reports its exact package version", () => {
+  const { version } = JSON.parse(readFileSync(join(PACKAGE_ROOT, "package.json"), "utf8"));
+  const result = spawnSync(process.execPath, [CLI, "--version"], { encoding: "utf8" });
+  assert.equal(result.status, 0, JSON.stringify(result));
+  assert.equal(result.stdout, `${version}\n`);
+  assert.equal(result.stderr, "");
+});
+
 function fixture() {
   const root = realpathSync.native(mkdtempSync(join(tmpdir(), "manteen-scaffold-node-")));
   const catalogPath = join(root, "manteen.registry.json");
@@ -158,4 +166,55 @@ test("built package exports the public scaffold planner", async () => {
     "component-styles-api",
     "component-polymorphic",
   ]);
+});
+
+test("built CLI --register completes and replays the full authoring plan", () => {
+  const created = fixture();
+  try {
+    const common = [
+      "scaffold",
+      "--template",
+      "component-styles-api",
+      "--name",
+      "registered-card",
+      "--catalog",
+      created.catalogPath,
+      "--register",
+      "--json",
+    ];
+    const preview = run(created.root, [...common, "--dry-run"]);
+    assert.equal(preview.status, 0, preview.stderr || preview.stdout);
+    const plan = json(preview).payload;
+    assert.equal(plan.registration.enabled, true);
+    assert.deepEqual(
+      plan.registration.files.map((file) => [file.path, file.operation]),
+      [
+        ["manteen.author-profile.json", "replace"],
+        ["manteen.registry.json", "replace"],
+        ["package.json", "replace"],
+      ],
+    );
+
+    const apply = run(created.root, [...common, "--apply", "--expect-plan", plan.planDigest]);
+    assert.equal(apply.status, 0, apply.stderr || apply.stdout);
+    assert.equal(json(apply).mutated, true);
+    const catalog = JSON.parse(readFileSync(created.catalogPath, "utf8"));
+    const item = catalog.items.find((candidate) => candidate.name === "registered-card");
+    assert.deepEqual(
+      item.files.map((file) => file.target),
+      ["@ui/registered-card/registered-card.tsx", "@ui/registered-card/registered-card.module.css"],
+    );
+    const profile = JSON.parse(readFileSync(created.profilePath, "utf8"));
+    assert.equal(profile.stylesApi.at(-1).item, "registered-card");
+    const manifest = JSON.parse(readFileSync(created.manifestPath, "utf8"));
+    assert.equal(manifest.dependencies["@mantine/core"], "^9.5.0");
+
+    const replay = run(created.root, [...common, "--dry-run"]);
+    assert.equal(replay.status, 0, replay.stderr || replay.stdout);
+    const replayPlan = json(replay).payload;
+    assert.ok(replayPlan.files.every((file) => file.operation === "noop"));
+    assert.ok(replayPlan.registration.files.every((file) => file.operation === "noop"));
+  } finally {
+    rmSync(created.root, { recursive: true, force: true });
+  }
 });

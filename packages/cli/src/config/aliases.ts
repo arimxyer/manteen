@@ -280,6 +280,19 @@ export function createAliasResolver(
         );
       }
 
+      // An `@` prefix is an alias token, never a literal project-root
+      // directory. Accepting an unknown spelling here is especially dangerous
+      // because `resolve(root, "@/components/...")` remains inside root and
+      // therefore passes every containment check while creating a surprising
+      // literal `@/` tree. Authors must use one of the supported interchange
+      // placeholders above, or an ordinary relative/root (`~/`) target.
+      if (file.target.startsWith("@")) {
+        return refuse(
+          "target-refused-type",
+          `${item.id} declares unknown target alias "${file.target}"; use @components/, @ui/, @hooks/, @lib/, ~/ or a relative path`,
+        );
+      }
+
       // `~/` is the interchange format's spelling of "the project root".
       const target = file.target.startsWith("~/") ? file.target.slice(2) : file.target;
       return contain({ destination: resolve(root, target) }, root, item.id);

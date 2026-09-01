@@ -50,7 +50,7 @@ Start with a catalog and ordinary source files:
         {
           "path": "src/release-panel.tsx",
           "as": "component",
-          "target": "@ui/release-panel.tsx"
+          "target": "@ui/release-panel/release-panel.tsx"
         }
       ]
     }
@@ -67,6 +67,23 @@ reference](/docs/reference/catalog) defines theme fragments, package stylesheet 
 Styles API declarations, props, usage examples, and the remaining authoring fields.
 
 ## Compile and validate
+
+For a component starting point, the machine-first scaffold can also register the item and its
+exact package/evidence declarations through one reviewed plan:
+
+```npm
+npm exec --yes=false -- manteen-kit scaffold --template component-styles-api --name release-panel --register --dry-run --json
+```
+
+Review the source and bounded registration changes, then execute the returned digest-bound rerun
+argv directly. The default component/style targets preserve their shared item directory, so
+relative sibling imports continue to resolve after consumer installation.
+
+Registration owns package declarations by exact section and range text. A semver-compatible but
+differently authored declaration still refuses instead of being normalized or moved; align
+`package.json` to the preview's `requiredPackages`, or scaffold without `--register` and integrate
+the declaration yourself. In author profiles, omit unused `stylesApi`, `props`, and `usage`
+sections—empty arrays are invalid.
 
 ```npm
 npm exec --yes=false -- manteen-kit build
@@ -93,9 +110,15 @@ npm exec --yes=false -- manteen-kit dev manteen.registry.json public/r --port 0 
 ```
 
 The server watches declared catalog inputs and serves only its last validated snapshot. A broken
-rebuild is reported without replacing the served bytes. `build-succeeded` includes an exact
-dry-run `manteen registry add` argv for a consumer. Stop the process cleanly when finished; a local
-ready event is not hosted-registry or deployment proof.
+rebuild is reported without replacing the served bytes. `build-succeeded` includes exact dry-run
+`manteen registry add` argv for initial configuration and an explicit `registry reconnect` preview
+for a consumer left on an earlier ephemeral port. Reconnect verifies every installed item identity
+at the new endpoint and atomically migrates config plus receipt source URLs. Stop the process cleanly; a local ready
+event is not hosted-registry or deployment proof.
+
+An optional author-profile `verification` block can name ordered root `package.json` scripts such
+as lint and typecheck. `build` and `dev` run them after registry validation and before publishing
+new output; a failed dev hook keeps serving the last-good snapshot.
 
 The repository's
 [registry starter](https://github.com/arimxyer/manteen/tree/main/examples/registry-starter)

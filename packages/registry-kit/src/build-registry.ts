@@ -23,6 +23,7 @@ import {
   inspectAuthorConformance,
 } from "./author-conformance";
 import { inspectMantineRanges, MantineRangeError } from "./mantine-ranges";
+import { inspectThemeFragmentImports, ThemeFragmentImportError } from "./theme-fragment-imports";
 import { summarizeThemeFragment } from "./theme-summary";
 
 const ajv = () => new Ajv({ strict: false, allErrors: true });
@@ -156,6 +157,8 @@ export function toWireItem(item: MantineItem, namespace: string, root: string): 
     // it into the project theme, and one that does not must not drop a stray
     // theme file into the project.
     const content = read(item.themeFragment);
+    const importFailures = inspectThemeFragmentImports(content, item.name, item.themeFragment);
+    if (importFailures.length > 0) throw new ThemeFragmentImportError(importFailures);
     meta.themeFragment = { path: item.themeFragment, content };
     meta.themeSummary = summarizeThemeFragment(content);
   }
@@ -298,6 +301,11 @@ export {
   recoverRegistryWrite,
   writeRegistry,
 } from "./registry-output";
+export {
+  inspectThemeFragmentImports,
+  ThemeFragmentImportError,
+  type ThemeFragmentImportFailure,
+} from "./theme-fragment-imports";
 export {
   summarizeThemeFragment,
   THEME_CHANNELS,

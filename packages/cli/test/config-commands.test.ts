@@ -1,10 +1,16 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { reviewedApplyActions } from "../src/cli/machine";
 import type { Streams } from "../src/cli/render";
-import { runRegistryAdd, runRegistryList, runRegistryRemove } from "../src/commands/registry";
+import {
+  runRegistryAdd,
+  runRegistryList,
+  runRegistryReconnect,
+  runRegistryRemove,
+} from "../src/commands/registry";
 import {
   runVerificationClear,
   runVerificationSet,
@@ -52,6 +58,152 @@ function capture(): { streams: Streams; stdout: string[]; stderr: string[] } {
 }
 
 describe("registry configuration commands", () => {
+  test("reconnect verifies installed identities and atomically migrates config plus receipt", async () => {
+    const root = fixture();
+    const receiptPath = join(root, "manteen.lock.json");
+    writeFileSync(
+      receiptPath,
+      `${JSON.stringify(
+        {
+          lockfileVersion: 3,
+          items: [
+            {
+              id: "@house/card",
+              registry: "@house",
+              sourceUrl: "http://127.0.0.1:4000/card.json",
+              wireType: "registry:ui",
+              direct: true,
+              files: [],
+            },
+          ],
+          theme: null,
+          styles: null,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const server = createServer((request, response) => {
+      if (request.url !== "/card.json") {
+        response.writeHead(404).end();
+        return;
+      }
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(
+        JSON.stringify({
+          name: "card",
+          type: "registry:ui",
+          files: [{ path: "card.tsx", type: "registry:ui", content: "export const Card = 1;" }],
+        }),
+      );
+    });
+    await new Promise<void>((accept) => server.listen(0, "127.0.0.1", accept));
+    const address = server.address();
+    if (address === null || typeof address === "string")
+      throw new Error("test server did not bind");
+    const url = `http://127.0.0.1:${address.port}/{name}.json`;
+    try {
+      const beforeConfig = readFileSync(join(root, "manteen.json"), "utf8");
+      const beforeReceipt = readFileSync(receiptPath, "utf8");
+      const planned = capture();
+      expect(
+        await runRegistryReconnect(
+          "@house",
+          { cwd: root, url, dryRun: true, json: true },
+          planned.streams,
+        ),
+      ).toBe(0);
+      expect(readFileSync(join(root, "manteen.json"), "utf8")).toBe(beforeConfig);
+      expect(readFileSync(receiptPath, "utf8")).toBe(beforeReceipt);
+      const preview = JSON.parse(planned.stdout.join(""));
+      expect(preview.plan.items).toEqual([
+        expect.objectContaining({
+          id: "@house/card",
+          wireType: "registry:ui",
+          sourceUrl: url.replace("{name}", "card"),
+        }),
+      ]);
+
+      const applied = capture();
+      expect(
+        await runRegistryReconnect(
+          "@house",
+          { cwd: root, url, expectPlan: preview.planDigest, json: true },
+          applied.streams,
+        ),
+      ).toBe(0);
+      expect(
+        JSON.parse(readFileSync(join(root, "manteen.json"), "utf8").toString()).registries[
+          "@house"
+        ],
+      ).toBe(url);
+      expect(JSON.parse(readFileSync(receiptPath, "utf8")).items[0].sourceUrl).toBe(
+        url.replace("{name}", "card"),
+      );
+    } finally {
+      await new Promise<void>((accept, reject) =>
+        server.close((error) => (error ? reject(error) : accept())),
+      );
+    }
+  });
+
+  test("reconnect refuses an endpoint whose item identity changed", async () => {
+    const root = fixture();
+    const receiptPath = join(root, "manteen.lock.json");
+    writeFileSync(
+      receiptPath,
+      `${JSON.stringify({
+        lockfileVersion: 3,
+        items: [
+          {
+            id: "@house/card",
+            registry: "@house",
+            sourceUrl: "http://old.test/card.json",
+            wireType: "registry:ui",
+            direct: true,
+            files: [],
+          },
+        ],
+        theme: null,
+        styles: null,
+      })}\n`,
+    );
+    const server = createServer((_request, response) => {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(
+        JSON.stringify({
+          name: "not-card",
+          type: "registry:ui",
+          files: [{ path: "card.tsx", type: "registry:ui", content: "export const Card = 1;" }],
+        }),
+      );
+    });
+    await new Promise<void>((accept) => server.listen(0, "127.0.0.1", accept));
+    const address = server.address();
+    if (address === null || typeof address === "string")
+      throw new Error("test server did not bind");
+    try {
+      const result = capture();
+      expect(
+        await runRegistryReconnect(
+          "@house",
+          {
+            cwd: root,
+            url: `http://127.0.0.1:${address.port}/{name}.json`,
+            dryRun: true,
+          },
+          result.streams,
+        ),
+      ).toBe(1);
+      expect(result.stderr.join("")).toContain("registry-reconnect-refused");
+      expect(result.stderr.join("")).toContain("expected card");
+    } finally {
+      await new Promise<void>((accept, reject) =>
+        server.close((error) => (error ? reject(error) : accept())),
+      );
+    }
+  });
+
   test("dry-run redacts templates, applies the exact plan, and lists without expansion", async () => {
     const root = fixture();
     const before = readFileSync(join(root, "manteen.json"), "utf8");

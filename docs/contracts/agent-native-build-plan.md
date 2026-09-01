@@ -50,7 +50,40 @@ execute argv directly; they do not reconstruct a shell command. Diagnostic actio
 to the finding they remediate.
 
 Schemas are published with both packages and validate success and refusal documents. Secrets and
-expanded URL variables are excluded from all envelopes, diagnostics, receipts, and digests.
+expanded URL variables are excluded from all envelopes, diagnostics, receipts, and digests. A
+receipt JSON parse failure is reported as a stable syntax category; native parser messages are not
+forwarded because current runtimes may embed nearby receipt source bytes in them.
+
+The update payload treats `kind` as the operation outcome rather than an internal stage marker:
+`nothing-to-do`, `refused`, `previewed`, `cancelled`, `applied`, `rolled-back`,
+`rollback-failed`, or `failed`. A verification-rejected transaction whose managed preimages were
+restored is `rolled-back`, never `applied`; its narrower cause remains in `failure.kind` and the
+verification payload. After argv and project configuration are accepted, `payload.dryRun` echoes
+the normalized invocation on every update-operation exit, including receipt failure, resolution
+refusal, and nothing-to-do. Usage/configuration exit 2 remains the command-envelope boundary where
+`payload` may be null.
+
+The update lifecycle is one explicit matrix:
+
+| Boundary | Machine outcome | Mutation claim |
+| --- | --- | --- |
+| usage or project-config rejection | exit 2, `payload: null`, typed error | false |
+| no receipt | `nothing-to-do` | false |
+| selected update completes with no observed mutation and no verification run | `nothing-to-do` | false |
+| readable but invalid receipt | `failed` / `receipt-unreadable` | false |
+| receipt or installed-file selection throw | `failed` / `selection-failed` | false |
+| returned blocking plan | `refused` | false |
+| unexpected planning throw | `failed` / `planning-failed` | false |
+| applicable dry run | `previewed` | false |
+| cancellation | `cancelled` | false |
+| install or other returned pre-write apply failure | `failed` plus the returned failure kind | read `mutated` for unowned effects |
+| restored write or verification rejection | `rolled-back` | false for Manteen-managed bytes |
+| failed rollback | `rollback-failed` with relative `failure.paths` | conservative; inspect paths |
+| unexpected apply or verification throw | `failed` / stage-specific failure | conservatively true |
+| completed apply with mutation or a completed verification run | `applied` | inferred from the returned outcome |
+
+Rollback recovery never assumes Git. The failure carries root-relative paths and tells callers to
+restore them from version control or another trusted pre-run copy before retrying.
 
 ## 2. Registry output ownership
 
@@ -93,7 +126,10 @@ expanded variables, timestamps, and incidental display text.
 Optional verification commands are configured separately for add, update, and remove. Each command
 can opt out with `--no-verify`. Verification runs after writes and inside rollback: failure restores
 all captured preimages, while `mutated` truthfully records whether durable bytes remain changed when
-the process exits. Verification definitions are included in the plan digest and drift is refused.
+the process exits. Every machine verification outcome names this boundary as
+`phase: "post-write-pre-commit"` and `rollbackScope: "manteen-managed"`; those fields do not claim
+that dependencies, caches, generated artifacts, or arbitrary verifier side effects are reversible.
+Verification definitions are included in the plan digest and drift is refused.
 
 `status` is offline. Missing or invalid initialization is a successful assessment with
 `healthy: false`; only inability to inspect the target is a command failure. It reports configuration,
@@ -113,6 +149,12 @@ Registry sources have their own bounded configuration commands. `registry list` 
 Replacement and removal fail closed on unreadable receipts. Header values must retain a literal
 `${VAR}` template. Machine previews expose URL/index and header/parameter keys, never expanded
 values, and apply only a reviewed surgical edit of the top-level `registries` member.
+
+`registry reconnect` is the separate referenced-source migration. Planning fetches every receipt
+item owned by the namespace, refuses item-name or wire-type drift, and binds the verified documents
+plus config and receipt preimages/results. Apply re-plans, then journals the surgical config edit
+and receipt source-URL projection as one rollback unit. Generic replacement remains unable to
+rewrite referenced receipt ownership.
 
 Verification configuration is managed through `verification show/set/clear`. `show` reports the
 configured operation lists and discovers root `package.json` scripts. `set` accepts script names,
@@ -137,6 +179,9 @@ query, registry and canonical item order remain unchanged. A query ranks matchin
 registry by exact canonical id, exact name, exact title, title prefix, id/name substring, title
 substring, then description substring; ties retain the prior item order. JSON exposes both every
 matching field and the winning rank so the ordering is explainable rather than an opaque score.
+`--installed` is a receipt-first offline inventory: it never fetches registry indexes and reports
+only metadata the receipt and current managed files can prove. Index-only titles, descriptions, and
+compatibility fields are `null`, including for a local registry whose development server has stopped.
 
 The supported programmatic entrypoint is `createManteenClient()`: read operations plus opaque
 plan/apply handles. Existing low-level exports remain available but are not the stable façade.
@@ -157,11 +202,17 @@ modified installations are refused; `--take-packaged` is the explicit destructiv
 theme, usage, profile, and evidence inputs; compiles and transactionally writes registry output;
 and serves only the last successfully validated in-memory snapshot over HTTP. Initial failure
 returns `503`; later failures keep serving the last good snapshot. `--jsonl` emits a separate
-schema-versioned ready/build/stopped event stream, including an exact dry-run `manteen registry add`
-argv. Signal shutdown closes watchers and the server. A local ready event is not deployment proof.
+schema-versioned ready/build/stopped event stream, including exact dry-run `manteen registry add`
+and installed-consumer `manteen registry reconnect` argv. Signal shutdown closes watchers and the
+server. Lifecycle handlers are installed before the first observable ready/build event, and the
+final stopped JSONL line is synchronously committed before wrapper-driven shutdown can truncate the
+stream. A local ready event is not deployment proof.
 
 The repository root contains vendor-neutral `AGENTS.md`. The public docs expose an Agent Guide plus
 `/llms.txt` and `/llms-full.txt`. MCP is deliberately outside this roadmap.
+
+`manteen-kit -V` and `manteen-kit --version` print the installed author-package version; JSON mode
+returns the same identity in a zero-mutation `version` envelope.
 
 ## 6. Release boundary
 

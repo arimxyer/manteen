@@ -61,6 +61,38 @@
       },
       "then": { "properties": { "exitCode": { "type": "integer", "const": 0 } } },
       "else": { "properties": { "exitCode": { "type": "integer", "minimum": 1 } } }
+    },
+    {
+      "if": {
+        "required": ["command", "exitCode"],
+        "properties": {
+          "command": { "const": "update" },
+          "exitCode": { "not": { "const": 2 } }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["kind", "dryRun"],
+            "properties": {
+              "kind": {
+                "enum": [
+                  "nothing-to-do",
+                  "refused",
+                  "previewed",
+                  "cancelled",
+                  "applied",
+                  "rolled-back",
+                  "rollback-failed",
+                  "failed"
+                ]
+              },
+              "dryRun": { "type": "boolean" }
+            }
+          }
+        }
+      }
     }
   ],
   "$defs": {

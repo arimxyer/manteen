@@ -41,15 +41,15 @@
  * user-typed action. Raised and approved before implementation.
  *
  * ── Errors, and the exit code ───────────────────────────────────────────────
- * This module catches nothing. `plan()`'s throws, the receipt reader's
- * non-ENOENT throw and `FileHasher`'s EISDIR throw all propagate to the caller,
- * which owns exit codes (`cli/index.ts` maps a thrown error to its `renderThrown`
- * + exit 1). Swallowing any of them here would turn "we could not read your
- * project" into "nothing to update".
+ * Each lifecycle boundary preserves a typed failure for the machine envelope.
+ * The initial receipt read is normalized separately so a broken ownership file
+ * names `manteen.lock.json`, provides bounded recovery guidance, and never
+ * exposes a machine-local absolute path. Swallowing any of these failures would
+ * turn "we could not read your project" into "nothing to update".
  *
  * **THE EXIT CODE COMES OFF `outcome`, NEVER OFF `kind`.** `UpdateResult.kind`
- * discriminates which STAGE was reached, not whether it succeeded, and
- * `"applied"` covers three different exits — this is measured, not asserted:
+ * discriminates which STAGE was reached, not whether it succeeded. The
+ * `"attempted"` stage covers every exit after apply was entered:
  *
  *   nothing-to-do                         -> 0
  *   refused                               -> `blockingExitCode(plan.diagnostics, false)`,
@@ -57,13 +57,14 @@
  *                                            and 1 otherwise. NOT a flat 1: that
  *                                            row of §1's table is reachable here
  *                                            whenever D17 does not drop a dep.
- *   applied + outcome.cancelled           -> 130 (zero mutation; the prompt was
+ *   attempted + outcome.cancelled         -> 130 (zero mutation; the prompt was
  *                                            cancelled, `outcome.ok` is false)
- *   applied + outcome.failure !== null    -> 1  (stale-plan, install-failed,
- *                                            write-failed, rollback-failed)
- *   applied + outcome.failure caused by
+ *   attempted + outcome.failure !== null  -> 1  (stale-plan, install-failed,
+ *                                            write-failed, verification-failed,
+ *                                            rollback-failed)
+ *   attempted + outcome.failure caused by
  *             failed verification         -> 1  (the file transaction is restored)
- *   applied + outcome.ok + verification
+ *   attempted + outcome.ok + verification
  *             not failed                  -> 0
  *
  * `runAdd` in `cli/index.ts` is the reference for all five rows, including the
@@ -94,7 +95,13 @@ import {
 import type { LoadedConfig } from "../config/types";
 import type { FileHasher } from "../inventory/installed";
 import { fromReceiptState, itemsById } from "../inventory/installed";
-import type { Installed, InventoryNote, UpdateResult, UpdateSkip } from "../inventory/types";
+import type {
+  Installed,
+  InventoryNote,
+  UpdateCommandFailureKind,
+  UpdateResult,
+  UpdateSkip,
+} from "../inventory/types";
 import { blockingExitCode, diag, sortDiagnostics } from "../plan/diagnostics";
 import { digestPlan, planDigestMatches } from "../plan/digest";
 import { plan } from "../plan/index";
@@ -111,7 +118,7 @@ import type {
 import { createReceiptReader, createReceiptValidator } from "../receipt/load";
 import { toReceiptPath } from "../receipt/path";
 import type { ReceiptReader, ReceiptValidator } from "../receipt/read";
-import { readReceipt } from "../receipt/read";
+import { readReceipt, receiptPathFor } from "../receipt/read";
 import {
   createVerificationPorts,
   plannedVerificationOutcome,
@@ -119,12 +126,48 @@ import {
   type VerificationPorts,
   verifyAppliedUpdate,
 } from "../verification/run";
-import type { VerificationOutcome } from "../verification/types";
+import { VERIFICATION_BOUNDARY, type VerificationOutcome } from "../verification/types";
 
 const EXIT_OK = 0;
 const EXIT_REFUSED = 1;
 const EXIT_USAGE = 2;
 const EXIT_CANCELLED = 130;
+
+/** Preserve the lifecycle phase when a port throws instead of returning data. */
+export class UpdateCommandError extends Error {
+  constructor(
+    readonly kind: Exclude<UpdateCommandFailureKind, "receipt-unreadable" | "setup-failed">,
+    message: string,
+    readonly mutated: boolean,
+    readonly paths?: string[],
+  ) {
+    super(message);
+    this.name = "UpdateCommandError";
+  }
+}
+
+function thrownMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function receiptReadMessage(root: string, error: unknown): string {
+  const receiptPath = receiptPathFor(root);
+  const detail = thrownMessage(error).split(receiptPath).join("manteen.lock.json");
+  return (
+    `manteen.lock.json could not be read: ${detail}. ` +
+    "Restore it as a regular readable file, or restore it from another trusted copy, before retrying."
+  );
+}
+
+function stageError(
+  kind: UpdateCommandError["kind"],
+  error: unknown,
+  mutated: boolean,
+): UpdateCommandError {
+  return error instanceof UpdateCommandError
+    ? error
+    : new UpdateCommandError(kind, thrownMessage(error), mutated);
+}
 
 /** Derived from nypm rather than hardcoded, so a new manager arrives with an
  *  upgrade. Same derivation `cli/index.ts` uses for `add`. */
@@ -157,6 +200,8 @@ export type UpdateOptions = Omit<PlanOptions, "overwrite" | "operation" | "takeU
   takeUpstream?: boolean;
   /** Refuse before apply unless the fresh read-only preview has this digest. */
   expectPlan?: string;
+  /** Keep dependency-manager transcripts out of a machine caller's stdout. */
+  dependencyOutput?: ApplyOptions["dependencyOutput"];
 };
 
 /**
@@ -212,13 +257,14 @@ function unavailableVerification(
   planned: Plan,
 ): VerificationOutcome {
   if (config.raw.verification?.update === undefined) {
-    return { status: "not-configured", checks: [], failure: null };
+    return { ...VERIFICATION_BOUNDARY, status: "not-configured", checks: [], failure: null };
   }
-  if (options.verify === false) return { status: "skipped", checks: [], failure: null };
+  if (options.verify === false)
+    return { ...VERIFICATION_BOUNDARY, status: "skipped", checks: [], failure: null };
   if (planned.verification === null) {
     // Reachable only on a refused plan. An ok plan with configured verification
     // must carry the exact definitions the runner will revalidate.
-    return { status: "planned", checks: [], failure: null };
+    return { ...VERIFICATION_BOUNDARY, status: "planned", checks: [], failure: null };
   }
   return plannedVerificationOutcome(planned.verification);
 }
@@ -257,19 +303,43 @@ export async function update(
    * preflight re-hashes `plan.receipt.path` in both directions of its presence
    * and returns `stale-plan`.
    */
-  const installed = fromReceiptState(
-    readReceipt(root, ports.read, ports.validate),
-    root,
-    ports.hash,
-  );
+  let receiptState: ReturnType<typeof readReceipt>;
+  try {
+    receiptState = readReceipt(root, ports.read, ports.validate);
+  } catch (error) {
+    throw new UpdateCommandError("selection-failed", receiptReadMessage(root, error), false, [
+      receiptPathFor(root),
+    ]);
+  }
 
-  // `installed.notes` carries `no-receipt` / `receipt-unreadable`. Both yield an
-  // empty item list, so both fall out below as "no candidates" — which is the
-  // point: an UNREADABLE receipt must never reach plan()/apply(). Planning zero
-  // refs under `--force` would push past `receipt-unreadable`, and phase 7 would
-  // then merge from `null` and delete every ownership record in the file.
+  let installed: Installed;
+  try {
+    installed = fromReceiptState(receiptState, root, ports.hash);
+  } catch (error) {
+    throw stageError("selection-failed", error, false);
+  }
+
+  // An unreadable receipt must never become the successful no-receipt case. It
+  // cannot safely reach plan/apply because that would merge ownership from
+  // null, but returning "nothing-to-do" tells an agent the broken state is
+  // healthy. Preserve it as a command-native failure instead.
   const notes: InventoryNote[] = [...installed.notes];
   const skipped: UpdateSkip[] = [];
+  if (installed.source.state === "unreadable") {
+    return {
+      kind: "failed",
+      failure: {
+        kind: "receipt-unreadable",
+        message:
+          notes.find((note) => note.code === "receipt-unreadable")?.message ??
+          "manteen.lock.json is unreadable and must be repaired before update can continue.",
+      },
+      mutated: false,
+      selected: [],
+      skipped: [],
+      notes: [],
+    };
+  }
 
   const candidates =
     refs.length > 0
@@ -280,14 +350,19 @@ export async function update(
     return { kind: "nothing-to-do", selected: [], skipped: sortSkips(skipped), notes };
   }
 
-  const planned = await ports.plan(config, [...candidates], {
-    force: options.force,
-    interactive: options.interactive,
-    packageManager: options.packageManager,
-    operation: "update",
-    takeUpstream: options.takeUpstream,
-    verify: options.verify,
-  });
+  let planned: Plan;
+  try {
+    planned = await ports.plan(config, [...candidates], {
+      force: options.force,
+      interactive: options.interactive,
+      packageManager: options.packageManager,
+      operation: "update",
+      takeUpstream: options.takeUpstream,
+      verify: options.verify,
+    });
+  } catch (error) {
+    throw stageError("planning-failed", error, false);
+  }
 
   const planDigest = digestPlan(planned, {
     refs: candidates,
@@ -346,31 +421,43 @@ export async function update(
    * files are never written, and phase 7 is gated on the receipt BYTES
    * differing, so an up-to-date project ends with an untouched tree.
    */
-  const outcome = await ports.apply(
-    planned,
-    {
-      // Source conflicts were decided in plan. `true` means "apply that exact
-      // conflict-free result", not "replace with pristine upstream".
-      interactive: false,
-      overwrite: true,
-      dryRun: options.dryRun,
-    },
-    ports.applyPorts,
-  );
+  let outcome: ApplyOutcome;
+  try {
+    outcome = await ports.apply(
+      planned,
+      {
+        // Source conflicts were decided in plan. `true` means "apply that exact
+        // conflict-free result", not "replace with pristine upstream".
+        interactive: false,
+        overwrite: true,
+        dryRun: options.dryRun,
+        dependencyOutput: options.dependencyOutput,
+      },
+      ports.applyPorts,
+    );
+  } catch (error) {
+    // A throwing apply port violated the normal returned-outcome contract. It
+    // may have thrown after a write, so never report a reassuring false here.
+    throw stageError("apply-failed", error, options.dryRun !== true);
+  }
 
   let verification = unavailableVerification(config, options, planned);
   if (outcome.verification !== undefined) {
     verification = outcome.verification;
   } else if (verification.status === "planned" && planned.verification !== null) {
     if (!outcome.ok) {
-      verification = { status: "skipped", checks: [], failure: null };
+      verification = { ...VERIFICATION_BOUNDARY, status: "skipped", checks: [], failure: null };
     } else if (!outcome.dryRun) {
-      verification = await verifyAppliedUpdate(planned, planned.verification, ports.verification);
+      try {
+        verification = await verifyAppliedUpdate(planned, planned.verification, ports.verification);
+      } catch (error) {
+        throw stageError("verification-failed", error, true);
+      }
     }
   }
 
   return {
-    kind: "applied",
+    kind: "attempted",
     plan: planned,
     outcome,
     verification,
@@ -697,13 +784,54 @@ function renderSelected(selected: readonly CanonicalId[]): string {
   return `\nupdated  ${selected.join(", ")}\n`;
 }
 
+export type UpdatePayloadKind =
+  | "nothing-to-do"
+  | "refused"
+  | "previewed"
+  | "cancelled"
+  | "applied"
+  | "rolled-back"
+  | "rollback-failed"
+  | "failed";
+
+function isObservedNoop(result: Extract<UpdateResult, { kind: "attempted" }>): boolean {
+  const { outcome, verification } = result;
+  const verificationDidNotRun =
+    verification.status === "not-configured" || verification.status === "skipped";
+  return (
+    result.selected.length === 0 &&
+    verificationDidNotRun &&
+    outcome.files.every((file) => file.result !== "written") &&
+    !outcome.dependencies.installed &&
+    outcome.dependencies.command === null &&
+    outcome.theme?.written !== true &&
+    outcome.styles?.written !== true &&
+    !outcome.receipt.written &&
+    !outcome.updateState.changed
+  );
+}
+
+/** Project the internal stage union into the truthful command outcome. */
+export function updatePayloadKind(result: UpdateResult): UpdatePayloadKind {
+  if (result.kind !== "attempted") return result.kind;
+  if (result.outcome.dryRun) return "previewed";
+  if (result.outcome.cancelled) return "cancelled";
+  if (result.outcome.ok) return isObservedNoop(result) ? "nothing-to-do" : "applied";
+  if (
+    result.outcome.failure?.kind === "write-failed" ||
+    result.outcome.failure?.kind === "verification-failed"
+  )
+    return "rolled-back";
+  if (result.outcome.failure?.kind === "rollback-failed") return "rollback-failed";
+  return "failed";
+}
+
 /**
  * The `--json` document.
  *
- * `kind` is `UpdateResult`'s own discriminator and is carried through verbatim,
- * but a consumer must read `ok` for success — `"applied"` covers a clean run, a
- * cancelled prompt and a write failure alike. That is the same rule the module
- * docblock states for the exit code, restated where a script will hit it.
+ * The public `kind` is an OUTCOME, not `UpdateResult`'s internal stage
+ * discriminator. In particular, a successfully restored transaction is
+ * `"rolled-back"`, never `"applied"`. `failure.kind` retains the narrower cause.
  *
  * `plan` and `outcome` are PROJECTED, not serialized. `PlannedFile.content` and
  * `PlannedTheme.text` carry whole source files, so `JSON.stringify(result)`
@@ -714,22 +842,27 @@ function toUpdateJson(
   result: UpdateResult,
   ok: boolean,
   fallbackVerification: VerificationOutcome,
+  requestedDryRun: boolean,
 ): JsonEnvelope & Record<string, unknown> {
-  const plan = result.kind === "nothing-to-do" ? null : result.plan;
-  const outcome = result.kind === "applied" ? result.outcome : null;
-  const verification = result.kind === "applied" ? result.verification : fallbackVerification;
+  const plan = result.kind === "refused" || result.kind === "attempted" ? result.plan : null;
+  const outcome = result.kind === "attempted" ? result.outcome : null;
+  const verification = result.kind === "attempted" ? result.verification : fallbackVerification;
   const planDigest = plan?.planDigest ?? null;
+  const failure = result.kind === "failed" ? result.failure : (outcome?.failure ?? null);
 
   return {
     command: "update",
     root,
     ok,
-    kind: result.kind,
+    kind: updatePayloadKind(result),
+    ...(result.kind === "failed" ? { mutated: result.mutated } : {}),
     planDigest,
     selected: [...result.selected],
     skipped: result.skipped,
     cancelled: outcome?.cancelled ?? false,
-    dryRun: outcome?.dryRun ?? false,
+    // Echo argv, not apply reachability. A resolution refusal and a no-op still
+    // need to tell a machine caller that this invocation prohibited mutation.
+    dryRun: requestedDryRun,
     files:
       outcome === null
         ? (plan?.files ?? []).map((file) => ({
@@ -761,9 +894,17 @@ function toUpdateJson(
         ? null
         : { installed: outcome.dependencies.installed, command: outcome.dependencies.command },
     failure:
-      outcome?.failure == null
+      failure === null
         ? null
-        : { kind: outcome.failure.kind, message: outcome.failure.message },
+        : {
+            kind: failure.kind,
+            message: failure.message,
+            ...(failure.paths === undefined
+              ? {}
+              : {
+                  paths: [...new Set(failure.paths.map((path) => toReceiptPath(path, root)))],
+                }),
+          },
     updateState:
       outcome === null
         ? null
@@ -833,6 +974,10 @@ export async function runUpdate(
   const loaded = loadProjectConfig(flags.cwd, streams.stderr);
   if (!loaded.ok) return loaded.exit;
   const config = loaded.config;
+  const fallbackVerification: VerificationOutcome =
+    config.raw.verification === undefined
+      ? { ...VERIFICATION_BOUNDARY, status: "not-configured", checks: [], failure: null }
+      : { ...VERIFICATION_BOUNDARY, status: "skipped", checks: [], failure: null };
 
   // Validated before planning, exactly as `runAdd` does and for the same reason:
   // nypm would otherwise take an unknown name as far as building an unrunnable
@@ -855,41 +1000,85 @@ export async function runUpdate(
     takeUpstream: flags.takeUpstream,
     expectPlan: flags.expectPlan,
     verify: flags.verify,
+    ...(flags.json ? { dependencyOutput: "capture" as const } : {}),
   };
 
-  // `update()` catches nothing on purpose (see the module docblock): the receipt
-  // reader's non-ENOENT throw and `FileHasher`'s EISDIR must not become "nothing
-  // to update". They land here, print, and exit 1 — the same handling `runAdd`
-  // gives a throw out of `plan()`.
+  // `update()` preserves lifecycle throws as typed command errors (see the
+  // module docblock). They land here, project into JSON when requested, and
+  // exit 1 rather than becoming a successful "nothing to update" result.
   let result: UpdateResult;
   try {
     result = await update(config, refs, options, createUpdatePorts(streams.stderr));
   } catch (error) {
+    const failure =
+      error instanceof UpdateCommandError
+        ? error
+        : {
+            kind: "setup-failed" as const,
+            message: thrownMessage(error),
+            mutated: false,
+            paths: undefined,
+          };
+    if (flags.json === true) {
+      streams.stdout(
+        renderJson(
+          toUpdateJson(
+            config.root,
+            {
+              kind: "failed",
+              failure: {
+                kind: failure.kind,
+                message: failure.message,
+                ...(failure.paths === undefined ? {} : { paths: failure.paths }),
+              },
+              mutated: failure.mutated,
+              selected: [],
+              skipped: [],
+              notes: [],
+            },
+            false,
+            fallbackVerification,
+            flags.dryRun === true,
+          ),
+        ),
+      );
+      return EXIT_REFUSED;
+    }
     streams.stderr("error  update\n");
     streams.stderr(renderThrown(error));
     return EXIT_REFUSED;
   }
 
   const exit = updateExitCode(result);
-  const fallbackVerification: VerificationOutcome =
-    config.raw.verification === undefined
-      ? { status: "not-configured", checks: [], failure: null }
-      : { status: "skipped", checks: [], failure: null };
 
   if (flags.json === true) {
     streams.stdout(
-      renderJson(toUpdateJson(config.root, result, exit === EXIT_OK, fallbackVerification)),
+      renderJson(
+        toUpdateJson(
+          config.root,
+          result,
+          exit === EXIT_OK,
+          fallbackVerification,
+          flags.dryRun === true,
+        ),
+      ),
     );
     return exit;
   }
 
   // Diagnostics, then notes, then skips — widest scope first, and all on stderr
   // so `manteen update --dry-run > plan.txt` captures only what would change.
-  if (result.kind !== "nothing-to-do") {
+  if (result.kind === "refused" || result.kind === "attempted") {
     renderDiagnostics(result.plan.diagnostics, result.plan.root, streams.stderr);
   }
   streams.stderr(renderNotes(sortNotes(result.notes)));
   for (const skip of result.skipped) streams.stderr(renderSkip(skip));
+
+  if (result.kind === "failed") {
+    streams.stderr(`error  ${result.failure.kind}\n`);
+    for (const line of result.failure.message.split("\n")) streams.stderr(`  ${line}\n`);
+    return exit;
+  }
 
   if (result.kind === "nothing-to-do") {
     // A real answer, not silence: "everything is current" and "you named
@@ -923,6 +1112,7 @@ export async function runUpdate(
  */
 export function updateExitCode(result: UpdateResult): number {
   if (result.kind === "nothing-to-do") return EXIT_OK;
+  if (result.kind === "failed") return EXIT_REFUSED;
   if (result.kind === "refused") {
     // `force: false` deliberately: `plan.diagnostics` has already been
     // downgraded by the aggregator, so re-applying `--force` here would forgive

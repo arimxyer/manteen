@@ -386,6 +386,83 @@ test("add installs over http from an unauthenticated registry", async () => {
   }
 });
 
+test("a refused update dry run preserves the requested machine mode", async () => {
+  const disconnected = await startRegistryServer({ mounts: { gone: { dir: BASE_DIST } } });
+  let closed = false;
+  try {
+    const project = makeProject({ "@gone": disconnected.itemUrl("gone") });
+    const installed = await run(project, ["add", "@gone/empty-state"]);
+    assert.equal(installed.status, 0, installed.all);
+    const before = manifest(project);
+
+    await disconnected.close();
+    closed = true;
+
+    const refused = await run(project, ["update", "@gone/empty-state", "--dry-run", "--json"]);
+    assert.equal(refused.status, 1, refused.all);
+    const envelope = JSON.parse(refused.stdout);
+    assert.equal(envelope.ok, false);
+    assert.equal(envelope.mutated, false);
+    assert.equal(envelope.payload.kind, "refused");
+    assert.equal(envelope.payload.dryRun, true);
+    assert.ok(
+      envelope.diagnostics.some((diagnostic) => diagnostic.code === "fetch-failed"),
+      refused.stdout,
+    );
+    assert.deepEqual(manifest(project), before, "a refused preview must write nothing");
+  } finally {
+    if (!closed) await disconnected.close();
+  }
+});
+
+test("a built consumer reconnects an installed namespace across ephemeral ports", async () => {
+  const project = makeProject({ "@base": OPEN_URL });
+  const installed = await run(project, ["add", "@base/empty-state"]);
+  assert.equal(installed.status, 0, installed.all);
+
+  const moved = await startRegistryServer({ mounts: { moved: { dir: BASE_DIST } } });
+  try {
+    const movedUrl = moved.itemUrl("moved");
+    assert.notEqual(movedUrl, OPEN_URL);
+    const before = manifest(project);
+    const previewResult = await run(project, [
+      "registry",
+      "reconnect",
+      "@base",
+      "--url",
+      movedUrl,
+      "--dry-run",
+      "--json",
+    ]);
+    assert.equal(previewResult.status, 0, previewResult.all);
+    assert.deepEqual(manifest(project), before, "reconnect dry-run must be zero-write");
+    const preview = JSON.parse(previewResult.stdout);
+    assert.equal(preview.schemaVersion, 2);
+    assert.equal(preview.actions.length, 1);
+    assert.equal(preview.payload.plan.items[0].id, "@base/empty-state");
+
+    const applied = await run(project, preview.actions[0].argv.slice(1));
+    assert.equal(applied.status, 0, applied.all);
+    const appliedEnvelope = JSON.parse(applied.stdout);
+    assert.equal(appliedEnvelope.mutated, true);
+    assert.equal(
+      JSON.parse(readFileSync(join(project, "manteen.json"), "utf8")).registries["@base"],
+      movedUrl,
+    );
+    assert.equal(
+      JSON.parse(readFileSync(join(project, RECEIPT), "utf8")).items[0].sourceUrl,
+      movedUrl.replace("{name}", "empty-state"),
+    );
+
+    moved.clear();
+    const diff = await run(project, ["diff", "@base/empty-state", "--json"]);
+    assert.equal(diff.status, 0, diff.all);
+    assert.ok(moved.requests().some((request) => request.name === "empty-state.json"));
+  } finally {
+    await moved.close();
+  }
+});
+
 // ---- authentication ----------------------------------------------------------
 
 test("a registry that sends no Authorization header surfaces the 401", async () => {

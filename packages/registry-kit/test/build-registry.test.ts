@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import {
@@ -106,6 +107,49 @@ describe("dependency qualification", () => {
 });
 
 describe("meta.mantine", () => {
+  test("refuses a theme fragment import the consumer merger cannot carry", () => {
+    const root = mkdtempSync(join(tmpdir(), "manteen-theme-import-"));
+    try {
+      writeFileSync(
+        join(root, "manteen.registry.json"),
+        `${JSON.stringify({
+          name: "Theme import proof",
+          namespace: "@proof",
+          items: [
+            {
+              name: "metric-card",
+              kind: "component",
+              files: [{ path: "metric-card.tsx", as: "component" }],
+              themeFragment: "metric-card.theme.ts",
+            },
+          ],
+        })}\n`,
+      );
+      writeFileSync(
+        join(root, "metric-card.tsx"),
+        "export function MetricCard() { return null; }\n",
+      );
+      writeFileSync(
+        join(root, "metric-card.theme.ts"),
+        `import { createTheme } from "@mantine/core";\nimport { MetricCard } from "./metric-card";\n\nexport const theme = createTheme({ components: { MetricCard: MetricCard.extend({}) } });\n`,
+      );
+
+      expect(() => compileRegistry(join(root, "manteen.registry.json"))).toThrow(
+        /metric-card.*\.\/metric-card.*merged theme fragments can import only/s,
+      );
+
+      writeFileSync(
+        join(root, "metric-card.theme.ts"),
+        `import { createTheme, DEFAULT_THEME } from "@mantine/core";\n\nexport const theme = createTheme({ fontFamily: DEFAULT_THEME.fontFamily });\n`,
+      );
+      expect(() => compileRegistry(join(root, "manteen.registry.json"))).toThrow(
+        /DEFAULT_THEME outside the mergeable createTheme.*components\.Component\.extend.*boundary/s,
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   test("carries the version gate and provider requirement", () => {
     const theme = itemNamed(compileRegistry(BASE).items, "theme");
     const meta = (theme.meta as { mantine: Record<string, unknown> }).mantine;
@@ -282,6 +326,33 @@ describe("validation", () => {
     });
 
     expect(errors).not.toBeNull();
+  });
+
+  test("rejects unknown alias-like targets before wire output", () => {
+    const base = {
+      name: "target proof",
+      namespace: "@proof",
+      items: [
+        {
+          name: "x",
+          kind: "component",
+          files: [{ path: "a.tsx", as: "component", target: "@/components/x.tsx" }],
+        },
+      ],
+    };
+
+    expect(validateCatalog(base)).not.toBeNull();
+    expect(
+      validateCatalog({
+        ...base,
+        items: [
+          {
+            ...base.items[0],
+            files: [{ ...base.items[0]!.files[0], target: "@components/x.tsx" }],
+          },
+        ],
+      }),
+    ).toBeNull();
   });
 
   test("rejects a prop entry missing its type or carrying an unknown field", () => {

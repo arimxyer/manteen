@@ -22,6 +22,7 @@ import {
   type RemovalApplyPorts,
 } from "../src/removal/apply";
 import type { RemovalPlan } from "../src/removal/types";
+import { VERIFICATION_BOUNDARY } from "../src/verification/types";
 
 const roots: string[] = [];
 const DESTINATION = "src/components/ui/old.tsx";
@@ -259,6 +260,7 @@ describe("upstream-removal apply", () => {
     const outcome = applyRemoval(state.plan, {
       ...createRemovalApplyPorts(),
       verify: () => ({
+        ...VERIFICATION_BOUNDARY,
         status: "failed",
         checks: [],
         failure: {

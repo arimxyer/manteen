@@ -228,9 +228,17 @@ function commandError(stderr: string, exitCode: number): CommandError[] {
   }
   const first = message.split("\n", 1)[0] ?? "";
   const match = /^(?:error\s{2})?([a-z][a-z0-9-]*)/.exec(first);
+  const inferred = match?.[1];
+  const code =
+    exitCode === 2 && (inferred === undefined || inferred === "manteen" || inferred === "error")
+      ? "usage-error"
+      : (inferred ?? (exitCode === 2 ? "usage-error" : "command-failed"));
   return [
     {
-      code: match?.[1] ?? (exitCode === 2 ? "usage-error" : "command-failed"),
+      // Exit 2 is the executable's usage/config boundary. Human usage text
+      // commonly starts with the binary name (`manteen update: ...`), which is
+      // not an error code and must not leak into the machine vocabulary.
+      code,
       message,
       manualRationale: "The emitted error does not have a safe automatic remediation.",
     },
@@ -299,6 +307,10 @@ function hasWrittenFlag(value: unknown): boolean {
 
 function inferMutated(command: string, payload: Record<string, unknown> | null): boolean {
   if (payload === null || payload.dryRun === true) return false;
+  // A failed rollback means captured pre-images could not be proven restored.
+  // The exact durable bytes are unknowable, so schema-v2 requires the
+  // conservative machine claim even when per-file observations are empty.
+  if (command === "update" && payload.kind === "rollback-failed") return true;
   if (typeof payload.mutated === "boolean") return payload.mutated;
   if (command === "list" || command === "info" || command === "diff" || command === "status") {
     return false;

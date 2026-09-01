@@ -401,9 +401,10 @@ export interface ListRow {
 }
 
 export interface ListGroup {
-  registry: string;
+  /** Namespace for configured/recorded registries; null for direct URL installs. */
+  registry: string | null;
   /** REDACTED. */
-  redactedUrl: string;
+  redactedUrl: string | null;
   title: string | null;
   homepage: string | null;
   rows: ListRow[];
@@ -556,6 +557,22 @@ export interface UpdateSkip {
   detail: string;
 }
 
+/** A failure before or outside apply's returned `ApplyOutcome` contract. */
+export type UpdateCommandFailureKind =
+  | "receipt-unreadable"
+  | "selection-failed"
+  | "planning-failed"
+  | "apply-failed"
+  | "verification-failed"
+  | "setup-failed";
+
+export interface UpdateCommandFailure {
+  kind: UpdateCommandFailureKind;
+  message: string;
+  /** Absolute internally; machine projection makes these root-relative. */
+  paths?: string[];
+}
+
 /**
  * `manteen update`.
  *
@@ -571,6 +588,16 @@ export interface UpdateSkip {
 export type UpdateResult =
   | { kind: "nothing-to-do"; selected: readonly []; skipped: UpdateSkip[]; notes: InventoryNote[] }
   | {
+      /** The command could not safely reach or complete a returned apply outcome. */
+      kind: "failed";
+      failure: UpdateCommandFailure;
+      /** Conservative for unexpected apply/verification throws. */
+      mutated: boolean;
+      selected: CanonicalId[];
+      skipped: UpdateSkip[];
+      notes: InventoryNote[];
+    }
+  | {
       kind: "refused";
       /** Carries the blocking diagnostics; the renderer prints `plan.diagnostics`
        *  exactly as `add` does. */
@@ -580,7 +607,9 @@ export type UpdateResult =
       notes: InventoryNote[];
     }
   | {
-      kind: "applied";
+      /** The apply stage was entered. Inspect `outcome` for whether it previewed,
+       *  completed, failed before writes, rolled back, or could not roll back. */
+      kind: "attempted";
       plan: Plan;
       outcome: ApplyOutcome;
       /** Post-apply project checks. Never part of ApplyOutcome or its journal. */

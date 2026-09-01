@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { packageVersion } from "../registry-output";
 import { BUILD_USAGE, build } from "./build";
 import { DEV_USAGE, dev } from "./dev";
 import { kitEnvelope, writeJson } from "./json";
@@ -17,6 +18,9 @@ Commands:
                                         plan or apply source-owned author files
   dev [catalog] [outDir]                  watch, build and serve a local registry
 
+Options:
+  -V, --version                           print the installed package version
+
 Run a command with --help for its options.
 `;
 
@@ -30,6 +34,13 @@ Run a command with --help for its options.
 async function run(command: string | undefined, rest: string[]): Promise<number> {
   const json = command === "--json" || rest.includes("--json");
   switch (command) {
+    case "-V":
+    case "--version": {
+      const version = packageVersion();
+      if (json) writeJson(kitEnvelope("version", 0, false, { version }));
+      else process.stdout.write(`${version}\n`);
+      return 0;
+    }
     case "build":
       return build(rest);
     case "merge-theme":

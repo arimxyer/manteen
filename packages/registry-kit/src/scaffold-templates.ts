@@ -67,6 +67,7 @@ function stylesApiSource(name: string, itemName: string): string {
   type Factory,
   factory,
   Paper,
+  type PaperBaseProps,
   type StylesApiProps,
   Text,
   useProps,
@@ -78,7 +79,8 @@ import classes from "./${itemName}.module.css";
 
 export type ${name}StylesNames = "root" | "label";
 
-export interface ${name}Props extends BoxProps, StylesApiProps<${name}Factory> {
+export interface ${name}Props
+  extends BoxProps, PaperBaseProps, StylesApiProps<${name}Factory> {
   label?: ReactNode;
 }
 
@@ -161,7 +163,13 @@ export function ${name}Usage() {
   return `import { ${name} } from "./${itemName}";
 
 export function ${name}Usage() {
-  return <${name} label="A source-owned ${splitComponentName(name)}" />;
+  return (
+    <${name}
+      label="A source-owned ${splitComponentName(name)}"
+      radius="xl"
+      shadow="sm"
+    />
+  );
 }
 `;
 }
@@ -269,6 +277,7 @@ export function renderScaffoldTemplate(
   const directory = `src/${itemName}`;
   const componentPath = `${directory}/${itemName}.tsx`;
   const usagePath = `${directory}/${itemName}.usage.tsx`;
+  const componentTarget = `@ui/${itemName}/${itemName}.tsx`;
   const runtime = ["@mantine/core@^9.5.0"];
   const baseDevelopment = ["@types/react@^19.2.0", "react@^19.2.0", "typescript@^5.9.0"];
 
@@ -283,7 +292,7 @@ export function renderScaffoldTemplate(
         mantine: ">=9.5.0 <10",
         provider: true,
         npm: runtime,
-        files: [{ path: componentPath, as: "component" }],
+        files: [{ path: componentPath, as: "component", target: componentTarget }],
       },
       authorProfileMapping: null,
       requiredPackages: { runtime, development: baseDevelopment },
@@ -309,8 +318,12 @@ export function renderScaffoldTemplate(
         provider: true,
         npm: runtime,
         files: [
-          { path: componentPath, as: "component" },
-          { path: stylePath, as: "style", target: `@ui/${itemName}.module.css` },
+          { path: componentPath, as: "component", target: componentTarget },
+          {
+            path: stylePath,
+            as: "style",
+            target: `@ui/${itemName}/${itemName}.module.css`,
+          },
         ],
         stylesApi: { [name]: ["root", "label"] },
         usage: usagePath,
@@ -342,7 +355,7 @@ export function renderScaffoldTemplate(
         mantine: ">=9.5.0 <10",
         provider: true,
         npm: runtime,
-        files: [{ path: componentPath, as: "component" }],
+        files: [{ path: componentPath, as: "component", target: componentTarget }],
         usage: usagePath,
       },
       authorProfileMapping: null,

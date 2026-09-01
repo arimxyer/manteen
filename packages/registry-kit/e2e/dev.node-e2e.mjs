@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CLI = join(PACKAGE_ROOT, "dist/cli.mjs");
@@ -13,6 +13,7 @@ const CLI = join(PACKAGE_ROOT, "dist/cli.mjs");
 function fixture() {
   const root = realpathSync.native(mkdtempSync(join(tmpdir(), "manteen-kit-dev-node-")));
   const catalog = join(root, "manteen.registry.json");
+  const profile = join(root, "manteen.author-profile.json");
   const source = join(root, "src/alpha.tsx");
   const outDir = join(root, "generated/r");
   mkdirSync(dirname(source), { recursive: true });
@@ -20,6 +21,7 @@ function fixture() {
   const catalogValue = {
     name: "Dev fixture",
     namespace: "@dev",
+    authorProfile: "manteen.author-profile.json",
     items: [
       {
         name: "alpha",
@@ -29,6 +31,22 @@ function fixture() {
     ],
   };
   writeFileSync(catalog, `${JSON.stringify(catalogValue, null, 2)}\n`);
+  writeFileSync(
+    profile,
+    `${JSON.stringify({ schemaVersion: 2, verification: { scripts: ["verify:author"] } }, null, 2)}\n`,
+  );
+  writeFileSync(
+    join(root, "package.json"),
+    `${JSON.stringify({
+      name: "dev-proof",
+      private: true,
+      scripts: { "verify:author": "node verify-author.mjs" },
+    })}\n`,
+  );
+  writeFileSync(
+    join(root, "verify-author.mjs"),
+    'import { readFileSync } from "node:fs";\nif (readFileSync(new URL("./src/alpha.tsx", import.meta.url), "utf8").includes("verification-failure")) process.exitCode = 1;\n',
+  );
   return { root, catalog, source, outDir, catalogValue };
 }
 
@@ -69,7 +87,11 @@ function eventStream(child) {
           timer: setTimeout(() => {
             const index = waiters.indexOf(waiter);
             if (index >= 0) waiters.splice(index, 1);
-            reject(new Error(`Timed out waiting for ${label}; events: ${JSON.stringify(events)}`));
+            reject(
+              new Error(
+                `Timed out waiting for ${label}; events: ${JSON.stringify(events)}; stderr: ${JSON.stringify(stderr.join(""))}`,
+              ),
+            );
           }, 10_000),
         };
         waiters.push(waiter);
@@ -96,10 +118,24 @@ test("built dev server retains last-good output and recovers in one foreground p
       "initial build",
     );
     assert.equal(first.payload.namespace, "@dev");
+    assert.equal(first.payload.authorVerification.status, "passed");
+    assert.equal(first.payload.authorVerification.checks[0].script, "verify:author");
     assert.deepEqual(first.payload.registryAddArgv, [
       "manteen",
       "registry",
       "add",
+      "@dev",
+      "--url",
+      `${ready.payload.baseUrl}/{name}.json`,
+      "--index",
+      `${ready.payload.baseUrl}/registry.json`,
+      "--dry-run",
+      "--json",
+    ]);
+    assert.deepEqual(first.payload.registryReconnectArgv, [
+      "manteen",
+      "registry",
+      "reconnect",
       "@dev",
       "--url",
       `${ready.payload.baseUrl}/{name}.json`,
@@ -118,9 +154,24 @@ test("built dev server retains last-good output and recovers in one foreground p
       405,
     );
 
+    writeFileSync(created.source, 'export const Alpha = () => "verification-failure";\n');
+    const verificationFailed = await stream.wait(
+      (event) => event.event === "build-failed" && event.sequence > first.sequence,
+      "author verification failure",
+    );
+    assert.equal(verificationFailed.payload.code, "author-verification-script-failed");
+    assert.equal(verificationFailed.payload.servingLastGood, true);
+    assert.match(await (await fetch(`${ready.payload.baseUrl}/alpha.json`)).text(), /first/);
+
+    writeFileSync(created.source, 'export const Alpha = () => "first";\n');
+    const verificationRecovered = await stream.wait(
+      (event) => event.event === "build-succeeded" && event.sequence > verificationFailed.sequence,
+      "author verification recovery",
+    );
+
     writeFileSync(created.catalog, "{ broken\n");
     const failed = await stream.wait(
-      (event) => event.event === "build-failed" && event.sequence > first.sequence,
+      (event) => event.event === "build-failed" && event.sequence > verificationRecovered.sequence,
       "failed rebuild",
     );
     assert.equal(failed.payload.servingLastGood, true);
@@ -157,6 +208,86 @@ test("built dev server retains last-good output and recovers in one foreground p
     assert.equal(stream.stderr.join(""), "");
   } finally {
     if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+    rmSync(created.root, { recursive: true, force: true });
+  }
+});
+
+test("npm exec SIGINT emits stopped before EOF and closes the listener", {
+  skip: process.platform === "win32",
+}, async () => {
+  const created = fixture();
+  const bin = join(created.root, "node_modules", ".bin");
+  const installedPackage = join(created.root, "node_modules", "manteen-kit");
+  mkdirSync(bin, { recursive: true });
+  mkdirSync(installedPackage, { recursive: true });
+  writeFileSync(
+    join(installedPackage, "package.json"),
+    `${JSON.stringify({
+      name: "manteen-kit",
+      version: "0.0.0-test",
+      type: "module",
+      bin: { "manteen-kit": "cli.mjs" },
+    })}\n`,
+  );
+  writeFileSync(
+    join(installedPackage, "cli.mjs"),
+    `#!/usr/bin/env node\nawait import(${JSON.stringify(pathToFileURL(CLI).href)});\n`,
+    { mode: 0o755 },
+  );
+  const shim = join(bin, "manteen-kit");
+  symlinkSync("../manteen-kit/cli.mjs", shim);
+  const child = spawn(
+    "npm",
+    [
+      "exec",
+      "--offline",
+      "--yes=false",
+      "--",
+      "manteen-kit",
+      "dev",
+      created.catalog,
+      created.outDir,
+      "--port",
+      "0",
+      "--jsonl",
+    ],
+    {
+      cwd: created.root,
+      detached: true,
+      stdio: ["ignore", "pipe", "pipe"],
+      env: process.env,
+    },
+  );
+  const stream = eventStream(child);
+
+  try {
+    const ready = await stream.wait((event) => event.event === "ready", "npm exec ready");
+    const built = await stream.wait(
+      (event) => event.event === "build-succeeded" && event.sequence > ready.sequence,
+      "npm exec initial build",
+    );
+    const exited = new Promise((accept) =>
+      child.once("exit", (code, signal) => accept({ code, signal })),
+    );
+    // A terminal sends Ctrl-C to the foreground process group, not only to the
+    // npm wrapper. The detached group keeps that realistic signal away from
+    // the test runner while exercising both npm and the CLI child.
+    process.kill(-child.pid, "SIGINT");
+    const stopped = await stream.wait(
+      (event) => event.event === "stopped" && event.sequence > built.sequence,
+      "npm exec stopped event",
+    );
+    assert.ok(["SIGINT", "SIGHUP", "SIGTERM"].includes(stopped.payload.reason));
+    await exited;
+    await assert.rejects(fetch(`${ready.payload.baseUrl}/registry.json`));
+  } finally {
+    if (child.exitCode === null && child.signalCode === null) {
+      try {
+        process.kill(-child.pid, "SIGKILL");
+      } catch {
+        child.kill("SIGKILL");
+      }
+    }
     rmSync(created.root, { recursive: true, force: true });
   }
 });

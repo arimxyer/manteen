@@ -1,5 +1,20 @@
 # manteen
 
+## 0.9.1
+
+- Keep add/update dependency-manager transcripts out of machine stdout, sanitize corrupt-receipt
+  parser errors, reject unknown alias-like explicit targets, and classify true zero-mutation,
+  unverified updates as `nothing-to-do`.
+- Make update machine outcomes truthful after preview, refusal, failure, and rollback; every
+  operation path after usage/config acceptance echoes the requested dry-run mode. Corrupt receipts
+  now fail instead of reporting a successful no-op, thrown lifecycle stages retain typed failure
+  payloads, and rollback recovery no longer assumes Git.
+- Add digest-bound `registry reconnect`, which verifies installed item identities at a new endpoint
+  and atomically migrates registry config plus receipt source URLs.
+- Make `list --installed` a receipt-first offline inventory that never fetches registry indexes.
+- Add machine-explicit verification `phase` and `rollbackScope` fields so managed rollback is not
+  mistaken for reversal of dependency, cache, generated-artifact, or arbitrary script effects.
+
 ## 0.9.0
 
 - Replace the machine envelope with schema version 2, including an always-present top-level

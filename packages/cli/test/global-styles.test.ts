@@ -233,6 +233,17 @@ describe("managed stylesheet composition", () => {
 });
 
 describe("receipt v3", () => {
+  test("does not echo corrupt receipt bytes through parser details", () => {
+    const sentinel = "CANARY_NOT_SECRET_7f50a3f8";
+    const result = parseReceipt(
+      `{"lockfileVersion":3,"items":[${sentinel}]}`,
+      createReceiptValidator(),
+    );
+
+    expect(result).toEqual({ ok: false, reason: "unparseable", detail: "invalid JSON syntax" });
+    expect(JSON.stringify(result)).not.toContain(sentinel);
+  });
+
   test("refuses legacy receipts because v3 requires exact merge bases", () => {
     const v1 = `${JSON.stringify({ lockfileVersion: 1, items: [], theme: null }, null, 2)}\n`;
     const result = parseReceipt(v1, createReceiptValidator());

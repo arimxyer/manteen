@@ -145,8 +145,10 @@ export async function buildList(
   ports: ListPorts,
   options: ListOptions = {},
 ): Promise<ListResult> {
-  const available = await readAvailable(config, ports.available, toAvailableOptions(options));
   const installed = readInstalled(config.root, ports.installed);
+  if (options.installed === true) return buildInstalledList(config, installed, options);
+
+  const available = await readAvailable(config, ports.available, toAvailableOptions(options));
   const byId = itemsById(installed);
   const query = normalizedQuery(options.query);
 
@@ -187,6 +189,100 @@ export async function buildList(
       // warning.
       ...missingFromIndex(unfilteredGroups, byId),
     ]),
+  };
+}
+
+/**
+ * Receipt-first installed inventory. `--installed` answers what this project
+ * owns, so fetching an index would make a durable local fact depend on a live
+ * registry and would strand local-development consumers as soon as their kit
+ * server stops.
+ *
+ * Index-only display metadata is deliberately null. A receipt proves id, source,
+ * wire type, directness and managed files; inventing title/description/Mantine
+ * metadata would be less truthful than the smaller offline answer.
+ */
+function buildInstalledList(
+  config: LoadedConfig,
+  installed: ReturnType<typeof readInstalled>,
+  options: ListOptions,
+): ListResult {
+  const requested =
+    options.registries === undefined || options.registries.length === 0
+      ? null
+      : new Set(options.registries);
+  const receiptNamespaces = new Set(
+    installed.items.flatMap((item) => (item.registry === null ? [] : [item.registry])),
+  );
+  const notes = [...installed.notes];
+
+  if (requested !== null) {
+    const known = new Set([...config.registries.keys(), ...receiptNamespaces]);
+    for (const namespace of requested) {
+      if (known.has(namespace)) continue;
+      const configured = [...config.registries.keys()].sort(byCodeUnit);
+      notes.push({
+        code: "unknown-namespace",
+        registry: namespace,
+        message:
+          configured.length > 0
+            ? `${namespace} is not a registered namespace. Registered: ${configured.join(", ")}.`
+            : `${namespace} is not a registered namespace. No registries are configured in manteen.json.`,
+      });
+    }
+  }
+
+  const grouped = new Map<string | null, InstalledItem[]>();
+  for (const item of installed.items) {
+    if (requested !== null && (item.registry === null || !requested.has(item.registry))) continue;
+    const current = grouped.get(item.registry) ?? [];
+    current.push(item);
+    grouped.set(item.registry, current);
+  }
+
+  const groups: ListGroup[] = [...grouped.entries()]
+    .sort(([left], [right]) => {
+      if (left === null) return right === null ? 0 : 1;
+      if (right === null) return -1;
+      return byCodeUnit(left, right);
+    })
+    .map(([namespace, items]) => {
+      const registry = namespace === null ? null : config.registries.get(namespace);
+      return {
+        registry: namespace,
+        redactedUrl: registry?.index ?? null,
+        title: null,
+        homepage: null,
+        rows: items.map((item) => {
+          const available = receiptAvailable(item);
+          const query = normalizedQuery(options.query);
+          return {
+            item: available,
+            installed: item,
+            queryMatches: queryMatchFields(available, query),
+            queryRank: queryRank(available, query),
+          };
+        }),
+      };
+    });
+
+  return {
+    groups: filterGroups(groups, { ...options, installed: false }),
+    notes: sortNotes(notes),
+  };
+}
+
+function receiptAvailable(item: InstalledItem): AvailableItem {
+  const name = item.registry === null ? item.id : item.id.slice(item.registry.length + 1);
+  return {
+    id: item.id,
+    rawName: name,
+    name,
+    registry: item.registry ?? "",
+    type: item.wireType,
+    title: null,
+    description: null,
+    mantine: null,
   };
 }
 
@@ -311,20 +407,22 @@ function missingFromIndex(
   const notes: InventoryNote[] = [];
 
   for (const group of groups) {
+    const registry = group.registry;
+    if (registry === null) continue;
     const listed = new Set(group.rows.map((row) => row.item.id).filter((id) => id !== null));
 
     const absent = [...byId.values()]
-      .filter((item) => item.registry === group.registry && !listed.has(item.id))
+      .filter((item) => item.registry === registry && !listed.has(item.id))
       .map((item) => item.id)
       .sort(byCodeUnit);
 
     for (const itemId of absent) {
       notes.push({
         code: "not-in-index",
-        registry: group.registry,
+        registry,
         itemId,
-        redactedUrl: group.redactedUrl,
-        message: `${itemId} is installed, and ${group.registry}'s index does not list it — it may have been renamed or removed upstream. \`manteen info ${itemId}\` fetches the item document directly.`,
+        redactedUrl: group.redactedUrl ?? undefined,
+        message: `${itemId} is installed, and ${registry}'s index does not list it — it may have been renamed or removed upstream. \`manteen info ${itemId}\` fetches the item document directly.`,
       });
     }
   }
@@ -441,8 +539,9 @@ function renderRows(rows: readonly ListRow[]): string[] {
  * LOOK like an answer, not like output that got truncated.
  */
 function renderGroup(group: ListGroup): string[] {
-  const lines = [group.title === null ? group.registry : `${group.registry}  ${group.title}`];
-  lines.push(`  ${group.redactedUrl}`);
+  const label = group.registry ?? "direct URL installs";
+  const lines = [group.title === null ? label : `${label}  ${group.title}`];
+  if (group.redactedUrl !== null) lines.push(`  ${group.redactedUrl}`);
   if (group.homepage !== null) lines.push(`  ${group.homepage}`);
   lines.push("");
   lines.push(...(group.rows.length === 0 ? ["  (no items)"] : renderRows(group.rows)));
@@ -530,9 +629,10 @@ export interface ListJsonItem {
 }
 
 export interface ListJsonRegistry {
-  namespace: string;
+  /** Null for receipt-backed direct URL installs. */
+  namespace: string | null;
   /** REDACTED index URL. */
-  index: string;
+  index: string | null;
   title: string | null;
   homepage: string | null;
   items: ListJsonItem[];

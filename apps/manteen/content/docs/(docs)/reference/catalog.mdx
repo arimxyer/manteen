@@ -80,6 +80,24 @@ of that category exactly once: item/component for Styles API, item/export for pr
 usage. Stale, missing, and duplicate mappings refuse. One physical evidence file cannot be reused
 across sections.
 
+Omit an unused category instead of writing an empty array. For a profile that only runs author
+checks, this is complete and valid:
+
+```json
+{
+  "schemaVersion": 2,
+  "verification": {
+    "scripts": ["lint", "typecheck"]
+  }
+}
+```
+
+Theme fragments are merged as theme-object syntax, not installed as standalone modules. Imports
+are limited to the direct `createTheme(...)` wrapper and unaliased Mantine components used as
+direct `components.Component.extend(...)` entries. Local, default, namespace, aliased, type-only,
+and other unreconstructable imports refuse during author build because the consumer merge cannot
+carry those bindings into its theme module.
+
 The generic validator checks strict profile shape, canonical repository-relative POSIX paths,
 ordinary-file type, and realpath containment. It does not read or execute evidence. The author's
 normal tests remain the behavioral authority. Use the published `manteen-kit/schema/author-profile`

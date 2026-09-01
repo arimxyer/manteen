@@ -52,46 +52,17 @@ for (const mantineVersion of MANTINE_VERSIONS) {
         2,
       )}\n`,
     );
+    writeFileSync(
+      join(root, "package.json"),
+      `${JSON.stringify({ name: "manteen-scaffold-registration-proof", private: true }, null, 2)}\n`,
+    );
 
-    const plans = templates.map(([template, itemName]) => {
-      const input = { catalogPath, template, itemName };
+    for (const [template, itemName] of templates) {
+      const input = { catalogPath, template, itemName, register: true };
       const plan = planScaffold(input);
       if (!plan.safe) throw new Error(JSON.stringify(plan.diagnostics));
       applyScaffold(input, plan.planDigest);
-      return plan;
-    });
-
-    writeFileSync(
-      catalogPath,
-      `${JSON.stringify(
-        {
-          ...baseCatalog,
-          items: [...baseCatalog.items, ...plans.map((plan) => plan.catalogInsertion)],
-        },
-        null,
-        2,
-      )}\n`,
-    );
-    writeFileSync(
-      profilePath,
-      `${JSON.stringify(
-        {
-          schemaVersion: 2,
-          stylesApi: [
-            {
-              item: "existing",
-              component: "Existing",
-              evidence: "evidence/existing.contract",
-            },
-            ...plans.flatMap((plan) =>
-              plan.authorProfileInsertion ? [plan.authorProfileInsertion.mapping] : [],
-            ),
-          ],
-        },
-        null,
-        2,
-      )}\n`,
-    );
+    }
     const compiled = compileRegistry(catalogPath);
     if (compiled.failures.length > 0 || compiled.items.length !== templates.length + 1) {
       throw new Error(
@@ -157,7 +128,7 @@ for (const mantineVersion of MANTINE_VERSIONS) {
       stdio: "inherit",
     });
     process.stdout.write(
-      `Mantine ${mantineVersion}: three scaffold templates typechecked; manually consumed registry compiled.\n`,
+      `Mantine ${mantineVersion}: three registered scaffold templates typechecked and compiled.\n`,
     );
   } finally {
     rmSync(root, { recursive: true, force: true });

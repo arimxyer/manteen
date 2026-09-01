@@ -1,5 +1,21 @@
 # manteen-kit
 
+## 0.3.1
+
+- Reject unknown alias-like file targets during author validation, and make `dev --jsonl` emit its
+  final stopped event reliably when Ctrl-C arrives through `npm exec`.
+- Expose Paper props from the Paper-backed Styles API scaffold and add `-V, --version` package
+  identity output, including a structured JSON form.
+- Preserve scaffold component/style directory topology and add digest-gated `scaffold --register`
+  plans that atomically add source, catalog entries, author evidence mappings, and exact missing
+  package declarations without replacing authored conflicts.
+- Emit an explicit verified registry reconnect preview from the dev server after an ephemeral-port
+  restart.
+- Refuse unsupported theme-fragment imports during author build, clarify exact scaffold dependency
+  ownership, and give an actionable omission rule for empty author-profile categories.
+- Let author profiles declare ordered package verification scripts; `build` and `dev` run and
+  report them before publishing output, while dev retains its last-good snapshot on failure.
+
 ## 0.3.0
 
 - Replace the command envelope with schema version 2 and emit an exact reviewed scaffold apply argv

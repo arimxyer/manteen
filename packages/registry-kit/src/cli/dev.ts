@@ -1,13 +1,14 @@
-import { existsSync, type FSWatcher, readFileSync, watch } from "node:fs";
+import { existsSync, type FSWatcher, readFileSync, watch, writeSync } from "node:fs";
 import { createServer } from "node:http";
 import { dirname, isAbsolute, resolve } from "node:path";
-
+import { AuthorVerificationError, runAuthorVerification } from "../author-verification";
 import {
   AuthorConformanceError,
   type CompileResult,
   compileRegistry,
   type MantineRegistry,
   RegistryOutputError,
+  ThemeFragmentImportError,
   writeRegistry,
 } from "../build-registry";
 import { MantineRangeError } from "../mantine-ranges";
@@ -119,6 +120,13 @@ function discoverInputs(catalogPath: string): string[] {
             }
           }
         }
+        if (
+          profile.verification &&
+          typeof profile.verification === "object" &&
+          Array.isArray((profile.verification as { scripts?: unknown }).scripts)
+        ) {
+          paths.add(resolve(root, "package.json"));
+        }
       } catch {
         // The profile itself remains watched; a later valid write refreshes its evidence graph.
       }
@@ -151,6 +159,14 @@ function errorPayload(error: unknown): { code: string; message: string; details?
     return { code: "mantine-range-validation-failed", message, details: error.failures };
   if (error instanceof RegistryOutputError)
     return { code: "registry-output-refused", message, details: error.diagnostics };
+  if (error instanceof ThemeFragmentImportError)
+    return { code: "theme-fragment-import-unsupported", message, details: error.failures };
+  if (error instanceof AuthorVerificationError)
+    return {
+      code: error.outcome.failure?.code ?? "author-verification-failed",
+      message,
+      details: error.outcome,
+    };
   return { code: "build-failed", message };
 }
 
@@ -169,8 +185,14 @@ export async function dev(argv: string[]): Promise<number> {
   const emit = (event: DevEvent["event"], payload: Record<string, unknown>) => {
     sequence += 1;
     const value: DevEvent = { schemaVersion: 1, sequence, event, payload };
-    if (args.jsonl) process.stdout.write(`${JSON.stringify(value)}\n`);
-    else if (event === "build-failed")
+    if (args.jsonl) {
+      const line = `${JSON.stringify(value)}\n`;
+      // npm exec may terminate its child immediately after forwarding Ctrl-C.
+      // The terminal lifecycle event therefore uses a synchronous fd write:
+      // once emit() returns, the complete line is in the supervisor's pipe.
+      if (event === "stopped") writeSync(process.stdout.fd, line);
+      else process.stdout.write(line);
+    } else if (event === "build-failed")
       process.stderr.write(`Build failed: ${String(payload.message ?? "unknown failure")}\n`);
     else if (event === "build-succeeded")
       process.stdout.write(
@@ -205,9 +227,40 @@ export async function dev(argv: string[]): Promise<number> {
 
   const build = () => {
     try {
-      const result = compileRegistry(args.catalog);
+      let result = compileRegistry(args.catalog);
       if (result.failures.length > 0)
         throw new Error(`${result.failures.length} item(s) failed wire-schema validation.`);
+      const authorVerification = runAuthorVerification(args.catalog, result.authorConformance);
+      if (authorVerification.status === "failed") {
+        throw new AuthorVerificationError(authorVerification);
+      }
+      if (authorVerification.status === "passed") {
+        try {
+          const revalidated = compileRegistry(args.catalog);
+          if (revalidated.failures.length > 0) {
+            throw new Error(
+              `${revalidated.failures.length} item(s) failed wire-schema validation.`,
+            );
+          }
+          if (
+            JSON.stringify(revalidated.authorConformance?.verification ?? null) !==
+            JSON.stringify(result.authorConformance?.verification ?? null)
+          ) {
+            throw new Error("The author verification configuration changed while its scripts ran.");
+          }
+          result = revalidated;
+        } catch (error) {
+          throw new AuthorVerificationError({
+            ...authorVerification,
+            status: "failed",
+            failure: {
+              code: "author-verification-input-drift",
+              script: null,
+              message: `Registry inputs could not be revalidated after author verification: ${error instanceof Error ? error.message : String(error)}`,
+            },
+          });
+        }
+      }
       const outcome = writeRegistry(result, args.outDir, { overwriteOutput: args.overwriteOutput });
       served = snapshot(result);
       const itemUrl = `${baseUrl}/{name}.json`;
@@ -217,12 +270,25 @@ export async function dev(argv: string[]): Promise<number> {
         itemCount: result.items.length,
         mutated: outcome.mutated,
         outputStatus: outcome.status,
+        authorVerification,
         itemUrl,
         indexUrl,
         registryAddArgv: [
           "manteen",
           "registry",
           "add",
+          result.source.namespace,
+          "--url",
+          itemUrl,
+          "--index",
+          indexUrl,
+          "--dry-run",
+          "--json",
+        ],
+        registryReconnectArgv: [
+          "manteen",
+          "registry",
+          "reconnect",
           result.source.namespace,
           "--url",
           itemUrl,
@@ -288,20 +354,40 @@ export async function dev(argv: string[]): Promise<number> {
     process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
     return 1;
   }
+
+  // Install lifecycle handlers BEFORE publishing `ready` or
+  // `build-succeeded`. Those lines are observable by a supervisor immediately;
+  // registering afterward leaves a real race where an immediate Ctrl-C takes
+  // Node's default exit path and truncates the stream before `stopped`.
+  const stopped = new Promise<void>((accept) => {
+    let stopping = false;
+    const stop = (signal: string) => {
+      if (stopping) return;
+      stopping = true;
+      // Announce acceptance synchronously before npm can escalate its forwarded
+      // signal. Cleanup follows immediately below, and the command does not
+      // resolve until the listener has closed.
+      emit("stopped", { reason: signal });
+      accept();
+    };
+    process.once("SIGINT", () => stop("SIGINT"));
+    process.once("SIGTERM", () => stop("SIGTERM"));
+    // npm exec can leave its child outside the foreground process group. When
+    // npm itself receives Ctrl-C and tears down the wrapper, the child observes
+    // a hangup rather than SIGINT. Treat that as the same graceful lifecycle
+    // boundary so supervisors still receive the documented terminal event.
+    process.once("SIGHUP", () => stop("SIGHUP"));
+  });
+
   const address = server.address();
   const port = typeof address === "object" && address !== null ? address.port : args.port;
   baseUrl = `http://${args.host}:${port}`;
   emit("ready", { host: args.host, port, baseUrl, catalog: args.catalog, outDir: args.outDir });
   build();
 
-  const stopped = await new Promise<string>((accept) => {
-    const stop = (signal: string) => accept(signal);
-    process.once("SIGINT", () => stop("SIGINT"));
-    process.once("SIGTERM", () => stop("SIGTERM"));
-  });
+  await stopped;
   if (timer !== null) clearTimeout(timer);
   for (const watcher of watchers.values()) watcher.close();
   await new Promise<void>((accept) => server.close(() => accept()));
-  emit("stopped", { reason: stopped });
   return 0;
 }

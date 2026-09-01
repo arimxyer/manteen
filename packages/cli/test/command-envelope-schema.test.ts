@@ -72,4 +72,17 @@ describe("published command envelope schema", () => {
   test("refuses extra top-level fields so the eleven-key boundary cannot drift", () => {
     expect(validate(envelope({ extra: true }))).toBe(false);
   });
+
+  test("requires every non-usage update result to retain kind and dry-run mode", () => {
+    const updateFailure = envelope({
+      command: "update",
+      ok: false,
+      exitCode: 1,
+      payload: { kind: "failed", dryRun: true },
+    });
+    expect(validate(updateFailure)).toBe(true);
+    expect(validate({ ...updateFailure, payload: null })).toBe(false);
+    expect(validate({ ...updateFailure, payload: { kind: "failed" } })).toBe(false);
+    expect(validate({ ...updateFailure, ok: false, exitCode: 2, payload: null })).toBe(true);
+  });
 });

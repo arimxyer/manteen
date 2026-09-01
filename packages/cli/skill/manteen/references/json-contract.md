@@ -25,6 +25,11 @@ Require `ok === (exitCode === 0)`. Interpret `mutated` as whether durable projec
 changed when the process exits, including after rollback attempts. Do not infer mutation from a
 planned write count.
 
+Verification outcomes explicitly report `phase: "post-write-pre-commit"` and
+`rollbackScope: "manteen-managed"`. Never broaden that scope to dependency installations, caches,
+generated artifacts, or arbitrary project-script effects. `list --installed` is a receipt-first
+offline inventory and must not be treated as live registry availability evidence.
+
 Validate documents against the JSON schemas shipped by the installed package when durable
 automation depends on them. Branch on stable codes and fields, not display text.
 
@@ -66,3 +71,12 @@ Plan digests exclude source bodies, expanded variables, timestamps, and incident
 They bind normalized roots/options/refs, redacted sources, hashes, destinations, dependency and
 theme/style operations, verification definitions, and preimages. A mismatch requires a fresh
 preview, not `--force`.
+
+For `update`, treat `payload.kind` as the final outcome: `nothing-to-do`, `refused`, `previewed`,
+`cancelled`, `applied`, `rolled-back`, `rollback-failed`, or `failed`. A restored verification or
+write failure is `rolled-back`, not `applied`. Read `failure.kind` and `verification` for the cause.
+After usage and project configuration are accepted, `payload.dryRun` echoes the invocation on every
+update exit, including receipt/read failure and resolution refusal before apply. Usage/configuration
+exit 2 may have `payload: null`. Never treat `receipt-unreadable` or `selection-failed` as a clean
+no-op. A `rollback-failed` payload carries relative paths; restore them from version control or a
+trusted pre-run copy before retrying.

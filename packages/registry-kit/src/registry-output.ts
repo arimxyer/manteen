@@ -82,7 +82,7 @@ function sha256(value: string | Buffer): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function packageVersion(): string {
+export function packageVersion(): string {
   try {
     const manifest = JSON.parse(
       readFileSync(resolve(import.meta.dirname, "../package.json"), "utf8"),

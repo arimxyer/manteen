@@ -80,6 +80,11 @@ manteen status --json >manteen-result.json
 When a harness needs verifier output too, capture the streams independently and treat the JSON
 document as the command result.
 
+Verification payloads name their exact execution and rollback boundary:
+`phase: "post-write-pre-commit"` and `rollbackScope: "manteen-managed"`. These fields do not cover
+dependency installations, caches, generated artifacts, or arbitrary side effects from a project
+script.
+
 ## Exit semantics
 
 | Exit | Meaning |
@@ -104,6 +109,21 @@ plan-time refusal and a dry-run report `false`. A failed transaction can also re
 its journal restores captured state. Conversely, an unowned side effect such as a dependency
 installation can remain even when Manteen restores its own captured bytes, so callers must read the
 field rather than equating a non-zero exit with no effects.
+
+### Update outcomes are not execution stages
+
+For `update`, `payload.kind` is the final operation outcome: `nothing-to-do`, `refused`,
+`previewed`, `cancelled`, `applied`, `rolled-back`, `rollback-failed`, or `failed`. A transaction
+that reached writes but restored its managed preimages is `rolled-back`; inspect `failure.kind` and
+`verification` for the narrower cause. Once usage and project configuration are valid,
+`payload.dryRun` always echoes the requested invocation, including receipt/read failure and a
+refusal before apply. Usage/configuration exit 2 may carry `payload: null`.
+
+A readable invalid receipt is `failed` with `failure.kind: "receipt-unreadable"`; an OS-level
+receipt or installed-file read failure is `selection-failed`. Neither is a successful no-op.
+Unexpected apply/verification throws conservatively report mutation possible instead of claiming
+the tree is unchanged. Rollback failures include root-relative paths and recovery guidance that
+works with or without Git.
 
 ## A safe parsing loop
 

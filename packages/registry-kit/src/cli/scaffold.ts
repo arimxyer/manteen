@@ -6,8 +6,8 @@ import { kitEnvelope, writeJson } from "./json";
 
 export const SCAFFOLD_USAGE = `manteen-kit scaffold --template <template> --name <item> [options]
 
-Plans or applies source files for one new catalog item. The catalog, author profile,
-and package.json are review-only boundaries and are never changed.
+Plans or applies one new catalog item. Source-only is the default; --register adds
+digest-bound surgical catalog, author-profile, and package declaration edits.
 
 Templates:
   component-basic
@@ -22,8 +22,9 @@ Options:
   --template <template>  explicit scaffold template
   --name <item>          portable strict kebab-case catalog item name
   --catalog <path>       catalog path (default: ./manteen.registry.json)
+  --register             include bounded registration edits in the plan/apply
   --dry-run              compute a zero-write plan
-  --apply                apply only source files from a matching plan
+  --apply                apply every change from a matching plan
   --expect-plan <sha256> exact digest emitted by an equivalent dry run
   --json                 emit one versioned machine-readable document
 `;
@@ -34,6 +35,7 @@ interface ScaffoldArgs {
   catalogPath: string;
   mode: "dry-run" | "apply";
   expectedPlan: string | null;
+  register: boolean;
 }
 
 function parseArgs(argv: string[]): ScaffoldArgs | null {
@@ -45,6 +47,7 @@ function parseArgs(argv: string[]): ScaffoldArgs | null {
   let apply = false;
   let expectedPlan: string | null = null;
   let json = false;
+  let register = false;
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
@@ -82,6 +85,9 @@ function parseArgs(argv: string[]): ScaffoldArgs | null {
     } else if (arg === "--json") {
       if (json) return null;
       json = true;
+    } else if (arg === "--register") {
+      if (register) return null;
+      register = true;
     } else {
       return null;
     }
@@ -105,6 +111,7 @@ function parseArgs(argv: string[]): ScaffoldArgs | null {
     catalogPath: resolve(catalogPath),
     mode: dryRun ? "dry-run" : "apply",
     expectedPlan,
+    register,
   };
 }
 
@@ -135,6 +142,7 @@ export function scaffold(argv: string[]): number {
     catalogPath: args.catalogPath,
     template: args.template,
     itemName: args.itemName,
+    register: args.register,
   };
   if (args.mode === "dry-run") {
     const plan = planScaffold(input);

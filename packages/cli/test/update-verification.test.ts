@@ -5,7 +5,12 @@ import { tmpdir } from "node:os";
 import { delimiter, dirname, join } from "node:path";
 import { apply } from "../src/apply/index";
 import { hashFileBytes, preflight } from "../src/apply/preflight";
-import { renderVerification, update } from "../src/commands/update";
+import {
+  renderVerification,
+  UpdateCommandError,
+  update,
+  updatePayloadKind,
+} from "../src/commands/update";
 import { loadConfig } from "../src/config/load";
 import { createConfigValidator } from "../src/config/validate";
 import { isBlocking } from "../src/plan/diagnostics";
@@ -23,6 +28,7 @@ import type {
   VerificationProcessRequest,
   VerificationProcessResult,
 } from "../src/verification/types";
+import { VERIFICATION_BOUNDARY } from "../src/verification/types";
 
 const roots: string[] = [];
 
@@ -175,6 +181,7 @@ function verificationFixture(scriptNames: string[]): VerificationFixture {
     configPath,
     `${JSON.stringify({ ...BASE_CONFIG, verification: { update: scriptNames } })}\n`,
   );
+
   write(
     join(root, "tsconfig.json"),
     `${JSON.stringify({
@@ -270,6 +277,7 @@ describe("post-apply verification", () => {
         verify: async () => {
           write(fixture.plan.configPath, '{"changed":true}\n');
           return {
+            ...VERIFICATION_BOUNDARY,
             status: "failed",
             checks: [],
             failure: {
@@ -286,7 +294,8 @@ describe("post-apply verification", () => {
 
     expect(outcome.ok).toBe(false);
     expect(outcome.verification?.status).toBe("failed");
-    expect(outcome.failure?.kind).toBe("write-failed");
+    expect(outcome.failure).toMatchObject({ kind: "verification-failed" });
+    expect(outcome.failure?.paths).toBeUndefined();
     expect(readFileSync(fixture.plan.configPath, "utf8")).toBe(configBefore);
   });
 
@@ -510,7 +519,187 @@ function cancelledApply(): ApplyOutcome {
   };
 }
 
+function successfulNoopApply(receiptPath: string): ApplyOutcome {
+  return {
+    ok: true,
+    cancelled: false,
+    dryRun: false,
+    files: [],
+    dependencies: { installed: false, command: null },
+    theme: null,
+    styles: null,
+    receipt: { path: receiptPath, written: false },
+    updateState: { changed: false },
+    failure: null,
+  };
+}
+
 describe("update verification orchestration", () => {
+  test("classifies an observed zero-mutation update with no verification as nothing-to-do", () => {
+    const fixture = verificationFixture(["verify"]);
+    const result = {
+      kind: "attempted" as const,
+      plan: fixture.plan,
+      outcome: successfulNoopApply(fixture.plan.receipt.path),
+      verification: {
+        ...VERIFICATION_BOUNDARY,
+        status: "skipped" as const,
+        checks: [],
+        failure: null,
+      },
+      selected: [],
+      skipped: [],
+      notes: [],
+    };
+
+    expect(updatePayloadKind(result)).toBe("nothing-to-do");
+    expect(
+      updatePayloadKind({
+        ...result,
+        verification: { ...result.verification, status: "passed" as const },
+      }),
+    ).toBe("applied");
+    expect(
+      updatePayloadKind({
+        ...result,
+        outcome: { ...result.outcome, updateState: { changed: true } },
+      }),
+    ).toBe("applied");
+  });
+
+  test("a readable corrupt receipt is a failed update, never a successful no-op", async () => {
+    const fixture = verificationFixture(["verify"]);
+    const loaded = loadConfig(fixture.root);
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok) return;
+
+    const result = await update(
+      loaded.config,
+      [],
+      { interactive: false, dryRun: true },
+      {
+        plan: async () => {
+          throw new Error("planning must not run");
+        },
+        apply: async () => {
+          throw new Error("apply must not run");
+        },
+        read: () => ({ present: true, raw: "not-json\n", sha256: sha("not-json\n") }),
+        validate: createReceiptValidator(),
+        hash: hashFileBytes,
+        verification: ports(async () => ({
+          started: true,
+          exitCode: 0,
+          signal: null,
+          timedOut: false,
+        })),
+      },
+    );
+
+    expect(result).toMatchObject({
+      kind: "failed",
+      mutated: false,
+      failure: { kind: "receipt-unreadable" },
+    });
+    expect(updatePayloadKind(result)).toBe("failed");
+  });
+
+  test.each([
+    ["selection", "selection-failed", false],
+    ["planning", "planning-failed", false],
+    ["apply", "apply-failed", true],
+  ] as const)(
+    "preserves an unexpected %s throw as a typed stage failure",
+    async (stage, kind, mutated) => {
+      const fixture = verificationFixture(["verify"]);
+      const loaded = loadConfig(fixture.root);
+      expect(loaded.ok).toBe(true);
+      if (!loaded.ok) return;
+
+      const call = update(
+        loaded.config,
+        [],
+        { interactive: false },
+        {
+          plan: async () => {
+            if (stage === "planning") throw new Error("planning fixture");
+            return fixture.plan;
+          },
+          apply: async () => {
+            if (stage === "apply") throw new Error("apply fixture");
+            return failedApply("install-failed");
+          },
+          read:
+            stage === "selection"
+              ? () => {
+                  throw new Error("selection fixture");
+                }
+              : createReceiptReader(),
+          validate: createReceiptValidator(),
+          hash: hashFileBytes,
+          verification: ports(async () => ({
+            started: true,
+            exitCode: 0,
+            signal: null,
+            timedOut: false,
+          })),
+        },
+      );
+
+      await expect(call).rejects.toMatchObject({
+        name: "UpdateCommandError",
+        kind,
+        mutated,
+      } satisfies Partial<UpdateCommandError>);
+    },
+  );
+
+  test("a receipt read throw names the owned file without exposing the project root", async () => {
+    const fixture = verificationFixture(["verify"]);
+    const loaded = loadConfig(fixture.root);
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok) return;
+    const receiptPath = join(fixture.root, "manteen.lock.json");
+
+    const call = update(
+      loaded.config,
+      [],
+      { interactive: false },
+      {
+        plan: async () => fixture.plan,
+        apply: async () => failedApply("install-failed"),
+        read: () => {
+          throw new Error(`EACCES: permission denied, open '${receiptPath}'`);
+        },
+        validate: createReceiptValidator(),
+        hash: hashFileBytes,
+        verification: ports(async () => ({
+          started: true,
+          exitCode: 0,
+          signal: null,
+          timedOut: false,
+        })),
+      },
+    );
+
+    try {
+      await call;
+      throw new Error("receipt read unexpectedly succeeded");
+    } catch (error) {
+      expect(error).toMatchObject({
+        name: "UpdateCommandError",
+        kind: "selection-failed",
+        mutated: false,
+        paths: [receiptPath],
+      } satisfies Partial<UpdateCommandError>);
+      expect(error).toBeInstanceOf(UpdateCommandError);
+      if (!(error instanceof UpdateCommandError)) return;
+      expect(error.message).toContain("manteen.lock.json could not be read");
+      expect(error.message).toContain("regular readable file");
+      expect(error.message).not.toContain(fixture.root);
+    }
+  });
+
   test("text distinguishes dry-run planning from fail-fast not-run checks", () => {
     const fixture = verificationFixture(["first", "second"]);
     const checks = fixture.verification.checks.map((check) => ({
@@ -522,11 +711,15 @@ describe("update verification orchestration", () => {
     }));
 
     expect(
-      renderVerification({ status: "planned", checks, failure: null }, fixture.root),
+      renderVerification(
+        { ...VERIFICATION_BOUNDARY, status: "planned", checks, failure: null },
+        fixture.root,
+      ),
     ).toContain("planned  verification  npm run second");
     expect(
       renderVerification(
         {
+          ...VERIFICATION_BOUNDARY,
           status: "failed",
           checks: [{ ...checks[0], result: "failed" }, checks[1] as (typeof checks)[number]],
           failure: {
@@ -543,37 +736,46 @@ describe("update verification orchestration", () => {
   });
 
   test.each([
-    ["cancellation", cancelledApply()],
-    ["dependency failure", failedApply("install-failed")],
-    ["write failure", failedApply("write-failed")],
-    ["rollback failure", failedApply("rollback-failed")],
-  ])("does not invoke verification after %s", async (_label, applyOutcome) => {
-    const fixture = verificationFixture(["verify"]);
-    const loaded = loadConfig(fixture.root);
-    expect(loaded.ok).toBe(true);
-    if (!loaded.ok) return;
-    let calls = 0;
+    ["cancellation", cancelledApply(), "cancelled"],
+    ["dependency failure", failedApply("install-failed"), "failed"],
+    ["write failure", failedApply("write-failed"), "rolled-back"],
+    ["rollback failure", failedApply("rollback-failed"), "rollback-failed"],
+  ] as const)(
+    "does not invoke verification after %s",
+    async (_label, applyOutcome, payloadKind) => {
+      const fixture = verificationFixture(["verify"]);
+      const loaded = loadConfig(fixture.root);
+      expect(loaded.ok).toBe(true);
+      if (!loaded.ok) return;
+      let calls = 0;
 
-    const result = await update(
-      loaded.config,
-      [],
-      { interactive: false },
-      {
-        plan: async () => fixture.plan,
-        apply: async () => applyOutcome,
-        read: createReceiptReader(),
-        validate: createReceiptValidator(),
-        hash: hashFileBytes,
-        verification: ports(async () => {
-          calls += 1;
-          return { started: true, exitCode: 0, signal: null, timedOut: false };
-        }),
-      },
-    );
+      const result = await update(
+        loaded.config,
+        [],
+        { interactive: false },
+        {
+          plan: async () => fixture.plan,
+          apply: async () => applyOutcome,
+          read: createReceiptReader(),
+          validate: createReceiptValidator(),
+          hash: hashFileBytes,
+          verification: ports(async () => {
+            calls += 1;
+            return { started: true, exitCode: 0, signal: null, timedOut: false };
+          }),
+        },
+      );
 
-    expect(calls).toBe(0);
-    expect(result.kind).toBe("applied");
-    if (result.kind !== "applied") return;
-    expect(result.verification).toEqual({ status: "skipped", checks: [], failure: null });
-  });
+      expect(calls).toBe(0);
+      expect(result.kind).toBe("attempted");
+      if (result.kind !== "attempted") return;
+      expect(updatePayloadKind(result)).toBe(payloadKind);
+      expect(result.verification).toEqual({
+        ...VERIFICATION_BOUNDARY,
+        status: "skipped",
+        checks: [],
+        failure: null,
+      });
+    },
+  );
 });

@@ -39,6 +39,12 @@ export interface AuthorProfile {
   stylesApi?: StylesApiEvidenceMapping[];
   props?: PropsEvidenceMapping[];
   usage?: UsageEvidenceMapping[];
+  verification?: AuthorVerificationConfig;
+}
+
+export interface AuthorVerificationConfig {
+  scripts: string[];
+  timeoutMs?: number;
 }
 
 export type AuthorConformanceFailureCode =
@@ -89,6 +95,7 @@ export interface AuthorConformanceInspection {
   failures: AuthorConformanceFailure[];
   claimCount: number;
   evidenceCount: number;
+  verification: AuthorVerificationConfig | null;
 }
 
 interface RepositoryFile {
@@ -132,9 +139,15 @@ function profileValidator(): ValidateFunction {
 }
 
 function schemaMessages(validate: ValidateFunction): string[] {
-  return (validate.errors ?? []).map(
-    (error) => `${error.instancePath || "/"} ${error.message ?? "is invalid"}`,
-  );
+  return (validate.errors ?? []).map((error) => {
+    if (
+      error.keyword === "minItems" &&
+      ["/stylesApi", "/props", "/usage"].includes(error.instancePath)
+    ) {
+      return `${error.instancePath} must contain at least one evidence mapping when present; omit the section entirely when the catalog has no claims in that category`;
+    }
+    return `${error.instancePath || "/"} ${error.message ?? "is invalid"}`;
+  });
 }
 
 function inspectRepositoryFile(
@@ -378,6 +391,7 @@ export function inspectAuthorConformance(
       failures: [],
       claimCount: 0,
       evidenceCount: 0,
+      verification: null,
     };
   }
 
@@ -397,6 +411,7 @@ export function inspectAuthorConformance(
       failures,
       claimCount: 0,
       evidenceCount: 0,
+      verification: null,
     };
   }
 
@@ -416,6 +431,7 @@ export function inspectAuthorConformance(
       failures,
       claimCount: 0,
       evidenceCount: 0,
+      verification: null,
     };
   }
 
@@ -434,6 +450,7 @@ export function inspectAuthorConformance(
       failures,
       claimCount: 0,
       evidenceCount: 0,
+      verification: null,
     };
   }
 
@@ -486,5 +503,6 @@ export function inspectAuthorConformance(
     failures,
     claimCount,
     evidenceCount: evidenceOwners.size,
+    verification: authorProfile.verification ?? null,
   };
 }

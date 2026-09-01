@@ -14,12 +14,14 @@ import { strict as assert } from "node:assert";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   realpathSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -245,13 +247,18 @@ test("a configured passing check verifies the applied update and may create an o
 
   const preview = run(project, ["update", "--dry-run", "--json"]);
   assert.equal(preview.status, 0, preview.all);
-  const digest = json(preview).planDigest;
+  const previewDocument = json(preview);
+  assert.equal(previewDocument.kind, "previewed");
+  assert.equal(previewDocument.dryRun, true);
+  const digest = previewDocument.planDigest;
   assert.match(digest, /^[0-9a-f]{64}$/);
 
   const result = run(project, ["update", "--expect-plan", digest, "--json"]);
   assert.equal(result.status, 0, result.all);
   const doc = json(result);
   assert.equal(doc.ok, true);
+  assert.equal(doc.kind, "applied");
+  assert.equal(doc.dryRun, false);
   assert.equal(doc.planDigest, digest);
   assert.equal(doc.verification.status, "passed");
   assert.deepEqual(
@@ -297,12 +304,14 @@ test("verification is fail-fast and failure restores source, base, receipt and c
   assert.equal(result.status, 1, result.all);
   const doc = json(result);
   assert.equal(doc.ok, false);
-  assert.equal(doc.kind, "applied", "verification failure must not relabel apply as refused");
+  assert.equal(doc.kind, "rolled-back", "a restored verification failure is not applied");
   assert.equal(doc.verification.status, "failed");
   assert.equal(doc.verification.failure.kind, "script-failed");
   assert.equal(doc.verification.failure.exitCode, 7);
   assert.match(doc.verification.failure.message, /restore captured preimages/i);
+  assert.equal(doc.failure.kind, "verification-failed");
   assert.match(doc.failure.message, /restored to its previous contents/i);
+  assert.equal(doc.failure.paths, undefined);
   assert.equal(doc.mutated, false);
   assert.deepEqual(
     doc.verification.checks.map(({ script, result: checkResult }) => [script, checkResult]),
@@ -314,6 +323,52 @@ test("verification is fail-fast and failure restores source, base, receipt and c
   assert.equal(existsSync(join(project, ".verify-first")), true);
   assert.equal(existsSync(join(project, ".verify-later")), false, "later script was not skipped");
   assertManagedTree(project, before);
+});
+
+test("a failed verification rollback conservatively reports durable mutation and bounded recovery", {
+  skip: process.platform === "win32",
+}, () => {
+  const registry = publish("rollback-failed");
+  const project = makeProject({
+    registry,
+    checks: ["verify:rollback-fail"],
+    scripts: { "verify:rollback-fail": "node verify-rollback-fail.mjs" },
+  });
+  const managedDirectory = join(project, "src", "components", "ui");
+  writeVerifier(
+    project,
+    "verify-rollback-fail.mjs",
+    `
+        import { chmodSync } from "node:fs";
+        chmodSync(new URL("./src/components/ui/", import.meta.url), 0o555);
+        process.exitCode = 24;
+      `,
+  );
+  install(project);
+  const sourceBefore = readFileSync(join(project, DESTINATION));
+  const modeBefore = statSync(managedDirectory).mode & 0o777;
+  moveUpstream(registry, "rollback obstruction upstream");
+
+  const preview = run(project, ["update", "--dry-run", "--json"]);
+  assert.equal(preview.status, 0, preview.all);
+  const digest = json(preview).planDigest;
+
+  try {
+    const result = run(project, ["update", "--expect-plan", digest, "--json"]);
+    assert.equal(result.status, 1, result.all);
+    const doc = json(result);
+    assert.equal(doc.kind, "rollback-failed");
+    assert.equal(doc.failure.kind, "rollback-failed");
+    assert.equal(doc.mutated, true, "an unrestored transaction is conservatively mutated");
+    assert.equal(new Set(doc.failure.paths).size, doc.failure.paths.length);
+    assert.ok(doc.failure.paths.includes(DESTINATION.split("\\").join("/")));
+    assert.equal(doc.failure.message.includes(project), false, doc.failure.message);
+    assert.match(doc.failure.message, /trusted pre-run copy/i);
+    assert.notDeepEqual(readFileSync(join(project, DESTINATION)), sourceBefore);
+    assert.equal(statSync(managedDirectory).mode & 0o777, 0o555);
+  } finally {
+    chmodSync(managedDirectory, modeBefore);
+  }
 });
 
 /**
@@ -363,7 +418,7 @@ test("a check that never finishes is terminated and reported as a timeout", () =
   assert.equal(result.status, 1, result.all);
   const doc = json(result);
   assert.equal(doc.ok, false);
-  assert.equal(doc.kind, "applied", "a timeout must not relabel apply as refused");
+  assert.equal(doc.kind, "rolled-back", "a restored verification timeout is not applied");
   assert.equal(doc.verification.status, "failed");
   assert.equal(doc.verification.failure.kind, "timed-out");
   assert.equal(doc.verification.failure.script, "verify:hang");
@@ -628,7 +683,7 @@ test("an applied package-script change makes the planned definition stale", () =
   const result = run(project, ["update", "--json"]);
   assert.equal(result.status, 1, result.all);
   const doc = json(result);
-  assert.equal(doc.kind, "applied");
+  assert.equal(doc.kind, "rolled-back");
   assert.equal(doc.verification.status, "failed");
   assert.equal(doc.verification.failure.kind, "definition-stale");
   assert.equal(existsSync(join(project, ".stale-original-ran")), false);
@@ -659,7 +714,7 @@ test("a zero-exit script that changes a managed component fails verification as 
   const result = run(project, ["update", "--json"]);
   assert.equal(result.status, 1, result.all);
   const doc = json(result);
-  assert.equal(doc.kind, "applied");
+  assert.equal(doc.kind, "rolled-back");
   assert.equal(doc.verification.status, "failed");
   assert.equal(doc.verification.failure.kind, "managed-byte-drift");
   assert.match(JSON.stringify(doc.verification.failure), /src\/components\/ui\/empty-state\.tsx/);

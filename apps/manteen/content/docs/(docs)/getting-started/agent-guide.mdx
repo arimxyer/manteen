@@ -89,6 +89,10 @@ payload, diagnostics, errors, notes, actions
 diagnostics carry a typed rerun argument list, a configuration patch, or a bounded manual action
 and rationale.
 
+Use `list --installed --json` for offline receipt-backed inventory. Verification outcomes report
+`phase: "post-write-pre-commit"` and `rollbackScope: "manteen-managed"`; do not infer rollback of
+dependency installations, caches, generated artifacts, or arbitrary project-script side effects.
+
 A successful applicable mutating preview carries one exact top-level rerun argv with the fresh plan
 digest. Discovery-only removal without a selected candidate does not. Execute argv directly after
 reviewing the payload instead of reconstructing flags or shell text.

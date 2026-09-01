@@ -104,11 +104,74 @@ function invalidRangeFixture(item: Record<string, unknown>): {
   return { catalog, outDir, sentinel };
 }
 
+function verificationFixture(): { root: string; catalog: string; outDir: string; script: string } {
+  const root = temporaryRoot();
+  const catalog = join(root, "manteen.registry.json");
+  const outDir = join(root, "public/r");
+  const script = join(root, "verify-author.mjs");
+  mkdirSync(join(root, "src"), { recursive: true });
+  writeFileSync(join(root, "src/alpha.tsx"), "export const Alpha = () => null;\n");
+  writeFileSync(
+    catalog,
+    `${JSON.stringify(
+      {
+        name: "verification fixture",
+        namespace: "@verification",
+        authorProfile: "manteen.author-profile.json",
+        items: [
+          {
+            name: "alpha",
+            kind: "component",
+            files: [{ path: "src/alpha.tsx", as: "component" }],
+          },
+        ],
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  writeFileSync(
+    join(root, "manteen.author-profile.json"),
+    `${JSON.stringify({ schemaVersion: 2, verification: { scripts: ["verify:author"] } })}\n`,
+  );
+  writeFileSync(
+    join(root, "package.json"),
+    `${JSON.stringify({
+      name: "verification-fixture",
+      private: true,
+      scripts: { "verify:author": "node verify-author.mjs" },
+    })}\n`,
+  );
+  writeFileSync(script, "process.exitCode = 1;\n");
+  return { root, catalog, outDir, script };
+}
+
 afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
 
 describe("kit JSON commands", () => {
+  test("version reports the package identity in text and JSON modes", () => {
+    const { version } = JSON.parse(
+      readFileSync(resolve(import.meta.dirname, "../package.json"), "utf8"),
+    ) as { version: string };
+
+    const textResult = run(["--version"]);
+    expect(textResult.exitCode).toBe(0);
+    expect(textResult.stdout.toString()).toBe(`${version}\n`);
+    expect(textResult.stderr.toString()).toBe("");
+
+    const jsonResult = run(["--version", "--json"]);
+    expect(jsonResult.exitCode).toBe(0);
+    expect(jsonResult.stderr.toString()).toBe("");
+    expect(document(jsonResult)).toMatchObject({
+      command: "version",
+      ok: true,
+      mutated: false,
+      payload: { version },
+    });
+  });
+
   test("merge-theme --write --json writes the reported merge", () => {
     const root = temporaryRoot();
     const base = join(root, "theme.ts");
@@ -181,6 +244,38 @@ describe("kit JSON commands", () => {
       expect(readFileSync(created.sentinel, "utf8")).toBe("unchanged\n");
       expect(readdirSync(created.outDir)).toEqual(["sentinel.txt"]);
     }
+  });
+
+  test("build runs declared author hooks before publishing output", () => {
+    const created = verificationFixture();
+    const failed = run(["build", created.catalog, created.outDir, "--json"]);
+    const failedJson = document(failed) as {
+      payload: { authorVerification: { status: string; checks: Array<{ result: string }> } };
+      errors: Array<{ code: string }>;
+    };
+
+    expect(failed.exitCode).toBe(1);
+    expect(failedJson.errors[0]?.code).toBe("author-verification-script-failed");
+    expect(failedJson.payload.authorVerification).toMatchObject({
+      phase: "post-compile-pre-publish",
+      status: "failed",
+      checks: [{ script: "verify:author", result: "failed" }],
+    });
+    expect(readdirSync(created.root).sort()).not.toContain("public");
+
+    writeFileSync(
+      created.script,
+      'import { writeFileSync } from "node:fs";\nwriteFileSync(new URL("./src/alpha.tsx", import.meta.url), \'export const Alpha = () => "after-hook";\\n\');\n',
+    );
+    const passed = run(["build", created.catalog, created.outDir, "--json"]);
+    const passedJson = document(passed) as {
+      mutated: boolean;
+      payload: { authorVerification: { status: string } };
+    };
+    expect(passed.exitCode).toBe(0);
+    expect(passedJson.payload.authorVerification.status).toBe("passed");
+    expect(passedJson.mutated).toBe(true);
+    expect(readFileSync(join(created.outDir, "alpha.json"), "utf8")).toContain("after-hook");
   });
 
   test("range refusals are stable JSON and cannot mutate output", () => {

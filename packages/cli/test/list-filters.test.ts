@@ -197,11 +197,35 @@ describe("list filters", () => {
   });
 
   test("installed keeps only receipt-backed rows and composes with other filters", async () => {
-    expect(ids(await filtered({ installed: true }))).toEqual([["@alpha/card"], []]);
+    expect(ids(await filtered({ installed: true }))).toEqual([["@alpha/card"]]);
     expect(ids(await filtered({ installed: true, query: "card", types: ["registry:ui"] }))).toEqual(
-      [["@alpha/card"], []],
+      [["@alpha/card"]],
     );
-    expect(ids(await filtered({ installed: true, types: ["registry:hook"] }))).toEqual([[], []]);
+    expect(ids(await filtered({ installed: true, types: ["registry:hook"] }))).toEqual([[]]);
+  });
+
+  test("installed is receipt-first and never fetches a registry index", async () => {
+    const configured = config();
+    const configuredPorts = ports();
+    let loads = 0;
+    configuredPorts.available.load = async () => {
+      loads += 1;
+      return {
+        ok: false,
+        reason: "network",
+        detail: "ECONNREFUSED",
+        redactedUrl: "https://example.test/alpha/index.json",
+      };
+    };
+
+    const result = await buildList(configured, configuredPorts, {
+      installed: true,
+      registries: [],
+    });
+
+    expect(loads).toBe(0);
+    expect(ids(result)).toEqual([["@alpha/card"]]);
+    expect(result.notes.some((note) => note.code === "index-unreachable")).toBe(false);
   });
 
   test("keeps empty groups and does not mistake filtered installed rows for missing index rows", async () => {

@@ -13,7 +13,13 @@ import {
 import { basename, dirname, isAbsolute, join, parse, relative, resolve, sep } from "node:path";
 import { isAbsolute as isAbsolutePosix, normalize as normalizePosix } from "node:path/posix";
 
-import { inspectAuthorConformance, type MantineRegistry, validateCatalog } from "./build-registry";
+import {
+  compileRegistry,
+  inspectAuthorConformance,
+  type MantineRegistry,
+  validateCatalog,
+} from "./build-registry";
+import { appendTopLevelArrayItem, setTopLevelMember } from "./json-edit";
 import { inspectMantineRanges } from "./mantine-ranges";
 import {
   renderScaffoldTemplate,
@@ -50,6 +56,22 @@ export interface ScaffoldPreservedFile {
   sha256: string | null;
 }
 
+export interface ScaffoldRegistrationFile {
+  role: "catalog" | "author-profile" | "package-manifest";
+  path: string;
+  preimageSha256: string | null;
+  sha256: string;
+  operation: "create" | "replace" | "noop";
+  changes: Record<string, unknown>;
+  /** Apply-only projected bytes. Deliberately non-enumerable in machine plans. */
+  content: string;
+}
+
+export interface ScaffoldRegistrationPlan {
+  enabled: boolean;
+  files: ScaffoldRegistrationFile[];
+}
+
 export interface ScaffoldPlanBody {
   schemaVersion: 1;
   template: ScaffoldTemplate;
@@ -64,6 +86,7 @@ export interface ScaffoldPlanBody {
     profilePath: string | null;
     mapping: NonNullable<ReturnType<typeof renderScaffoldTemplate>["authorProfileMapping"]>;
   } | null;
+  registration: ScaffoldRegistrationPlan;
   safe: boolean;
   diagnostics: ScaffoldDiagnostic[];
 }
@@ -76,6 +99,7 @@ export interface ScaffoldInput {
   catalogPath: string;
   template: ScaffoldTemplate;
   itemName: string;
+  register?: boolean;
 }
 
 export interface ScaffoldApplyOutcome {
@@ -111,6 +135,7 @@ interface ScaffoldApplyHooks {
   beforeStageWrite?: (path: string, temporaryPath: string, index: number) => void;
   beforeCommitLink?: (path: string, temporaryPath: string, index: number) => void;
   beforeCleanup?: (phase: ScaffoldCleanupPhase, path: string) => void;
+  afterRegistrationWrite?: (path: string, writtenCount: number) => void;
 }
 
 type ScaffoldCleanupPhase =
@@ -397,6 +422,132 @@ function inspectPreservedFile(
   return { role, path, sha256: sha256(readFileSync(destination)) };
 }
 
+function registrationFile(
+  snapshot: ScaffoldPreservedFile,
+  content: string,
+  changes: Record<string, unknown>,
+): ScaffoldRegistrationFile {
+  const result: ScaffoldRegistrationFile = {
+    role: snapshot.role,
+    path: snapshot.path,
+    preimageSha256: snapshot.sha256,
+    sha256: sha256(content),
+    operation:
+      snapshot.sha256 === null
+        ? "create"
+        : snapshot.sha256 === sha256(content)
+          ? "noop"
+          : "replace",
+    changes,
+    content,
+  };
+  Object.defineProperty(result, "content", { enumerable: false, value: content });
+  return result;
+}
+
+function packageDeclaration(specifier: string): { name: string; range: string } {
+  const separator = specifier.lastIndexOf("@");
+  if (separator <= 0 || separator === specifier.length - 1) {
+    throw new Error(`Scaffold package declaration is invalid: ${specifier}.`);
+  }
+  return { name: specifier.slice(0, separator), range: specifier.slice(separator + 1) };
+}
+
+function projectPackageManifest(
+  bytes: string,
+  requiredPackages: ScaffoldPlanBody["requiredPackages"],
+  diagnostics: ScaffoldDiagnostic[],
+): {
+  content: string;
+  additions: { dependencies: Record<string, string>; devDependencies: Record<string, string> };
+} {
+  const parsed = JSON.parse(bytes) as Record<string, unknown>;
+  const sections = [
+    "dependencies",
+    "devDependencies",
+    "peerDependencies",
+    "optionalDependencies",
+  ] as const;
+  for (const section of sections) {
+    const value = parsed[section];
+    if (
+      value !== undefined &&
+      (value === null || Array.isArray(value) || typeof value !== "object")
+    ) {
+      diagnostics.push({
+        code: "scaffold-package-manifest-invalid",
+        message: `package.json ${section} must be an object before scaffold registration.`,
+        details: { section },
+      });
+    }
+  }
+  if (diagnostics.some((diagnostic) => diagnostic.code === "scaffold-package-manifest-invalid")) {
+    return { content: bytes, additions: { dependencies: {}, devDependencies: {} } };
+  }
+
+  const additions = {
+    dependencies: {} as Record<string, string>,
+    devDependencies: {} as Record<string, string>,
+  };
+  const requested = [
+    ...requiredPackages.runtime.map((specifier) => ({
+      section: "dependencies" as const,
+      specifier,
+    })),
+    ...requiredPackages.development.map((specifier) => ({
+      section: "devDependencies" as const,
+      specifier,
+    })),
+  ];
+  for (const { section, specifier } of requested) {
+    const declaration = packageDeclaration(specifier);
+    const owners = sections.flatMap((candidate) => {
+      const values = (parsed[candidate] ?? {}) as Record<string, unknown>;
+      return values[declaration.name] === undefined
+        ? []
+        : [{ section: candidate, range: values[declaration.name] }];
+    });
+    if (owners.length > 0) {
+      const exact =
+        owners.length === 1 &&
+        owners[0]!.section === section &&
+        owners[0]!.range === declaration.range;
+      if (!exact) {
+        diagnostics.push({
+          code: "scaffold-package-dependency-conflict",
+          message: `Scaffold registration requires ${declaration.name}@${declaration.range} in ${section}, but package.json already owns ${declaration.name} as ${owners
+            .map((owner) => `${owner.section}:${JSON.stringify(owner.range)}`)
+            .join(
+              ", ",
+            )}. Registration uses exact section-and-range ownership, not semver compatibility; align the authored declaration or scaffold without --register.`,
+          details: {
+            package: declaration.name,
+            requiredSection: section,
+            requiredRange: declaration.range,
+            existing: owners,
+          },
+        });
+      }
+      continue;
+    }
+    additions[section][declaration.name] = declaration.range;
+  }
+
+  let content = bytes;
+  for (const section of ["dependencies", "devDependencies"] as const) {
+    if (Object.keys(additions[section]).length === 0) continue;
+    const existing = (parsed[section] ?? {}) as Record<string, string>;
+    const next = Object.fromEntries(
+      Object.entries({ ...existing, ...additions[section] }).sort(([left], [right]) =>
+        codeUnitCompare(left, right),
+      ),
+    );
+    content = setTopLevelMember(content, section, next);
+    parsed[section] = next;
+  }
+  return { content, additions };
+}
+
 function digestBody(body: ScaffoldPlanBody): string {
   return sha256(JSON.stringify(body));
 }
@@ -460,10 +611,14 @@ export function planScaffold(input: ScaffoldInput): ScaffoldPlan {
     }
   }
 
-  if (catalog?.items.some((item) => item.name === input.itemName)) {
+  const existingItem = catalog?.items.find((item) => item.name === input.itemName);
+  if (
+    existingItem !== undefined &&
+    (!input.register || JSON.stringify(existingItem) !== JSON.stringify(rendered.catalogInsertion))
+  ) {
     diagnostics.push({
       code: "scaffold-catalog-item-collision",
-      message: `Catalog item already exists: ${input.itemName}.`,
+      message: `Catalog item already exists with different authored data: ${input.itemName}.`,
       details: { itemName: input.itemName },
     });
   }
@@ -479,19 +634,16 @@ export function planScaffold(input: ScaffoldInput): ScaffoldPlan {
   preservedFiles.push(packageSnapshot);
 
   let profilePath: string | null = null;
+  let profileSnapshot: ScaffoldPreservedFile | null = null;
+  let profileBytes = "";
   if (catalog?.authorProfile !== undefined) {
     profilePath = catalog.authorProfile;
-    const profileSnapshot = inspectPreservedFile(
-      root,
-      "author-profile",
-      profilePath,
-      true,
-      diagnostics,
-    );
+    profileSnapshot = inspectPreservedFile(root, "author-profile", profilePath, true, diagnostics);
     preservedFiles.push(profileSnapshot);
     if (profileSnapshot.sha256) {
       try {
-        const profile = JSON.parse(readFileSync(join(root, ...profilePath.split("/")), "utf8")) as {
+        profileBytes = readFileSync(join(root, ...profilePath.split("/")), "utf8");
+        const profile = JSON.parse(profileBytes) as {
           schemaVersion?: unknown;
         };
         if (profile.schemaVersion !== 2) {
@@ -522,6 +674,97 @@ export function planScaffold(input: ScaffoldInput): ScaffoldPlan {
     }
   }
 
+  const registrationFiles: ScaffoldRegistrationFile[] = [];
+  if (input.register && catalog) {
+    let nextCatalog = catalogBytes;
+    if (rendered.authorProfileMapping && profilePath === null) {
+      profilePath = "manteen.author-profile.json";
+      profileSnapshot = inspectPreservedFile(
+        root,
+        "author-profile",
+        profilePath,
+        false,
+        diagnostics,
+      );
+      preservedFiles.push(profileSnapshot);
+      if (profileSnapshot.sha256 !== null) {
+        diagnostics.push({
+          code: "scaffold-author-profile-unowned",
+          message: `Default author profile already exists but is not owned by the catalog: ${profilePath}.`,
+          details: { path: profilePath },
+        });
+      } else {
+        nextCatalog = setTopLevelMember(nextCatalog, "authorProfile", profilePath);
+        profileBytes = `${JSON.stringify(
+          { schemaVersion: 2, stylesApi: [rendered.authorProfileMapping] },
+          null,
+          2,
+        )}\n`;
+      }
+    } else if (rendered.authorProfileMapping && profilePath && profileSnapshot?.sha256) {
+      const profile = JSON.parse(profileBytes) as Record<string, unknown>;
+      const mappings = (profile.stylesApi ?? []) as unknown[];
+      if (
+        !mappings.some(
+          (mapping) => JSON.stringify(mapping) === JSON.stringify(rendered.authorProfileMapping),
+        )
+      ) {
+        profileBytes = appendTopLevelArrayItem(
+          profileBytes,
+          "stylesApi",
+          rendered.authorProfileMapping,
+        );
+      }
+    }
+
+    if (existingItem === undefined) {
+      nextCatalog = appendTopLevelArrayItem(nextCatalog, "items", rendered.catalogInsertion);
+    }
+    registrationFiles.push(
+      registrationFile(catalogSnapshot, nextCatalog, {
+        item: rendered.catalogInsertion,
+        ...(catalog?.authorProfile === undefined && profilePath
+          ? { authorProfile: profilePath }
+          : {}),
+      }),
+    );
+
+    if (rendered.authorProfileMapping && profilePath && profileSnapshot) {
+      registrationFiles.push(
+        registrationFile(profileSnapshot, profileBytes, {
+          section: "stylesApi",
+          mapping: rendered.authorProfileMapping,
+        }),
+      );
+    }
+
+    if (packageSnapshot.sha256 === null) {
+      diagnostics.push({
+        code: "scaffold-package-manifest-missing",
+        message: "Scaffold registration requires an existing package.json.",
+        details: { path: packageSnapshot.path },
+      });
+    } else {
+      try {
+        const packageBytes = readFileSync(join(root, "package.json"), "utf8");
+        const projected = projectPackageManifest(
+          packageBytes,
+          rendered.requiredPackages,
+          diagnostics,
+        );
+        registrationFiles.push(
+          registrationFile(packageSnapshot, projected.content, { additions: projected.additions }),
+        );
+      } catch (error) {
+        diagnostics.push({
+          code: "scaffold-package-manifest-invalid",
+          message: "package.json is not readable strict JSON.",
+          details: { error: error instanceof Error ? error.message : String(error) },
+        });
+      }
+    }
+  }
+
   const files = [...rendered.files]
     .sort((left, right) => codeUnitCompare(left.path, right.path))
     .map((file) => inspectPlannedFile(root, file, diagnostics));
@@ -546,6 +789,10 @@ export function planScaffold(input: ScaffoldInput): ScaffoldPlan {
     authorProfileInsertion: rendered.authorProfileMapping
       ? { profilePath, mapping: rendered.authorProfileMapping }
       : null,
+    registration: {
+      enabled: input.register === true,
+      files: registrationFiles.sort((left, right) => codeUnitCompare(left.path, right.path)),
+    },
     safe: diagnostics.length === 0 && files.every((file) => file.operation !== "refuse"),
     diagnostics,
   };
@@ -684,7 +931,7 @@ function cleanupCreatedDirectories(
 }
 
 /** Internal hooks exist only so tests can prove deterministic operation-boundary failures. */
-export function applyScaffoldWithHooks(
+function applyScaffoldSourcesWithHooks(
   input: ScaffoldInput,
   expectedPlan: string,
   hooks: ScaffoldApplyHooks = {},
@@ -897,6 +1144,228 @@ export function applyScaffoldWithHooks(
         : [
             {
               code: "scaffold-apply-failed",
+              message: error instanceof Error ? error.message : String(error),
+            },
+          ];
+    throw new ScaffoldError([...original, ...rollbackDiagnostics], rollbackDiagnostics.length > 0);
+  }
+}
+
+function absentParentDirectories(root: string, files: readonly ScaffoldPlannedFile[]): string[] {
+  const paths = new Set<string>();
+  for (const file of files.filter((candidate) => candidate.operation === "create")) {
+    let cursor = dirname(join(root, ...file.path.split("/")));
+    while (cursor !== root && relative(root, cursor) !== "") {
+      if (!lstatIfPresent(cursor)) paths.add(cursor);
+      cursor = dirname(cursor);
+    }
+  }
+  return [...paths].sort((left, right) => {
+    const depth = left.split(sep).length - right.split(sep).length;
+    return depth || codeUnitCompare(left, right);
+  });
+}
+
+function rollbackCommittedSources(
+  root: string,
+  plan: ScaffoldPlan,
+  writtenPaths: readonly string[],
+  createdDirectories: string[],
+  hooks: ScaffoldApplyHooks,
+): ScaffoldDiagnostic[] {
+  const diagnostics: ScaffoldDiagnostic[] = [];
+  for (const path of [...writtenPaths].reverse()) {
+    const file = plan.files.find((candidate) => candidate.path === path);
+    if (!file) continue;
+    const destination = join(root, ...path.split("/"));
+    try {
+      hooks.beforeCleanup?.("rollback", path);
+      const unsafe = cleanupPathDiagnostics(root, path, "rollback");
+      if (unsafe.length > 0) {
+        diagnostics.push(...unsafe);
+        continue;
+      }
+      const status = lstatIfPresent(destination);
+      if (!status) continue;
+      if (!status.isFile() || sha256(readFileSync(destination)) !== file.sha256) {
+        diagnostics.push({
+          code: "scaffold-rollback-preimage-drift",
+          message: `Scaffold file changed before registration rollback and was preserved: ${path}.`,
+          details: { path },
+        });
+        continue;
+      }
+      unlinkSync(destination);
+    } catch (error) {
+      diagnostics.push({
+        code: "scaffold-rollback-failed",
+        message: `Could not roll back scaffold file after registration failure: ${path}.`,
+        details: { path, error: error instanceof Error ? error.message : String(error) },
+      });
+    }
+  }
+  try {
+    diagnostics.push(...cleanupCreatedDirectories(root, createdDirectories, hooks));
+  } catch (error) {
+    diagnostics.push({
+      code: "scaffold-directory-cleanup-failed",
+      message: "Scaffold source directories could not be removed after registration failure.",
+      details: { error: error instanceof Error ? error.message : String(error) },
+    });
+  }
+  return diagnostics;
+}
+
+export function applyScaffoldWithHooks(
+  input: ScaffoldInput,
+  expectedPlan: string,
+  hooks: ScaffoldApplyHooks = {},
+): ScaffoldApplyOutcome {
+  const initial = planScaffold(input);
+  const root = dirname(resolve(input.catalogPath));
+  const createdDirectories = absentParentDirectories(root, initial.files);
+  const sourceOutcome = applyScaffoldSourcesWithHooks(input, expectedPlan, hooks);
+  const controls = sourceOutcome.plan.registration.files.filter(
+    (file) => file.operation !== "noop",
+  );
+  if (!sourceOutcome.plan.registration.enabled || controls.length === 0) return sourceOutcome;
+
+  const preimages = new Map<string, Buffer | null>();
+  const written: ScaffoldRegistrationFile[] = [];
+  try {
+    for (const control of controls) {
+      const unsafe = canonicalPathDiagnostic(control.path) ?? inspectParents(root, control.path)[0];
+      if (unsafe) throw new ScaffoldError([unsafe]);
+      const destination = fullPath(root, control.path);
+      if (!destination) {
+        throw new ScaffoldError([
+          {
+            code: "scaffold-registration-path-escape",
+            message: `Registration path escapes the catalog root: ${control.path}.`,
+            details: { path: control.path },
+          },
+        ]);
+      }
+      const status = lstatIfPresent(destination);
+      if (control.preimageSha256 === null) {
+        if (status) {
+          throw new ScaffoldError([
+            {
+              code: "scaffold-registration-preimage-stale",
+              message: `Registration destination became occupied: ${control.path}.`,
+              details: { path: control.path },
+            },
+          ]);
+        }
+        preimages.set(control.path, null);
+        written.push(control);
+        writeFileSync(destination, control.content, { flag: "wx" });
+      } else {
+        if (!status?.isFile()) {
+          throw new ScaffoldError([
+            {
+              code: "scaffold-registration-preimage-stale",
+              message: `Registration destination is no longer an ordinary file: ${control.path}.`,
+              details: { path: control.path },
+            },
+          ]);
+        }
+        const before = readFileSync(destination);
+        if (sha256(before) !== control.preimageSha256) {
+          throw new ScaffoldError([
+            {
+              code: "scaffold-registration-preimage-stale",
+              message: `Registration destination changed after planning: ${control.path}.`,
+              details: { path: control.path },
+            },
+          ]);
+        }
+        preimages.set(control.path, before);
+        written.push(control);
+        writeFileSync(destination, control.content);
+      }
+      if (sha256(readFileSync(destination)) !== control.sha256) {
+        throw new ScaffoldError([
+          {
+            code: "scaffold-registration-postcondition-failed",
+            message: `Registration destination does not match the plan: ${control.path}.`,
+            details: { path: control.path },
+          },
+        ]);
+      }
+      hooks.afterRegistrationWrite?.(control.path, written.length);
+    }
+
+    const compiled = compileRegistry(input.catalogPath);
+    if (compiled.failures.length > 0) {
+      throw new ScaffoldError([
+        {
+          code: "scaffold-registration-wire-invalid",
+          message: "Registered scaffold does not compile to valid registry wire output.",
+          details: { failures: compiled.failures },
+        },
+      ]);
+    }
+    return {
+      plan: sourceOutcome.plan,
+      mutated: sourceOutcome.mutated || written.length > 0,
+      writtenPaths: [...sourceOutcome.writtenPaths, ...written.map((file) => file.path)],
+    };
+  } catch (error) {
+    const rollbackDiagnostics: ScaffoldDiagnostic[] = [];
+    for (const control of [...written].reverse()) {
+      const destination = join(root, ...control.path.split("/"));
+      try {
+        const status = lstatIfPresent(destination);
+        const preimage = preimages.get(control.path);
+        if (preimage === null && !status) continue;
+        if (!status?.isFile()) {
+          rollbackDiagnostics.push({
+            code: "scaffold-registration-rollback-drift",
+            message: `Registration file changed before rollback and was preserved: ${control.path}.`,
+            details: { path: control.path },
+          });
+          continue;
+        }
+        const current = readFileSync(destination);
+        const currentSha256 = sha256(current);
+        if (preimage !== null && preimage !== undefined && current.equals(preimage)) continue;
+        if (currentSha256 !== control.sha256) {
+          rollbackDiagnostics.push({
+            code: "scaffold-registration-rollback-drift",
+            message: `Registration file changed before rollback and was preserved: ${control.path}.`,
+            details: { path: control.path },
+          });
+          continue;
+        }
+        if (preimage === null) unlinkSync(destination);
+        else if (preimage !== undefined) writeFileSync(destination, preimage);
+      } catch (rollbackError) {
+        rollbackDiagnostics.push({
+          code: "scaffold-registration-rollback-failed",
+          message: `Could not restore registration file: ${control.path}.`,
+          details: {
+            path: control.path,
+            error: rollbackError instanceof Error ? rollbackError.message : String(rollbackError),
+          },
+        });
+      }
+    }
+    rollbackDiagnostics.push(
+      ...rollbackCommittedSources(
+        root,
+        sourceOutcome.plan,
+        sourceOutcome.writtenPaths,
+        createdDirectories,
+        hooks,
+      ),
+    );
+    const original =
+      error instanceof ScaffoldError
+        ? error.diagnostics
+        : [
+            {
+              code: "scaffold-registration-write-failed",
               message: error instanceof Error ? error.message : String(error),
             },
           ];
