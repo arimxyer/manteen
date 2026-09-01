@@ -13,16 +13,32 @@ import Ajv, { type ValidateFunction } from "ajv";
 
 const PKG_ROOT = resolve(import.meta.dirname, "..");
 
-export interface StylesApiEvidenceMapping {
+interface EvidenceMapping {
   item: string;
-  component: string;
   evidence: string;
 }
 
+export interface StylesApiEvidenceMapping extends EvidenceMapping {
+  component: string;
+}
+
+export interface PropsEvidenceMapping extends EvidenceMapping {
+  export: string;
+}
+
+export type UsageEvidenceMapping = EvidenceMapping;
+
+export type AuthorEvidenceMapping =
+  | StylesApiEvidenceMapping
+  | PropsEvidenceMapping
+  | UsageEvidenceMapping;
+
 export interface AuthorProfile {
   $schema?: string;
-  schemaVersion: 1;
-  stylesApi: StylesApiEvidenceMapping[];
+  schemaVersion: 2;
+  stylesApi?: StylesApiEvidenceMapping[];
+  props?: PropsEvidenceMapping[];
+  usage?: UsageEvidenceMapping[];
 }
 
 export type AuthorConformanceFailureCode =
@@ -36,7 +52,14 @@ export type AuthorConformanceFailureCode =
   | "styles-api-evidence-missing"
   | "styles-api-evidence-stale"
   | "styles-api-evidence-duplicate"
-  | "styles-api-evidence-shared"
+  | "props-claim-empty"
+  | "props-evidence-missing"
+  | "props-evidence-stale"
+  | "props-evidence-duplicate"
+  | "usage-evidence-missing"
+  | "usage-evidence-stale"
+  | "usage-evidence-duplicate"
+  | "evidence-path-shared"
   | "evidence-path-invalid"
   | "evidence-file-missing"
   | "evidence-not-file"
@@ -54,13 +77,15 @@ export interface AuthorConformanceCatalog {
   items: Array<{
     name: string;
     stylesApi?: Record<string, string[]>;
+    props?: Record<string, unknown[]>;
+    usage?: string;
   }>;
 }
 
 export interface AuthorConformanceInspection {
   enabled: boolean;
   profilePath: string | null;
-  mappings: StylesApiEvidenceMapping[];
+  mappings: AuthorEvidenceMapping[];
   failures: AuthorConformanceFailure[];
   claimCount: number;
   evidenceCount: number;
@@ -71,9 +96,17 @@ interface RepositoryFile {
   realPath: string;
 }
 
-interface ClaimedComponent {
-  item: string;
-  component: string;
+interface Claim<TMapping extends AuthorEvidenceMapping> {
+  key: string;
+  label: string;
+  mappingLabel: string;
+  matches: (mapping: TMapping) => boolean;
+  details: Record<string, unknown>;
+}
+
+interface EvidenceOwner {
+  path: string;
+  claims: Set<string>;
 }
 
 export class AuthorConformanceError extends Error {
@@ -102,14 +135,6 @@ function schemaMessages(validate: ValidateFunction): string[] {
   return (validate.errors ?? []).map(
     (error) => `${error.instancePath || "/"} ${error.message ?? "is invalid"}`,
   );
-}
-
-function claimKey(item: string, component: string): string {
-  return JSON.stringify([item, component]);
-}
-
-function claimLabel(namespace: string, item: string, component: string): string {
-  return `${namespace}/${item}#${component}`;
 }
 
 function inspectRepositoryFile(
@@ -209,11 +234,11 @@ function inspectRepositoryFile(
   return { repositoryPath, realPath: realFile };
 }
 
-function catalogClaims(
+function stylesApiClaims(
   catalog: AuthorConformanceCatalog,
   failures: AuthorConformanceFailure[],
-): Map<string, ClaimedComponent> {
-  const claims = new Map<string, ClaimedComponent>();
+): Claim<StylesApiEvidenceMapping>[] {
+  const claims: Claim<StylesApiEvidenceMapping>[] = [];
   for (const item of catalog.items) {
     if (!Object.hasOwn(item, "stylesApi")) continue;
     const components = Object.keys(item.stylesApi ?? {});
@@ -223,13 +248,118 @@ function catalogClaims(
         message: `${catalog.namespace}/${item.name} declares stylesApi without a component claim`,
         details: { item: item.name },
       });
-      continue;
     }
     for (const component of components) {
-      claims.set(claimKey(item.name, component), { item: item.name, component });
+      claims.push({
+        key: JSON.stringify([item.name, component]),
+        label: `${catalog.namespace}/${item.name}#stylesApi.${component}`,
+        mappingLabel: `${item.name}#${component}`,
+        matches: (mapping) => mapping.item === item.name && mapping.component === component,
+        details: { item: item.name, component },
+      });
     }
   }
   return claims;
+}
+
+function propsClaims(
+  catalog: AuthorConformanceCatalog,
+  failures: AuthorConformanceFailure[],
+): Claim<PropsEvidenceMapping>[] {
+  const claims: Claim<PropsEvidenceMapping>[] = [];
+  for (const item of catalog.items) {
+    if (!Object.hasOwn(item, "props")) continue;
+    const exports = Object.keys(item.props ?? {});
+    if (exports.length === 0) {
+      failures.push({
+        code: "props-claim-empty",
+        message: `${catalog.namespace}/${item.name} declares props without an export claim`,
+        details: { item: item.name },
+      });
+    }
+    for (const exportName of exports) {
+      claims.push({
+        key: JSON.stringify([item.name, exportName]),
+        label: `${catalog.namespace}/${item.name}#props.${exportName}`,
+        mappingLabel: `${item.name}#${exportName}`,
+        matches: (mapping) => mapping.item === item.name && mapping.export === exportName,
+        details: { item: item.name, export: exportName },
+      });
+    }
+  }
+  return claims;
+}
+
+function usageClaims(catalog: AuthorConformanceCatalog): Claim<UsageEvidenceMapping>[] {
+  return catalog.items
+    .filter((item) => Object.hasOwn(item, "usage"))
+    .map((item) => ({
+      key: JSON.stringify([item.name]),
+      label: `${catalog.namespace}/${item.name}#usage`,
+      mappingLabel: item.name,
+      matches: (mapping: UsageEvidenceMapping) => mapping.item === item.name,
+      details: { item: item.name },
+    }));
+}
+
+function inspectMappings<TMapping extends AuthorEvidenceMapping>(
+  category: "styles-api" | "props" | "usage",
+  mappings: TMapping[],
+  claims: Claim<TMapping>[],
+  repositoryRoot: string,
+  failures: AuthorConformanceFailure[],
+  evidenceOwners: Map<string, EvidenceOwner>,
+): void {
+  const mappingsByClaim = new Map<string, TMapping[]>();
+  const currentClaims = new Map(claims.map((claim) => [claim.key, claim]));
+
+  for (const mapping of mappings) {
+    const claim = claims.find((candidate) => candidate.matches(mapping));
+    const key = claim?.key ?? JSON.stringify(mapping);
+    const owners = mappingsByClaim.get(key) ?? [];
+    owners.push(mapping);
+    mappingsByClaim.set(key, owners);
+
+    if (claim === undefined || !currentClaims.has(key)) {
+      failures.push({
+        code: `${category}-evidence-stale`,
+        message: `${category} mapping ${JSON.stringify(mapping)} does not identify a current catalog claim`,
+        details: { mapping },
+      });
+    }
+
+    const evidenceFile = inspectRepositoryFile(
+      repositoryRoot,
+      mapping.evidence,
+      "evidence",
+      failures,
+    );
+    if (evidenceFile !== null) {
+      const owner = evidenceOwners.get(evidenceFile.realPath) ?? {
+        path: evidenceFile.repositoryPath,
+        claims: new Set<string>(),
+      };
+      owner.claims.add(claim?.label ?? `${category}:${JSON.stringify(mapping)}`);
+      evidenceOwners.set(evidenceFile.realPath, owner);
+    }
+  }
+
+  for (const claim of claims) {
+    const owners = mappingsByClaim.get(claim.key) ?? [];
+    if (owners.length === 0) {
+      failures.push({
+        code: `${category}-evidence-missing`,
+        message: `${claim.label} has no evidence mapping`,
+        details: claim.details,
+      });
+    } else if (owners.length > 1) {
+      failures.push({
+        code: `${category}-evidence-duplicate`,
+        message: `${claim.label} has ${owners.length} evidence mappings; expected exactly one`,
+        details: { ...claim.details, count: owners.length },
+      });
+    }
+  }
 }
 
 /**
@@ -253,7 +383,6 @@ export function inspectAuthorConformance(
 
   const repositoryRoot = dirname(resolve(catalogPath));
   const failures: AuthorConformanceFailure[] = [];
-  const claims = catalogClaims(catalog, failures);
   const profileFile = inspectRepositoryFile(
     repositoryRoot,
     catalog.authorProfile,
@@ -266,7 +395,7 @@ export function inspectAuthorConformance(
       profilePath: catalog.authorProfile,
       mappings: [],
       failures,
-      claimCount: claims.size,
+      claimCount: 0,
       evidenceCount: 0,
     };
   }
@@ -285,7 +414,7 @@ export function inspectAuthorConformance(
       profilePath: catalog.authorProfile,
       mappings: [],
       failures,
-      claimCount: claims.size,
+      claimCount: 0,
       evidenceCount: 0,
     };
   }
@@ -303,77 +432,50 @@ export function inspectAuthorConformance(
       profilePath: catalog.authorProfile,
       mappings: [],
       failures,
-      claimCount: claims.size,
+      claimCount: 0,
       evidenceCount: 0,
     };
   }
 
-  const mappings = (profile as AuthorProfile).stylesApi;
-  const items = new Map(catalog.items.map((item) => [item.name, item]));
-  const mappingsByClaim = new Map<string, StylesApiEvidenceMapping[]>();
-  const claimsByEvidence = new Map<string, { path: string; claims: Map<string, string> }>();
+  const authorProfile = profile as AuthorProfile;
+  const mappings = [
+    ...(authorProfile.stylesApi ?? []),
+    ...(authorProfile.props ?? []),
+    ...(authorProfile.usage ?? []),
+  ];
+  const evidenceOwners = new Map<string, EvidenceOwner>();
+  let claimCount = 0;
 
-  for (const mapping of mappings) {
-    const key = claimKey(mapping.item, mapping.component);
-    const owners = mappingsByClaim.get(key) ?? [];
-    owners.push(mapping);
-    mappingsByClaim.set(key, owners);
-
-    const item = items.get(mapping.item);
-    if (item === undefined || !Object.hasOwn(item, "stylesApi")) {
-      failures.push({
-        code: "styles-api-evidence-stale",
-        message: `${claimLabel(catalog.namespace, mapping.item, mapping.component)} does not point to an item with a current stylesApi claim`,
-        details: { item: mapping.item, component: mapping.component },
-      });
-    } else if (!Object.hasOwn(item.stylesApi ?? {}, mapping.component)) {
-      failures.push({
-        code: "styles-api-evidence-stale",
-        message: `${claimLabel(catalog.namespace, mapping.item, mapping.component)} is not declared by the item's current stylesApi`,
-        details: { item: mapping.item, component: mapping.component },
-      });
-    }
-
-    const evidenceFile = inspectRepositoryFile(
+  if (authorProfile.stylesApi) {
+    const claims = stylesApiClaims(catalog, failures);
+    claimCount += claims.length;
+    inspectMappings(
+      "styles-api",
+      authorProfile.stylesApi,
+      claims,
       repositoryRoot,
-      mapping.evidence,
-      "evidence",
       failures,
+      evidenceOwners,
     );
-    if (evidenceFile !== null) {
-      const evidenceOwner = claimsByEvidence.get(evidenceFile.realPath) ?? {
-        path: evidenceFile.repositoryPath,
-        claims: new Map<string, string>(),
-      };
-      evidenceOwner.claims.set(key, claimLabel(catalog.namespace, mapping.item, mapping.component));
-      claimsByEvidence.set(evidenceFile.realPath, evidenceOwner);
-    }
+  }
+  if (authorProfile.props) {
+    const claims = propsClaims(catalog, failures);
+    claimCount += claims.length;
+    inspectMappings("props", authorProfile.props, claims, repositoryRoot, failures, evidenceOwners);
+  }
+  if (authorProfile.usage) {
+    const claims = usageClaims(catalog);
+    claimCount += claims.length;
+    inspectMappings("usage", authorProfile.usage, claims, repositoryRoot, failures, evidenceOwners);
   }
 
-  for (const [key, claim] of claims) {
-    const owners = mappingsByClaim.get(key) ?? [];
-    if (owners.length === 0) {
-      failures.push({
-        code: "styles-api-evidence-missing",
-        message: `${claimLabel(catalog.namespace, claim.item, claim.component)} has no evidence mapping`,
-        details: { item: claim.item, component: claim.component },
-      });
-    } else if (owners.length > 1) {
-      failures.push({
-        code: "styles-api-evidence-duplicate",
-        message: `${claimLabel(catalog.namespace, claim.item, claim.component)} has ${owners.length} evidence mappings; expected exactly one`,
-        details: { item: claim.item, component: claim.component, count: owners.length },
-      });
-    }
-  }
-
-  for (const owner of claimsByEvidence.values()) {
+  for (const owner of evidenceOwners.values()) {
     if (owner.claims.size <= 1) continue;
-    const claimLabels = [...owner.claims.values()].sort();
+    const claims = [...owner.claims].sort();
     failures.push({
-      code: "styles-api-evidence-shared",
-      message: `evidence ${JSON.stringify(owner.path)} is reused by ${claimLabels.join(", ")}`,
-      details: { path: owner.path, claims: claimLabels },
+      code: "evidence-path-shared",
+      message: `evidence ${JSON.stringify(owner.path)} is reused by ${claims.join(", ")}`,
+      details: { path: owner.path, claims },
     });
   }
 
@@ -382,7 +484,7 @@ export function inspectAuthorConformance(
     profilePath: catalog.authorProfile,
     mappings,
     failures,
-    claimCount: claims.size,
-    evidenceCount: claimsByEvidence.size,
+    claimCount,
+    evidenceCount: evidenceOwners.size,
   };
 }

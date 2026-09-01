@@ -4,13 +4,15 @@
   "title": "Manteen registry author conformance profile",
   "description": "Author-only evidence ownership for claims in a Manteen registry catalog. This data is validated during author builds and is never compiled into registry wire output.",
   "type": "object",
-  "required": ["schemaVersion", "stylesApi"],
+  "required": ["schemaVersion"],
+  "anyOf": [{ "required": ["stylesApi"] }, { "required": ["props"] }, { "required": ["usage"] }],
   "additionalProperties": false,
   "properties": {
     "$schema": { "type": "string" },
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": { "const": 2 },
     "stylesApi": {
       "type": "array",
+      "minItems": 1,
       "description": "Explicit evidence ownership for item/component claims in the catalog's stylesApi declarations.",
       "items": {
         "type": "object",
@@ -19,6 +21,43 @@
         "properties": {
           "item": { "type": "string", "minLength": 1 },
           "component": { "type": "string", "minLength": 1 },
+          "evidence": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Canonical repository-relative POSIX path to one existing ordinary evidence file."
+          }
+        }
+      }
+    },
+    "props": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Explicit evidence ownership for item/export claims in the catalog's props declarations.",
+      "items": {
+        "type": "object",
+        "required": ["item", "export", "evidence"],
+        "additionalProperties": false,
+        "properties": {
+          "item": { "type": "string", "minLength": 1 },
+          "export": { "type": "string", "minLength": 1 },
+          "evidence": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Canonical repository-relative POSIX path to one existing ordinary evidence file."
+          }
+        }
+      }
+    },
+    "usage": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Explicit evidence ownership for item usage claims in the catalog.",
+      "items": {
+        "type": "object",
+        "required": ["item", "evidence"],
+        "additionalProperties": false,
+        "properties": {
+          "item": { "type": "string", "minLength": 1 },
           "evidence": {
             "type": "string",
             "minLength": 1,

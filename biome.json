@@ -2,14 +2,7 @@
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": {
-    "includes": [
-      "**",
-      "!**/dist",
-      "!**/public/r",
-      "!**/*.astro",
-      "!apps/docs/.astro",
-      "!packages/registry-kit/schema/wire"
-    ]
+    "includes": ["**", "!**/dist", "!**/public/r", "!packages/registry-kit/schema/wire"]
   },
   "formatter": {
     "enabled": true,

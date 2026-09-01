@@ -86,6 +86,17 @@ The defaults read `manteen.registry.json` and write:
 The build validates both the authoring catalog and every emitted interchange document. A failed
 validation is a refusal, not trustworthy partial output.
 
+For a foreground local loop, use an available port and the versioned event stream:
+
+```npm
+npm exec --yes=false -- manteen-kit dev manteen.registry.json public/r --port 0 --jsonl
+```
+
+The server watches declared catalog inputs and serves only its last validated snapshot. A broken
+rebuild is reported without replacing the served bytes. `build-succeeded` includes an exact
+dry-run `manteen registry add` argv for a consumer. Stop the process cleanly when finished; a local
+ready event is not hosted-registry or deployment proof.
+
 The repository's
 [registry starter](https://github.com/arimxyer/manteen/tree/main/examples/registry-starter)
 contains a complete multi-file example with package styles and a theme fragment. Once the compiled

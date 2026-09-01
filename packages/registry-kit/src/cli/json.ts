@@ -5,7 +5,7 @@ export interface KitCommandError {
 }
 
 export interface KitCommandEnvelope<T = unknown> {
-  schemaVersion: 1;
+  schemaVersion: 2;
   command: string;
   ok: boolean;
   exitCode: number;
@@ -13,6 +13,7 @@ export interface KitCommandEnvelope<T = unknown> {
   payload: T | null;
   errors: KitCommandError[];
   notes: string[];
+  actions: { kind: "rerun"; argv: string[] }[];
 }
 
 export function kitEnvelope<T>(
@@ -22,9 +23,10 @@ export function kitEnvelope<T>(
   payload: T | null,
   errors: KitCommandError[] = [],
   notes: string[] = [],
+  actions: { kind: "rerun"; argv: string[] }[] = [],
 ): KitCommandEnvelope<T> {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     command,
     ok: exitCode === 0,
     exitCode,
@@ -32,6 +34,7 @@ export function kitEnvelope<T>(
     payload,
     errors,
     notes,
+    actions,
   };
 }
 

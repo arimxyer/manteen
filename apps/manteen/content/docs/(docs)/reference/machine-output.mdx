@@ -14,17 +14,18 @@ answers three separate questions without making an agent infer one from another:
     Read `mutated`; do not infer it from the command name.
   </Card>
   <Card title="What happened and what comes next?">
-    Read the command-specific `payload`, then `diagnostics`, `errors`, and `notes`.
+    Read the command-specific `payload`, then `diagnostics`, `errors`, `notes`, and `actions`.
   </Card>
 </Cards>
 
 ## The complete envelope
 
-The outer shape is stable at schema version 1. `payload` is the only command-specific field:
+The outer shape is stable at schema version 2. Version 1 is not emitted. `payload` is the only
+command-specific field:
 
 ```ts
 interface CommandEnvelope<T = unknown> {
-  schemaVersion: 1;
+  schemaVersion: 2;
   command: string;
   root: string | null;
   ok: boolean;
@@ -34,12 +35,13 @@ interface CommandEnvelope<T = unknown> {
   diagnostics: Diagnostic[];
   errors: CommandError[];
   notes: string[];
+  actions: DiagnosticAction[];
 }
 ```
 
 | Field | Contract |
 | --- | --- |
-| `schemaVersion` | Selects the outer envelope contract. Currently `1`. |
+| `schemaVersion` | Selects the outer envelope contract. Currently `2`. |
 | `command` | The recognized logical command, such as `add`, `status`, or `agent`. |
 | `root` | The absolute consumer root when the command has one; otherwise `null`. |
 | `ok` | Exactly `exitCode === 0`. It is command success, not a health verdict. |
@@ -49,9 +51,15 @@ interface CommandEnvelope<T = unknown> {
 | `diagnostics` | Planned findings with severity, forceability, and remediation. |
 | `errors` | Execution or invocation failures not already represented by a blocking diagnostic. |
 | `notes` | Non-blocking explanatory guidance, not proof and not a refusal. |
+| `actions` | Top-level executable argv choices. Always present; empty when no safe next command exists. |
 
 The published `command-envelope.schema.json` is the machine authority. It rejects unknown outer
 fields, requires every field above, and requires `ok: true` to pair with exit `0`.
+
+Successful applicable mutating previews return one top-level `rerun` action containing the exact
+reviewed argv: `--dry-run` is removed and the fresh `--expect-plan` is attached. Discovery-only
+removal without a selected candidate returns no apply action. Execute the array directly; never join
+it into shell text. Diagnostic actions remain attached to their specific finding.
 
 ## One stdout document, separate operational output
 
@@ -106,7 +114,8 @@ field rather than equating a non-zero exit with no effects.
    manual rationale.
 5. Treat `payload` as command-specific. Do not assume `status`, `add`, and `agent guide` return the
    same inner shape.
-6. Preserve stderr separately when project verification evidence matters.
+6. Review top-level `actions`; execute only an argv whose consequence is already authorized.
+7. Preserve stderr separately when project verification evidence matters.
 
 Continue with [Diagnostics and refusals](/docs/reference/diagnostics) for remediation semantics, or
 use the [Agent guide](/docs/getting-started/agent-guide) for the preview-and-apply operating model.

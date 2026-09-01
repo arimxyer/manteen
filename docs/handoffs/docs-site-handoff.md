@@ -1,5 +1,9 @@
 # Documentation site handoff
 
+> Historical receipt. The Astro/Starlight application and its Pages workflow were removed on
+> 2026-08-31 without migrating their implementation or content. This document records what the
+> retired milestone proved; it is not current architecture or deployment guidance.
+
 [Documentation map](../project-context.md) · [Implementation handoffs](README.md)
 
 Status: **complete and publicly deployed.**

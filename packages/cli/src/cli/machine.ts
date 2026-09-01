@@ -18,7 +18,7 @@ export interface CommandError {
 }
 
 export interface CommandEnvelope<T = unknown> {
-  schemaVersion: 1;
+  schemaVersion: 2;
   command: string;
   root: string | null;
   ok: boolean;
@@ -28,6 +28,7 @@ export interface CommandEnvelope<T = unknown> {
   diagnostics: MachineDiagnostic[];
   errors: CommandError[];
   notes: string[];
+  actions: RemediationAction[];
 }
 
 interface LegacyDocument {
@@ -49,6 +50,8 @@ const COMMANDS = new Set([
   "remove",
   "status",
   "agent",
+  "registry",
+  "verification",
 ]);
 
 const nativeStdout = process.stdout.write.bind(process.stdout);
@@ -242,12 +245,49 @@ function payloadOf(document: LegacyDocument): Record<string, unknown> | null {
       key === "root" ||
       key === "ok" ||
       key === "diagnostics" ||
-      key === "notes"
+      key === "notes" ||
+      key === "actions"
     )
       continue;
     payload[key] = value;
   }
   return Object.keys(payload).length === 0 ? null : payload;
+}
+
+export function reviewedApplyActions(
+  payload: Record<string, unknown> | null,
+  argv: readonly string[],
+  root?: string,
+): RemediationAction[] {
+  if (payload?.dryRun !== true || typeof payload.planDigest !== "string") return [];
+  if (!/^[a-f0-9]{64}$/i.test(payload.planDigest)) return [];
+  if (
+    Array.isArray(payload.candidates) &&
+    !payload.candidates.some((candidate) => isRecord(candidate) && candidate.selected === true)
+  ) {
+    return [];
+  }
+
+  const next: string[] = [];
+  let hasRoot = false;
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index]!;
+    if (arg === "--dry-run") continue;
+    if (arg === "--expect-plan") {
+      index += 1;
+      continue;
+    }
+    if (arg === "--cwd" && root !== undefined) {
+      index += 1;
+      next.push("--cwd", root);
+      hasRoot = true;
+      continue;
+    }
+    next.push(arg);
+  }
+  if (root !== undefined && !hasRoot) next.push("--cwd", root);
+  next.push("--expect-plan", payload.planDigest.toLowerCase());
+  return [{ kind: "rerun", argv: next }];
 }
 
 function hasWrittenFlag(value: unknown): boolean {
@@ -272,6 +312,7 @@ function inferMutated(command: string, payload: Record<string, unknown> | null):
   const dependencies = isRecord(payload.dependencies) ? payload.dependencies : null;
   if (typeof dependencies?.command === "string" && dependencies.command.length > 0) return true;
   const outcome = isRecord(payload.outcome) ? payload.outcome : null;
+  if (outcome?.mutated === true) return true;
   const outcomeDependencies = isRecord(outcome?.dependencies) ? outcome.dependencies : null;
   return typeof outcomeDependencies?.command === "string" && outcomeDependencies.command.length > 0;
 }
@@ -328,8 +369,9 @@ export class MachineSession {
         ? commandError(stderr, exitCode)
         : legacyErrors(payload, diagnostics, exitCode);
 
+    const actions = ok ? reviewedApplyActions(payload, this.argv, this.root) : [];
     const envelope: CommandEnvelope = {
-      schemaVersion: 1,
+      schemaVersion: 2,
       command: typeof legacy?.command === "string" ? legacy.command : this.command,
       root: typeof legacy?.root === "string" || legacy?.root === null ? legacy.root : this.root,
       ok,
@@ -339,6 +381,7 @@ export class MachineSession {
       diagnostics,
       errors,
       notes: legacyNotes,
+      actions,
     };
 
     activeSession = null;

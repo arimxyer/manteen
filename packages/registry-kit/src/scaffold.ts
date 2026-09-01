@@ -493,12 +493,11 @@ export function planScaffold(input: ScaffoldInput): ScaffoldPlan {
       try {
         const profile = JSON.parse(readFileSync(join(root, ...profilePath.split("/")), "utf8")) as {
           schemaVersion?: unknown;
-          stylesApi?: unknown;
         };
-        if (profile.schemaVersion !== 1 || !Array.isArray(profile.stylesApi)) {
+        if (profile.schemaVersion !== 2) {
           diagnostics.push({
             code: "scaffold-author-profile-invalid",
-            message: `Author profile is not a schema-version 1 evidence document: ${profilePath}.`,
+            message: `Author profile is not a schema-version 2 evidence document: ${profilePath}.`,
             details: { path: profilePath },
           });
         }

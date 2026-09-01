@@ -89,15 +89,13 @@ registry/                    # the components themselves
 test/                        # smoke test for this catalog
 packages/registry-kit/       # → manteen-kit, the toolchain
 packages/cli/                # → manteen, init/install/maintenance client
-apps/docs/                   # deployed Astro/Starlight docs + Pages artifact
-apps/manteen/                # checked, undeployed Next.js/Fumadocs replacement candidate
+apps/manteen/                # checked, undeployed Next.js/Fumadocs documentation app
 public/r/*.json              # build output (gitignored)
 ```
 
 The toolchain is packaged rather than kept as repository-only scripts so any number of registries
-can share it. Follow the public [registry-authoring guide](https://arimxyer.github.io/manteen/registry-authors/),
-or see [packages/registry-kit](packages/registry-kit/README.md) for the author package and
-[packages/cli](packages/cli/README.md) for the consumer package.
+can share it. See [packages/registry-kit](packages/registry-kit/README.md) for the author package
+and [packages/cli](packages/cli/README.md) for the consumer package.
 
 ## Develop
 
@@ -109,17 +107,14 @@ bun run typecheck
 bun test
 ```
 
-The documentation applications intentionally have separate commands and deployment status:
+The documentation application has its own checks and no deployment workflow:
 
 ```bash
-bun run build:site   # currently deployed Astro/Starlight artifact
-bun run site:check   # Next.js/Fumadocs replacement candidate
+bun run site:check   # Next.js/Fumadocs
 bun run site:build
 ```
 
-Only `.github/workflows/pages.yml` defines the public artifact; it currently uploads
-`apps/docs/dist` through a manual dispatch. Building `apps/manteen` locally or in CI does not deploy
-it or change the public registry.
+Building `apps/manteen` locally or in CI does not deploy it or publish the generated registry.
 
 The build validates the catalog against our authoring schema *and* every emitted item
 against the vendored wire schema, exiting non-zero on either, so conformance can't silently

@@ -144,6 +144,11 @@ manteen update
 manteen update --take-upstream # explicitly discard local source adaptations
 manteen update --no-verify     # skip configured project checks for this run
 manteen remove --upstream-removed --dry-run
+manteen registry list
+manteen registry add @workshop --url 'http://127.0.0.1:4174/{name}.json' \
+  --index http://127.0.0.1:4174/registry.json --dry-run --json
+manteen verification show
+manteen verification set --add typecheck --add test --dry-run --json
 ```
 
 `status` is an offline assessment of Manteen's local configuration and ownership state. Even
@@ -157,7 +162,8 @@ JSON rows expose `queryMatches` and the winning `queryRank` so agents can explai
 
 For automation, every recognized `--json` invocation writes exactly one versioned envelope to
 stdout with `schemaVersion`, `command`, `root`, `ok`, `exitCode`, `mutated`, `payload`,
-`diagnostics`, `errors`, and `notes`. `ok` is exactly `exitCode === 0`; stderr remains available
+`diagnostics`, `errors`, `notes`, and `actions`. Schema version 2 is a clean break; version 1 is not
+emitted. `ok` is exactly `exitCode === 0`; stderr remains available
 for verifier output. JSON mode disables prompting but grants no overwrite or discard authority.
 Blocking diagnostics include a typed rerun argument array, a configuration patch, or a bounded
 manual action and rationale.
@@ -165,6 +171,17 @@ manual action and rationale.
 Mutating dry runs return a source-free `planDigest`. Apply the exact reviewed plan by repeating the
 same refs and flags with `--expect-plan <sha256>`; a changed source, destination, preimage,
 verification definition, or relevant option produces a non-forceable zero-write refusal.
+Successful applicable previews also return an exact top-level `rerun` argv action with `--dry-run`
+removed and the fresh digest attached. Discovery-only removal without a selection returns no apply
+action. Execute argv directly rather than joining it into a shell command. Add previews expose the
+exact planned dependency-manager command, or `null` when none will run.
+
+`registry add` and `registry remove` surgically edit only the top-level registry map and require the
+same preview/apply coupling. Replacement is explicit and refuses while receipt items reference the
+namespace; removal also refuses the last registry. Repeated `--header key=value` values must retain
+a literal `${VAR}` template. Machine output reports only header and parameter keys, never expanded
+values. `verification show` discovers root package scripts; `set` stores ordered script names for
+selected add/update/remove operations; `clear` removes one operation or the whole block.
 
 Every install is recorded in `manteen.lock.json`, with exact pristine upstream bases under
 `.manteen/bases/`. **Commit both — do not gitignore `.manteen/`.** They stop cross-registry

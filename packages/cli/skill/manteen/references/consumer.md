@@ -51,6 +51,18 @@ explain the result through `queryMatches` and `queryRank`.
 Use configured namespaces for repeatable work. A direct item URL is suitable for one
 self-contained item, but cannot safely resolve its bare parent-local dependencies.
 
+Manage a namespace through reviewed config plans when the installed CLI exposes them:
+
+```bash
+manteen registry list --json
+manteen registry add @workshop --url 'http://127.0.0.1:4174/{name}.json' \
+  --index http://127.0.0.1:4174/registry.json --dry-run --json
+```
+
+Use the returned top-level rerun action to apply. Replacement is explicit, and removal refuses a
+namespace still referenced by receipt items. Header values must remain literal `${VAR}` templates;
+never pass an expanded secret.
+
 `info --json` is the detail surface. Read its full docs, props, usage, dependency, provider,
 Mantine-version, theme, Styles API, and file metadata before deciding whether an item fits.
 
@@ -109,6 +121,10 @@ result.
 
 Configured verification runs inside the mutation transaction. Do not add `--no-verify` merely to
 make a failure disappear; first decide whether the configured check is inapplicable to this run.
+
+Use `manteen verification show --json` to compare configured checks with discovered package
+scripts. `verification set` stores repeated operation-specific script names and `verification
+clear --operation <name|all>` removes them; both mutations require a reviewed plan.
 
 Files omitted upstream are retained until exact removal:
 

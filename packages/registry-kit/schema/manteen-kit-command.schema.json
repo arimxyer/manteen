@@ -12,10 +12,11 @@
     "mutated",
     "payload",
     "errors",
-    "notes"
+    "notes",
+    "actions"
   ],
   "properties": {
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": { "const": 2 },
     "command": { "type": "string", "minLength": 1 },
     "ok": { "type": "boolean" },
     "exitCode": { "type": "integer", "minimum": 0, "maximum": 255 },
@@ -34,7 +35,20 @@
         }
       }
     },
-    "notes": { "type": "array", "items": { "type": "string" } }
+    "notes": { "type": "array", "items": { "type": "string" } },
+    "actions": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "argv"],
+        "properties": {
+          "kind": { "const": "rerun" },
+          "argv": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+        }
+      }
+    }
   },
   "allOf": [
     {

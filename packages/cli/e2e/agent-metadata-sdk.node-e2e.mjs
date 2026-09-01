@@ -151,7 +151,7 @@ test("built CLI keeps full metadata in JSON and expands text only on request", (
   assert.equal(jsonResult.stderr, "");
 
   const envelope = JSON.parse(jsonResult.stdout);
-  assert.equal(envelope.schemaVersion, 1);
+  assert.equal(envelope.schemaVersion, 2);
   assert.equal(envelope.payload.detail.docs, item.docs);
   assert.deepEqual(envelope.payload.detail.meta.props, item.meta.mantine.props);
   assert.equal(envelope.payload.detail.meta.usage.content, item.meta.mantine.usage.content);

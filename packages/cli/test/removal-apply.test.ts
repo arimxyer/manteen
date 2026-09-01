@@ -107,6 +107,10 @@ function failingJournal(path: string): Journal {
       journal.write(destination, content);
       if (destination === path) throw new Error(`injected failure after ${destination}`);
     },
+    writeChecked(destination, expectedSha256, content) {
+      journal.writeChecked(destination, expectedSha256, content);
+      if (destination === path) throw new Error(`injected failure after ${destination}`);
+    },
     remove(destination) {
       journal.remove(destination);
       if (destination === path) throw new Error(`injected failure after ${destination}`);
@@ -130,6 +134,10 @@ describe("upstream-removal apply", () => {
         write(destination, content) {
           order.push(destination);
           journal.write(destination, content);
+        },
+        writeChecked(destination, expectedSha256, content) {
+          order.push(destination);
+          journal.writeChecked(destination, expectedSha256, content);
         },
         remove(destination) {
           order.push(destination);
@@ -398,6 +406,7 @@ describe("upstream-removal apply", () => {
     const inner = failingJournal(state.receipt);
     const ports = portsWithJournal(() => ({
       write: inner.write,
+      writeChecked: inner.writeChecked,
       remove: inner.remove,
       entries: inner.entries,
       unwind: () => ({

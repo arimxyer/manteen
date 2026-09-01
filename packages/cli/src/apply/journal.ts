@@ -20,7 +20,7 @@
  * receipt LAST — an interrupted run under-claims ownership, and under-claiming
  * only costs a redundant prompt.
  */
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
@@ -53,6 +53,8 @@ export interface Journal {
    * every drift comparison the receipt makes.
    */
   write(destination: string, content: string): void;
+  /** Refuse if the destination no longer has the reviewed pre-image. */
+  writeChecked(destination: string, expectedSha256: string, content: string): void;
   /** Capture bytes without changing them so a later verifier mutation can be unwound. */
   capture?(destination: string): void;
   /** Journal and remove a Manteen-owned state file. Absence is a no-op. */
@@ -111,6 +113,17 @@ export function createJournal(): Journal {
       // Recorded before the write, so a rename that fails halfway is still
       // covered. Restoring an unchanged file is a no-op; not recording one that
       // did change is unrecoverable.
+      entries.push({ destination, preImage });
+      place(destination, content);
+    },
+
+    writeChecked(destination, expectedSha256, content) {
+      const preImage = readPreImage(destination);
+      const actualSha256 =
+        preImage === null ? null : createHash("sha256").update(preImage).digest("hex");
+      if (actualSha256 !== expectedSha256) {
+        throw new Error("The destination changed immediately before the configuration write.");
+      }
       entries.push({ destination, preImage });
       place(destination, content);
     },

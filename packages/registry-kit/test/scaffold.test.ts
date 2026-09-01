@@ -39,13 +39,39 @@ function fixture(options: FixtureOptions = {}) {
     name: "Scaffold fixture",
     namespace: "@scaffold",
     ...(options.profile ? { authorProfile: "manteen.author-profile.json" } : {}),
-    items: [],
+    items: options.profile
+      ? [
+          {
+            name: "existing",
+            kind: "component",
+            files: [{ path: "src/existing.tsx", as: "component" }],
+            stylesApi: { Existing: ["root"] },
+          },
+        ]
+      : [],
   };
   writeFileSync(catalogPath, `${JSON.stringify(catalog, null, 2)}\n`);
   if (options.profile) {
+    mkdirSync(join(root, "src"), { recursive: true });
+    mkdirSync(join(root, "evidence"), { recursive: true });
+    writeFileSync(join(root, "src/existing.tsx"), "export const Existing = () => null;\n");
+    writeFileSync(join(root, "evidence/existing.contract"), "existing ownership\n");
     writeFileSync(
       join(root, "manteen.author-profile.json"),
-      `${JSON.stringify({ schemaVersion: 1, stylesApi: [] }, null, 2)}\n`,
+      `${JSON.stringify(
+        {
+          schemaVersion: 2,
+          stylesApi: [
+            {
+              item: "existing",
+              component: "Existing",
+              evidence: "evidence/existing.contract",
+            },
+          ],
+        },
+        null,
+        2,
+      )}\n`,
     );
   }
   if (options.packageManifest) {
@@ -218,6 +244,38 @@ describe("safe author scaffold planning", () => {
     expect(digitName.files.find((file) => file.path.endsWith(".tsx"))?.content).toContain(
       'import classes from "./chart-2d.module.css"',
     );
+  });
+
+  test("a valid props-only v2 profile can review a new Styles API mapping", () => {
+    const created = fixture({ profile: true, packageManifest: true });
+    const catalog = {
+      ...created.catalog,
+      items: created.catalog.items.map((item) => ({
+        ...item,
+        stylesApi: undefined,
+        props: { Existing: [] },
+      })),
+    };
+    writeFileSync(created.catalogPath, `${JSON.stringify(catalog, null, 2)}\n`);
+    writeFileSync(
+      join(created.root, "manteen.author-profile.json"),
+      `${JSON.stringify(
+        {
+          schemaVersion: 2,
+          props: [{ item: "existing", export: "Existing", evidence: "evidence/existing.contract" }],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+
+    const planned = planScaffold(input(created.catalogPath, "component-styles-api"));
+
+    expect(planned.safe).toBe(true);
+    expect(planned.authorProfileInsertion?.mapping).toMatchObject({
+      item: "status-card",
+      component: "StatusCard",
+    });
   });
 
   test("rejects catalog collisions, invalid names, and path normalization drift", () => {
@@ -579,12 +637,26 @@ describe("safe author scaffold apply", () => {
 
     writeFileSync(
       created.catalogPath,
-      `${JSON.stringify({ ...created.catalog, items: [planned.catalogInsertion] }, null, 2)}\n`,
+      `${JSON.stringify(
+        { ...created.catalog, items: [...created.catalog.items, planned.catalogInsertion] },
+        null,
+        2,
+      )}\n`,
     );
     writeFileSync(
       join(created.root, "manteen.author-profile.json"),
       `${JSON.stringify(
-        { schemaVersion: 1, stylesApi: [planned.authorProfileInsertion!.mapping] },
+        {
+          schemaVersion: 2,
+          stylesApi: [
+            {
+              item: "existing",
+              component: "Existing",
+              evidence: "evidence/existing.contract",
+            },
+            planned.authorProfileInsertion!.mapping,
+          ],
+        },
         null,
         2,
       )}\n`,
@@ -592,12 +664,12 @@ describe("safe author scaffold apply", () => {
     const compiled = compileRegistry(created.catalogPath);
 
     expect(compiled.failures).toEqual([]);
-    expect(compiled.items).toHaveLength(1);
-    expect(compiled.items[0]).toMatchObject({
+    expect(compiled.items).toHaveLength(2);
+    expect(compiled.items[1]).toMatchObject({
       name: "status-card",
       dependencies: ["@mantine/core@^9.5.0"],
       meta: { mantine: { requires: ">=9.5.0 <10" } },
     });
-    expect(compiled.authorConformance).toMatchObject({ claimCount: 1, evidenceCount: 1 });
+    expect(compiled.authorConformance).toMatchObject({ claimCount: 2, evidenceCount: 2 });
   });
 });

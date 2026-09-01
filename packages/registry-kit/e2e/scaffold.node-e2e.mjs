@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -21,13 +21,40 @@ function fixture() {
         name: "Built Node scaffold fixture",
         namespace: "@node-proof",
         authorProfile: "manteen.author-profile.json",
-        items: [],
+        items: [
+          {
+            name: "existing",
+            kind: "component",
+            files: [{ path: "src/existing.tsx", as: "component" }],
+            stylesApi: { Existing: ["root"] },
+          },
+        ],
       },
       null,
       2,
     )}\n`,
   );
-  writeFileSync(profilePath, `${JSON.stringify({ schemaVersion: 1, stylesApi: [] }, null, 2)}\n`);
+  mkdirSync(join(root, "src"));
+  mkdirSync(join(root, "evidence"));
+  writeFileSync(join(root, "src/existing.tsx"), "export const Existing = () => null;\n");
+  writeFileSync(join(root, "evidence/existing.contract"), "existing ownership\n");
+  writeFileSync(
+    profilePath,
+    `${JSON.stringify(
+      {
+        schemaVersion: 2,
+        stylesApi: [
+          {
+            item: "existing",
+            component: "Existing",
+            evidence: "evidence/existing.contract",
+          },
+        ],
+      },
+      null,
+      2,
+    )}\n`,
+  );
   writeFileSync(manifestPath, '{"name":"node-proof","private":true}\n');
   return { root, catalogPath, profilePath, manifestPath };
 }
@@ -43,7 +70,7 @@ function run(root, args) {
 function json(result) {
   assert.equal(result.stderr, "");
   const value = JSON.parse(result.stdout);
-  assert.equal(value.schemaVersion, 1);
+  assert.equal(value.schemaVersion, 2);
   assert.equal(value.command, "scaffold");
   return value;
 }

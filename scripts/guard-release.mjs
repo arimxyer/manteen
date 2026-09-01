@@ -22,7 +22,6 @@ const REPO_ROOT = resolve(import.meta.dirname, "..");
 const REPOSITORY_URL = "git+https://github.com/arimxyer/manteen.git";
 const BUGS_URL = "https://github.com/arimxyer/manteen/issues";
 const RELEASE_WORKFLOW = join(REPO_ROOT, ".github/workflows/release.yml");
-const PAGES_WORKFLOW = join(REPO_ROOT, ".github/workflows/pages.yml");
 
 const PACKAGES = [
   {
@@ -180,26 +179,6 @@ function inspectWorkflow() {
   );
 }
 
-function inspectPagesWorkflow() {
-  const source = readFileSync(PAGES_WORKFLOW, "utf8");
-  expect(
-    source.includes("workflow_dispatch:"),
-    "pages.yml: registry deployment must have an explicit manual dispatch",
-  );
-  expect(
-    !/push:\s*\n\s*branches:\s*\[main\]/.test(source),
-    "pages.yml: registry must not deploy automatically before its client contract is public",
-  );
-  expect(
-    source.includes("bun run build:site"),
-    "pages.yml: the Starlight site and registry artifact must be built before upload",
-  );
-  expect(
-    source.includes("path: apps/docs/dist"),
-    "pages.yml: Pages must upload the Starlight artifact that contains the copied /r registry",
-  );
-}
-
 function npmPackRecord(spec) {
   const run = spawnSync("npm", ["pack", "--dry-run", "--ignore-scripts", "--json"], {
     cwd: spec.packageRoot,
@@ -269,7 +248,6 @@ expect(
   `manteen: dependency must match publishable manteen-kit@${String(expectedKitRange)}`,
 );
 inspectWorkflow();
-inspectPagesWorkflow();
 
 const tag = requestedTag();
 if (tag) {

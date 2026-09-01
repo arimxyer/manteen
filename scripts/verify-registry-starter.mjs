@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Disposable author-guide dogfood.
+ * Disposable registry-starter dogfood.
  *
  * Builds the committed starter with the built kit, initializes a fresh Vite
  * project with the built CLI, installs the item by direct file URL, renders it,
@@ -24,7 +24,7 @@ for (const artifact of [KIT, CLI]) {
   }
 }
 
-const scratch = mkdtempSync(join(tmpdir(), "manteen-docs-guide-"));
+const scratch = mkdtempSync(join(tmpdir(), "manteen-registry-starter-"));
 const registry = join(scratch, "registry");
 const consumer = join(scratch, "consumer");
 

@@ -161,31 +161,47 @@ export function loadEnv(root: string): Record<string, string | undefined> {
   return { ...process.env, ...preexisting };
 }
 
-export function loadConfig(cwd: string = process.cwd()): ConfigLoadResult {
+export type RawConfigLoadResult =
+  | { ok: true; root: string; configPath: string; raw: MantineConfig }
+  | { ok: false; errors: ConfigError[] };
+
+/** Validate authored config without requiring its tsconfig or alias backing to be usable. */
+export function loadRawConfig(cwd: string = process.cwd()): RawConfigLoadResult {
   const root = resolve(cwd);
   const configPath = resolve(root, CONFIG_FILENAME);
 
-  if (!existsSync(configPath)) return fail([missingConfig(root)]);
+  if (!existsSync(configPath)) return { ok: false, errors: [missingConfig(root)] };
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(readFileSync(configPath, "utf8"));
   } catch (error) {
-    return fail([
-      whole(
-        `${configPath} is not valid JSON.`,
-        `${error instanceof Error ? error.message : String(error)}\n\nmanteen.json is plain JSON — no comments, no trailing commas.`,
-      ),
-    ]);
+    return {
+      ok: false,
+      errors: [
+        whole(
+          `${configPath} is not valid JSON.`,
+          `${error instanceof Error ? error.message : String(error)}\n\nmanteen.json is plain JSON — no comments, no trailing commas.`,
+        ),
+      ],
+    };
   }
 
   const schemaErrors = configValidator()(parsed);
-  if (schemaErrors) return fail(schemaErrors);
+  if (schemaErrors) return { ok: false, errors: schemaErrors };
 
   const raw = parsed as MantineConfig;
 
   const semanticErrors = checkSemantics(raw);
-  if (semanticErrors.length > 0) return fail(semanticErrors);
+  if (semanticErrors.length > 0) return { ok: false, errors: semanticErrors };
+
+  return { ok: true, root, configPath, raw };
+}
+
+export function loadConfig(cwd: string = process.cwd()): ConfigLoadResult {
+  const loaded = loadRawConfig(cwd);
+  if (!loaded.ok) return fail(loaded.errors);
+  const { root, configPath, raw } = loaded;
 
   // No `basename()` for the REQUESTED path: `"tsconfig": "tsconfig.app.json"`
   // names a FILE, and a project with several tsconfigs is exactly the case

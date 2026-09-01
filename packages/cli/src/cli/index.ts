@@ -45,12 +45,20 @@ import type { InitFlags } from "../commands/init";
 import { runInit } from "../commands/init";
 import type { ListFlags } from "../commands/list";
 import { runList } from "../commands/list";
+import type { RegistryFlags } from "../commands/registry";
+import { runRegistryAdd, runRegistryList, runRegistryRemove } from "../commands/registry";
 import type { RemoveFlags } from "../commands/remove";
 import { runRemove } from "../commands/remove";
 import type { StatusFlags } from "../commands/status";
 import { runStatus } from "../commands/status";
 import type { UpdateFlags } from "../commands/update";
 import { renderVerification, runUpdate } from "../commands/update";
+import type { VerificationFlags } from "../commands/verification";
+import {
+  runVerificationClear,
+  runVerificationSet,
+  runVerificationShow,
+} from "../commands/verification";
 import { blockingExitCode, diag, sortDiagnostics } from "../plan/diagnostics";
 import { digestPlan, planDigestMatches } from "../plan/digest";
 import { plan } from "../plan/index";
@@ -161,6 +169,7 @@ function renderAddJson(
             dev: dependency.dev,
           }))
         : outcome.dependencies,
+    installCommand: planned.installCommand,
     receipt:
       outcome === null
         ? { written: false }
@@ -440,6 +449,93 @@ program
  */
 
 const collectValue = (value: string, previous: string[]): string[] => [...previous, value];
+
+const registryCommand = program
+  .command("registry")
+  .description("inspect and edit registry sources");
+
+registryCommand
+  .command("list")
+  .description("list configured registry namespaces")
+  .option("--cwd <dir>", "project directory containing manteen.json", process.cwd())
+  .option("--json", "emit one machine-readable command envelope")
+  .action(async (flags: RegistryFlags) => {
+    process.exitCode = await runRegistryList(flags);
+  });
+
+registryCommand
+  .command("add")
+  .description("add or explicitly replace one registry source")
+  .argument("<namespace>", "consumer namespace, e.g. @workshop")
+  .requiredOption("--url <template>", "item URL containing the literal {name}")
+  .option("--index <url>", "registry index URL")
+  .option(
+    "--header <key=value>",
+    "request header using a literal ${VAR} template",
+    collectValue,
+    [],
+  )
+  .option("--param <key=value>", "request query parameter", collectValue, [])
+  .option("--replace", "replace a differing unreferenced registry source")
+  .option("--cwd <dir>", "project directory containing manteen.json", process.cwd())
+  .option("--dry-run", "plan the configuration edit without writing")
+  .option("--expect-plan <sha256>", "apply only the exact reviewed plan")
+  .option("--json", "emit one machine-readable command envelope")
+  .action(async (namespace: string, flags: RegistryFlags) => {
+    process.exitCode = await runRegistryAdd(namespace, flags);
+  });
+
+registryCommand
+  .command("remove")
+  .description("remove one registry source when no installed receipt depends on it")
+  .argument("<namespace>", "configured consumer namespace")
+  .option("--cwd <dir>", "project directory containing manteen.json", process.cwd())
+  .option("--dry-run", "plan the configuration edit without writing")
+  .option("--expect-plan <sha256>", "apply only the exact reviewed plan")
+  .option("--json", "emit one machine-readable command envelope")
+  .action(async (namespace: string, flags: RegistryFlags) => {
+    process.exitCode = await runRegistryRemove(namespace, flags);
+  });
+
+const verificationCommand = program
+  .command("verification")
+  .description("inspect and edit project-owned mutation checks");
+
+verificationCommand
+  .command("show")
+  .description("show configured checks and available package scripts")
+  .option("--cwd <dir>", "project directory containing manteen.json", process.cwd())
+  .option("--json", "emit one machine-readable command envelope")
+  .action(async (flags: VerificationFlags) => {
+    process.exitCode = await runVerificationShow(flags);
+  });
+
+verificationCommand
+  .command("set")
+  .description("replace explicitly selected operation check lists")
+  .option("--add <script>", "post-add package script (repeatable)", collectValue, [])
+  .option("--update <script>", "post-update package script (repeatable)", collectValue, [])
+  .option("--remove <script>", "post-remove package script (repeatable)", collectValue, [])
+  .option("--timeout-ms <ms>", "per-check timeout in milliseconds")
+  .option("--cwd <dir>", "project directory containing manteen.json", process.cwd())
+  .option("--dry-run", "plan the configuration edit without writing")
+  .option("--expect-plan <sha256>", "apply only the exact reviewed plan")
+  .option("--json", "emit one machine-readable command envelope")
+  .action(async (flags: VerificationFlags) => {
+    process.exitCode = await runVerificationSet(flags);
+  });
+
+verificationCommand
+  .command("clear")
+  .description("clear one operation or all verification configuration")
+  .requiredOption("--operation <name>", "add, update, remove, or all")
+  .option("--cwd <dir>", "project directory containing manteen.json", process.cwd())
+  .option("--dry-run", "plan the configuration edit without writing")
+  .option("--expect-plan <sha256>", "apply only the exact reviewed plan")
+  .option("--json", "emit one machine-readable command envelope")
+  .action(async (flags: VerificationFlags) => {
+    process.exitCode = await runVerificationClear(flags);
+  });
 
 program
   .command("list")

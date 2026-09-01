@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { BUILD_USAGE, build } from "./build";
+import { DEV_USAGE, dev } from "./dev";
 import { kitEnvelope, writeJson } from "./json";
 import { MERGE_USAGE, mergeTheme } from "./merge-theme";
 import { SCAFFOLD_USAGE, scaffold } from "./scaffold";
@@ -14,6 +15,7 @@ Commands:
   merge-theme <base> <fragment>         compose a theme fragment into a theme
   scaffold --template <kind> --name <item>
                                         plan or apply source-owned author files
+  dev [catalog] [outDir]                  watch, build and serve a local registry
 
 Run a command with --help for its options.
 `;
@@ -25,7 +27,7 @@ Run a command with --help for its options.
  * through into `merge-theme` — a hazard that surfaces the day someone captures
  * the code instead of exiting on it.
  */
-function run(command: string | undefined, rest: string[]): number {
+async function run(command: string | undefined, rest: string[]): Promise<number> {
   const json = command === "--json" || rest.includes("--json");
   switch (command) {
     case "build":
@@ -34,6 +36,8 @@ function run(command: string | undefined, rest: string[]): number {
       return mergeTheme(rest);
     case "scaffold":
       return scaffold(rest);
+    case "dev":
+      return dev(rest);
     case "-h":
     case "--help":
     case undefined:
@@ -53,11 +57,11 @@ function run(command: string | undefined, rest: string[]): number {
         );
       } else {
         process.stderr.write(`Unknown command: ${command}\n\n${USAGE}`);
-        process.stderr.write(`\n${BUILD_USAGE}\n${MERGE_USAGE}\n${SCAFFOLD_USAGE}`);
+        process.stderr.write(`\n${BUILD_USAGE}\n${MERGE_USAGE}\n${SCAFFOLD_USAGE}\n${DEV_USAGE}`);
       }
       return 2;
   }
 }
 
 const [command, ...rest] = process.argv.slice(2);
-process.exit(run(command, rest));
+process.exitCode = await run(command, rest);

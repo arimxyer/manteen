@@ -139,7 +139,31 @@ export function scaffold(argv: string[]): number {
   if (args.mode === "dry-run") {
     const plan = planScaffold(input);
     const exitCode = plan.safe ? 0 : 1;
-    writeJson(kitEnvelope("scaffold", exitCode, false, plan, plan.diagnostics));
+    const applyArgv = ["manteen-kit", "scaffold"];
+    for (let index = 0; index < argv.length; index += 1) {
+      const arg = argv[index]!;
+      if (arg === "--dry-run") {
+        applyArgv.push("--apply");
+        continue;
+      }
+      if (arg === "--expect-plan") {
+        index += 1;
+        continue;
+      }
+      applyArgv.push(arg);
+    }
+    applyArgv.push("--expect-plan", plan.planDigest);
+    writeJson(
+      kitEnvelope(
+        "scaffold",
+        exitCode,
+        false,
+        plan,
+        plan.diagnostics,
+        [],
+        exitCode === 0 ? [{ kind: "rerun", argv: applyArgv }] : [],
+      ),
+    );
     return exitCode;
   }
 

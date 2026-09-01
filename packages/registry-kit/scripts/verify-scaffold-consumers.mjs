@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -21,10 +21,37 @@ for (const mantineVersion of MANTINE_VERSIONS) {
       name: `Mantine ${mantineVersion} scaffold proof`,
       namespace: "@scaffold-proof",
       authorProfile: "manteen.author-profile.json",
-      items: [],
+      items: [
+        {
+          name: "existing",
+          kind: "component",
+          files: [{ path: "src/existing.tsx", as: "component" }],
+          stylesApi: { Existing: ["root"] },
+        },
+      ],
     };
+    mkdirSync(join(root, "src"));
+    mkdirSync(join(root, "evidence"));
+    writeFileSync(join(root, "src/existing.tsx"), "export const Existing = () => null;\n");
+    writeFileSync(join(root, "evidence/existing.contract"), "existing ownership\n");
     writeFileSync(catalogPath, `${JSON.stringify(baseCatalog, null, 2)}\n`);
-    writeFileSync(profilePath, `${JSON.stringify({ schemaVersion: 1, stylesApi: [] }, null, 2)}\n`);
+    writeFileSync(
+      profilePath,
+      `${JSON.stringify(
+        {
+          schemaVersion: 2,
+          stylesApi: [
+            {
+              item: "existing",
+              component: "Existing",
+              evidence: "evidence/existing.contract",
+            },
+          ],
+        },
+        null,
+        2,
+      )}\n`,
+    );
 
     const plans = templates.map(([template, itemName]) => {
       const input = { catalogPath, template, itemName };
@@ -36,23 +63,37 @@ for (const mantineVersion of MANTINE_VERSIONS) {
 
     writeFileSync(
       catalogPath,
-      `${JSON.stringify({ ...baseCatalog, items: plans.map((plan) => plan.catalogInsertion) }, null, 2)}\n`,
+      `${JSON.stringify(
+        {
+          ...baseCatalog,
+          items: [...baseCatalog.items, ...plans.map((plan) => plan.catalogInsertion)],
+        },
+        null,
+        2,
+      )}\n`,
     );
     writeFileSync(
       profilePath,
       `${JSON.stringify(
         {
-          schemaVersion: 1,
-          stylesApi: plans.flatMap((plan) =>
-            plan.authorProfileInsertion ? [plan.authorProfileInsertion.mapping] : [],
-          ),
+          schemaVersion: 2,
+          stylesApi: [
+            {
+              item: "existing",
+              component: "Existing",
+              evidence: "evidence/existing.contract",
+            },
+            ...plans.flatMap((plan) =>
+              plan.authorProfileInsertion ? [plan.authorProfileInsertion.mapping] : [],
+            ),
+          ],
         },
         null,
         2,
       )}\n`,
     );
     const compiled = compileRegistry(catalogPath);
-    if (compiled.failures.length > 0 || compiled.items.length !== templates.length) {
+    if (compiled.failures.length > 0 || compiled.items.length !== templates.length + 1) {
       throw new Error(
         `Independent registry compilation failed: ${JSON.stringify(compiled.failures)}`,
       );
