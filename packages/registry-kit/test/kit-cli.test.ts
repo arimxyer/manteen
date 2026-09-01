@@ -199,8 +199,14 @@ describe("kit JSON commands", () => {
   test("build --check --json distinguishes missing and clean without mutating", () => {
     const outDir = join(temporaryRoot(), "r");
     const missing = run(["build", CATALOG, outDir, "--check", "--json"]);
-    const missingJson = document(missing) as { payload: { status: string }; mutated: boolean };
+    const missingJson = document(missing) as {
+      ok: boolean;
+      payload: { ok: boolean; status: string };
+      mutated: boolean;
+    };
     expect(missing.exitCode).toBe(1);
+    expect(missingJson.ok).toBe(false);
+    expect(missingJson.payload.ok).toBe(true);
     expect(missingJson.payload.status).toBe("missing");
     expect(missingJson.mutated).toBe(false);
 
@@ -210,7 +216,7 @@ describe("kit JSON commands", () => {
 
     const clean = run(["build", CATALOG, outDir, "--check", "--json"]);
     expect(clean.exitCode).toBe(0);
-    expect((document(clean) as { payload: { status: string } }).payload.status).toBe("clean");
+    expect(document(clean)).toMatchObject({ ok: true, payload: { ok: true, status: "clean" } });
   });
 
   test("recognized JSON refusals emit exactly one stdout document", () => {

@@ -55,6 +55,13 @@ Its signed tags, hosted matrix, npm provenance, and fresh public consumer are ac
 [`0.9.1 release handoff`](./releases/v0.9.1-release-handoff.md). Public registry bytes and deployment
 remain unchanged.
 
+A later clean-room run found three source regressions behind those accepted public claims: Styles
+API registration did not wire its generated test into author verification, a fully current update
+still entered apply and verification, and a real npm-owned PTY could lose the final dev event. The
+`manteen-kit@0.3.2` and `manteen@0.9.2` source candidates fix all three with built-Node/PTY
+regressions; the public `0.3.1` and `0.9.1` packages remain unchanged until trusted publishing
+completes.
+
 The agent-native release is public at `manteen-kit@0.2.1` and `manteen@0.7.0`. It adds
 transactional generated registry ownership, one stable JSON command envelope, complete display
 metadata, an opaque SDK facade, offline status, expected-plan digests, deterministic discovery

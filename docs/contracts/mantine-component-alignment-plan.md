@@ -120,6 +120,8 @@ The first scaffold release has exactly these machine-oriented forms:
 ```text
 manteen-kit scaffold --template <template> --name <item> [--catalog <path>] --dry-run --json
 manteen-kit scaffold --template <template> --name <item> [--catalog <path>] --apply --expect-plan <sha256> --json
+manteen-kit scaffold --template <template> --name <item> [--catalog <path>] --register --dry-run --json
+manteen-kit scaffold --template <template> --name <item> [--catalog <path>] --register --apply --expect-plan <sha256> --json
 ```
 
 `--catalog` defaults to `./manteen.registry.json`. Exactly one of `--dry-run` and `--apply` is
@@ -136,8 +138,9 @@ apply argv in top-level `actions`. Its `payload` is a schema-version 1 scaffold
 plan containing the template, item name, SHA-256 plan digest, catalog preimage hash, preserved-file
 preimages, required runtime and development package declarations, diagnostics, and the exact
 catalog insertion object. The Styles API plan also contains the exact evidence mapping insertion
-and its current author-profile path when one is declared. Profile and catalog insertions are
-review data only. The command never edits the catalog, author profile, or package manifest.
+and its current author-profile path when one is declared. Without `--register`, profile and catalog
+insertions are review data only and apply writes only scaffold-owned sources. With `--register`,
+the digest also binds the projected catalog, author-profile, and package-manifest edits.
 
 The default catalog contract is `mantine: ">=9.5.0 <10"` with
 `npm: ["@mantine/core@^9.5.0"]`. The fixed catalog-root-relative layout is
@@ -160,9 +163,11 @@ expected digest. Before its first write it rechecks every path and preimage, cat
 absence and catalog hash, profile and package-manifest preservation preimages, and the absence of
 any unsafe plan member. Stale digest, catalog drift, or file drift is a refusal. It stages all
 creates, commits without overwriting occupied paths, and rolls back every scaffold-owned file it
-created if any commit or postcondition fails. Success and failure leave the catalog, author profile,
-and package manifest byte-identical. Apply is never interactive or inferred from omission of
-`--dry-run`; it reports mutation truth in the envelope, including `mutated: true` on a failure that
+created if any commit or postcondition fails. A registered Styles API scaffold adds a missing
+`scripts.test = "vitest run"`, preserves any authored string command, and appends `test` to the
+author profile's ordered verification scripts. Registered control edits and sources share the same
+rollback boundary; source-only apply leaves all three control files byte-identical. Apply is never
+interactive or inferred from omission of `--dry-run`; it reports mutation truth in the envelope, including `mutated: true` on a failure that
 cannot safely remove a scaffold-created file, staging file, or directory.
 
 ## Execution order

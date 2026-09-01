@@ -114,11 +114,13 @@ import type {
   PlanFn,
   PlanItem,
   PlanOptions,
+  WriteResult,
 } from "../plan/types";
 import { createReceiptReader, createReceiptValidator } from "../receipt/load";
 import { toReceiptPath } from "../receipt/path";
 import type { ReceiptReader, ReceiptValidator } from "../receipt/read";
 import { readReceipt, receiptPathFor } from "../receipt/read";
+import { mergeReceipt, serializeReceipt } from "../receipt/write";
 import {
   createVerificationPorts,
   plannedVerificationOutcome,
@@ -408,9 +410,20 @@ export async function update(
     };
   }
 
+  if (!planHasUpdateWork(planned)) {
+    return {
+      kind: "nothing-to-do",
+      selected: [],
+      skipped: sortSkips(skipped),
+      notes,
+    };
+  }
+
   /**
-   * apply() runs whenever the plan is ok, INCLUDING when every candidate came
-   * back `up-to-date`.
+   * apply() still runs for an all-identical source plan when bases or receipt
+   * ownership need repair. `planHasUpdateWork` proves those control bytes too;
+   * only a complete source/dependency/theme/styles/base/receipt no-op returns
+   * above without entering apply or project verification.
    *
    * Short-circuiting on "nothing changed" looks like a free optimisation and is
    * not: an all-`identical` plan is exactly the run `apply/index.ts` phase 7
@@ -699,6 +712,23 @@ function classify(
   }
 
   return { selected, skipped };
+}
+
+/** Predict apply's durable work for its fixed non-interactive update decision. */
+function planHasUpdateWork(planned: Plan): boolean {
+  if (planned.installCommand !== null) return true;
+  if (planned.files.some((file) => file.disposition !== "identical")) return true;
+  if (planned.theme?.changed === true || planned.styles?.changed === true) return true;
+  if (planned.removedBases.some((base) => base.existing !== null)) return true;
+  if (planned.files.some((file) => file.base.existing?.sha256 !== file.base.sha256)) return true;
+
+  const results = new Map<string, WriteResult>(
+    planned.files.map((file) => [file.destination, "identical"]),
+  );
+  const prior = planned.receipt.present && planned.receipt.ok ? planned.receipt.receipt : null;
+  const priorRaw = planned.receipt.present ? planned.receipt.raw : null;
+  const projected = mergeReceipt(prior, planned, results, false, false);
+  return serializeReceipt(projected) !== priorRaw;
 }
 
 /**

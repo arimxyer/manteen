@@ -456,10 +456,15 @@ function packageDeclaration(specifier: string): { name: string; range: string } 
 function projectPackageManifest(
   bytes: string,
   requiredPackages: ScaffoldPlanBody["requiredPackages"],
+  requiredScripts: Record<string, string>,
   diagnostics: ScaffoldDiagnostic[],
 ): {
   content: string;
-  additions: { dependencies: Record<string, string>; devDependencies: Record<string, string> };
+  additions: {
+    dependencies: Record<string, string>;
+    devDependencies: Record<string, string>;
+    scripts: Record<string, string>;
+  };
 } {
   const parsed = JSON.parse(bytes) as Record<string, unknown>;
   const sections = [
@@ -481,13 +486,28 @@ function projectPackageManifest(
       });
     }
   }
+  const scripts = parsed.scripts;
+  if (
+    scripts !== undefined &&
+    (scripts === null || Array.isArray(scripts) || typeof scripts !== "object")
+  ) {
+    diagnostics.push({
+      code: "scaffold-package-manifest-invalid",
+      message: "package.json scripts must be an object before scaffold registration.",
+      details: { section: "scripts" },
+    });
+  }
   if (diagnostics.some((diagnostic) => diagnostic.code === "scaffold-package-manifest-invalid")) {
-    return { content: bytes, additions: { dependencies: {}, devDependencies: {} } };
+    return {
+      content: bytes,
+      additions: { dependencies: {}, devDependencies: {}, scripts: {} },
+    };
   }
 
   const additions = {
     dependencies: {} as Record<string, string>,
     devDependencies: {} as Record<string, string>,
+    scripts: {} as Record<string, string>,
   };
   const requested = [
     ...requiredPackages.runtime.map((specifier) => ({
@@ -544,6 +564,24 @@ function projectPackageManifest(
     );
     content = setTopLevelMember(content, section, next);
     parsed[section] = next;
+  }
+  const existingScripts = (parsed.scripts ?? {}) as Record<string, unknown>;
+  for (const [name, command] of Object.entries(requiredScripts)) {
+    const existing = existingScripts[name];
+    if (existing === undefined) additions.scripts[name] = command;
+    else if (typeof existing !== "string") {
+      diagnostics.push({
+        code: "scaffold-package-manifest-invalid",
+        message: `package.json scripts.${name} must be a string before scaffold registration.`,
+        details: { script: name },
+      });
+    }
+  }
+  if (Object.keys(additions.scripts).length > 0) {
+    content = setTopLevelMember(content, "scripts", {
+      ...existingScripts,
+      ...additions.scripts,
+    });
   }
   return { content, additions };
 }
@@ -677,6 +715,7 @@ export function planScaffold(input: ScaffoldInput): ScaffoldPlan {
   const registrationFiles: ScaffoldRegistrationFile[] = [];
   if (input.register && catalog) {
     let nextCatalog = catalogBytes;
+    let profileVerificationAdded = false;
     if (rendered.authorProfileMapping && profilePath === null) {
       profilePath = "manteen.author-profile.json";
       profileSnapshot = inspectPreservedFile(
@@ -696,10 +735,15 @@ export function planScaffold(input: ScaffoldInput): ScaffoldPlan {
       } else {
         nextCatalog = setTopLevelMember(nextCatalog, "authorProfile", profilePath);
         profileBytes = `${JSON.stringify(
-          { schemaVersion: 2, stylesApi: [rendered.authorProfileMapping] },
+          {
+            schemaVersion: 2,
+            stylesApi: [rendered.authorProfileMapping],
+            verification: { scripts: ["test"] },
+          },
           null,
           2,
         )}\n`;
+        profileVerificationAdded = true;
       }
     } else if (rendered.authorProfileMapping && profilePath && profileSnapshot?.sha256) {
       const profile = JSON.parse(profileBytes) as Record<string, unknown>;
@@ -714,6 +758,18 @@ export function planScaffold(input: ScaffoldInput): ScaffoldPlan {
           "stylesApi",
           rendered.authorProfileMapping,
         );
+      }
+      const refreshed = JSON.parse(profileBytes) as Record<string, unknown>;
+      const verification = (refreshed.verification ?? {}) as Record<string, unknown>;
+      const scripts = Array.isArray(verification.scripts)
+        ? verification.scripts.filter((script): script is string => typeof script === "string")
+        : [];
+      if (!scripts.includes("test")) {
+        profileBytes = setTopLevelMember(profileBytes, "verification", {
+          ...verification,
+          scripts: [...scripts, "test"],
+        });
+        profileVerificationAdded = true;
       }
     }
 
@@ -734,6 +790,7 @@ export function planScaffold(input: ScaffoldInput): ScaffoldPlan {
         registrationFile(profileSnapshot, profileBytes, {
           section: "stylesApi",
           mapping: rendered.authorProfileMapping,
+          ...(profileVerificationAdded ? { verificationScriptsAdded: ["test"] } : {}),
         }),
       );
     }
@@ -750,6 +807,7 @@ export function planScaffold(input: ScaffoldInput): ScaffoldPlan {
         const projected = projectPackageManifest(
           packageBytes,
           rendered.requiredPackages,
+          rendered.authorProfileMapping ? { test: "vitest run" } : {},
           diagnostics,
         );
         registrationFiles.push(

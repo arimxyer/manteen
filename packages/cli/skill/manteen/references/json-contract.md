@@ -80,3 +80,7 @@ update exit, including receipt/read failure and resolution refusal before apply.
 exit 2 may have `payload: null`. Never treat `receipt-unreadable` or `selection-failed` as a clean
 no-op. A `rollback-failed` payload carries relative paths; restore them from version control or a
 trusted pre-run copy before retrying.
+
+A selected update with no source, dependency, theme, styles, base, or receipt work returns
+`nothing-to-do` before apply. It runs no project verifier and emits no apply action; do not treat
+the absence of verification evidence as an applied or verified update.

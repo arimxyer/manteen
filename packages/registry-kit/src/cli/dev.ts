@@ -42,6 +42,55 @@ export interface DevEvent {
   payload: Record<string, unknown>;
 }
 
+/**
+ * npm exits its foreground wrapper immediately on terminal SIGINT, which can
+ * close an automation supervisor before the child flushes its final event. In
+ * an npm-owned TTY, consume the literal Ctrl-C byte in raw mode so npm keeps
+ * waiting while this process emits `stopped` and closes cleanly.
+ */
+function captureNpmTtyInterrupt(stop: (signal: string) => void): () => void {
+  const stdin = process.stdin;
+  if (process.env.npm_execpath === undefined || !stdin.isTTY) return () => {};
+
+  const wasRaw = stdin.isRaw === true;
+  const wasFlowing = stdin.readableFlowing === true;
+  let active = false;
+  const onData = (chunk: Buffer | string) => {
+    const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    if (bytes.includes(3)) stop("SIGINT");
+  };
+
+  try {
+    if (!wasRaw) stdin.setRawMode(true);
+    stdin.on("data", onData);
+    stdin.resume();
+    active = true;
+  } catch {
+    if (!wasRaw) {
+      try {
+        stdin.setRawMode(false);
+      } catch {
+        // Signal handlers remain the fallback when raw terminal setup fails.
+      }
+    }
+    return () => {};
+  }
+
+  return () => {
+    if (!active) return;
+    active = false;
+    stdin.off("data", onData);
+    if (!wasFlowing) stdin.pause();
+    if (!wasRaw) {
+      try {
+        stdin.setRawMode(false);
+      } catch {
+        // The foreground PTY restores terminal state when this process exits.
+      }
+    }
+  };
+}
+
 function parseArgs(argv: string[]): DevArgs | null {
   const positional: string[] = [];
   let host = "127.0.0.1";
@@ -359,6 +408,7 @@ export async function dev(argv: string[]): Promise<number> {
   // `build-succeeded`. Those lines are observable by a supervisor immediately;
   // registering afterward leaves a real race where an immediate Ctrl-C takes
   // Node's default exit path and truncates the stream before `stopped`.
+  let releaseTerminalInterrupt = () => {};
   const stopped = new Promise<void>((accept) => {
     let stopping = false;
     const stop = (signal: string) => {
@@ -377,6 +427,7 @@ export async function dev(argv: string[]): Promise<number> {
     // a hangup rather than SIGINT. Treat that as the same graceful lifecycle
     // boundary so supervisors still receive the documented terminal event.
     process.once("SIGHUP", () => stop("SIGHUP"));
+    releaseTerminalInterrupt = captureNpmTtyInterrupt(stop);
   });
 
   const address = server.address();
@@ -386,6 +437,7 @@ export async function dev(argv: string[]): Promise<number> {
   build();
 
   await stopped;
+  releaseTerminalInterrupt();
   if (timer !== null) clearTimeout(timer);
   for (const watcher of watchers.values()) watcher.close();
   await new Promise<void>((accept) => server.close(() => accept()));

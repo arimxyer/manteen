@@ -69,7 +69,7 @@ The update lifecycle is one explicit matrix:
 | --- | --- | --- |
 | usage or project-config rejection | exit 2, `payload: null`, typed error | false |
 | no receipt | `nothing-to-do` | false |
-| selected update completes with no observed mutation and no verification run | `nothing-to-do` | false |
+| selected update has no source, dependency, theme, styles, base, or receipt work | `nothing-to-do`; apply and verification do not run | false |
 | readable but invalid receipt | `failed` / `receipt-unreadable` | false |
 | receipt or installed-file selection throw | `failed` / `selection-failed` | false |
 | returned blocking plan | `refused` | false |
@@ -109,7 +109,10 @@ writer returns a structured outcome. `writeRegistry(result, outDir)` remains sup
 defaults.
 
 `build --check` renders and validates, compares the complete prospective output with disk, and never
-mutates. Its JSON result distinguishes `clean`, `missing`, `changed`, and `refused`.
+mutates. Its JSON result distinguishes `clean`, `missing`, `changed`, and `refused`. The envelope's
+top-level `ok` answers whether the check passed (`clean`, exit 0); `payload.ok` answers whether the
+prospective output is safe to write. Therefore `missing` and `changed` intentionally have
+top-level `ok: false` with `payload.ok: true`, while `payload.status` names the required action.
 
 ## 3. Client planning and execution
 
@@ -204,9 +207,10 @@ and serves only the last successfully validated in-memory snapshot over HTTP. In
 returns `503`; later failures keep serving the last good snapshot. `--jsonl` emits a separate
 schema-versioned ready/build/stopped event stream, including exact dry-run `manteen registry add`
 and installed-consumer `manteen registry reconnect` argv. Signal shutdown closes watchers and the
-server. Lifecycle handlers are installed before the first observable ready/build event, and the
-final stopped JSONL line is synchronously committed before wrapper-driven shutdown can truncate the
-stream. A local ready event is not deployment proof.
+server. Lifecycle handlers are installed before the first observable ready/build event. In an
+npm-owned TTY, the child consumes the literal Ctrl-C interrupt long enough to synchronously commit
+the final stopped JSONL line, release terminal state, close its resources, and exit before the
+wrapper can truncate the stream. A local ready event is not deployment proof.
 
 The repository root contains vendor-neutral `AGENTS.md`. The public docs expose an Agent Guide plus
 `/llms.txt` and `/llms-full.txt`. MCP is deliberately outside this roadmap.

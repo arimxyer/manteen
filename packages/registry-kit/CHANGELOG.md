@@ -1,5 +1,12 @@
 # manteen-kit
 
+## 0.3.2
+
+- Make registered Styles API scaffolds runnable by wiring a missing `test` script to `vitest run`
+  and appending that script to author-profile verification without replacing an authored command.
+- Keep `dev --jsonl` in control of terminal Ctrl-C while it runs through `npm exec`, so the final
+  `stopped` event is observable and the process then exits cleanly.
+
 ## 0.3.1
 
 - Reject unknown alias-like file targets during author validation, and make `dev --jsonl` emit its

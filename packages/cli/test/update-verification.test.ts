@@ -534,6 +534,10 @@ function successfulNoopApply(receiptPath: string): ApplyOutcome {
   };
 }
 
+function planWithApplyWork(plan: Plan): Plan {
+  return { ...plan, installCommand: "npm install fixture" };
+}
+
 describe("update verification orchestration", () => {
   test("classifies an observed zero-mutation update with no verification as nothing-to-do", () => {
     const fixture = verificationFixture(["verify"]);
@@ -623,7 +627,7 @@ describe("update verification orchestration", () => {
         {
           plan: async () => {
             if (stage === "planning") throw new Error("planning fixture");
-            return fixture.plan;
+            return planWithApplyWork(fixture.plan);
           },
           apply: async () => {
             if (stage === "apply") throw new Error("apply fixture");
@@ -754,7 +758,7 @@ describe("update verification orchestration", () => {
         [],
         { interactive: false },
         {
-          plan: async () => fixture.plan,
+          plan: async () => planWithApplyWork(fixture.plan),
           apply: async () => applyOutcome,
           read: createReceiptReader(),
           validate: createReceiptValidator(),
