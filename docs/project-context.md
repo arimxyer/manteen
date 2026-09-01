@@ -11,9 +11,9 @@ separate public evidence.
 
 | Area | Current state | Authority or evidence |
 | --- | --- | --- |
-| Packages | This tree holds release candidates `manteen-kit@0.3.1` and `manteen@0.9.1`; their manifests are authoritative. | `packages/*/package.json` |
-| Release candidate | The current source adds the post-0.9 reliability and eval findings recorded in the package changelogs. Local repository verification is green; tags and public package receipts remain pending. | [`agent-native-build-plan.md`](./contracts/agent-native-build-plan.md), package changelogs |
-| Public package proof | Public npm `latest` remains `manteen-kit@0.3.0` and `manteen@0.9.0` until the release candidates publish and receive independent receipts. | [`v0.9-release-handoff.md`](./releases/v0.9-release-handoff.md) |
+| Packages | This tree and public npm `latest` hold `manteen-kit@0.3.1` and `manteen@0.9.1`; the manifests remain authoritative for source versions. | `packages/*/package.json`, [`v0.9.1-release-handoff.md`](./releases/v0.9.1-release-handoff.md) |
+| Current release | The post-0.9 reliability and agent-evaluation findings recorded in the package changelogs are released. | [`agent-native-build-plan.md`](./contracts/agent-native-build-plan.md), [`v0.9.1-release-handoff.md`](./releases/v0.9.1-release-handoff.md) |
+| Public package proof | Both current packages have signed tags, successful trusted release workflows, npm provenance, and a fresh public-consumer receipt. | [`v0.9.1-release-handoff.md`](./releases/v0.9.1-release-handoff.md) |
 | Registry | The source catalog contains 22 items. Generated `public/r/` is local build output and must be rebuilt before use; no repository workflow currently publishes it. | [`roadmap.md`](roadmap.md), `manteen.registry.json` |
 | Documentation | `apps/manteen` is the sole Next.js/Fumadocs application. CI checks and builds it; no workflow deploys it. | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), [`apps/manteen/README.md`](../apps/manteen/README.md) |
 | Retired site | The Astro/Starlight application and its Pages workflow were removed on 2026-08-31 without migrating their implementation or content. Earlier deployment receipts remain historical evidence only. | [`docs-site-handoff.md`](./handoffs/docs-site-handoff.md) |
@@ -79,8 +79,9 @@ These documents are receipts, not competing roadmaps:
 - [`agent-native-release-handoff.md`](./releases/agent-native-release-handoff.md) and
   [`v0.2-release-handoff.md`](./releases/v0.2-release-handoff.md) through
   [`v0.5-release-handoff.md`](./releases/v0.5-release-handoff.md), plus
-  [`v0.8-release-handoff.md`](./releases/v0.8-release-handoff.md) and
-  [`v0.9-release-handoff.md`](./releases/v0.9-release-handoff.md), record public release boundaries.
+  [`v0.8-release-handoff.md`](./releases/v0.8-release-handoff.md),
+  [`v0.9-release-handoff.md`](./releases/v0.9-release-handoff.md), and
+  [`v0.9.1-release-handoff.md`](./releases/v0.9.1-release-handoff.md), record public release boundaries.
 - [`wc-registry-content-handoff.md`](./handoffs/wc-registry-content-handoff.md) records the first eight-item
   content milestone; [`roadmap.md`](roadmap.md) owns the later 22-item summary.
 - [`second-registry-handoff.md`](./handoffs/second-registry-handoff.md) records the independent-registry
