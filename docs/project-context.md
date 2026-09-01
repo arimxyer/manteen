@@ -11,9 +11,9 @@ separate public evidence.
 
 | Area | Current state | Authority or evidence |
 | --- | --- | --- |
-| Packages | This tree prepares `manteen-kit@0.3.2` and `manteen@0.9.2`; public npm `latest` remains `0.3.1` and `0.9.1` until the trusted releases complete. | `packages/*/package.json`, [`roadmap.md`](roadmap.md), [`v0.9.1-release-handoff.md`](./releases/v0.9.1-release-handoff.md) |
-| Current release | The source candidate fixes three clean-room regressions in registered scaffold verification, true no-op updates, and npm-owned PTY shutdown. | [`agent-native-build-plan.md`](./contracts/agent-native-build-plan.md), [`roadmap.md`](roadmap.md) |
-| Public package proof | The current public `0.3.1` and `0.9.1` packages have signed tags, successful trusted release workflows, npm provenance, and a fresh public-consumer receipt. | [`v0.9.1-release-handoff.md`](./releases/v0.9.1-release-handoff.md) |
+| Packages | This tree and public npm `latest` are `manteen-kit@0.3.2` and `manteen@0.9.2`. | `packages/*/package.json`, [`roadmap.md`](roadmap.md), [`v0.9.2-release-handoff.md`](./releases/v0.9.2-release-handoff.md) |
+| Current release | The public release fixes three clean-room regressions in registered scaffold verification, true no-op updates, and npm-owned PTY shutdown. | [`agent-native-build-plan.md`](./contracts/agent-native-build-plan.md), [`v0.9.2-release-handoff.md`](./releases/v0.9.2-release-handoff.md) |
+| Public package proof | The current public `0.3.2` and `0.9.2` packages have signed tags, successful trusted release workflows, npm provenance, and a fresh public-consumer receipt. | [`v0.9.2-release-handoff.md`](./releases/v0.9.2-release-handoff.md) |
 | Registry | The source catalog contains 22 items. Generated `public/r/` is local build output and must be rebuilt before use; no repository workflow currently publishes it. | [`roadmap.md`](roadmap.md), `manteen.registry.json` |
 | Documentation | `apps/manteen` is the sole Next.js/Fumadocs application. CI checks and builds it; no workflow deploys it. | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), [`apps/manteen/README.md`](../apps/manteen/README.md) |
 | Retired site | The Astro/Starlight application and its Pages workflow were removed on 2026-08-31 without migrating their implementation or content. Earlier deployment receipts remain historical evidence only. | [`docs-site-handoff.md`](./handoffs/docs-site-handoff.md) |
@@ -80,8 +80,9 @@ These documents are receipts, not competing roadmaps:
   [`v0.2-release-handoff.md`](./releases/v0.2-release-handoff.md) through
   [`v0.5-release-handoff.md`](./releases/v0.5-release-handoff.md), plus
   [`v0.8-release-handoff.md`](./releases/v0.8-release-handoff.md),
-  [`v0.9-release-handoff.md`](./releases/v0.9-release-handoff.md), and
-  [`v0.9.1-release-handoff.md`](./releases/v0.9.1-release-handoff.md), record public release boundaries.
+  [`v0.9-release-handoff.md`](./releases/v0.9-release-handoff.md),
+  [`v0.9.1-release-handoff.md`](./releases/v0.9.1-release-handoff.md), and
+  [`v0.9.2-release-handoff.md`](./releases/v0.9.2-release-handoff.md), record public release boundaries.
 - [`wc-registry-content-handoff.md`](./handoffs/wc-registry-content-handoff.md) records the first eight-item
   content milestone; [`roadmap.md`](roadmap.md) owns the later 22-item summary.
 - [`second-registry-handoff.md`](./handoffs/second-registry-handoff.md) records the independent-registry
