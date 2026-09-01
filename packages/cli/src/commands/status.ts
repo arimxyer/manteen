@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 import { detectPackageManager } from "nypm";
 
 import type { JsonEnvelope, Streams } from "../cli/render";
-import { PROCESS_STREAMS, renderJson, renderThrown } from "../cli/render";
+import { PROCESS_STREAMS, renderDiagnostics, renderJson, renderThrown } from "../cli/render";
 import { loadConfig } from "../config/load";
 import type { ConfigError, LoadedConfig } from "../config/types";
 import { resolveMantineInstall } from "../gates/resolve-mantine-install";
@@ -13,7 +13,9 @@ import { createInitPlanPorts } from "../init/ports";
 import type { InitDetectionResult } from "../init/types";
 import { createInstalledPorts, localStatus, readInstalled } from "../inventory/index";
 import type { Installed } from "../inventory/types";
+import { diag } from "../plan/diagnostics";
 import { manteenStateIsGitIgnored } from "../plan/state-ignored";
+import type { Diagnostic, DiagnosticAction, ReceiptUnreadable } from "../plan/types";
 
 export const DEFAULT_SKILL_INSTALL_PATH = ".agents/skills/manteen";
 
@@ -40,6 +42,8 @@ export interface StatusResult {
   mantine: StatusCheck<ReturnType<typeof resolveMantineInstall>>;
   receipt: StatusCheck<{
     state: Installed["source"]["state"];
+    reason?: ReceiptUnreadable;
+    sawVersion?: number;
     itemCount: number;
     localFiles: { unchanged: number; modified: number; missing: number };
   }>;
@@ -51,7 +55,9 @@ export interface StatusResult {
     missingScripts: string[];
   }>;
   skill: StatusCheck<{ path: string; installed: boolean; owned: boolean }>;
+  diagnostics: Diagnostic[];
   notes: string[];
+  actions: DiagnosticAction[];
 }
 
 function emptyOperations(): { add: string[]; update: string[]; remove: string[] } {
@@ -117,7 +123,52 @@ function skillCheck(root: string): StatusResult["skill"] {
   };
 }
 
-function receiptChecks(installed: Installed): Pick<StatusResult, "receipt" | "bases"> {
+function receiptRecovery(installed: Installed): Diagnostic[] {
+  if (installed.source.state !== "unreadable") return [];
+  const restore =
+    "Restore manteen.lock.json and .manteen/bases/ together from trusted version control or backup; do not reconstruct ownership state by guessing.";
+  const classification =
+    installed.source.reason === "unparseable"
+      ? {
+          code: "receipt-invalid-json" as const,
+          message: "manteen.lock.json contains invalid JSON syntax.",
+          instruction: restore,
+        }
+      : installed.source.reason === "future-version"
+        ? {
+            code: "receipt-future-version" as const,
+            message: `manteen.lock.json uses newer lockfileVersion ${installed.source.sawVersion ?? "?"}.`,
+            instruction:
+              "Use a Manteen version that supports this receipt, or restore manteen.lock.json and .manteen/bases/ together from trusted version control or backup; do not overwrite or reconstruct them by guessing.",
+          }
+        : installed.source.reason === "io"
+          ? {
+              code: "receipt-io-unreadable" as const,
+              message: "manteen.lock.json is present but cannot be read as a regular file.",
+              instruction: restore,
+            }
+          : installed.source.reason === "unsupported-version"
+            ? {
+                code: "receipt-unsupported-version" as const,
+                message: `manteen.lock.json uses unsupported lockfileVersion ${installed.source.sawVersion ?? "?"}.`,
+                instruction: restore,
+              }
+            : {
+                code: "receipt-schema-invalid" as const,
+                message: "manteen.lock.json does not match the supported receipt schema.",
+                instruction: restore,
+              };
+  return [
+    diag(classification.code, classification.message, {
+      path: installed.source.path,
+      actions: [{ kind: "manual", instruction: classification.instruction }],
+    }),
+  ];
+}
+
+function receiptChecks(
+  installed: Installed,
+): Pick<StatusResult, "receipt" | "bases" | "diagnostics" | "actions"> {
   const counts = { unchanged: 0, modified: 0, missing: 0 };
   const badBases: string[] = [];
   let checked = 0;
@@ -129,11 +180,20 @@ function receiptChecks(installed: Installed): Pick<StatusResult, "receipt" | "ba
     }
   }
   const receiptOk = installed.source.state !== "unreadable";
+  const diagnostics = receiptRecovery(installed);
   return {
     receipt: {
       ok: receiptOk,
       value: {
         state: installed.source.state,
+        ...(installed.source.state === "unreadable"
+          ? {
+              reason: installed.source.reason,
+              ...(installed.source.sawVersion === undefined
+                ? {}
+                : { sawVersion: installed.source.sawVersion }),
+            }
+          : {}),
         itemCount: installed.items.length,
         localFiles: counts,
       },
@@ -142,6 +202,8 @@ function receiptChecks(installed: Installed): Pick<StatusResult, "receipt" | "ba
       ok: badBases.length === 0,
       value: { checked, missingOrDrifted: badBases.sort() },
     },
+    diagnostics,
+    actions: diagnostics.flatMap((diagnostic) => diagnostic.actions ?? []),
   };
 }
 
@@ -180,7 +242,7 @@ export async function buildStatus(cwd: string): Promise<StatusResult> {
       source: {
         state: "unreadable",
         path: resolve(root, "manteen.lock.json"),
-        reason: "invalid",
+        reason: "io",
         detail: renderThrown(error).trim(),
       },
       items: [],
@@ -224,7 +286,9 @@ export async function buildStatus(cwd: string): Promise<StatusResult> {
     gitignore,
     verification,
     skill,
+    diagnostics: ownership.diagnostics,
     notes: [],
+    actions: ownership.actions,
   };
 }
 
@@ -236,7 +300,17 @@ function renderStatus(result: StatusResult): string {
       : "not-initialized";
   const lines = [`status  ${state}`, `  root: ${result.root}`];
   for (const [name, check] of Object.entries(result).filter(
-    ([name]) => !["command", "root", "ok", "healthy", "initialized", "notes"].includes(name),
+    ([name]) =>
+      ![
+        "command",
+        "root",
+        "ok",
+        "healthy",
+        "initialized",
+        "diagnostics",
+        "notes",
+        "actions",
+      ].includes(name),
   )) {
     const value = check as StatusCheck;
     lines.push(`${value.ok ? "ok" : "warn"}  ${name}`);
@@ -251,9 +325,11 @@ export async function runStatus(
 ): Promise<number> {
   try {
     const result = await buildStatus(flags.cwd);
-    streams.stdout(
-      flags.json ? renderJson(result as unknown as JsonEnvelope) : renderStatus(result),
-    );
+    if (flags.json) streams.stdout(renderJson(result as unknown as JsonEnvelope));
+    else {
+      renderDiagnostics(result.diagnostics, result.root, streams.stderr);
+      streams.stdout(renderStatus(result));
+    }
     // An unhealthy project is an assessment, not a command failure.
     return 0;
   } catch (error) {

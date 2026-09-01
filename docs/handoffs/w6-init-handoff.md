@@ -7,6 +7,12 @@ framework adapters, shared plan/apply boundary, CLI integration and built-Node a
 all landed. W7 portability/runtime hardening was next at this handoff and has since completed; see
 [`w7-hardening-handoff.md`](./w7-hardening-handoff.md) and the current [`roadmap.md`](../roadmap.md).
 
+Supersession note (2026-09-01): the Vite 8 `resolve.tsconfigPaths` decision recorded below was
+invalid for a fresh generator release that resolved Vite 7.3.6. Current D48 in
+[`client-build-plan.md`](../contracts/client-build-plan.md) replaces only that resolver mechanism
+with a portable explicit `@` alias. This handoff's original probe and implementation evidence
+remain historical.
+
 ## The question
 
 Can `manteen init` take a current Tier A project with no `manteen.json` to a state that:

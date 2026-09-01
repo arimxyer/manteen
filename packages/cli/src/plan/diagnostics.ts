@@ -186,6 +186,13 @@ export const DIAGNOSTIC_CODES: Record<DiagnosticCode, DiagnosticSpec> = {
    *  transfers and the run proceeds — nothing is being replaced, so refusing
    *  would be theatre. */
   "receipt-stale": { severity: "warn", forceable: false, exit: 0 },
+  /** Offline status classifications. They do not turn assessment into command
+   * failure, but each carries a bounded recovery action. */
+  "receipt-invalid-json": { severity: "warn", forceable: false, exit: 0 },
+  "receipt-schema-invalid": { severity: "warn", forceable: false, exit: 0 },
+  "receipt-unsupported-version": { severity: "warn", forceable: false, exit: 0 },
+  "receipt-future-version": { severity: "warn", forceable: false, exit: 0 },
+  "receipt-io-unreadable": { severity: "warn", forceable: false, exit: 0 },
 
   // ---- informational --------------------------------------------------------
   "styles-api": { severity: "info", forceable: false, exit: 0 },

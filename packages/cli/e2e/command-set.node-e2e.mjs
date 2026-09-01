@@ -470,6 +470,50 @@ test("offline status and packaged agent guidance work before project initializat
   );
 });
 
+test("offline status gives machine-actionable receipt recovery without leaking receipt bytes", () => {
+  for (const [source, secret, code, reason] of [
+    [
+      '{"private":"INVALID_JSON_E2E_SECRET"',
+      "INVALID_JSON_E2E_SECRET",
+      "receipt-invalid-json",
+      "unparseable",
+    ],
+    ['["WRONG_TYPE_E2E_SECRET"]\n', "WRONG_TYPE_E2E_SECRET", "receipt-schema-invalid", "invalid"],
+  ]) {
+    const project = makeProject();
+    writeFileSync(join(project, "manteen.lock.json"), source);
+
+    const result = run(project, ["status", "--json"]);
+    assert.equal(result.status, 0, result.all);
+    assert.equal(result.stderr, "", result.all);
+    assert.equal(result.stdout.includes(secret), false, result.stdout);
+
+    const document = json(result);
+    assert.equal(document.ok, true);
+    assert.equal(document.mutated, false);
+    assert.equal(document.payload.healthy, false);
+    assert.equal(document.payload.receipt.ok, false);
+    assert.equal(document.payload.receipt.value.reason, reason);
+    assert.equal(document.diagnostics[0]?.code, code);
+    assert.equal(document.diagnostics[0]?.severity, "warn");
+    assert.equal(document.diagnostics[0]?.actions[0]?.kind, "manual");
+    assert.match(
+      document.diagnostics[0]?.actions[0]?.instruction ?? "",
+      /trusted version control or backup/,
+    );
+    assert.deepEqual(document.actions, document.diagnostics[0]?.actions);
+  }
+
+  const ioProject = makeProject();
+  mkdirSync(join(ioProject, "manteen.lock.json"));
+  const ioResult = run(ioProject, ["status", "--json"]);
+  assert.equal(ioResult.status, 0, ioResult.all);
+  const ioDocument = json(ioResult);
+  assert.equal(ioDocument.payload.receipt.value.reason, "io");
+  assert.equal(ioDocument.diagnostics[0]?.code, "receipt-io-unreadable");
+  assert.equal(ioDocument.actions[0]?.kind, "manual");
+});
+
 test("built agent install is dry-run safe and writes an owned packaged skill", () => {
   const project = join(WORK, "agent-install");
   mkdirSync(project);

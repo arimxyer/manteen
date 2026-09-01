@@ -63,6 +63,14 @@ regressions. Its signed tags, hosted portability matrix, npm provenance, and fre
 are accepted in the [`0.9.2 release handoff`](./releases/v0.9.2-release-handoff.md). Public registry
 bytes and deployment remain unchanged.
 
+A subsequent retained clean-room dashboard evaluation found two client gaps without reopening the
+kit verdict: generic Vite init emitted a Vite 8-only resolver member into a fresh template that
+resolved Vite 7.3.6, and offline status collapsed distinct unreadable-receipt causes into an
+actionless state. The current unreleased client tree replaces the generated resolver member with a
+portable explicit alias and gives invalid JSON, invalid schema, version skew, and receipt I/O
+failures sanitized, non-mutating recovery diagnostics. Source tests, built-Node command/init e2e,
+and a fresh Vite 7.3.6 production build cover the fixes; public release evidence remains at 0.9.2.
+
 The agent-native release is public at `manteen-kit@0.2.1` and `manteen@0.7.0`. It adds
 transactional generated registry ownership, one stable JSON command envelope, complete display
 metadata, an opaque SDK facade, offline status, expected-plan digests, deterministic discovery
