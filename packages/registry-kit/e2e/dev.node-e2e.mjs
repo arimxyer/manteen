@@ -128,16 +128,15 @@ test("built dev server retains last-good output and recovers in one foreground p
       "--dry-run",
       "--json",
     ]);
-    assert.deepEqual(first.payload.registryReplaceArgv, [
+    assert.deepEqual(first.payload.registryReconnectArgv, [
       "manteen",
       "registry",
-      "add",
+      "reconnect",
       "@dev",
       "--url",
       `${ready.payload.baseUrl}/{name}.json`,
       "--index",
       `${ready.payload.baseUrl}/registry.json`,
-      "--replace",
       "--dry-run",
       "--json",
     ]);

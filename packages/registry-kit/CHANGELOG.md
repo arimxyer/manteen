@@ -5,8 +5,10 @@
 - Preserve scaffold component/style directory topology and add digest-gated `scaffold --register`
   plans that atomically add source, catalog entries, author evidence mappings, and exact missing
   package declarations without replacing authored conflicts.
-- Emit explicit registry replacement preview argv from the dev server for reconnecting consumers
-  after an ephemeral-port restart.
+- Emit an explicit verified registry reconnect preview from the dev server after an ephemeral-port
+  restart.
+- Refuse unsupported theme-fragment imports during author build, clarify exact scaffold dependency
+  ownership, and give an actionable omission rule for empty author-profile categories.
 - Let author profiles declare ordered package verification scripts; `build` and `dev` run and
   report them before publishing output, while dev retains its last-good snapshot on failure.
 

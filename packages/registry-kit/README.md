@@ -94,7 +94,8 @@ hashes, required package declarations,
 and the exact catalog insertion object. The Styles API template also returns its exact author
 profile evidence mapping. Without `--register`, apply changes only scaffold-owned source files.
 With `--register`, a reviewed digest also binds surgical catalog insertion, author-profile mapping,
-and missing exact package declarations; conflicts refuse rather than overwrite authored values, and
+and missing exact package declarations; declarations are owned by exact section and range text,
+so semver-compatible but differently authored values still refuse rather than normalize, and
 all changed files share one rollback boundary. Differing occupied files, unsafe paths or links,
 catalog collisions, dependency conflicts, and stale plans are named refusals; exact existing
 scaffold bytes are a no-op. A failed rollback reports `mutated: true` whenever a scaffold-created or
@@ -108,8 +109,8 @@ refuses, and registry inputs are recompiled before publication. Hooks are author
 not proof about a consumer application.
 
 For `dev --port 0`, each successful build event includes both initial registration and explicit
-replacement preview argv. A consumer left pointing at a stopped ephemeral port can run the
-replacement preview and its digest-bound action instead of hand-editing `manteen.json`.
+verified reconnect preview argv. A consumer left pointing at a stopped ephemeral port can run the
+reconnect preview and its digest-bound action instead of hand-editing config and receipt state.
 
 ## Authoring format
 
@@ -191,6 +192,7 @@ boundary: `stylesApi` maps item/component claims, `props` maps item/export claim
 item claims. Missing, duplicate, and stale mappings refuse, and one physical evidence file cannot
 be reused across sections. Evidence paths are canonical catalog-root-relative POSIX paths to
 existing ordinary files contained by that repository. Evidence can use any filename and file type:
+Unused categories must be omitted; an empty `stylesApi`, `props`, or `usage` array is invalid.
 the generic claim validator does not require Bun, read evidence contents, inspect assertions or
 skips, execute TypeScript, or runtime-import source. When `verification` is present, the kit CLI
 does run those exact root package scripts as a separate author-owned gate; the scripts remain the

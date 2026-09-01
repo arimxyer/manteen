@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add digest-bound `registry reconnect`, which verifies installed item identities at a new endpoint
+  and atomically migrates registry config plus receipt source URLs.
 - Make `list --installed` a receipt-first offline inventory that never fetches registry indexes.
 - Add machine-explicit verification `phase` and `rollbackScope` fields so managed rollback is not
   mistaken for reversal of dependency, cache, generated-artifact, or arbitrary script effects.

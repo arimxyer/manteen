@@ -491,6 +491,11 @@ describe("safe author scaffold apply", () => {
     expect(planned.diagnostics.map((diagnostic) => diagnostic.code)).toContain(
       "scaffold-package-dependency-conflict",
     );
+    expect(
+      planned.diagnostics.find(
+        (diagnostic) => diagnostic.code === "scaffold-package-dependency-conflict",
+      )?.message,
+    ).toContain("exact section-and-range ownership, not semver compatibility");
     expect(() =>
       applyScaffold({ ...input(created.catalogPath), register: true }, planned.planDigest),
     ).toThrow(ScaffoldError);

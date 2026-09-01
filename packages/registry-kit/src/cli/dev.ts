@@ -8,6 +8,7 @@ import {
   compileRegistry,
   type MantineRegistry,
   RegistryOutputError,
+  ThemeFragmentImportError,
   writeRegistry,
 } from "../build-registry";
 import { MantineRangeError } from "../mantine-ranges";
@@ -158,6 +159,8 @@ function errorPayload(error: unknown): { code: string; message: string; details?
     return { code: "mantine-range-validation-failed", message, details: error.failures };
   if (error instanceof RegistryOutputError)
     return { code: "registry-output-refused", message, details: error.diagnostics };
+  if (error instanceof ThemeFragmentImportError)
+    return { code: "theme-fragment-import-unsupported", message, details: error.failures };
   if (error instanceof AuthorVerificationError)
     return {
       code: error.outcome.failure?.code ?? "author-verification-failed",
@@ -276,16 +279,15 @@ export async function dev(argv: string[]): Promise<number> {
           "--dry-run",
           "--json",
         ],
-        registryReplaceArgv: [
+        registryReconnectArgv: [
           "manteen",
           "registry",
-          "add",
+          "reconnect",
           result.source.namespace,
           "--url",
           itemUrl,
           "--index",
           indexUrl,
-          "--replace",
           "--dry-run",
           "--json",
         ],

@@ -117,6 +117,12 @@ Replacement and removal fail closed on unreadable receipts. Header values must r
 `${VAR}` template. Machine previews expose URL/index and header/parameter keys, never expanded
 values, and apply only a reviewed surgical edit of the top-level `registries` member.
 
+`registry reconnect` is the separate referenced-source migration. Planning fetches every receipt
+item owned by the namespace, refuses item-name or wire-type drift, and binds the verified documents
+plus config and receipt preimages/results. Apply re-plans, then journals the surgical config edit
+and receipt source-URL projection as one rollback unit. Generic replacement remains unable to
+rewrite referenced receipt ownership.
+
 Verification configuration is managed through `verification show/set/clear`. `show` reports the
 configured operation lists and discovers root `package.json` scripts. `set` accepts script names,
 not shell strings, preserves authored order, rejects duplicates and missing scripts, and refuses a
@@ -163,8 +169,9 @@ modified installations are refused; `--take-packaged` is the explicit destructiv
 theme, usage, profile, and evidence inputs; compiles and transactionally writes registry output;
 and serves only the last successfully validated in-memory snapshot over HTTP. Initial failure
 returns `503`; later failures keep serving the last good snapshot. `--jsonl` emits a separate
-schema-versioned ready/build/stopped event stream, including an exact dry-run `manteen registry add`
-argv. Signal shutdown closes watchers and the server. A local ready event is not deployment proof.
+schema-versioned ready/build/stopped event stream, including exact dry-run `manteen registry add`
+and installed-consumer `manteen registry reconnect` argv. Signal shutdown closes watchers and the
+server. A local ready event is not deployment proof.
 
 The repository root contains vendor-neutral `AGENTS.md`. The public docs expose an Agent Guide plus
 `/llms.txt` and `/llms-full.txt`. MCP is deliberately outside this roadmap.

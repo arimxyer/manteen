@@ -46,6 +46,13 @@ remove` provide surgical dry-run/expected-plan edits of this top-level member. R
 registry. Repeated `--header key=value` values must contain a literal `${VAR}` template. Machine
 output exposes header and parameter keys but never expanded values.
 
+Use `registry reconnect` when an installed registry moves, including a local dev server that
+restarts on a different ephemeral port. Its dry-run fetches every receipt item in the namespace,
+requires the same item name and wire type, and binds those documents plus both local preimages into
+the plan digest. Apply repeats that verification and writes `manteen.json` and
+`manteen.lock.json` in one rollback boundary. Generic `--replace` remains limited to unreferenced
+sources.
+
 ## Aliases and TypeScript paths
 
 Every configuration declares `components`, `ui`, `hooks`, and `lib` import prefixes:

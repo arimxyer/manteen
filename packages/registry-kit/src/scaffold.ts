@@ -515,7 +515,11 @@ function projectPackageManifest(
       if (!exact) {
         diagnostics.push({
           code: "scaffold-package-dependency-conflict",
-          message: `Scaffold registration will not replace the authored declaration for ${declaration.name}.`,
+          message: `Scaffold registration requires ${declaration.name}@${declaration.range} in ${section}, but package.json already owns ${declaration.name} as ${owners
+            .map((owner) => `${owner.section}:${JSON.stringify(owner.range)}`)
+            .join(
+              ", ",
+            )}. Registration uses exact section-and-range ownership, not semver compatibility; align the authored declaration or scaffold without --register.`,
           details: {
             package: declaration.name,
             requiredSection: section,

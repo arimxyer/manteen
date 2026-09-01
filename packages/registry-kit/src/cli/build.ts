@@ -5,6 +5,7 @@ import {
   compileRegistry,
   planRegistryWrite,
   RegistryOutputError,
+  ThemeFragmentImportError,
   writeRegistry,
 } from "../build-registry";
 import { MantineRangeError } from "../mantine-ranges";
@@ -121,7 +122,13 @@ export function build(argv: string[]): number {
                   message,
                   details: error.failures,
                 }
-              : { code: "compile-failed", message },
+              : error instanceof ThemeFragmentImportError
+                ? {
+                    code: "theme-fragment-import-unsupported",
+                    message,
+                    details: error.failures,
+                  }
+                : { code: "compile-failed", message },
         ]),
       );
     } else process.stderr.write(`${message}\n`);

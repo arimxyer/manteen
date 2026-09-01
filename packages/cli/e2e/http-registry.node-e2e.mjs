@@ -386,6 +386,54 @@ test("add installs over http from an unauthenticated registry", async () => {
   }
 });
 
+test("a built consumer reconnects an installed namespace across ephemeral ports", async () => {
+  const project = makeProject({ "@base": OPEN_URL });
+  const installed = await run(project, ["add", "@base/empty-state"]);
+  assert.equal(installed.status, 0, installed.all);
+
+  const moved = await startRegistryServer({ mounts: { moved: { dir: BASE_DIST } } });
+  try {
+    const movedUrl = moved.itemUrl("moved");
+    assert.notEqual(movedUrl, OPEN_URL);
+    const before = manifest(project);
+    const previewResult = await run(project, [
+      "registry",
+      "reconnect",
+      "@base",
+      "--url",
+      movedUrl,
+      "--dry-run",
+      "--json",
+    ]);
+    assert.equal(previewResult.status, 0, previewResult.all);
+    assert.deepEqual(manifest(project), before, "reconnect dry-run must be zero-write");
+    const preview = JSON.parse(previewResult.stdout);
+    assert.equal(preview.schemaVersion, 2);
+    assert.equal(preview.actions.length, 1);
+    assert.equal(preview.payload.plan.items[0].id, "@base/empty-state");
+
+    const applied = await run(project, preview.actions[0].argv.slice(1));
+    assert.equal(applied.status, 0, applied.all);
+    const appliedEnvelope = JSON.parse(applied.stdout);
+    assert.equal(appliedEnvelope.mutated, true);
+    assert.equal(
+      JSON.parse(readFileSync(join(project, "manteen.json"), "utf8")).registries["@base"],
+      movedUrl,
+    );
+    assert.equal(
+      JSON.parse(readFileSync(join(project, RECEIPT), "utf8")).items[0].sourceUrl,
+      movedUrl.replace("{name}", "empty-state"),
+    );
+
+    moved.clear();
+    const diff = await run(project, ["diff", "@base/empty-state", "--json"]);
+    assert.equal(diff.status, 0, diff.all);
+    assert.ok(moved.requests().some((request) => request.name === "empty-state.json"));
+  } finally {
+    await moved.close();
+  }
+});
+
 // ---- authentication ----------------------------------------------------------
 
 test("a registry that sends no Authorization header surfaces the 401", async () => {

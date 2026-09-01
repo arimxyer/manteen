@@ -139,9 +139,15 @@ function profileValidator(): ValidateFunction {
 }
 
 function schemaMessages(validate: ValidateFunction): string[] {
-  return (validate.errors ?? []).map(
-    (error) => `${error.instancePath || "/"} ${error.message ?? "is invalid"}`,
-  );
+  return (validate.errors ?? []).map((error) => {
+    if (
+      error.keyword === "minItems" &&
+      ["/stylesApi", "/props", "/usage"].includes(error.instancePath)
+    ) {
+      return `${error.instancePath} must contain at least one evidence mapping when present; omit the section entirely when the catalog has no claims in that category`;
+    }
+    return `${error.instancePath || "/"} ${error.message ?? "is invalid"}`;
+  });
 }
 
 function inspectRepositoryFile(

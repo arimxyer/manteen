@@ -46,7 +46,12 @@ import { runInit } from "../commands/init";
 import type { ListFlags } from "../commands/list";
 import { runList } from "../commands/list";
 import type { RegistryFlags } from "../commands/registry";
-import { runRegistryAdd, runRegistryList, runRegistryRemove } from "../commands/registry";
+import {
+  runRegistryAdd,
+  runRegistryList,
+  runRegistryReconnect,
+  runRegistryRemove,
+} from "../commands/registry";
 import type { RemoveFlags } from "../commands/remove";
 import { runRemove } from "../commands/remove";
 import type { StatusFlags } from "../commands/status";
@@ -495,6 +500,27 @@ registryCommand
   .option("--json", "emit one machine-readable command envelope")
   .action(async (namespace: string, flags: RegistryFlags) => {
     process.exitCode = await runRegistryRemove(namespace, flags);
+  });
+
+registryCommand
+  .command("reconnect")
+  .description("verify and atomically migrate an installed registry to a new endpoint")
+  .argument("<namespace>", "configured consumer namespace")
+  .requiredOption("--url <template>", "item URL containing the literal {name}")
+  .option("--index <url>", "registry index URL")
+  .option(
+    "--header <key=value>",
+    "request header using a literal ${VAR} template",
+    collectValue,
+    [],
+  )
+  .option("--param <key=value>", "request query parameter", collectValue, [])
+  .option("--cwd <dir>", "project directory containing manteen.json", process.cwd())
+  .option("--dry-run", "verify the endpoint and plan the config plus receipt migration")
+  .option("--expect-plan <sha256>", "apply only the exact reviewed and reverified plan")
+  .option("--json", "emit one machine-readable command envelope")
+  .action(async (namespace: string, flags: RegistryFlags) => {
+    process.exitCode = await runRegistryReconnect(namespace, flags);
   });
 
 const verificationCommand = program
