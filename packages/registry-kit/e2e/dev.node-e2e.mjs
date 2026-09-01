@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline";
@@ -11,7 +11,7 @@ const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CLI = join(PACKAGE_ROOT, "dist/cli.mjs");
 
 function fixture() {
-  const root = mkdtempSync(join(tmpdir(), "manteen-kit-dev-node-"));
+  const root = realpathSync.native(mkdtempSync(join(tmpdir(), "manteen-kit-dev-node-")));
   const catalog = join(root, "manteen.registry.json");
   const source = join(root, "src/alpha.tsx");
   const outDir = join(root, "generated/r");
