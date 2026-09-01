@@ -136,6 +136,10 @@ function outcomeFiles(
   });
 }
 
+function uniquePaths(paths: readonly string[]): string[] {
+  return [...new Set(paths)];
+}
+
 /*
  * WHY EVERY FAILURE RETURN BELOW SETS `files: []`.
  *
@@ -336,13 +340,14 @@ async function applyPlan(
         failure: {
           kind: "rollback-failed",
           message:
-            `${detail}\nThe rollback then failed, so the tree may be inconsistent: ` +
-            `${unwound.detail ?? "no detail"}\n` +
+            `${detail}\nThe rollback then failed, so the tree may be inconsistent.\n` +
             "Restore the paths listed below from version control or another trusted pre-run copy before retrying.",
-          paths: unwound.unrestored,
+          paths: uniquePaths(unwound.unrestored),
         },
       };
     }
+
+    const verificationFailed = verification?.status === "failed";
 
     return {
       ...emptyOutcome(plan, options),
@@ -351,9 +356,9 @@ async function applyPlan(
       dependencies,
       ...(verification === undefined ? {} : { verification }),
       failure: {
-        kind: "write-failed",
+        kind: verificationFailed ? "verification-failed" : "write-failed",
         message: `${detail}\nEvery file written by this run was restored to its previous contents.`,
-        paths: touched,
+        ...(verificationFailed ? {} : { paths: uniquePaths(touched) }),
       },
     };
   }

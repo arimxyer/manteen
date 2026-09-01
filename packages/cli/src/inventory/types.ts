@@ -569,6 +569,8 @@ export type UpdateCommandFailureKind =
 export interface UpdateCommandFailure {
   kind: UpdateCommandFailureKind;
   message: string;
+  /** Absolute internally; machine projection makes these root-relative. */
+  paths?: string[];
 }
 
 /**

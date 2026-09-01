@@ -41,11 +41,11 @@
  * user-typed action. Raised and approved before implementation.
  *
  * ── Errors, and the exit code ───────────────────────────────────────────────
- * This module catches nothing. `plan()`'s throws, the receipt reader's
- * non-ENOENT throw and `FileHasher`'s EISDIR throw all propagate to the caller,
- * which owns exit codes (`cli/index.ts` maps a thrown error to its `renderThrown`
- * + exit 1). Swallowing any of them here would turn "we could not read your
- * project" into "nothing to update".
+ * Each lifecycle boundary preserves a typed failure for the machine envelope.
+ * The initial receipt read is normalized separately so a broken ownership file
+ * names `manteen.lock.json`, provides bounded recovery guidance, and never
+ * exposes a machine-local absolute path. Swallowing any of these failures would
+ * turn "we could not read your project" into "nothing to update".
  *
  * **THE EXIT CODE COMES OFF `outcome`, NEVER OFF `kind`.** `UpdateResult.kind`
  * discriminates which STAGE was reached, not whether it succeeded. The
@@ -60,7 +60,8 @@
  *   attempted + outcome.cancelled         -> 130 (zero mutation; the prompt was
  *                                            cancelled, `outcome.ok` is false)
  *   attempted + outcome.failure !== null  -> 1  (stale-plan, install-failed,
- *                                            write-failed, rollback-failed)
+ *                                            write-failed, verification-failed,
+ *                                            rollback-failed)
  *   attempted + outcome.failure caused by
  *             failed verification         -> 1  (the file transaction is restored)
  *   attempted + outcome.ok + verification
@@ -117,7 +118,7 @@ import type {
 import { createReceiptReader, createReceiptValidator } from "../receipt/load";
 import { toReceiptPath } from "../receipt/path";
 import type { ReceiptReader, ReceiptValidator } from "../receipt/read";
-import { readReceipt } from "../receipt/read";
+import { readReceipt, receiptPathFor } from "../receipt/read";
 import {
   createVerificationPorts,
   plannedVerificationOutcome,
@@ -138,6 +139,7 @@ export class UpdateCommandError extends Error {
     readonly kind: Exclude<UpdateCommandFailureKind, "receipt-unreadable" | "setup-failed">,
     message: string,
     readonly mutated: boolean,
+    readonly paths?: string[],
   ) {
     super(message);
     this.name = "UpdateCommandError";
@@ -146,6 +148,15 @@ export class UpdateCommandError extends Error {
 
 function thrownMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function receiptReadMessage(root: string, error: unknown): string {
+  const receiptPath = receiptPathFor(root);
+  const detail = thrownMessage(error).split(receiptPath).join("manteen.lock.json");
+  return (
+    `manteen.lock.json could not be read: ${detail}. ` +
+    "Restore it as a regular readable file, or restore it from another trusted copy, before retrying."
+  );
 }
 
 function stageError(
@@ -290,9 +301,18 @@ export async function update(
    * preflight re-hashes `plan.receipt.path` in both directions of its presence
    * and returns `stale-plan`.
    */
+  let receiptState: ReturnType<typeof readReceipt>;
+  try {
+    receiptState = readReceipt(root, ports.read, ports.validate);
+  } catch (error) {
+    throw new UpdateCommandError("selection-failed", receiptReadMessage(root, error), false, [
+      receiptPathFor(root),
+    ]);
+  }
+
   let installed: Installed;
   try {
-    installed = fromReceiptState(readReceipt(root, ports.read, ports.validate), root, ports.hash);
+    installed = fromReceiptState(receiptState, root, ports.hash);
   } catch (error) {
     throw stageError("selection-failed", error, false);
   }
@@ -777,7 +797,11 @@ export function updatePayloadKind(result: UpdateResult): UpdatePayloadKind {
   if (result.outcome.dryRun) return "previewed";
   if (result.outcome.cancelled) return "cancelled";
   if (result.outcome.ok) return "applied";
-  if (result.outcome.failure?.kind === "write-failed") return "rolled-back";
+  if (
+    result.outcome.failure?.kind === "write-failed" ||
+    result.outcome.failure?.kind === "verification-failed"
+  )
+    return "rolled-back";
   if (result.outcome.failure?.kind === "rollback-failed") return "rollback-failed";
   return "failed";
 }
@@ -855,9 +879,11 @@ function toUpdateJson(
         : {
             kind: failure.kind,
             message: failure.message,
-            ...(outcome?.failure?.paths === undefined
+            ...(failure.paths === undefined
               ? {}
-              : { paths: outcome.failure.paths.map((path) => toReceiptPath(path, root)) }),
+              : {
+                  paths: [...new Set(failure.paths.map((path) => toReceiptPath(path, root)))],
+                }),
           },
     updateState:
       outcome === null
@@ -956,10 +982,9 @@ export async function runUpdate(
     verify: flags.verify,
   };
 
-  // `update()` catches nothing on purpose (see the module docblock): the receipt
-  // reader's non-ENOENT throw and `FileHasher`'s EISDIR must not become "nothing
-  // to update". They land here, print, and exit 1 — the same handling `runAdd`
-  // gives a throw out of `plan()`.
+  // `update()` preserves lifecycle throws as typed command errors (see the
+  // module docblock). They land here, project into JSON when requested, and
+  // exit 1 rather than becoming a successful "nothing to update" result.
   let result: UpdateResult;
   try {
     result = await update(config, refs, options, createUpdatePorts(streams.stderr));
@@ -967,7 +992,12 @@ export async function runUpdate(
     const failure =
       error instanceof UpdateCommandError
         ? error
-        : { kind: "setup-failed" as const, message: thrownMessage(error), mutated: false };
+        : {
+            kind: "setup-failed" as const,
+            message: thrownMessage(error),
+            mutated: false,
+            paths: undefined,
+          };
     if (flags.json === true) {
       streams.stdout(
         renderJson(
@@ -975,7 +1005,11 @@ export async function runUpdate(
             config.root,
             {
               kind: "failed",
-              failure: { kind: failure.kind, message: failure.message },
+              failure: {
+                kind: failure.kind,
+                message: failure.message,
+                ...(failure.paths === undefined ? {} : { paths: failure.paths }),
+              },
               mutated: failure.mutated,
               selected: [],
               skipped: [],

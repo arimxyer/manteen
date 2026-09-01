@@ -1201,6 +1201,10 @@ test("update projects a receipt I/O throw as a command-native failed payload", (
   assert.equal(envelope.payload.kind, "failed");
   assert.equal(envelope.payload.dryRun, true);
   assert.equal(envelope.payload.failure.kind, "selection-failed");
+  assert.deepEqual(envelope.payload.failure.paths, ["manteen.lock.json"]);
+  assert.match(envelope.payload.failure.message, /manteen\.lock\.json could not be read/i);
+  assert.match(envelope.payload.failure.message, /regular readable file/i);
+  assert.equal(envelope.payload.failure.message.includes(project), false);
   assert.equal(envelope.errors[0]?.code, "selection-failed");
   assert.deepEqual(readFileSync(target), targetBefore, "selection failure must write nothing");
 });

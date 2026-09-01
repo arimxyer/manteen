@@ -14,12 +14,14 @@ import { strict as assert } from "node:assert";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   realpathSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -307,7 +309,9 @@ test("verification is fail-fast and failure restores source, base, receipt and c
   assert.equal(doc.verification.failure.kind, "script-failed");
   assert.equal(doc.verification.failure.exitCode, 7);
   assert.match(doc.verification.failure.message, /restore captured preimages/i);
+  assert.equal(doc.failure.kind, "verification-failed");
   assert.match(doc.failure.message, /restored to its previous contents/i);
+  assert.equal(doc.failure.paths, undefined);
   assert.equal(doc.mutated, false);
   assert.deepEqual(
     doc.verification.checks.map(({ script, result: checkResult }) => [script, checkResult]),
@@ -319,6 +323,52 @@ test("verification is fail-fast and failure restores source, base, receipt and c
   assert.equal(existsSync(join(project, ".verify-first")), true);
   assert.equal(existsSync(join(project, ".verify-later")), false, "later script was not skipped");
   assertManagedTree(project, before);
+});
+
+test("a failed verification rollback conservatively reports durable mutation and bounded recovery", {
+  skip: process.platform === "win32",
+}, () => {
+  const registry = publish("rollback-failed");
+  const project = makeProject({
+    registry,
+    checks: ["verify:rollback-fail"],
+    scripts: { "verify:rollback-fail": "node verify-rollback-fail.mjs" },
+  });
+  const managedDirectory = join(project, "src", "components", "ui");
+  writeVerifier(
+    project,
+    "verify-rollback-fail.mjs",
+    `
+        import { chmodSync } from "node:fs";
+        chmodSync(new URL("./src/components/ui/", import.meta.url), 0o555);
+        process.exitCode = 24;
+      `,
+  );
+  install(project);
+  const sourceBefore = readFileSync(join(project, DESTINATION));
+  const modeBefore = statSync(managedDirectory).mode & 0o777;
+  moveUpstream(registry, "rollback obstruction upstream");
+
+  const preview = run(project, ["update", "--dry-run", "--json"]);
+  assert.equal(preview.status, 0, preview.all);
+  const digest = json(preview).planDigest;
+
+  try {
+    const result = run(project, ["update", "--expect-plan", digest, "--json"]);
+    assert.equal(result.status, 1, result.all);
+    const doc = json(result);
+    assert.equal(doc.kind, "rollback-failed");
+    assert.equal(doc.failure.kind, "rollback-failed");
+    assert.equal(doc.mutated, true, "an unrestored transaction is conservatively mutated");
+    assert.equal(new Set(doc.failure.paths).size, doc.failure.paths.length);
+    assert.ok(doc.failure.paths.includes(DESTINATION.split("\\").join("/")));
+    assert.equal(doc.failure.message.includes(project), false, doc.failure.message);
+    assert.match(doc.failure.message, /trusted pre-run copy/i);
+    assert.notDeepEqual(readFileSync(join(project, DESTINATION)), sourceBefore);
+    assert.equal(statSync(managedDirectory).mode & 0o777, 0o555);
+  } finally {
+    chmodSync(managedDirectory, modeBefore);
+  }
 });
 
 /**

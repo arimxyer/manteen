@@ -113,7 +113,10 @@ claiming reversal of dependency-manager, cache, generated-artifact, or arbitrary
 The current unreleased client also closes update's pre-result failure boundary: corrupt receipts
 are failed operations rather than successful no-ops, thrown selection/planning/apply/verification
 stages retain typed machine payloads and requested dry-run mode, and rollback recovery reports
-relative paths without assuming a Git worktree.
+relative paths without assuming a Git worktree. Returned verification rejections retain the
+`verification-failed` cause after a successful restore; failed rollback reports conservative
+durable mutation with unique relative recovery paths; and receipt I/O failures name the ownership
+file with bounded recovery guidance without exposing the project root.
 
 **Portability.** The built tier passes on Linux Node 22.12, 24 and 26 plus macOS and Windows at the
 Node floor. Packed npm, pnpm, Yarn PnP and Bun consumers pass, including the native Windows

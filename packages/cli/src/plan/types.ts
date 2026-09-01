@@ -418,6 +418,8 @@ export type ApplyFailureKind =
   | "stale-plan"
   /** A write failed; the journal unwound and the tree is back to its pre-images. */
   | "write-failed"
+  /** Project verification rejected the transaction and every captured pre-image was restored. */
+  | "verification-failed"
   /** The unwind itself failed. The tree may be inconsistent; `paths` names what
    *  must be restored from version control or another trusted pre-run copy. */
   | "rollback-failed"

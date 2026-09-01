@@ -307,6 +307,10 @@ function hasWrittenFlag(value: unknown): boolean {
 
 function inferMutated(command: string, payload: Record<string, unknown> | null): boolean {
   if (payload === null || payload.dryRun === true) return false;
+  // A failed rollback means captured pre-images could not be proven restored.
+  // The exact durable bytes are unknowable, so schema-v2 requires the
+  // conservative machine claim even when per-file observations are empty.
+  if (command === "update" && payload.kind === "rollback-failed") return true;
   if (typeof payload.mutated === "boolean") return payload.mutated;
   if (command === "list" || command === "info" || command === "diff" || command === "status") {
     return false;

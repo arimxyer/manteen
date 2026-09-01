@@ -7,7 +7,7 @@ import { apply } from "../src/apply/index";
 import { hashFileBytes, preflight } from "../src/apply/preflight";
 import {
   renderVerification,
-  type UpdateCommandError,
+  UpdateCommandError,
   update,
   updatePayloadKind,
 } from "../src/commands/update";
@@ -293,7 +293,8 @@ describe("post-apply verification", () => {
 
     expect(outcome.ok).toBe(false);
     expect(outcome.verification?.status).toBe("failed");
-    expect(outcome.failure?.kind).toBe("write-failed");
+    expect(outcome.failure).toMatchObject({ kind: "verification-failed" });
+    expect(outcome.failure?.paths).toBeUndefined();
     expect(readFileSync(fixture.plan.configPath, "utf8")).toBe(configBefore);
   });
 
@@ -604,6 +605,52 @@ describe("update verification orchestration", () => {
       } satisfies Partial<UpdateCommandError>);
     },
   );
+
+  test("a receipt read throw names the owned file without exposing the project root", async () => {
+    const fixture = verificationFixture(["verify"]);
+    const loaded = loadConfig(fixture.root);
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok) return;
+    const receiptPath = join(fixture.root, "manteen.lock.json");
+
+    const call = update(
+      loaded.config,
+      [],
+      { interactive: false },
+      {
+        plan: async () => fixture.plan,
+        apply: async () => failedApply("install-failed"),
+        read: () => {
+          throw new Error(`EACCES: permission denied, open '${receiptPath}'`);
+        },
+        validate: createReceiptValidator(),
+        hash: hashFileBytes,
+        verification: ports(async () => ({
+          started: true,
+          exitCode: 0,
+          signal: null,
+          timedOut: false,
+        })),
+      },
+    );
+
+    try {
+      await call;
+      throw new Error("receipt read unexpectedly succeeded");
+    } catch (error) {
+      expect(error).toMatchObject({
+        name: "UpdateCommandError",
+        kind: "selection-failed",
+        mutated: false,
+        paths: [receiptPath],
+      } satisfies Partial<UpdateCommandError>);
+      expect(error).toBeInstanceOf(UpdateCommandError);
+      if (!(error instanceof UpdateCommandError)) return;
+      expect(error.message).toContain("manteen.lock.json could not be read");
+      expect(error.message).toContain("regular readable file");
+      expect(error.message).not.toContain(fixture.root);
+    }
+  });
 
   test("text distinguishes dry-run planning from fail-fast not-run checks", () => {
     const fixture = verificationFixture(["first", "second"]);
