@@ -233,6 +233,12 @@ describe("safe author scaffold planning", () => {
       },
     ]);
     expect(plans["component-styles-api"].files[1]!.content).toContain("useStyles");
+    expect(plans["component-styles-api"].files[1]!.content).toContain("type PaperBaseProps");
+    expect(plans["component-styles-api"].files[1]!.content).toContain(
+      "extends BoxProps, PaperBaseProps, StylesApiProps",
+    );
+    expect(plans["component-styles-api"].files[2]!.content).toContain('radius="xl"');
+    expect(plans["component-styles-api"].files[2]!.content).toContain('shadow="sm"');
     expect(plans["component-styles-api"].files[3]!.content).toContain(".extend");
 
     expect(plans["component-polymorphic"].files.map((file) => file.path)).toEqual([

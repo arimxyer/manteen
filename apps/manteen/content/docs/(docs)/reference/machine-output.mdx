@@ -110,6 +110,14 @@ its journal restores captured state. Conversely, an unowned side effect such as 
 installation can remain even when Manteen restores its own captured bytes, so callers must read the
 field rather than equating a non-zero exit with no effects.
 
+### Update outcomes are not execution stages
+
+For `update`, `payload.kind` is the final operation outcome: `nothing-to-do`, `refused`,
+`previewed`, `cancelled`, `applied`, `rolled-back`, `rollback-failed`, or `failed`. A transaction
+that reached writes but restored its managed preimages is `rolled-back`; inspect `failure.kind` and
+`verification` for the narrower cause. `payload.dryRun` always echoes the requested invocation,
+including a refusal that occurs before apply can run.
+
 ## A safe parsing loop
 
 1. Parse all stdout as one JSON document and validate `schemaVersion`.

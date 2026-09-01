@@ -9,6 +9,14 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CLI = join(PACKAGE_ROOT, "dist/cli.mjs");
 
+test("built CLI reports its exact package version", () => {
+  const { version } = JSON.parse(readFileSync(join(PACKAGE_ROOT, "package.json"), "utf8"));
+  const result = spawnSync(process.execPath, [CLI, "--version"], { encoding: "utf8" });
+  assert.equal(result.status, 0, JSON.stringify(result));
+  assert.equal(result.stdout, `${version}\n`);
+  assert.equal(result.stderr, "");
+});
+
 function fixture() {
   const root = realpathSync.native(mkdtempSync(join(tmpdir(), "manteen-scaffold-node-")));
   const catalogPath = join(root, "manteen.registry.json");

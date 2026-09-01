@@ -151,6 +151,27 @@ afterEach(() => {
 });
 
 describe("kit JSON commands", () => {
+  test("version reports the package identity in text and JSON modes", () => {
+    const { version } = JSON.parse(
+      readFileSync(resolve(import.meta.dirname, "../package.json"), "utf8"),
+    ) as { version: string };
+
+    const textResult = run(["--version"]);
+    expect(textResult.exitCode).toBe(0);
+    expect(textResult.stdout.toString()).toBe(`${version}\n`);
+    expect(textResult.stderr.toString()).toBe("");
+
+    const jsonResult = run(["--version", "--json"]);
+    expect(jsonResult.exitCode).toBe(0);
+    expect(jsonResult.stderr.toString()).toBe("");
+    expect(document(jsonResult)).toMatchObject({
+      command: "version",
+      ok: true,
+      mutated: false,
+      payload: { version },
+    });
+  });
+
   test("merge-theme --write --json writes the reported merge", () => {
     const root = temporaryRoot();
     const base = join(root, "theme.ts");

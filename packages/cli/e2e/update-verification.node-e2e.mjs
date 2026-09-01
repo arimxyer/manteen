@@ -245,13 +245,18 @@ test("a configured passing check verifies the applied update and may create an o
 
   const preview = run(project, ["update", "--dry-run", "--json"]);
   assert.equal(preview.status, 0, preview.all);
-  const digest = json(preview).planDigest;
+  const previewDocument = json(preview);
+  assert.equal(previewDocument.kind, "previewed");
+  assert.equal(previewDocument.dryRun, true);
+  const digest = previewDocument.planDigest;
   assert.match(digest, /^[0-9a-f]{64}$/);
 
   const result = run(project, ["update", "--expect-plan", digest, "--json"]);
   assert.equal(result.status, 0, result.all);
   const doc = json(result);
   assert.equal(doc.ok, true);
+  assert.equal(doc.kind, "applied");
+  assert.equal(doc.dryRun, false);
   assert.equal(doc.planDigest, digest);
   assert.equal(doc.verification.status, "passed");
   assert.deepEqual(
@@ -297,7 +302,7 @@ test("verification is fail-fast and failure restores source, base, receipt and c
   assert.equal(result.status, 1, result.all);
   const doc = json(result);
   assert.equal(doc.ok, false);
-  assert.equal(doc.kind, "applied", "verification failure must not relabel apply as refused");
+  assert.equal(doc.kind, "rolled-back", "a restored verification failure is not applied");
   assert.equal(doc.verification.status, "failed");
   assert.equal(doc.verification.failure.kind, "script-failed");
   assert.equal(doc.verification.failure.exitCode, 7);
@@ -363,7 +368,7 @@ test("a check that never finishes is terminated and reported as a timeout", () =
   assert.equal(result.status, 1, result.all);
   const doc = json(result);
   assert.equal(doc.ok, false);
-  assert.equal(doc.kind, "applied", "a timeout must not relabel apply as refused");
+  assert.equal(doc.kind, "rolled-back", "a restored verification timeout is not applied");
   assert.equal(doc.verification.status, "failed");
   assert.equal(doc.verification.failure.kind, "timed-out");
   assert.equal(doc.verification.failure.script, "verify:hang");
@@ -628,7 +633,7 @@ test("an applied package-script change makes the planned definition stale", () =
   const result = run(project, ["update", "--json"]);
   assert.equal(result.status, 1, result.all);
   const doc = json(result);
-  assert.equal(doc.kind, "applied");
+  assert.equal(doc.kind, "rolled-back");
   assert.equal(doc.verification.status, "failed");
   assert.equal(doc.verification.failure.kind, "definition-stale");
   assert.equal(existsSync(join(project, ".stale-original-ran")), false);
@@ -659,7 +664,7 @@ test("a zero-exit script that changes a managed component fails verification as 
   const result = run(project, ["update", "--json"]);
   assert.equal(result.status, 1, result.all);
   const doc = json(result);
-  assert.equal(doc.kind, "applied");
+  assert.equal(doc.kind, "rolled-back");
   assert.equal(doc.verification.status, "failed");
   assert.equal(doc.verification.failure.kind, "managed-byte-drift");
   assert.match(JSON.stringify(doc.verification.failure), /src\/components\/ui\/empty-state\.tsx/);

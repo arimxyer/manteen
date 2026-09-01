@@ -386,6 +386,35 @@ test("add installs over http from an unauthenticated registry", async () => {
   }
 });
 
+test("a refused update dry run preserves the requested machine mode", async () => {
+  const disconnected = await startRegistryServer({ mounts: { gone: { dir: BASE_DIST } } });
+  let closed = false;
+  try {
+    const project = makeProject({ "@gone": disconnected.itemUrl("gone") });
+    const installed = await run(project, ["add", "@gone/empty-state"]);
+    assert.equal(installed.status, 0, installed.all);
+    const before = manifest(project);
+
+    await disconnected.close();
+    closed = true;
+
+    const refused = await run(project, ["update", "@gone/empty-state", "--dry-run", "--json"]);
+    assert.equal(refused.status, 1, refused.all);
+    const envelope = JSON.parse(refused.stdout);
+    assert.equal(envelope.ok, false);
+    assert.equal(envelope.mutated, false);
+    assert.equal(envelope.payload.kind, "refused");
+    assert.equal(envelope.payload.dryRun, true);
+    assert.ok(
+      envelope.diagnostics.some((diagnostic) => diagnostic.code === "fetch-failed"),
+      refused.stdout,
+    );
+    assert.deepEqual(manifest(project), before, "a refused preview must write nothing");
+  } finally {
+    if (!closed) await disconnected.close();
+  }
+});
+
 test("a built consumer reconnects an installed namespace across ephemeral ports", async () => {
   const project = makeProject({ "@base": OPEN_URL });
   const installed = await run(project, ["add", "@base/empty-state"]);

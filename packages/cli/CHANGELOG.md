@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Make update machine outcomes truthful after preview, refusal, failure, and rollback; every path
+  now echoes the requested dry-run mode instead of defaulting early refusals to real-apply mode.
 - Add digest-bound `registry reconnect`, which verifies installed item identities at a new endpoint
   and atomically migrates registry config plus receipt source URLs.
 - Make `list --installed` a receipt-first offline inventory that never fetches registry indexes.

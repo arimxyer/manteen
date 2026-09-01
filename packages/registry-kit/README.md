@@ -39,6 +39,7 @@ authoring layer entirely Mantine-shaped.
 ## CLI
 
 ```bash
+manteen-kit --version
 manteen-kit build [catalog.json] [outDir]      # default: ./manteen.registry.json → ./public/r
 manteen-kit merge-theme <base.ts> <fragment.ts> [--write] [--prefer incoming] [--json]
 manteen-kit scaffold --template <template> --name <item> --dry-run --json

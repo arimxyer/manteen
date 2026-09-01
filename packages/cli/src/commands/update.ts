@@ -48,8 +48,8 @@
  * project" into "nothing to update".
  *
  * **THE EXIT CODE COMES OFF `outcome`, NEVER OFF `kind`.** `UpdateResult.kind`
- * discriminates which STAGE was reached, not whether it succeeded, and
- * `"applied"` covers three different exits — this is measured, not asserted:
+ * discriminates which STAGE was reached, not whether it succeeded. The
+ * `"attempted"` stage covers every exit after apply was entered:
  *
  *   nothing-to-do                         -> 0
  *   refused                               -> `blockingExitCode(plan.diagnostics, false)`,
@@ -57,13 +57,13 @@
  *                                            and 1 otherwise. NOT a flat 1: that
  *                                            row of §1's table is reachable here
  *                                            whenever D17 does not drop a dep.
- *   applied + outcome.cancelled           -> 130 (zero mutation; the prompt was
+ *   attempted + outcome.cancelled         -> 130 (zero mutation; the prompt was
  *                                            cancelled, `outcome.ok` is false)
- *   applied + outcome.failure !== null    -> 1  (stale-plan, install-failed,
+ *   attempted + outcome.failure !== null  -> 1  (stale-plan, install-failed,
  *                                            write-failed, rollback-failed)
- *   applied + outcome.failure caused by
+ *   attempted + outcome.failure caused by
  *             failed verification         -> 1  (the file transaction is restored)
- *   applied + outcome.ok + verification
+ *   attempted + outcome.ok + verification
  *             not failed                  -> 0
  *
  * `runAdd` in `cli/index.ts` is the reference for all five rows, including the
@@ -371,7 +371,7 @@ export async function update(
   }
 
   return {
-    kind: "applied",
+    kind: "attempted",
     plan: planned,
     outcome,
     verification,
@@ -698,13 +698,33 @@ function renderSelected(selected: readonly CanonicalId[]): string {
   return `\nupdated  ${selected.join(", ")}\n`;
 }
 
+export type UpdatePayloadKind =
+  | "nothing-to-do"
+  | "refused"
+  | "previewed"
+  | "cancelled"
+  | "applied"
+  | "rolled-back"
+  | "rollback-failed"
+  | "failed";
+
+/** Project the internal stage union into the truthful command outcome. */
+export function updatePayloadKind(result: UpdateResult): UpdatePayloadKind {
+  if (result.kind !== "attempted") return result.kind;
+  if (result.outcome.dryRun) return "previewed";
+  if (result.outcome.cancelled) return "cancelled";
+  if (result.outcome.ok) return "applied";
+  if (result.outcome.failure?.kind === "write-failed") return "rolled-back";
+  if (result.outcome.failure?.kind === "rollback-failed") return "rollback-failed";
+  return "failed";
+}
+
 /**
  * The `--json` document.
  *
- * `kind` is `UpdateResult`'s own discriminator and is carried through verbatim,
- * but a consumer must read `ok` for success — `"applied"` covers a clean run, a
- * cancelled prompt and a write failure alike. That is the same rule the module
- * docblock states for the exit code, restated where a script will hit it.
+ * The public `kind` is an OUTCOME, not `UpdateResult`'s internal stage
+ * discriminator. In particular, a successfully restored transaction is
+ * `"rolled-back"`, never `"applied"`. `failure.kind` retains the narrower cause.
  *
  * `plan` and `outcome` are PROJECTED, not serialized. `PlannedFile.content` and
  * `PlannedTheme.text` carry whole source files, so `JSON.stringify(result)`
@@ -715,22 +735,25 @@ function toUpdateJson(
   result: UpdateResult,
   ok: boolean,
   fallbackVerification: VerificationOutcome,
+  requestedDryRun: boolean,
 ): JsonEnvelope & Record<string, unknown> {
   const plan = result.kind === "nothing-to-do" ? null : result.plan;
-  const outcome = result.kind === "applied" ? result.outcome : null;
-  const verification = result.kind === "applied" ? result.verification : fallbackVerification;
+  const outcome = result.kind === "attempted" ? result.outcome : null;
+  const verification = result.kind === "attempted" ? result.verification : fallbackVerification;
   const planDigest = plan?.planDigest ?? null;
 
   return {
     command: "update",
     root,
     ok,
-    kind: result.kind,
+    kind: updatePayloadKind(result),
     planDigest,
     selected: [...result.selected],
     skipped: result.skipped,
     cancelled: outcome?.cancelled ?? false,
-    dryRun: outcome?.dryRun ?? false,
+    // Echo argv, not apply reachability. A resolution refusal and a no-op still
+    // need to tell a machine caller that this invocation prohibited mutation.
+    dryRun: requestedDryRun,
     files:
       outcome === null
         ? (plan?.files ?? []).map((file) => ({
@@ -879,7 +902,15 @@ export async function runUpdate(
 
   if (flags.json === true) {
     streams.stdout(
-      renderJson(toUpdateJson(config.root, result, exit === EXIT_OK, fallbackVerification)),
+      renderJson(
+        toUpdateJson(
+          config.root,
+          result,
+          exit === EXIT_OK,
+          fallbackVerification,
+          flags.dryRun === true,
+        ),
+      ),
     );
     return exit;
   }

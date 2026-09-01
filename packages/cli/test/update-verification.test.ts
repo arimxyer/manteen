@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { delimiter, dirname, join } from "node:path";
 import { apply } from "../src/apply/index";
 import { hashFileBytes, preflight } from "../src/apply/preflight";
-import { renderVerification, update } from "../src/commands/update";
+import { renderVerification, update, updatePayloadKind } from "../src/commands/update";
 import { loadConfig } from "../src/config/load";
 import { createConfigValidator } from "../src/config/validate";
 import { isBlocking } from "../src/plan/diagnostics";
@@ -549,42 +549,46 @@ describe("update verification orchestration", () => {
   });
 
   test.each([
-    ["cancellation", cancelledApply()],
-    ["dependency failure", failedApply("install-failed")],
-    ["write failure", failedApply("write-failed")],
-    ["rollback failure", failedApply("rollback-failed")],
-  ])("does not invoke verification after %s", async (_label, applyOutcome) => {
-    const fixture = verificationFixture(["verify"]);
-    const loaded = loadConfig(fixture.root);
-    expect(loaded.ok).toBe(true);
-    if (!loaded.ok) return;
-    let calls = 0;
+    ["cancellation", cancelledApply(), "cancelled"],
+    ["dependency failure", failedApply("install-failed"), "failed"],
+    ["write failure", failedApply("write-failed"), "rolled-back"],
+    ["rollback failure", failedApply("rollback-failed"), "rollback-failed"],
+  ] as const)(
+    "does not invoke verification after %s",
+    async (_label, applyOutcome, payloadKind) => {
+      const fixture = verificationFixture(["verify"]);
+      const loaded = loadConfig(fixture.root);
+      expect(loaded.ok).toBe(true);
+      if (!loaded.ok) return;
+      let calls = 0;
 
-    const result = await update(
-      loaded.config,
-      [],
-      { interactive: false },
-      {
-        plan: async () => fixture.plan,
-        apply: async () => applyOutcome,
-        read: createReceiptReader(),
-        validate: createReceiptValidator(),
-        hash: hashFileBytes,
-        verification: ports(async () => {
-          calls += 1;
-          return { started: true, exitCode: 0, signal: null, timedOut: false };
-        }),
-      },
-    );
+      const result = await update(
+        loaded.config,
+        [],
+        { interactive: false },
+        {
+          plan: async () => fixture.plan,
+          apply: async () => applyOutcome,
+          read: createReceiptReader(),
+          validate: createReceiptValidator(),
+          hash: hashFileBytes,
+          verification: ports(async () => {
+            calls += 1;
+            return { started: true, exitCode: 0, signal: null, timedOut: false };
+          }),
+        },
+      );
 
-    expect(calls).toBe(0);
-    expect(result.kind).toBe("applied");
-    if (result.kind !== "applied") return;
-    expect(result.verification).toEqual({
-      ...VERIFICATION_BOUNDARY,
-      status: "skipped",
-      checks: [],
-      failure: null,
-    });
-  });
+      expect(calls).toBe(0);
+      expect(result.kind).toBe("attempted");
+      if (result.kind !== "attempted") return;
+      expect(updatePayloadKind(result)).toBe(payloadKind);
+      expect(result.verification).toEqual({
+        ...VERIFICATION_BOUNDARY,
+        status: "skipped",
+        checks: [],
+        failure: null,
+      });
+    },
+  );
 });

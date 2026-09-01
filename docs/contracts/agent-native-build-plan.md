@@ -52,6 +52,13 @@ to the finding they remediate.
 Schemas are published with both packages and validate success and refusal documents. Secrets and
 expanded URL variables are excluded from all envelopes, diagnostics, receipts, and digests.
 
+The update payload treats `kind` as the operation outcome rather than an internal stage marker:
+`nothing-to-do`, `refused`, `previewed`, `cancelled`, `applied`, `rolled-back`,
+`rollback-failed`, or `failed`. A verification-rejected transaction whose managed preimages were
+restored is `rolled-back`, never `applied`; its narrower cause remains in `failure.kind` and the
+verification payload. `payload.dryRun` echoes the normalized invocation on every path, including
+resolution refusal and nothing-to-do, rather than depending on whether apply was reached.
+
 ## 2. Registry output ownership
 
 `manteen-kit build` first renders and validates every output byte in a sibling staging directory.
@@ -175,6 +182,9 @@ server. A local ready event is not deployment proof.
 
 The repository root contains vendor-neutral `AGENTS.md`. The public docs expose an Agent Guide plus
 `/llms.txt` and `/llms-full.txt`. MCP is deliberately outside this roadmap.
+
+`manteen-kit -V` and `manteen-kit --version` print the installed author-package version; JSON mode
+returns the same identity in a zero-mutation `version` envelope.
 
 ## 6. Release boundary
 

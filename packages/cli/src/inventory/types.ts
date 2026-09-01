@@ -581,7 +581,9 @@ export type UpdateResult =
       notes: InventoryNote[];
     }
   | {
-      kind: "applied";
+      /** The apply stage was entered. Inspect `outcome` for whether it previewed,
+       *  completed, failed before writes, rolled back, or could not roll back. */
+      kind: "attempted";
       plan: Plan;
       outcome: ApplyOutcome;
       /** Post-apply project checks. Never part of ApplyOutcome or its journal. */

@@ -71,3 +71,8 @@ Plan digests exclude source bodies, expanded variables, timestamps, and incident
 They bind normalized roots/options/refs, redacted sources, hashes, destinations, dependency and
 theme/style operations, verification definitions, and preimages. A mismatch requires a fresh
 preview, not `--force`.
+
+For `update`, treat `payload.kind` as the final outcome: `nothing-to-do`, `refused`, `previewed`,
+`cancelled`, `applied`, `rolled-back`, `rollback-failed`, or `failed`. A restored verification or
+write failure is `rolled-back`, not `applied`. Read `failure.kind` and `verification` for the cause.
+`payload.dryRun` echoes the invocation even when resolution refuses before apply.

@@ -46,8 +46,10 @@ deployment remain unchanged; the repository has no workflow that publishes eithe
 The next unreleased reliability increment is implemented locally: receipt-first offline installed
 inventory, co-located scaffold targets, machine-explicit verification scope, digest-gated complete
 scaffold registration, ephemeral dev-server replacement previews, and author-owned build/dev
-verification hooks. These changes have no public-version, hosted-CI, npm, tag, release, registry,
-or deployment receipt yet.
+verification hooks. A second clean-room dashboard run then made update failure outcomes truthful,
+preserved dry-run identity through resolution refusals, aligned the Paper-backed Styles API scaffold
+with Paper props, and added direct kit package-version output. These changes have no public-version,
+hosted-CI, npm, tag, release, registry, or deployment receipt yet.
 
 The agent-native release is public at `manteen-kit@0.2.1` and `manteen@0.7.0`. It adds
 transactional generated registry ownership, one stable JSON command envelope, complete display
@@ -103,10 +105,11 @@ adds the conservative TypeScript fallback shared by `diff` and `update`, with it
 exact-byte/refusal contract in [`ast-merge-integration-decision.md`](./contracts/ast-merge-integration-decision.md).
 `search` does not
 exist and is not currently assigned to a wave; whether it belongs in v1 remains undecided. The
-public release also supports project-owned verification: configured `package.json` scripts run
-only after a coherent update has applied, and a failed check never pretends the update rolled
-back. Its frozen boundary, source/built-Node receipt and public-release acceptance are in
-[`update-verification-handoff.md`](./handoffs/update-verification-handoff.md).
+historical public post-update verification contract is recorded in
+[`update-verification-handoff.md`](./handoffs/update-verification-handoff.md). The current
+agent-native transaction instead runs configured operation checks before releasing Manteen's
+managed journal; a failure restores those bounded preimages and reports `rolled-back` without
+claiming reversal of dependency-manager, cache, generated-artifact, or arbitrary script effects.
 
 **Portability.** The built tier passes on Linux Node 22.12, 24 and 26 plus macOS and Windows at the
 Node floor. Packed npm, pnpm, Yarn PnP and Bun consumers pass, including the native Windows

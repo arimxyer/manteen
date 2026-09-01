@@ -67,6 +67,7 @@ function stylesApiSource(name: string, itemName: string): string {
   type Factory,
   factory,
   Paper,
+  type PaperBaseProps,
   type StylesApiProps,
   Text,
   useProps,
@@ -78,7 +79,8 @@ import classes from "./${itemName}.module.css";
 
 export type ${name}StylesNames = "root" | "label";
 
-export interface ${name}Props extends BoxProps, StylesApiProps<${name}Factory> {
+export interface ${name}Props
+  extends BoxProps, PaperBaseProps, StylesApiProps<${name}Factory> {
   label?: ReactNode;
 }
 
@@ -161,7 +163,13 @@ export function ${name}Usage() {
   return `import { ${name} } from "./${itemName}";
 
 export function ${name}Usage() {
-  return <${name} label="A source-owned ${splitComponentName(name)}" />;
+  return (
+    <${name}
+      label="A source-owned ${splitComponentName(name)}"
+      radius="xl"
+      shadow="sm"
+    />
+  );
 }
 `;
 }
