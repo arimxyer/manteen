@@ -75,4 +75,8 @@ preview, not `--force`.
 For `update`, treat `payload.kind` as the final outcome: `nothing-to-do`, `refused`, `previewed`,
 `cancelled`, `applied`, `rolled-back`, `rollback-failed`, or `failed`. A restored verification or
 write failure is `rolled-back`, not `applied`. Read `failure.kind` and `verification` for the cause.
-`payload.dryRun` echoes the invocation even when resolution refuses before apply.
+After usage and project configuration are accepted, `payload.dryRun` echoes the invocation on every
+update exit, including receipt/read failure and resolution refusal before apply. Usage/configuration
+exit 2 may have `payload: null`. Never treat `receipt-unreadable` or `selection-failed` as a clean
+no-op. A `rollback-failed` payload carries relative paths; restore them from version control or a
+trusted pre-run copy before retrying.

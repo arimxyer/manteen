@@ -172,14 +172,14 @@ function makeProject({
   return dir;
 }
 
-function run(project, args) {
+function run(project, args, env = {}) {
   const result = spawnSync(process.execPath, [CLI, ...args], {
     cwd: project,
     encoding: "utf8",
     // `CI=true`, not `CI=1`: D14's predicate is an exact string comparison, so
     // `CI=1` would leave the child on the interactive branch, where a prompt
     // against a piped stdin hangs until the test times out.
-    env: childEnv(),
+    env: childEnv(env),
   });
   return {
     status: result.status,
@@ -1149,6 +1149,60 @@ test("update rejects an unknown --pm exactly as add does, at exit 2", () => {
     assert.equal(result.status, 2, `${command}: ${result.all}`);
     assert.match(result.stderr, /is not a package manager manteen knows/, result.stderr);
   }
+
+  const machine = run(project, ["update", "--pm", "bogus", "--dry-run", "--json"]);
+  assert.equal(machine.status, 2, machine.all);
+  assert.equal(machine.stderr, "", machine.stderr);
+  const envelope = json(machine);
+  assert.equal(envelope.payload, null);
+  assert.equal(envelope.errors[0]?.code, "usage-error");
+});
+
+test("update refuses a corrupt receipt instead of reporting a successful no-op", () => {
+  const project = makeProject();
+  assert.equal(run(project, ["add", ITEM]).status, 0);
+  const target = join(project, DESTINATION);
+  const targetBefore = readFileSync(target);
+  writeFileSync(join(project, "manteen.lock.json"), "not-json\n");
+
+  for (const dryRun of [false, true]) {
+    const args = ["update", ITEM, "--json"];
+    if (dryRun) args.push("--dry-run");
+    const result = run(project, args);
+    assert.equal(result.status, 1, result.all);
+    assert.equal(result.stderr, "", result.stderr);
+    const envelope = json(result);
+    assert.equal(envelope.ok, false);
+    assert.equal(envelope.mutated, false);
+    assert.equal(envelope.payload.kind, "failed");
+    assert.equal(envelope.payload.dryRun, dryRun);
+    assert.equal(envelope.payload.failure.kind, "receipt-unreadable");
+    assert.equal(envelope.errors[0]?.code, "receipt-unreadable");
+    assert.equal(envelope.payload.skipped.length, 0);
+    assert.deepEqual(readFileSync(target), targetBefore, "receipt refusal must write nothing");
+  }
+});
+
+test("update projects a receipt I/O throw as a command-native failed payload", () => {
+  const project = makeProject();
+  assert.equal(run(project, ["add", ITEM]).status, 0);
+  const target = join(project, DESTINATION);
+  const targetBefore = readFileSync(target);
+  const receipt = join(project, "manteen.lock.json");
+  rmSync(receipt);
+  mkdirSync(receipt);
+
+  const result = run(project, ["update", "--dry-run", "--json"]);
+  assert.equal(result.status, 1, result.all);
+  assert.equal(result.stderr, "", result.stderr);
+  const envelope = json(result);
+  assert.equal(envelope.ok, false);
+  assert.equal(envelope.mutated, false);
+  assert.equal(envelope.payload.kind, "failed");
+  assert.equal(envelope.payload.dryRun, true);
+  assert.equal(envelope.payload.failure.kind, "selection-failed");
+  assert.equal(envelope.errors[0]?.code, "selection-failed");
+  assert.deepEqual(readFileSync(target), targetBefore, "selection failure must write nothing");
 });
 
 // ---- an UPSTREAM change, which is what `update` is actually for -------------

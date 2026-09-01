@@ -228,9 +228,17 @@ function commandError(stderr: string, exitCode: number): CommandError[] {
   }
   const first = message.split("\n", 1)[0] ?? "";
   const match = /^(?:error\s{2})?([a-z][a-z0-9-]*)/.exec(first);
+  const inferred = match?.[1];
+  const code =
+    exitCode === 2 && (inferred === undefined || inferred === "manteen" || inferred === "error")
+      ? "usage-error"
+      : (inferred ?? (exitCode === 2 ? "usage-error" : "command-failed"));
   return [
     {
-      code: match?.[1] ?? (exitCode === 2 ? "usage-error" : "command-failed"),
+      // Exit 2 is the executable's usage/config boundary. Human usage text
+      // commonly starts with the binary name (`manteen update: ...`), which is
+      // not an error code and must not leak into the machine vocabulary.
+      code,
       message,
       manualRationale: "The emitted error does not have a safe automatic remediation.",
     },

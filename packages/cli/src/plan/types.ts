@@ -418,8 +418,8 @@ export type ApplyFailureKind =
   | "stale-plan"
   /** A write failed; the journal unwound and the tree is back to its pre-images. */
   | "write-failed"
-  /** The unwind itself failed. The tree may be inconsistent; the message points
-   *  at `git checkout -- <paths>`. */
+  /** The unwind itself failed. The tree may be inconsistent; `paths` names what
+   *  must be restored from version control or another trusted pre-run copy. */
   | "rollback-failed"
   /** Phase 2 failed. Deliberately not rolled back (D18), and nothing was written. */
   | "install-failed";

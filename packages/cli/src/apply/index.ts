@@ -171,8 +171,8 @@ function outcomeFiles(
  * same reason — as the cancel return: no decision was carried out. Nothing is
  * lost. `ApplyFailure.paths` still carries the touched set (`write-failed`) and
  * the unrestored set (`rollback-failed`), and only the failure channel can say
- * "this one is now indeterminate, run `git checkout --` on it", which is the
- * sentence a `WriteResult` cannot form.
+ * "this one is now indeterminate; restore it from a trusted pre-run copy",
+ * which is the sentence a `WriteResult` cannot form and does not assume Git.
  */
 
 /**
@@ -337,7 +337,8 @@ async function applyPlan(
           kind: "rollback-failed",
           message:
             `${detail}\nThe rollback then failed, so the tree may be inconsistent: ` +
-            `${unwound.detail ?? "no detail"}\nRestore with: git checkout -- ${unwound.unrestored.join(" ")}`,
+            `${unwound.detail ?? "no detail"}\n` +
+            "Restore the paths listed below from version control or another trusted pre-run copy before retrying.",
           paths: unwound.unrestored,
         },
       };

@@ -557,6 +557,20 @@ export interface UpdateSkip {
   detail: string;
 }
 
+/** A failure before or outside apply's returned `ApplyOutcome` contract. */
+export type UpdateCommandFailureKind =
+  | "receipt-unreadable"
+  | "selection-failed"
+  | "planning-failed"
+  | "apply-failed"
+  | "verification-failed"
+  | "setup-failed";
+
+export interface UpdateCommandFailure {
+  kind: UpdateCommandFailureKind;
+  message: string;
+}
+
 /**
  * `manteen update`.
  *
@@ -571,6 +585,16 @@ export interface UpdateSkip {
  */
 export type UpdateResult =
   | { kind: "nothing-to-do"; selected: readonly []; skipped: UpdateSkip[]; notes: InventoryNote[] }
+  | {
+      /** The command could not safely reach or complete a returned apply outcome. */
+      kind: "failed";
+      failure: UpdateCommandFailure;
+      /** Conservative for unexpected apply/verification throws. */
+      mutated: boolean;
+      selected: CanonicalId[];
+      skipped: UpdateSkip[];
+      notes: InventoryNote[];
+    }
   | {
       kind: "refused";
       /** Carries the blocking diagnostics; the renderer prints `plan.diagnostics`

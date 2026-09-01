@@ -2,8 +2,10 @@
 
 ## Unreleased
 
-- Make update machine outcomes truthful after preview, refusal, failure, and rollback; every path
-  now echoes the requested dry-run mode instead of defaulting early refusals to real-apply mode.
+- Make update machine outcomes truthful after preview, refusal, failure, and rollback; every
+  operation path after usage/config acceptance echoes the requested dry-run mode. Corrupt receipts
+  now fail instead of reporting a successful no-op, thrown lifecycle stages retain typed failure
+  payloads, and rollback recovery no longer assumes Git.
 - Add digest-bound `registry reconnect`, which verifies installed item identities at a new endpoint
   and atomically migrates registry config plus receipt source URLs.
 - Make `list --installed` a receipt-first offline inventory that never fetches registry indexes.

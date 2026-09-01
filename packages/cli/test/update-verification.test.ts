@@ -5,7 +5,12 @@ import { tmpdir } from "node:os";
 import { delimiter, dirname, join } from "node:path";
 import { apply } from "../src/apply/index";
 import { hashFileBytes, preflight } from "../src/apply/preflight";
-import { renderVerification, update, updatePayloadKind } from "../src/commands/update";
+import {
+  renderVerification,
+  type UpdateCommandError,
+  update,
+  updatePayloadKind,
+} from "../src/commands/update";
 import { loadConfig } from "../src/config/load";
 import { createConfigValidator } from "../src/config/validate";
 import { isBlocking } from "../src/plan/diagnostics";
@@ -513,6 +518,93 @@ function cancelledApply(): ApplyOutcome {
 }
 
 describe("update verification orchestration", () => {
+  test("a readable corrupt receipt is a failed update, never a successful no-op", async () => {
+    const fixture = verificationFixture(["verify"]);
+    const loaded = loadConfig(fixture.root);
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok) return;
+
+    const result = await update(
+      loaded.config,
+      [],
+      { interactive: false, dryRun: true },
+      {
+        plan: async () => {
+          throw new Error("planning must not run");
+        },
+        apply: async () => {
+          throw new Error("apply must not run");
+        },
+        read: () => ({ present: true, raw: "not-json\n", sha256: sha("not-json\n") }),
+        validate: createReceiptValidator(),
+        hash: hashFileBytes,
+        verification: ports(async () => ({
+          started: true,
+          exitCode: 0,
+          signal: null,
+          timedOut: false,
+        })),
+      },
+    );
+
+    expect(result).toMatchObject({
+      kind: "failed",
+      mutated: false,
+      failure: { kind: "receipt-unreadable" },
+    });
+    expect(updatePayloadKind(result)).toBe("failed");
+  });
+
+  test.each([
+    ["selection", "selection-failed", false],
+    ["planning", "planning-failed", false],
+    ["apply", "apply-failed", true],
+  ] as const)(
+    "preserves an unexpected %s throw as a typed stage failure",
+    async (stage, kind, mutated) => {
+      const fixture = verificationFixture(["verify"]);
+      const loaded = loadConfig(fixture.root);
+      expect(loaded.ok).toBe(true);
+      if (!loaded.ok) return;
+
+      const call = update(
+        loaded.config,
+        [],
+        { interactive: false },
+        {
+          plan: async () => {
+            if (stage === "planning") throw new Error("planning fixture");
+            return fixture.plan;
+          },
+          apply: async () => {
+            if (stage === "apply") throw new Error("apply fixture");
+            return failedApply("install-failed");
+          },
+          read:
+            stage === "selection"
+              ? () => {
+                  throw new Error("selection fixture");
+                }
+              : createReceiptReader(),
+          validate: createReceiptValidator(),
+          hash: hashFileBytes,
+          verification: ports(async () => ({
+            started: true,
+            exitCode: 0,
+            signal: null,
+            timedOut: false,
+          })),
+        },
+      );
+
+      await expect(call).rejects.toMatchObject({
+        name: "UpdateCommandError",
+        kind,
+        mutated,
+      } satisfies Partial<UpdateCommandError>);
+    },
+  );
+
   test("text distinguishes dry-run planning from fail-fast not-run checks", () => {
     const fixture = verificationFixture(["first", "second"]);
     const checks = fixture.verification.checks.map((check) => ({

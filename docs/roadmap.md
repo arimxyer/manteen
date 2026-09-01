@@ -110,6 +110,10 @@ historical public post-update verification contract is recorded in
 agent-native transaction instead runs configured operation checks before releasing Manteen's
 managed journal; a failure restores those bounded preimages and reports `rolled-back` without
 claiming reversal of dependency-manager, cache, generated-artifact, or arbitrary script effects.
+The current unreleased client also closes update's pre-result failure boundary: corrupt receipts
+are failed operations rather than successful no-ops, thrown selection/planning/apply/verification
+stages retain typed machine payloads and requested dry-run mode, and rollback recovery reports
+relative paths without assuming a Git worktree.
 
 **Portability.** The built tier passes on Linux Node 22.12, 24 and 26 plus macOS and Windows at the
 Node floor. Packed npm, pnpm, Yarn PnP and Bun consumers pass, including the native Windows

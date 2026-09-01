@@ -56,8 +56,31 @@ The update payload treats `kind` as the operation outcome rather than an interna
 `nothing-to-do`, `refused`, `previewed`, `cancelled`, `applied`, `rolled-back`,
 `rollback-failed`, or `failed`. A verification-rejected transaction whose managed preimages were
 restored is `rolled-back`, never `applied`; its narrower cause remains in `failure.kind` and the
-verification payload. `payload.dryRun` echoes the normalized invocation on every path, including
-resolution refusal and nothing-to-do, rather than depending on whether apply was reached.
+verification payload. After argv and project configuration are accepted, `payload.dryRun` echoes
+the normalized invocation on every update-operation exit, including receipt failure, resolution
+refusal, and nothing-to-do. Usage/configuration exit 2 remains the command-envelope boundary where
+`payload` may be null.
+
+The update lifecycle is one explicit matrix:
+
+| Boundary | Machine outcome | Mutation claim |
+| --- | --- | --- |
+| usage or project-config rejection | exit 2, `payload: null`, typed error | false |
+| no receipt | `nothing-to-do` | false |
+| readable but invalid receipt | `failed` / `receipt-unreadable` | false |
+| receipt or installed-file selection throw | `failed` / `selection-failed` | false |
+| returned blocking plan | `refused` | false |
+| unexpected planning throw | `failed` / `planning-failed` | false |
+| applicable dry run | `previewed` | false |
+| cancellation | `cancelled` | false |
+| install or other returned pre-write apply failure | `failed` plus the returned failure kind | read `mutated` for unowned effects |
+| restored write or verification rejection | `rolled-back` | false for Manteen-managed bytes |
+| failed rollback | `rollback-failed` with relative `failure.paths` | conservative; inspect paths |
+| unexpected apply or verification throw | `failed` / stage-specific failure | conservatively true |
+| completed apply | `applied` | inferred from the returned outcome |
+
+Rollback recovery never assumes Git. The failure carries root-relative paths and tells callers to
+restore them from version control or another trusted pre-run copy before retrying.
 
 ## 2. Registry output ownership
 

@@ -35,8 +35,8 @@ export interface JournalEntry {
 
 export interface UnwindResult {
   ok: boolean;
-  /** Destinations the unwind could not restore — the paths worth naming in a
-   *  `git checkout --` message. Empty when `ok`. */
+  /** Destinations the unwind could not restore — the paths worth naming in
+   *  recovery guidance. Empty when `ok`. */
   unrestored: string[];
   detail: string | null;
 }

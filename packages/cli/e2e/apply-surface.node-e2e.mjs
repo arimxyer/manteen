@@ -503,7 +503,8 @@ test("a failed ROLLBACK reports nothing as written either", { skip: !CAN_DENY_WR
 
   // What the run DOES owe the user: which path is now indeterminate, and the
   // remedy. That sentence has no `WriteResult` — only the failure channel.
-  assert.match(result.stderr, /git checkout --/, result.all);
+  assert.doesNotMatch(result.stderr, /git checkout --/, result.all);
+  assert.match(result.stderr, /version control or another trusted pre-run copy/, result.all);
   assert.match(result.stderr, /empty-state\.tsx/, result.all);
 });
 

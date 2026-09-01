@@ -185,7 +185,13 @@ function renderAddJson(
     failure:
       outcome?.failure === null || outcome?.failure === undefined
         ? null
-        : { kind: outcome.failure.kind, message: outcome.failure.message },
+        : {
+            kind: outcome.failure.kind,
+            message: outcome.failure.message,
+            ...(outcome.failure.paths === undefined
+              ? {}
+              : { paths: outcome.failure.paths.map((path) => display(path, planned.root)) }),
+          },
     verification: outcome?.verification ?? null,
     updateState:
       outcome === null
