@@ -139,17 +139,24 @@ test("built dev server retains last-good output and recovers in one foreground p
     assert.equal(secondItem.status, 200);
     assert.match(await secondItem.text(), /second/);
 
-    child.kill("SIGINT");
-    const stopped = await stream.wait(
-      (event) => event.event === "stopped" && event.sequence > recovered.sequence,
-      "stopped event",
-    );
-    assert.equal(stopped.payload.reason, "SIGINT");
-    const exitCode = await new Promise((accept) => child.once("exit", accept));
-    assert.equal(exitCode, 0);
+    const exited = new Promise((accept) => child.once("exit", accept));
+    if (process.platform === "win32") {
+      // Windows child.kill cannot synthesize the console Ctrl-C event that a foreground user
+      // produces; it terminates the process directly regardless of the requested signal.
+      assert.equal(child.kill(), true);
+      await exited;
+    } else {
+      child.kill("SIGINT");
+      const stopped = await stream.wait(
+        (event) => event.event === "stopped" && event.sequence > recovered.sequence,
+        "stopped event",
+      );
+      assert.equal(stopped.payload.reason, "SIGINT");
+      assert.equal(await exited, 0);
+    }
     assert.equal(stream.stderr.join(""), "");
   } finally {
-    if (child.exitCode === null) child.kill("SIGKILL");
+    if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
     rmSync(created.root, { recursive: true, force: true });
   }
 });
