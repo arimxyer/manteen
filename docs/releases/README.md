@@ -17,3 +17,4 @@ They are historical receipts rather than the current backlog or version source o
 | [`v0.9-release-handoff.md`](v0.9-release-handoff.md) | Schema-v2 commands, configuration surfaces, kit dev server, and author-profile v2. |
 | [`v0.9.1-release-handoff.md`](v0.9.1-release-handoff.md) | Post-0.9 reliability and agent-evaluation closure. |
 | [`v0.9.2-release-handoff.md`](v0.9.2-release-handoff.md) | Scaffold verification, exact no-op updates, and real-PTY dev shutdown closure. |
+| [`v0.9.3-release-handoff.md`](v0.9.3-release-handoff.md) | Portable Vite init and actionable unreadable-receipt recovery. |
