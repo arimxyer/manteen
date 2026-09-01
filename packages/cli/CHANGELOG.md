@@ -1,5 +1,13 @@
 # manteen
 
+## 0.9.3
+
+- Generate portable explicit Vite aliases during init instead of relying on a resolver member that
+  is unavailable in otherwise supported Vite 7 projects, while preserving authored resolver values
+  and refusing ambiguous alias configurations.
+- Distinguish invalid JSON, invalid receipt schemas, unsupported receipt versions, and receipt I/O
+  failures in offline status, with sanitized recovery guidance in text and schema-v2 machine output.
+
 ## 0.9.2
 
 - Short-circuit a fully current update before apply and project verification, returning

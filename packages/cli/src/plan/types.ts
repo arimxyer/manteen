@@ -71,6 +71,11 @@ export type DiagnosticCode =
   | "receipt-collision"
   | "receipt-stale"
   | "receipt-unreadable"
+  | "receipt-invalid-json"
+  | "receipt-schema-invalid"
+  | "receipt-unsupported-version"
+  | "receipt-future-version"
+  | "receipt-io-unreadable"
   | "receipt-drift"
   | "merge-base-unreadable"
   | "update-conflict"
@@ -548,7 +553,8 @@ export type ReceiptUnreadable =
   | "unparseable"
   | "invalid"
   | "unsupported-version"
-  | "future-version";
+  | "future-version"
+  | "io";
 
 /**
  * `sha256` is of the RAW BYTES on disk. Apply's preflight re-reads and compares

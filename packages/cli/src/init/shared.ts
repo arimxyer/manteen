@@ -1,5 +1,5 @@
 /** Pure W6 planners for files shared by every framework adapter. */
-import { join, relative, sep } from "node:path";
+import { dirname, join, relative, sep } from "node:path";
 
 import {
   type CallExpression,
@@ -8,6 +8,7 @@ import {
   Project,
   type PropertyAssignment,
   ScriptKind,
+  type SourceFile,
   SyntaxKind,
 } from "ts-morph";
 import {
@@ -514,6 +515,78 @@ function configObject(call: CallExpression): ObjectLiteralExpression | null {
   return first && Node.isObjectLiteralExpression(first) ? first : null;
 }
 
+function nodeUrlBinding(file: SourceFile, imported: string, local: string): boolean {
+  return file
+    .getImportDeclarations()
+    .some(
+      (declaration) =>
+        !declaration.isTypeOnly() &&
+        declaration.getModuleSpecifierValue() === "node:url" &&
+        declaration
+          .getNamedImports()
+          .some(
+            (named) =>
+              !named.isTypeOnly() &&
+              named.getName() === imported &&
+              (named.getAliasNode()?.getText() ?? named.getName()) === local,
+          ),
+    );
+}
+
+function existingNodeUrlBinding(file: SourceFile, imported: string): string | null {
+  for (const declaration of file.getImportDeclarations()) {
+    if (declaration.isTypeOnly() || declaration.getModuleSpecifierValue() !== "node:url") continue;
+    const binding = declaration
+      .getNamedImports()
+      .find((named) => !named.isTypeOnly() && named.getName() === imported);
+    if (binding) return binding.getAliasNode()?.getText() ?? binding.getName();
+  }
+  return null;
+}
+
+function portableViteAlias(
+  file: SourceFile,
+  assignment: PropertyAssignment,
+  target: string,
+): boolean {
+  const initializer = assignment.getInitializer();
+  if (!initializer || !Node.isCallExpression(initializer)) return false;
+  const fileUrlCallee = initializer.getExpression();
+  if (!Node.isIdentifier(fileUrlCallee)) return false;
+  const [urlArgument] = initializer.getArguments();
+  if (!urlArgument || !Node.isNewExpression(urlArgument)) return false;
+  const urlCallee = urlArgument.getExpression();
+  if (!Node.isIdentifier(urlCallee)) return false;
+  const [pathArgument, baseArgument] = urlArgument.getArguments();
+  if (
+    !pathArgument ||
+    (!Node.isStringLiteral(pathArgument) && !Node.isNoSubstitutionTemplateLiteral(pathArgument)) ||
+    pathArgument.getLiteralText() !== target ||
+    baseArgument?.getText() !== "import.meta.url"
+  ) {
+    return false;
+  }
+  return (
+    nodeUrlBinding(file, "fileURLToPath", fileUrlCallee.getText()) &&
+    nodeUrlBinding(file, "URL", urlCallee.getText())
+  );
+}
+
+function unusedIdentifier(file: SourceFile, preferred: string): string {
+  const used = new Set(
+    file.getDescendantsOfKind(SyntaxKind.Identifier).map((identifier) => identifier.getText()),
+  );
+  if (!used.has(preferred)) return preferred;
+  let suffix = 2;
+  while (used.has(`${preferred}${suffix}`)) suffix += 1;
+  return `${preferred}${suffix}`;
+}
+
+function viteAliasTarget(project: InitProjectSnapshot, destination: string): string {
+  const target = posixRelative(dirname(destination), project.layout.sourceRoot);
+  return target === "" ? "." : target.startsWith(".") ? target : `./${target}`;
+}
+
 function planViteConfig(project: InitProjectSnapshot): InitSharedResult {
   const present = VITE_CONFIG_PATHS.map((path) => join(project.layout.root, path)).filter((path) =>
     project.files.has(path),
@@ -572,17 +645,60 @@ function planViteConfig(project: InitProjectSnapshot): InitSharedResult {
     };
   }
 
-  const tsconfigPaths = property(resolveConfig, "tsconfigPaths");
-  if (tsconfigPaths === null) {
-    resolveConfig.addPropertyAssignment({ name: "tsconfigPaths", initializer: "true" });
-  } else if (tsconfigPaths.getInitializer()?.getKindName() !== "TrueKeyword") {
+  let aliasAssignment = property(resolveConfig, "alias");
+  if (aliasAssignment === null) {
+    resolveConfig.addPropertyAssignment({ name: "alias", initializer: "{}" });
+    aliasAssignment = property(resolveConfig, "alias");
+  }
+  const aliases = aliasAssignment ? objectInitializer(aliasAssignment) : null;
+  if (aliases === null) {
     return {
       files: [],
       instructions: [],
-      diagnostics: [
-        initConfigConflict(destination, "resolve.tsconfigPaths is explicitly not true"),
-      ],
+      diagnostics: [initConfigConflict(destination, "resolve.alias is not a static object")],
     };
+  }
+
+  const target = viteAliasTarget(project, destination);
+  const existingAlias = property(aliases, "@");
+  if (existingAlias !== null) {
+    if (!portableViteAlias(file, existingAlias, target)) {
+      return {
+        files: [],
+        instructions: [],
+        diagnostics: [
+          initConfigConflict(
+            destination,
+            `resolve.alias["@"] must resolve to ${JSON.stringify(target)} from import.meta.url`,
+          ),
+        ],
+      };
+    }
+  } else {
+    const existingFileUrlName = existingNodeUrlBinding(file, "fileURLToPath");
+    const existingUrlName = existingNodeUrlBinding(file, "URL");
+    const fileUrlName = existingFileUrlName ?? unusedIdentifier(file, "fileURLToPath");
+    const urlName = existingUrlName ?? unusedIdentifier(file, "URL");
+    const namedImports = [
+      ...(existingFileUrlName === null
+        ? [
+            {
+              name: "fileURLToPath",
+              ...(fileUrlName === "fileURLToPath" ? {} : { alias: fileUrlName }),
+            },
+          ]
+        : []),
+      ...(existingUrlName === null
+        ? [{ name: "URL", ...(urlName === "URL" ? {} : { alias: urlName }) }]
+        : []),
+    ];
+    if (namedImports.length > 0) {
+      file.addImportDeclaration({ moduleSpecifier: "node:url", namedImports });
+    }
+    aliases.addPropertyAssignment({
+      name: '"@"',
+      initializer: `${fileUrlName}(new ${urlName}(${JSON.stringify(target)}, import.meta.url))`,
+    });
   }
 
   const content = file.getFullText();

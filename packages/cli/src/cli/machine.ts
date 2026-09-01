@@ -381,7 +381,14 @@ export class MachineSession {
         ? commandError(stderr, exitCode)
         : legacyErrors(payload, diagnostics, exitCode);
 
-    const actions = ok ? reviewedApplyActions(payload, this.argv, this.root) : [];
+    const suppliedActions = Array.isArray(legacy?.actions)
+      ? legacy.actions
+          .map(remediationAction)
+          .filter((action): action is RemediationAction => action !== null)
+      : [];
+    const actions = ok
+      ? [...suppliedActions, ...reviewedApplyActions(payload, this.argv, this.root)]
+      : [];
     const envelope: CommandEnvelope = {
       schemaVersion: 2,
       command: typeof legacy?.command === "string" ? legacy.command : this.command,

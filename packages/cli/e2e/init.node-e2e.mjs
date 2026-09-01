@@ -337,6 +337,12 @@ for (const [name, make] of [
     assert.ok(
       readFileSync(join(fixture.root, fixture.preserved[0]), "utf8").includes(fixture.preserved[1]),
     );
+    if (name === "Vite") {
+      const viteConfig = readFileSync(join(fixture.root, "vite.config.ts"), "utf8");
+      assert.match(viteConfig, /from ["']node:url["']/);
+      assert.match(viteConfig, /fileURLToPath\(new URL\(["']\.\/src["'], import\.meta\.url\)\)/);
+      assert.doesNotMatch(viteConfig, /tsconfigPaths/);
+    }
 
     const secondResult = run(fixture.root, ["--dry-run", "--yes", "--json"]);
     assert.equal(secondResult.status, 0, secondResult.all);

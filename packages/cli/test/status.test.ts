@@ -59,4 +59,88 @@ describe("offline status", () => {
     expect(status.verification).toMatchObject({ ok: true, value: { configured: true } });
     expect(status.skill).toMatchObject({ ok: false, value: { installed: true, owned: false } });
   });
+
+  test.each([
+    [
+      "invalid JSON",
+      '{"private":"INVALID_JSON_SECRET"',
+      "INVALID_JSON_SECRET",
+      "receipt-invalid-json",
+      "unparseable",
+    ],
+    [
+      "wrong top-level type",
+      '["WRONG_TYPE_SECRET"]\n',
+      "WRONG_TYPE_SECRET",
+      "receipt-schema-invalid",
+      "invalid",
+    ],
+    [
+      "unsupported version",
+      '{"lockfileVersion":2,"private":"UNSUPPORTED_VERSION_SECRET"}\n',
+      "UNSUPPORTED_VERSION_SECRET",
+      "receipt-unsupported-version",
+      "unsupported-version",
+    ],
+    [
+      "future version",
+      '{"lockfileVersion":4,"private":"FUTURE_VERSION_SECRET"}\n',
+      "FUTURE_VERSION_SECRET",
+      "receipt-future-version",
+      "future-version",
+    ],
+  ] as const)(
+    "distinguishes %s receipt recovery without exposing source bytes",
+    async (_, source, secret, code, reason) => {
+      const root = project();
+      writeFileSync(join(root, "manteen.lock.json"), source);
+
+      const status = await buildStatus(root);
+
+      expect(status.healthy).toBe(false);
+      expect(status.receipt).toMatchObject({
+        ok: false,
+        value: { state: "unreadable", reason, itemCount: 0 },
+      });
+      expect(status.diagnostics).toEqual([
+        expect.objectContaining({
+          code,
+          severity: "warn",
+          forceable: false,
+          actions: [
+            {
+              kind: "manual",
+              instruction: expect.stringContaining("trusted version control or backup"),
+            },
+          ],
+        }),
+      ]);
+      expect(status.actions).toEqual(status.diagnostics[0]?.actions ?? []);
+      expect(JSON.stringify(status)).not.toContain(secret);
+    },
+  );
+
+  test("distinguishes a receipt I/O failure from invalid receipt bytes", async () => {
+    const root = project();
+    mkdirSync(join(root, "manteen.lock.json"));
+
+    const status = await buildStatus(root);
+
+    expect(status.receipt).toMatchObject({
+      ok: false,
+      value: { state: "unreadable", reason: "io", itemCount: 0 },
+    });
+    expect(status.diagnostics).toEqual([
+      expect.objectContaining({
+        code: "receipt-io-unreadable",
+        severity: "warn",
+        actions: [
+          {
+            kind: "manual",
+            instruction: expect.stringContaining("trusted version control or backup"),
+          },
+        ],
+      }),
+    ]);
+  });
 });

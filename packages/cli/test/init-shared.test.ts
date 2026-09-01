@@ -67,7 +67,7 @@ describe("W6 shared init planning", () => {
     expect(merged.text).toContain('import { Table, createTheme } from "@mantine/core";');
   });
 
-  test("creates the compatible config, theme, paths, Vite resolver and PostCSS pipeline", () => {
+  test("creates the compatible config, theme, paths, portable Vite alias and PostCSS pipeline", () => {
     const result = planShared(snapshot(), frameworkSetFor("vite"));
 
     expect(result.diagnostics).toEqual([]);
@@ -105,7 +105,9 @@ describe("W6 shared init planning", () => {
     expect(tsconfig).toContain('"@/*": ["./src/*"]');
 
     const vite = result.files.find((file) => file.kind === "framework-config")?.content ?? "";
-    expect(vite).toContain("tsconfigPaths: true");
+    expect(vite).toContain('from "node:url"');
+    expect(vite).toContain('fileURLToPath(new URL("./src", import.meta.url))');
+    expect(vite).not.toContain("tsconfigPaths");
   });
 
   test("a second shared pass has no mutation entries", () => {
@@ -310,11 +312,11 @@ export { theme };
     expect(result.files.find((file) => file.kind === "tsconfig")?.content).toContain('"~/*"');
   });
 
-  test("explicit path and Vite resolver conflicts are named instead of overwritten", () => {
+  test("explicit path and Vite alias conflicts are named instead of overwritten", () => {
     const project = snapshot({
       [join(ROOT, "tsconfig.app.json")]: `{"compilerOptions":{"paths":{"@/*":["./other/*"]}}}`,
       [join(ROOT, "vite.config.ts")]:
-        'import { defineConfig } from "vite"; export default defineConfig({ resolve: { tsconfigPaths: false } });\n',
+        'import { defineConfig } from "vite"; export default defineConfig({ resolve: { alias: { "@": "/other" } } });\n',
     });
 
     const result = planShared(project, frameworkSetFor("vite"));
@@ -324,6 +326,42 @@ export { theme };
     ]);
     expect(result.files.some((file) => file.kind === "tsconfig")).toBe(false);
     expect(result.files.some((file) => file.kind === "framework-config")).toBe(false);
+  });
+
+  test("preserves an authored Vite resolver flag while adding the portable alias", () => {
+    const project = snapshot({
+      [join(ROOT, "vite.config.ts")]:
+        'import { defineConfig } from "vite"; export default defineConfig({ resolve: { tsconfigPaths: false } });\n',
+    });
+
+    const result = planShared(project, frameworkSetFor("vite"));
+    const vite = result.files.find((file) => file.kind === "framework-config")?.content ?? "";
+
+    expect(result.diagnostics).toEqual([]);
+    expect(vite).toContain("tsconfigPaths: false");
+    expect(vite).toContain('fileURLToPath(new URL("./src", import.meta.url))');
+  });
+
+  test("never reuses type-only or colliding node:url bindings for the runtime alias", () => {
+    const project = snapshot({
+      [join(ROOT, "vite.config.ts")]: `import type { URL } from "node:url";
+import { defineConfig } from "vite";
+const fileURLToPath = "authored";
+export default defineConfig({ plugins: [] });
+`,
+    });
+
+    const first = planShared(project, frameworkSetFor("vite"));
+    const vite = first.files.find((file) => file.kind === "framework-config")?.content ?? "";
+
+    expect(first.diagnostics).toEqual([]);
+    expect(vite).toContain("fileURLToPath as fileURLToPath2");
+    expect(vite).toContain("URL as URL2");
+    expect(vite).toContain('fileURLToPath2(new URL2("./src", import.meta.url))');
+
+    const second = planShared(applyProposals(project, first.files), frameworkSetFor("vite"));
+    expect(second.diagnostics).toEqual([]);
+    expect(second.files).toEqual([]);
   });
 
   test("manual mode records required framework work separately from mutations", () => {
