@@ -1,6 +1,6 @@
 # manteen
 
-## Unreleased
+## 0.9.0
 
 - Replace the machine envelope with schema version 2, including an always-present top-level
   `actions` array, exact reviewed rerun argv for applicable dry runs, and exact add dependency

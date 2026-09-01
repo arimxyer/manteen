@@ -1,6 +1,6 @@
 # manteen-kit
 
-## Unreleased
+## 0.3.0
 
 - Replace the command envelope with schema version 2 and emit an exact reviewed scaffold apply argv
   from successful dry runs.

@@ -11,9 +11,9 @@ separate public evidence.
 
 | Area | Current state | Authority or evidence |
 | --- | --- | --- |
-| Packages | This tree holds `manteen-kit@0.2.1` and `manteen@0.8.0`; their manifests are authoritative. | `packages/*/package.json` |
-| Unreleased source | The current source implements schema-v2 command envelopes, reviewed rerun actions, registry/verification config commands, the foreground kit dev server, and author-profile v2. Local repository verification is green; package manifests remain unchanged. | [`agent-native-build-plan.md`](./contracts/agent-native-build-plan.md), package changelogs |
-| Public package proof | Both versions above have accepted public release receipts. | [`agent-native-release-handoff.md`](./releases/agent-native-release-handoff.md), [`v0.8-release-handoff.md`](./releases/v0.8-release-handoff.md) |
+| Packages | This tree holds release candidates `manteen-kit@0.3.0` and `manteen@0.9.0`; their manifests are authoritative. | `packages/*/package.json` |
+| Release candidate | The current source implements schema-v2 command envelopes, reviewed rerun actions, registry/verification config commands, the foreground kit dev server, and author-profile v2. Local repository verification is green; tags and public package receipts remain pending. | [`agent-native-build-plan.md`](./contracts/agent-native-build-plan.md), package changelogs |
+| Public package proof | Public `latest` remains `manteen-kit@0.2.1` and `manteen@0.8.0` until the release candidates publish and receive independent receipts. | [`agent-native-release-handoff.md`](./releases/agent-native-release-handoff.md), [`v0.8-release-handoff.md`](./releases/v0.8-release-handoff.md) |
 | Registry | The source catalog contains 22 items. Generated `public/r/` is local build output and must be rebuilt before use; no repository workflow currently publishes it. | [`roadmap.md`](roadmap.md), `manteen.registry.json` |
 | Documentation | `apps/manteen` is the sole Next.js/Fumadocs application. CI checks and builds it; no workflow deploys it. | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), [`apps/manteen/README.md`](../apps/manteen/README.md) |
 | Retired site | The Astro/Starlight application and its Pages workflow were removed on 2026-08-31 without migrating their implementation or content. Earlier deployment receipts remain historical evidence only. | [`docs-site-handoff.md`](./handoffs/docs-site-handoff.md) |

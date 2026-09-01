@@ -33,13 +33,13 @@ catalog-content milestone itself remains commit `8853a720352c8842ce6957a494f919e
 historical: the Astro application and Pages workflow were removed on 2026-08-31, and the repository
 currently has no site or registry deployment path.
 
-The current unreleased source moves the client and kit command envelopes directly to schema v2,
+The current `manteen-kit@0.3.0` and `manteen@0.9.0` release candidate moves the client and kit command envelopes directly to schema v2,
 adds exact reviewed rerun actions and dependency-command previews, introduces receipt-aware
 registry and script-discovered verification configuration commands, adds the foreground
 `manteen-kit dev` last-good server, and replaces author-profile v1 with v2 ownership for Styles API,
 props, and usage evidence. The repository's unit, typecheck/site-check, lint, guard, registry-build,
 package-build, built-Node client/kit e2e, and Fumadocs production-build tiers pass locally. Package
-versions, tags, npm releases, hosted CI, public registry bytes, and site deployment are unchanged.
+versions are prepared; tags, npm releases, hosted CI, public registry bytes, and site deployment remain pending or unchanged.
 
 The agent-native release is public at `manteen-kit@0.2.1` and `manteen@0.7.0`. It adds
 transactional generated registry ownership, one stable JSON command envelope, complete display
@@ -86,7 +86,7 @@ complete. The findings and hosted closure receipt are recorded in
 [`w7-hardening-handoff.md`](./handoffs/w7-hardening-handoff.md).
 
 **Commands.** `init`, `add`, `list`, `info`, `diff`, `update` and the narrow `remove` mode ship. The
-unreleased source also has reviewed `registry list/add/remove` and `verification show/set/clear`
+`0.9.0` release candidate also has reviewed `registry list/add/remove` and `verification show/set/clear`
 configuration surfaces; they are not yet public package claims. In
 public `0.3.0` and later, `update` uses Wu's receipt-v3 three-way model. In public `0.4.0` and later,
 `remove --upstream-removed` adds explicit exact-selected upstream-file pruning; its contract and
