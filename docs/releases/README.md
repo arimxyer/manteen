@@ -15,3 +15,4 @@ They are historical receipts rather than the current backlog or version source o
 | [`agent-native-release-handoff.md`](agent-native-release-handoff.md) | Registry ownership plus the agent-native kit/client release train. |
 | [`v0.8-release-handoff.md`](v0.8-release-handoff.md) | Ranked discovery and agent-probe follow-up release. |
 | [`v0.9-release-handoff.md`](v0.9-release-handoff.md) | Schema-v2 commands, configuration surfaces, kit dev server, and author-profile v2. |
+| [`v0.9.1-release-handoff.md`](v0.9.1-release-handoff.md) | Post-0.9 reliability and agent-evaluation closure. |

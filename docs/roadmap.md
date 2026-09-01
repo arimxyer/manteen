@@ -20,7 +20,7 @@ historical receipts, start with [`project-context.md`](project-context.md).
 6. **Maintainable** — a linter, dependency automation, and a license file that matches what
    `package.json` claims.
 
-Today: all six criteria are public through `manteen-kit@0.3.0` and `manteen@0.9.0`, including the
+Today: all six criteria are public through `manteen-kit@0.3.1` and `manteen@0.9.1`, including the
 agent-native authoring, machine-command, SDK, verification, and guidance surfaces. W6 `init` is
 complete through its built-Node acceptance tier, W7 closed with a green hosted runtime, OS and
 package-manager matrix, and W8 established provenance-bearing releases. The final accepted
@@ -43,7 +43,7 @@ tags, hosted CI, npm provenance, and a fresh public consumer are accepted in the
 [`0.9 release handoff`](./releases/v0.9-release-handoff.md). Public registry bytes and site
 deployment remain unchanged; the repository has no workflow that publishes either artifact.
 
-The `manteen-kit@0.3.1` and `manteen@0.9.1` release candidate adds receipt-first offline installed
+The public `manteen-kit@0.3.1` and `manteen@0.9.1` release adds receipt-first offline installed
 inventory, co-located scaffold targets, machine-explicit verification scope, digest-gated complete
 scaffold registration, ephemeral dev-server replacement previews, and author-owned build/dev
 verification hooks. A second clean-room dashboard run then made update failure outcomes truthful,
@@ -51,8 +51,9 @@ preserved dry-run identity through resolution refusals, aligned the Paper-backed
 with Paper props, and added direct kit package-version output. The next evaluation closed five more
 agent-operability gaps: dependency-safe machine stdout, source-free corrupt-receipt errors,
 wrapper-safe dev shutdown events, fail-closed alias-like targets, and truthful no-op update outcomes.
-Package versions are prepared; hosted CI, npm, tags, public registry bytes, and deployment remain
-pending or unchanged.
+Its signed tags, hosted matrix, npm provenance, and fresh public consumer are accepted in the
+[`0.9.1 release handoff`](./releases/v0.9.1-release-handoff.md). Public registry bytes and deployment
+remain unchanged.
 
 The agent-native release is public at `manteen-kit@0.2.1` and `manteen@0.7.0`. It adds
 transactional generated registry ownership, one stable JSON command envelope, complete display
@@ -113,7 +114,7 @@ historical public post-update verification contract is recorded in
 agent-native transaction instead runs configured operation checks before releasing Manteen's
 managed journal; a failure restores those bounded preimages and reports `rolled-back` without
 claiming reversal of dependency-manager, cache, generated-artifact, or arbitrary script effects.
-The current unreleased client also closes update's pre-result failure boundary: corrupt receipts
+The public `0.9.1` client also closes update's pre-result failure boundary: corrupt receipts
 are failed operations rather than successful no-ops, thrown selection/planning/apply/verification
 stages retain typed machine payloads and requested dry-run mode, and rollback recovery reports
 relative paths without assuming a Git worktree. Returned verification rejections retain the
@@ -132,9 +133,9 @@ was a working bypass that let TypeScript write into a JS project at exit 0). The
 in `plan()`, the bypass routes into the same refusal rather than around it, and both are covered by
 unit tests.
 
-**Distribution.** `manteen-kit@0.3.0` and `manteen@0.9.0` are public on npm as `latest`. Both lines
+**Distribution.** `manteen-kit@0.3.1` and `manteen@0.9.1` are public on npm as `latest`. Both lines
 were published from tagged GitHub Actions OIDC workflows and expose npm publish plus SLSA
-provenance attestations. The current client resolves the public `manteen-kit@^0.3.0`; the earlier
+provenance attestations. The current client resolves the public `manteen-kit@^0.3.1`; the earlier
 client-only `0.3.0`, `0.4.0` and `0.5.0` releases correctly kept
 the prior kit range and created no kit tags. The
 initial trusted-release receipts are in
@@ -144,8 +145,9 @@ the [`0.2 release handoff`](./releases/v0.2-release-handoff.md), and the complet
 [`0.4 release handoff`](./releases/v0.4-release-handoff.md),
 [`0.5 release handoff`](./releases/v0.5-release-handoff.md), and the
 [`agent-native release handoff`](./releases/agent-native-release-handoff.md). The public client `0.8.0`
-follow-on is recorded in the [`0.8 release handoff`](./releases/v0.8-release-handoff.md); the current
-kit/client train is recorded in the [`0.9 release handoff`](./releases/v0.9-release-handoff.md).
+follow-on is recorded in the [`0.8 release handoff`](./releases/v0.8-release-handoff.md); the schema-v2
+train is recorded in the [`0.9 release handoff`](./releases/v0.9-release-handoff.md), and the current
+reliability release is recorded in the [`0.9.1 release handoff`](./releases/v0.9.1-release-handoff.md).
 
 **Project hygiene.** The MIT license, Biome, Dependabot, editorconfig and rename are done.
 `SECURITY.md` and contributor ceremony remain deliberately deferred until the repository has
@@ -210,7 +212,7 @@ is a judgment call, which is exactly why they are separate runs.
 | Wv | [`Update verification`](./handoffs/update-verification-handoff.md) | complete and public in `0.3.0`: post-apply orchestration, fail-fast bounded project scripts, drift detection, built-Node and fresh-consumer acceptance | Lets a consumer define what “the merged component still works here” means without placing arbitrary scripts inside Manteen's rollback journal. |
 | Wp | [`Upstream removal`](./handoffs/upstream-removal-handoff.md) | complete and public in client `0.4.0`: explicit selection, adapted-file opt-in, one journal, built/hosted/public acceptance | Adds explicit, exact-selected pruning for ordinary files proven absent upstream without turning update into implicit deletion or inferring renames. |
 | Wa | [`AST-assisted fallback`](./contracts/ast-merge-integration-decision.md) | complete and public in client `0.5.0`: exact source splicing, built/hosted/public accepted-and-refused acceptance | Reduces a narrow class of adjacent TypeScript line conflicts without allowing an AST printer or ambiguous structural mapping to emit bytes. |
-| Wn | [`Agent-native interface`](./contracts/agent-native-build-plan.md) | complete and public: kit `0.3.0`, client `0.9.0`, hosted portability and npm consumers accepted; prior Pages evidence remains historical | Makes discovery, planning, refusal, mutation, verification, and guidance safe to drive without an interactive human loop. |
+| Wn | [`Agent-native interface`](./contracts/agent-native-build-plan.md) | complete and public: kit `0.3.1`, client `0.9.1`, hosted portability and npm consumers accepted; prior Pages evidence remains historical | Makes discovery, planning, refusal, mutation, verification, and guidance safe to drive without an interactive human loop. |
 
 **Not workflow-shaped, do directly:** the hygiene set (LICENSE, linter, SECURITY, CONTRIBUTING,
 dependabot, README rename). Single-file, single-concern, no discovery — a workflow would be
@@ -304,7 +306,7 @@ Wu update merging ........... complete; public in client 0.3.0
 Wv update verification ...... complete; public in client 0.3.0
 Wp upstream removal ......... complete; public in client 0.4.0
 Wa AST-assisted fallback .... complete; public in client 0.5.0
-Wn agent-native interface ... complete; public in kit 0.3.0 and client 0.9.0; prior Pages proof is historical
+Wn agent-native interface ... complete; public in kit 0.3.1 and client 0.9.1; prior Pages proof is historical
 hygiene ..................... done, direct
 ```
 
