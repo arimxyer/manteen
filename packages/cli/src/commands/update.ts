@@ -200,6 +200,8 @@ export type UpdateOptions = Omit<PlanOptions, "overwrite" | "operation" | "takeU
   takeUpstream?: boolean;
   /** Refuse before apply unless the fresh read-only preview has this digest. */
   expectPlan?: string;
+  /** Keep dependency-manager transcripts out of a machine caller's stdout. */
+  dependencyOutput?: ApplyOptions["dependencyOutput"];
 };
 
 /**
@@ -429,6 +431,7 @@ export async function update(
         interactive: false,
         overwrite: true,
         dryRun: options.dryRun,
+        dependencyOutput: options.dependencyOutput,
       },
       ports.applyPorts,
     );
@@ -791,12 +794,29 @@ export type UpdatePayloadKind =
   | "rollback-failed"
   | "failed";
 
+function isObservedNoop(result: Extract<UpdateResult, { kind: "attempted" }>): boolean {
+  const { outcome, verification } = result;
+  const verificationDidNotRun =
+    verification.status === "not-configured" || verification.status === "skipped";
+  return (
+    result.selected.length === 0 &&
+    verificationDidNotRun &&
+    outcome.files.every((file) => file.result !== "written") &&
+    !outcome.dependencies.installed &&
+    outcome.dependencies.command === null &&
+    outcome.theme?.written !== true &&
+    outcome.styles?.written !== true &&
+    !outcome.receipt.written &&
+    !outcome.updateState.changed
+  );
+}
+
 /** Project the internal stage union into the truthful command outcome. */
 export function updatePayloadKind(result: UpdateResult): UpdatePayloadKind {
   if (result.kind !== "attempted") return result.kind;
   if (result.outcome.dryRun) return "previewed";
   if (result.outcome.cancelled) return "cancelled";
-  if (result.outcome.ok) return "applied";
+  if (result.outcome.ok) return isObservedNoop(result) ? "nothing-to-do" : "applied";
   if (
     result.outcome.failure?.kind === "write-failed" ||
     result.outcome.failure?.kind === "verification-failed"
@@ -980,6 +1000,7 @@ export async function runUpdate(
     takeUpstream: flags.takeUpstream,
     expectPlan: flags.expectPlan,
     verify: flags.verify,
+    ...(flags.json ? { dependencyOutput: "capture" as const } : {}),
   };
 
   // `update()` preserves lifecycle throws as typed command errors (see the

@@ -54,7 +54,8 @@ profile, both normal and `--check` builds validate it before any output mutation
 build failure, and stopped events with `--jsonl`. HTTP requests are served from the last validated
 in-memory snapshot; a broken rebuild never replaces it. The success event includes an exact
 dry-run `manteen registry add` argv for connecting a consumer. Stop it with `SIGINT` or `SIGTERM`.
-This is a local server, not publication or deployment evidence.
+The stopped JSONL event is emitted before the stream closes, including through a normal `npm exec`
+wrapper. This is a local server, not publication or deployment evidence.
 
 ### Safe component scaffolds
 
@@ -141,6 +142,10 @@ reconnect preview and its digest-bound action instead of hand-editing config and
 
 Unknown fields are rejected rather than dropped, so the authoring format can't quietly drift
 toward the wire format.
+
+An explicit file `target` may use `@components/`, `@ui/`, `@hooks/`, or `@lib/`, `~/` for the
+project root, or an ordinary relative path. Other alias-like `@` spellings such as `@/components/`
+are rejected during author validation rather than compiled into a surprising literal `@/` tree.
 
 `docs` is copied into the installable item document. Use it for human-facing usage, source and
 attribution notes; it is not a substitute for shipping any license notice required with copied

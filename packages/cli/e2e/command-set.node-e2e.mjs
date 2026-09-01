@@ -26,6 +26,7 @@
 import { strict as assert } from "node:assert";
 import { spawnSync } from "node:child_process";
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -35,7 +36,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { delimiter, join, resolve } from "node:path";
 import { after, test } from "node:test";
 import { pathToFileURL } from "node:url";
 
@@ -86,6 +87,55 @@ function publish(fixtureDir, outName) {
 }
 
 const BASE = publish(BASE_FIXTURE, "base");
+
+function dependencyRegistry() {
+  const root = join(WORK, "dependency-registry-source");
+  mkdirSync(join(root, "src"), { recursive: true });
+  writeFileSync(
+    join(root, "src", "dependency-proof.tsx"),
+    "export const DependencyProof = null;\n",
+  );
+  writeFileSync(
+    join(root, "manteen.registry.json"),
+    `${JSON.stringify(
+      {
+        name: "Dependency transcript proof",
+        namespace: "@dependency",
+        items: [
+          {
+            name: "proof",
+            kind: "component",
+            npm: ["manteen-e2e-dependency@^1.0.0"],
+            files: [{ path: "src/dependency-proof.tsx", as: "component" }],
+          },
+        ],
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  return publish(root, "dependency-registry");
+}
+
+const DEPENDENCY = dependencyRegistry();
+
+function fakePackageManager(root) {
+  const bin = join(root, "fake-package-manager");
+  mkdirSync(bin, { recursive: true });
+  const runner = join(bin, "runner.mjs");
+  writeFileSync(
+    runner,
+    'process.stdout.write("FAKE_DEPENDENCY_INSTALL_STDOUT\\n");\nprocess.stderr.write("FAKE_DEPENDENCY_INSTALL_STDERR\\n");\n',
+  );
+  const executable = join(bin, "aube");
+  writeFileSync(
+    executable,
+    `#!/usr/bin/env node\nawait import(${JSON.stringify(pathToFileURL(runner).href)});\n`,
+  );
+  if (process.platform !== "win32") chmodSync(executable, 0o755);
+  writeFileSync(join(bin, "aube.cmd"), `@echo off\r\n"${process.execPath}" "${runner}" %*\r\n`);
+  return bin;
+}
 
 const TSCONFIG = {
   compilerOptions: {
@@ -339,6 +389,22 @@ test("add JSON is non-interactive, truthful about mutation, and gives typed reme
   assert.ok(collision.actions.every((action) => action.argv[0] === "manteen"));
 });
 
+test("dependency-installing add reserves stdout for one JSON document", () => {
+  const project = makeProject({ registries: { "@dependency": DEPENDENCY } });
+  const bin = fakePackageManager(project);
+  const result = run(project, ["add", "@dependency/proof", "--pm", "aube", "--json"], {
+    PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
+  });
+
+  assert.equal(result.status, 0, result.all);
+  assert.equal(result.stdout.includes("FAKE_DEPENDENCY_INSTALL_STDOUT"), false, result.stdout);
+  assert.equal(result.stderr.includes("FAKE_DEPENDENCY_INSTALL_STDERR"), false, result.stderr);
+  const document = json(result);
+  assert.equal(document.ok, true);
+  assert.equal(document.payload.dependencies.installed, true);
+  assert.match(document.payload.dependencies.command, /^aube /);
+});
+
 test("JSON usage and configuration failures are one complete stdout document", () => {
   const project = mkdtempSync(join(tmpdir(), "manteen-json-failure-"));
 
@@ -586,6 +652,53 @@ test("registered scaffold topology installs relative component and style imports
   assert.match(readFileSync(component, "utf8"), /from "\.\/status-card\.module\.css"/);
 });
 
+test("client refuses a precompiled unknown alias target without creating a literal @ tree", () => {
+  const outDir = join(WORK, "hostile-target-registry");
+  mkdirSync(outDir, { recursive: true });
+  writeFileSync(
+    join(outDir, "proof.json"),
+    `${JSON.stringify({
+      $schema: "https://ui.shadcn.com/schema/registry-item.json",
+      name: "proof",
+      type: "registry:ui",
+      files: [
+        {
+          path: "proof.tsx",
+          type: "registry:ui",
+          target: "@/components/proof.tsx",
+          content: "export const Proof = null;\n",
+        },
+      ],
+    })}\n`,
+  );
+  writeFileSync(
+    join(outDir, "registry.json"),
+    `${JSON.stringify({
+      $schema: "https://ui.shadcn.com/schema/registry.json",
+      name: "Hostile target",
+      items: [{ name: "proof", type: "registry:ui" }],
+    })}\n`,
+  );
+  const base = pathToFileURL(outDir).href;
+  const project = makeProject({
+    registries: { "@hostile": { url: `${base}/{name}.json`, index: `${base}/registry.json` } },
+  });
+
+  const result = run(project, ["add", "@hostile/proof", "--dry-run", "--json"]);
+  assert.equal(result.status, 1, result.all);
+  const document = json(result);
+  assert.equal(document.mutated, false);
+  assert.ok(
+    document.diagnostics.some(
+      (diagnostic) =>
+        diagnostic.code === "target-refused-type" &&
+        diagnostic.message.includes("unknown target alias"),
+    ),
+    result.stdout,
+  );
+  assert.equal(existsSync(join(project, "@")), false);
+});
+
 test("list refuses an unregistered namespace with the code add uses, at exit 1", () => {
   const project = makeProject();
   const result = run(project, ["list", "@nope"]);
@@ -705,6 +818,13 @@ test("a second update is a no-op that says so, and writes nothing", () => {
   // that holds our bytes with no ownership record.
   assert.match(result.stderr, /skip {2}up-to-date {2}@base\/empty-state/, result.stderr);
   assert.doesNotMatch(result.stderr, /state-versioning-required/, result.stderr);
+
+  const machine = run(project, ["update", "--json"]);
+  assert.equal(machine.status, 0, machine.all);
+  const document = json(machine);
+  assert.equal(document.payload.kind, "nothing-to-do");
+  assert.deepEqual(document.payload.selected, []);
+  assert.equal(document.mutated, false);
 });
 
 test("a non-interactive local-only update and dry-run both preserve the edit", () => {
@@ -1181,6 +1301,26 @@ test("update refuses a corrupt receipt instead of reporting a successful no-op",
     assert.equal(envelope.payload.skipped.length, 0);
     assert.deepEqual(readFileSync(target), targetBefore, "receipt refusal must write nothing");
   }
+});
+
+test("corrupt receipt machine output never echoes nearby receipt bytes", () => {
+  const project = makeProject();
+  assert.equal(run(project, ["add", ITEM]).status, 0);
+  const sentinel = "CANARY_NOT_SECRET_7f50a3f8";
+  writeFileSync(
+    join(project, "manteen.lock.json"),
+    `{"lockfileVersion":3,"items":[${sentinel}]}\n`,
+  );
+
+  const result = run(project, ["update", "--json"]);
+  assert.equal(result.status, 1, result.all);
+  assert.equal(result.stderr, "", result.stderr);
+  assert.equal(result.stdout.includes(sentinel), false, "receipt source bytes reached stdout");
+  const envelope = json(result);
+  assert.equal(envelope.mutated, false);
+  assert.equal(envelope.payload.failure.kind, "receipt-unreadable");
+  assert.match(envelope.payload.failure.message, /invalid JSON syntax/);
+  assert.match(envelope.payload.failure.message, /Repair it by hand/);
 });
 
 test("update projects a receipt I/O throw as a command-native failed payload", () => {

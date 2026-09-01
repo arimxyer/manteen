@@ -132,10 +132,12 @@ export async function installDeps(
   if (development.length > 0) batches.push({ names: development, dev: true });
 
   // Interactive: the spinner owns the terminal, so the package manager's output
-  // is piped (`silent: true`) and surfaces only if it fails. Non-interactive:
-  // no spinner and nothing captured, so a CI log shows the install as it
-  // happens — which is the only record anyone will have of it.
-  const silent = options.interactive;
+  // is piped (`silent: true`) and surfaces only if it fails. Machine output has
+  // the same requirement for a different reason: stdout is reserved for one
+  // JSON document, and an inherited package-manager transcript corrupts it.
+  // Ordinary non-interactive text mode still inherits the transcript so a CI
+  // log retains the only live record of the install.
+  const silent = options.interactive || options.dependencyOutput === "capture";
   const progress = options.interactive ? spinner() : null;
 
   // The headline counts the WHOLE set, so it never appears to shrink when the

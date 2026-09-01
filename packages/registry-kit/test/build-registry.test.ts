@@ -328,6 +328,33 @@ describe("validation", () => {
     expect(errors).not.toBeNull();
   });
 
+  test("rejects unknown alias-like targets before wire output", () => {
+    const base = {
+      name: "target proof",
+      namespace: "@proof",
+      items: [
+        {
+          name: "x",
+          kind: "component",
+          files: [{ path: "a.tsx", as: "component", target: "@/components/x.tsx" }],
+        },
+      ],
+    };
+
+    expect(validateCatalog(base)).not.toBeNull();
+    expect(
+      validateCatalog({
+        ...base,
+        items: [
+          {
+            ...base.items[0],
+            files: [{ ...base.items[0]!.files[0], target: "@components/x.tsx" }],
+          },
+        ],
+      }),
+    ).toBeNull();
+  });
+
   test("rejects a prop entry missing its type or carrying an unknown field", () => {
     const catalog = (props: unknown) => ({
       name: "bad",

@@ -401,6 +401,9 @@ export type WriteResult = "written" | "identical" | "skipped";
 export interface ApplyOptions {
   interactive: boolean;
   overwrite?: boolean | "no";
+  /** Whether dependency-manager output may inherit the caller's terminal.
+   * Machine callers capture child output so stdout remains one JSON document. */
+  dependencyOutput?: "inherit" | "capture";
   /** D19: run plan() plus apply's read-only phases 0 and 1, then stop before
    *  phase 2. Never reaches the receipt write. */
   dryRun?: boolean;

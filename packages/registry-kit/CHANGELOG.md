@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Reject unknown alias-like file targets during author validation, and make `dev --jsonl` emit its
+  final stopped event reliably when Ctrl-C arrives through `npm exec`.
 - Expose Paper props from the Paper-backed Styles API scaffold and add `-V, --version` package
   identity output, including a structured JSON form.
 - Preserve scaffold component/style directory topology and add digest-gated `scaffold --register`

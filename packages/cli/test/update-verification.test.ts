@@ -181,6 +181,7 @@ function verificationFixture(scriptNames: string[]): VerificationFixture {
     configPath,
     `${JSON.stringify({ ...BASE_CONFIG, verification: { update: scriptNames } })}\n`,
   );
+
   write(
     join(root, "tsconfig.json"),
     `${JSON.stringify({
@@ -518,7 +519,54 @@ function cancelledApply(): ApplyOutcome {
   };
 }
 
+function successfulNoopApply(receiptPath: string): ApplyOutcome {
+  return {
+    ok: true,
+    cancelled: false,
+    dryRun: false,
+    files: [],
+    dependencies: { installed: false, command: null },
+    theme: null,
+    styles: null,
+    receipt: { path: receiptPath, written: false },
+    updateState: { changed: false },
+    failure: null,
+  };
+}
+
 describe("update verification orchestration", () => {
+  test("classifies an observed zero-mutation update with no verification as nothing-to-do", () => {
+    const fixture = verificationFixture(["verify"]);
+    const result = {
+      kind: "attempted" as const,
+      plan: fixture.plan,
+      outcome: successfulNoopApply(fixture.plan.receipt.path),
+      verification: {
+        ...VERIFICATION_BOUNDARY,
+        status: "skipped" as const,
+        checks: [],
+        failure: null,
+      },
+      selected: [],
+      skipped: [],
+      notes: [],
+    };
+
+    expect(updatePayloadKind(result)).toBe("nothing-to-do");
+    expect(
+      updatePayloadKind({
+        ...result,
+        verification: { ...result.verification, status: "passed" as const },
+      }),
+    ).toBe("applied");
+    expect(
+      updatePayloadKind({
+        ...result,
+        outcome: { ...result.outcome, updateState: { changed: true } },
+      }),
+    ).toBe("applied");
+  });
+
   test("a readable corrupt receipt is a failed update, never a successful no-op", async () => {
     const fixture = verificationFixture(["verify"]);
     const loaded = loadConfig(fixture.root);

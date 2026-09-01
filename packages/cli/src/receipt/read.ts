@@ -104,8 +104,11 @@ export function parseReceipt(text: string, validate: ReceiptValidator): ParsedRe
   let doc: unknown;
   try {
     doc = JSON.parse(text);
-  } catch (error) {
-    return { ok: false, reason: "unparseable", detail: (error as Error).message };
+  } catch {
+    // Modern Node JSON errors may include a nearby excerpt from the input.
+    // Receipts are user-controlled and can contain credentials or private URLs,
+    // so never forward the parser's message into diagnostics or machine logs.
+    return { ok: false, reason: "unparseable", detail: "invalid JSON syntax" };
   }
 
   const root = asRecord(doc);

@@ -48,7 +48,10 @@ inventory, co-located scaffold targets, machine-explicit verification scope, dig
 scaffold registration, ephemeral dev-server replacement previews, and author-owned build/dev
 verification hooks. A second clean-room dashboard run then made update failure outcomes truthful,
 preserved dry-run identity through resolution refusals, aligned the Paper-backed Styles API scaffold
-with Paper props, and added direct kit package-version output. These changes have no public-version,
+with Paper props, and added direct kit package-version output. The next evaluation closed five more
+agent-operability gaps: dependency-safe machine stdout, source-free corrupt-receipt errors,
+wrapper-safe dev shutdown events, fail-closed alias-like targets, and truthful no-op update outcomes.
+These changes have no public-version,
 hosted-CI, npm, tag, release, registry, or deployment receipt yet.
 
 The agent-native release is public at `manteen-kit@0.2.1` and `manteen@0.7.0`. It adds

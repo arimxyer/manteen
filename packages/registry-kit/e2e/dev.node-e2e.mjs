@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CLI = join(PACKAGE_ROOT, "dist/cli.mjs");
@@ -204,6 +204,70 @@ test("built dev server retains last-good output and recovers in one foreground p
     assert.equal(stream.stderr.join(""), "");
   } finally {
     if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+    rmSync(created.root, { recursive: true, force: true });
+  }
+});
+
+test("npm exec SIGINT emits stopped before EOF and closes the listener", {
+  skip: process.platform === "win32",
+}, async () => {
+  const created = fixture();
+  const bin = join(created.root, "node_modules", ".bin");
+  mkdirSync(bin, { recursive: true });
+  const shim = join(bin, "manteen-kit");
+  writeFileSync(
+    shim,
+    `#!/usr/bin/env node\nawait import(${JSON.stringify(pathToFileURL(CLI).href)});\n`,
+    { mode: 0o755 },
+  );
+  const child = spawn(
+    "npm",
+    [
+      "exec",
+      "--yes=false",
+      "--",
+      "manteen-kit",
+      "dev",
+      created.catalog,
+      created.outDir,
+      "--port",
+      "0",
+      "--jsonl",
+    ],
+    {
+      cwd: created.root,
+      detached: true,
+      stdio: ["ignore", "pipe", "pipe"],
+      env: process.env,
+    },
+  );
+  const stream = eventStream(child);
+
+  try {
+    const ready = await stream.wait((event) => event.event === "ready", "npm exec ready");
+    const built = await stream.wait(
+      (event) => event.event === "build-succeeded" && event.sequence > ready.sequence,
+      "npm exec initial build",
+    );
+    const exited = new Promise((accept) =>
+      child.once("exit", (code, signal) => accept({ code, signal })),
+    );
+    child.kill("SIGINT");
+    const stopped = await stream.wait(
+      (event) => event.event === "stopped" && event.sequence > built.sequence,
+      "npm exec stopped event",
+    );
+    assert.ok(["SIGINT", "SIGHUP", "SIGTERM"].includes(stopped.payload.reason));
+    await exited;
+    await assert.rejects(fetch(`${ready.payload.baseUrl}/registry.json`));
+  } finally {
+    if (child.exitCode === null && child.signalCode === null) {
+      try {
+        process.kill(-child.pid, "SIGKILL");
+      } catch {
+        child.kill("SIGKILL");
+      }
+    }
     rmSync(created.root, { recursive: true, force: true });
   }
 });

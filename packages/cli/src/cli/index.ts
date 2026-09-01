@@ -312,7 +312,12 @@ async function runAdd(refs: string[], flags: AddFlags, command: Command): Promis
     return exit;
   }
 
-  const applyOptions: ApplyOptions = { interactive, overwrite, dryRun: flags.dryRun };
+  const applyOptions: ApplyOptions = {
+    interactive,
+    overwrite,
+    dryRun: flags.dryRun,
+    ...(flags.json ? { dependencyOutput: "capture" as const } : {}),
+  };
 
   let outcome: ApplyOutcome;
   try {

@@ -237,7 +237,7 @@ ok = diagnostics.every(d =>
 | `target-collision` (two distinct ids, one destination) | error | **no** | plan | 1 |
 | `receipt-collision` (different recorded owner at this destination) | error | **no** | plan | 1 |
 | `target-escapes-root` | error | **no** | plan + apply preflight | 1 |
-| `target-refused-type` (registry:style/base/theme/item at file level) | error | no | plan | 1 |
+| `target-refused-type` (refused wire type or unknown alias-like explicit target) | error | no | plan | 1 |
 | `file-no-content` | error | no | plan | 1 |
 | `theme-base-unmergeable` | error | yes | plan | 1 |
 | `dependency-range-conflict` (ranges provably disjoint) | error | yes | plan | 1 |

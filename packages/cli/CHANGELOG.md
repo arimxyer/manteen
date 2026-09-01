@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Keep add/update dependency-manager transcripts out of machine stdout, sanitize corrupt-receipt
+  parser errors, reject unknown alias-like explicit targets, and classify true zero-mutation,
+  unverified updates as `nothing-to-do`.
 - Make update machine outcomes truthful after preview, refusal, failure, and rollback; every
   operation path after usage/config acceptance echoes the requested dry-run mode. Corrupt receipts
   now fail instead of reporting a successful no-op, thrown lifecycle stages retain typed failure

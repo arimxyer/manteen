@@ -50,7 +50,9 @@ execute argv directly; they do not reconstruct a shell command. Diagnostic actio
 to the finding they remediate.
 
 Schemas are published with both packages and validate success and refusal documents. Secrets and
-expanded URL variables are excluded from all envelopes, diagnostics, receipts, and digests.
+expanded URL variables are excluded from all envelopes, diagnostics, receipts, and digests. A
+receipt JSON parse failure is reported as a stable syntax category; native parser messages are not
+forwarded because current runtimes may embed nearby receipt source bytes in them.
 
 The update payload treats `kind` as the operation outcome rather than an internal stage marker:
 `nothing-to-do`, `refused`, `previewed`, `cancelled`, `applied`, `rolled-back`,
@@ -67,6 +69,7 @@ The update lifecycle is one explicit matrix:
 | --- | --- | --- |
 | usage or project-config rejection | exit 2, `payload: null`, typed error | false |
 | no receipt | `nothing-to-do` | false |
+| selected update completes with no observed mutation and no verification run | `nothing-to-do` | false |
 | readable but invalid receipt | `failed` / `receipt-unreadable` | false |
 | receipt or installed-file selection throw | `failed` / `selection-failed` | false |
 | returned blocking plan | `refused` | false |
@@ -77,7 +80,7 @@ The update lifecycle is one explicit matrix:
 | restored write or verification rejection | `rolled-back` | false for Manteen-managed bytes |
 | failed rollback | `rollback-failed` with relative `failure.paths` | conservative; inspect paths |
 | unexpected apply or verification throw | `failed` / stage-specific failure | conservatively true |
-| completed apply | `applied` | inferred from the returned outcome |
+| completed apply with mutation or a completed verification run | `applied` | inferred from the returned outcome |
 
 Rollback recovery never assumes Git. The failure carries root-relative paths and tells callers to
 restore them from version control or another trusted pre-run copy before retrying.
@@ -201,7 +204,9 @@ and serves only the last successfully validated in-memory snapshot over HTTP. In
 returns `503`; later failures keep serving the last good snapshot. `--jsonl` emits a separate
 schema-versioned ready/build/stopped event stream, including exact dry-run `manteen registry add`
 and installed-consumer `manteen registry reconnect` argv. Signal shutdown closes watchers and the
-server. A local ready event is not deployment proof.
+server. Lifecycle handlers are installed before the first observable ready/build event, and the
+final stopped JSONL line is synchronously committed before wrapper-driven shutdown can truncate the
+stream. A local ready event is not deployment proof.
 
 The repository root contains vendor-neutral `AGENTS.md`. The public docs expose an Agent Guide plus
 `/llms.txt` and `/llms-full.txt`. MCP is deliberately outside this roadmap.
