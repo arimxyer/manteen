@@ -16,6 +16,7 @@ The root requires `name`, `namespace`, and `items`.
 | `name` | Human-readable registry name written into the compiled index. |
 | `namespace` | Lowercase public namespace such as `@acme`; qualifies bare `uses`. |
 | `homepage` | Optional project or documentation URL included in the index. |
+| `authorProfile` | Optional repository-relative v2 evidence profile; author-only and never compiled. |
 | `items` | Components, blocks, hooks, libraries, themes, or files to compile. |
 
 ## Item fields
@@ -70,6 +71,19 @@ requires `name` and `type` and may include `required`, `default`, and `descripti
 When a component forwards additional props to an underlying element, document that behavior as a
 final `...others` row with the forwarded type. Keep the fact in the table readers scan rather than
 hiding inherited behavior in unrelated prose.
+
+## Author evidence profile
+
+Profile schema version 2 replaces version 1. It can opt into `stylesApi`, `props`, and `usage`
+ownership independently. A present section must be non-empty and map every current catalog claim
+of that category exactly once: item/component for Styles API, item/export for props, and item for
+usage. Stale, missing, and duplicate mappings refuse. One physical evidence file cannot be reused
+across sections.
+
+The generic validator checks strict profile shape, canonical repository-relative POSIX paths,
+ordinary-file type, and realpath containment. It does not read or execute evidence. The author's
+normal tests remain the behavioral authority. Use the published `manteen-kit/schema/author-profile`
+subpath for tooling.
 
 ## Editor schema
 

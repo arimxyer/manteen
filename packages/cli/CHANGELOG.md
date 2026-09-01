@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Replace the machine envelope with schema version 2, including an always-present top-level
+  `actions` array, exact reviewed rerun argv for applicable dry runs, and exact add dependency
+  command previews. Version 1 is no longer emitted.
+- Add dry-run/expected-plan `registry list/add/remove` commands with receipt-aware replacement and
+  removal refusals, surgical config edits, and secret-safe header/parameter reporting.
+- Add `verification show/set/clear` for discovering and managing ordered project script checks
+  without hand-editing the complete config.
+
 ## 0.8.0
 
 - Rank `list --query` matches deterministically within each registry while preserving unqueried and

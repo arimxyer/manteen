@@ -17,8 +17,9 @@ has exact runner forms.
    Always inspect the relevant command's local `--help` before relying on a documented flag.
 2. Prefer `--json` for automation. Treat JSON mode as non-interactive, not as consent.
 3. Inspect before changing: use `status`, `list`, `info`, or `diff` as appropriate.
-4. Preview mutations with `--dry-run`. When the installed version returns a `planDigest`, apply
-   the reviewed plan with the same arguments plus `--expect-plan <digest>`.
+4. Preview mutations with `--dry-run`. When the installed version returns a reviewed top-level
+   `rerun` action, execute its argv directly. Otherwise retain the `planDigest` and apply the same
+   arguments with `--expect-plan <digest>`.
 5. Supply destructive flags only when the user explicitly chose that consequence. Never use
    `--force`, `--overwrite`, `--take-upstream`, `--discard-adapted`, or `--take-packaged` as a
    generic retry.

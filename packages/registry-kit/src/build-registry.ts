@@ -274,9 +274,12 @@ export {
   type AuthorConformanceFailure,
   type AuthorConformanceFailureCode,
   type AuthorConformanceInspection,
+  type AuthorEvidenceMapping,
   type AuthorProfile,
   inspectAuthorConformance,
+  type PropsEvidenceMapping,
   type StylesApiEvidenceMapping,
+  type UsageEvidenceMapping,
 } from "./author-conformance";
 export {
   inspectMantineRanges,

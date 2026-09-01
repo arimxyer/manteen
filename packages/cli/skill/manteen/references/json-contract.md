@@ -3,11 +3,11 @@
 ## Client envelope
 
 Every recognized client invocation with `--json` writes exactly one document to stdout and never
-prompts. Schema version 1 has this shape:
+prompts. Schema version 2 replaces version 1 and has this shape:
 
 ```ts
 interface CommandEnvelope<T = unknown> {
-  schemaVersion: 1;
+  schemaVersion: 2;
   command: string;
   root: string | null;
   ok: boolean;
@@ -17,6 +17,7 @@ interface CommandEnvelope<T = unknown> {
   diagnostics: Diagnostic[];
   errors: CommandError[];
   notes: string[];
+  actions: DiagnosticAction[];
 }
 ```
 
@@ -45,6 +46,12 @@ Blocking diagnostics carry typed remediation actions or a manual rationale:
 - `manual`: bounded work that cannot safely be automated.
 
 Do not automatically select the first action when it discards or overwrites user work.
+
+Top-level `actions` is always present. A successful applicable mutating dry run returns one exact
+`rerun` argv with `--dry-run` removed and the fresh `--expect-plan` attached. Discovery-only removal
+without a selected candidate returns no apply action. Execute the array directly without joining or
+quoting it as a shell string. Review the complete payload first; the presence of an action does not
+expand user authority.
 
 ## Output and secret discipline
 

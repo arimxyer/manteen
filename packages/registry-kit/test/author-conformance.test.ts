@@ -58,7 +58,7 @@ function fixture(options: FixtureOptions = {}) {
   writeFileSync(
     join(repositoryRoot, "manteen.author-profile.json"),
     options.profileContents ??
-      `${JSON.stringify({ schemaVersion: 1, stylesApi: mappings }, null, 2)}\n`,
+      `${JSON.stringify({ schemaVersion: 2, stylesApi: mappings }, null, 2)}\n`,
   );
   mkdirSync(join(repositoryRoot, "src"), { recursive: true });
   writeFileSync(join(repositoryRoot, "src/alpha.tsx"), "export const Alpha = () => null;\n");
@@ -154,7 +154,7 @@ describe("optional author conformance", () => {
     expect(failureCodes(malformed)).toContain("author-profile-unreadable");
 
     const unsupported = fixture({
-      profileContents: `${JSON.stringify({ schemaVersion: 2, stylesApi: [] })}\n`,
+      profileContents: `${JSON.stringify({ schemaVersion: 1, stylesApi: [] })}\n`,
     });
     expect(failureCodes(unsupported)).toContain("author-profile-schema-invalid");
   });
@@ -174,7 +174,18 @@ describe("optional author conformance", () => {
   });
 
   test("fails missing, stale, duplicate, and shared Styles API ownership", () => {
-    const missing = fixture({ mappings: [] });
+    const missing = fixture({
+      catalog: {
+        items: [
+          {
+            name: "alpha",
+            kind: "component",
+            files: [{ path: "src/alpha.tsx", as: "component" }],
+            stylesApi: { Alpha: ["root"], AlphaGroup: ["root"] },
+          },
+        ],
+      },
+    });
     expect(failureCodes(missing)).toContain("styles-api-evidence-missing");
 
     const stale = fixture({
@@ -218,7 +229,103 @@ describe("optional author conformance", () => {
         { item: "beta", component: "Beta", evidence: "evidence/alpha.contract" },
       ],
     });
-    expect(failureCodes(shared)).toContain("styles-api-evidence-shared");
+    expect(failureCodes(shared)).toContain("evidence-path-shared");
+  });
+
+  test("profile v2 proves props and usage claims without interpreting evidence", () => {
+    const created = fixture({
+      catalog: {
+        items: [
+          {
+            name: "alpha",
+            kind: "component",
+            files: [{ path: "src/alpha.tsx", as: "component" }],
+            stylesApi: { Alpha: ["root"] },
+            props: { Alpha: [{ name: "tone", type: '"calm" | "loud"' }] },
+            usage: "src/alpha.usage.tsx",
+          },
+        ],
+      },
+      profileContents: `${JSON.stringify(
+        {
+          schemaVersion: 2,
+          stylesApi: [{ item: "alpha", component: "Alpha", evidence: "evidence/styles.contract" }],
+          props: [{ item: "alpha", export: "Alpha", evidence: "evidence/props.contract" }],
+          usage: [{ item: "alpha", evidence: "evidence/usage.contract" }],
+        },
+        null,
+        2,
+      )}\n`,
+      evidenceFiles: {
+        "evidence/styles.contract": "not parsed\n",
+        "evidence/props.contract": "not parsed\n",
+        "evidence/usage.contract": "not parsed\n",
+      },
+    });
+
+    expect(inspectAuthorConformance(created.catalogPath, created.catalog)).toMatchObject({
+      claimCount: 3,
+      evidenceCount: 3,
+      failures: [],
+    });
+  });
+
+  test("props and usage sections reject missing, stale, and globally shared evidence", () => {
+    const catalog: Partial<MantineRegistry> = {
+      items: [
+        {
+          name: "alpha",
+          kind: "component",
+          files: [{ path: "src/alpha.tsx", as: "component" }],
+          props: { Alpha: [], AlphaGroup: [] },
+          usage: "src/alpha.usage.tsx",
+        },
+      ],
+    };
+    const missingAndStale = fixture({
+      catalog,
+      profileContents: `${JSON.stringify(
+        {
+          schemaVersion: 2,
+          props: [{ item: "alpha", export: "Alpha", evidence: "evidence/alpha.contract" }],
+          usage: [{ item: "retired", evidence: "evidence/usage.contract" }],
+        },
+        null,
+        2,
+      )}\n`,
+      evidenceFiles: {
+        "evidence/alpha.contract": "not parsed\n",
+        "evidence/usage.contract": "not parsed\n",
+      },
+    });
+    expect(failureCodes(missingAndStale)).toEqual(
+      expect.arrayContaining([
+        "props-evidence-missing",
+        "usage-evidence-stale",
+        "usage-evidence-missing",
+      ]),
+    );
+
+    const shared = fixture({
+      catalog,
+      profileContents: `${JSON.stringify(
+        {
+          schemaVersion: 2,
+          props: [
+            { item: "alpha", export: "Alpha", evidence: "evidence/alpha.contract" },
+            { item: "alpha", export: "AlphaGroup", evidence: "evidence/group.contract" },
+          ],
+          usage: [{ item: "alpha", evidence: "evidence/alpha.contract" }],
+        },
+        null,
+        2,
+      )}\n`,
+      evidenceFiles: {
+        "evidence/alpha.contract": "not parsed\n",
+        "evidence/group.contract": "not parsed\n",
+      },
+    });
+    expect(failureCodes(shared)).toContain("evidence-path-shared");
   });
 
   test("rejects empty, absolute, traversal, and normalization-drift evidence paths", () => {
@@ -262,7 +369,9 @@ describe("optional author conformance", () => {
   });
 
   test("compileRegistry refuses an invalid opted-in profile before rendering", () => {
-    const created = fixture({ mappings: [] });
+    const created = fixture({
+      profileContents: `${JSON.stringify({ schemaVersion: 2, stylesApi: [] })}\n`,
+    });
 
     expect(() => compileRegistry(created.catalogPath)).toThrow(AuthorConformanceError);
   });

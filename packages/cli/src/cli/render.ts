@@ -401,7 +401,18 @@ export function renderApplyFailure(outcome: ApplyOutcome, root: string): string 
  * `not-installed` indistinguishable from a refusal.
  */
 export interface JsonEnvelope {
-  command: "init" | "add" | "list" | "info" | "diff" | "update" | "remove" | "status" | "agent";
+  command:
+    | "init"
+    | "add"
+    | "list"
+    | "info"
+    | "diff"
+    | "update"
+    | "remove"
+    | "status"
+    | "agent"
+    | "registry"
+    | "verification";
   root: string;
   ok: boolean;
 }

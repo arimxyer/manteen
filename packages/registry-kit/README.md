@@ -42,11 +42,18 @@ authoring layer entirely Mantine-shaped.
 manteen-kit build [catalog.json] [outDir]      # default: ./manteen.registry.json → ./public/r
 manteen-kit merge-theme <base.ts> <fragment.ts> [--write] [--prefer incoming] [--json]
 manteen-kit scaffold --template <template> --name <item> --dry-run --json
+manteen-kit dev [catalog.json] [outDir] --port 0 --jsonl
 ```
 
 `build` validates the catalog against the authoring schema **and** every emitted item against
 the vendored interchange schema, exiting non-zero on either. If the catalog opts into an author
 profile, both normal and `--check` builds validate it before any output mutation.
+
+`dev` is a foreground watch/build/server loop for local authoring. It emits ready, build success,
+build failure, and stopped events with `--jsonl`. HTTP requests are served from the last validated
+in-memory snapshot; a broken rebuild never replaces it. The success event includes an exact
+dry-run `manteen registry add` argv for connecting a consumer. Stop it with `SIGINT` or `SIGTERM`.
+This is a local server, not publication or deployment evidence.
 
 ### Safe component scaffolds
 
@@ -128,23 +135,38 @@ interpret tests or source behavior:
 ```json
 {
   "$schema": "./node_modules/manteen-kit/schema/manteen.author-profile.schema.json",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "stylesApi": [
     {
       "item": "data-grid",
       "component": "DataGrid",
       "evidence": "evidence/data-grid-styles.contract"
     }
+  ],
+  "props": [
+    {
+      "item": "data-grid",
+      "export": "DataGrid",
+      "evidence": "evidence/data-grid-props.contract"
+    }
+  ],
+  "usage": [
+    {
+      "item": "data-grid",
+      "evidence": "evidence/data-grid-usage.contract"
+    }
   ]
 }
 ```
 
-Every opted-in `stylesApi` item/component claim must have exactly one mapping, every mapping must
-point back to a current claim, and evidence paths must be unique canonical catalog-root-relative
-POSIX paths to existing ordinary files contained by that repository. Evidence can use any filename
-and file type: the generic validator does not require Bun, read evidence contents, inspect
-assertions or skips, execute TypeScript, runtime-import source, or run author commands. The author's
-normal test runner remains the authority for behavioral proof.
+Profile version 2 replaces version 1. Each present section is an exact bidirectional ownership
+boundary: `stylesApi` maps item/component claims, `props` maps item/export claims, and `usage` maps
+item claims. Missing, duplicate, and stale mappings refuse, and one physical evidence file cannot
+be reused across sections. Evidence paths are canonical catalog-root-relative POSIX paths to
+existing ordinary files contained by that repository. Evidence can use any filename and file type:
+the generic validator does not require Bun, read evidence contents, inspect assertions or skips,
+execute TypeScript, runtime-import source, or run author commands. The author's normal test runner
+remains the authority for behavioral proof.
 
 `props` and `usage` are the same kind of author assertion, for documentation clients. `props`
 documents the prop surface (keyed by exported component or hook name, each entry `name`/`type`

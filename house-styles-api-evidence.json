@@ -1,6 +1,6 @@
 {
   "$schema": "./packages/registry-kit/schema/manteen.author-profile.schema.json",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "stylesApi": [
     {
       "item": "empty-state",

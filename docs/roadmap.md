@@ -33,6 +33,14 @@ catalog-content milestone itself remains commit `8853a720352c8842ce6957a494f919e
 historical: the Astro application and Pages workflow were removed on 2026-08-31, and the repository
 currently has no site or registry deployment path.
 
+The current unreleased source moves the client and kit command envelopes directly to schema v2,
+adds exact reviewed rerun actions and dependency-command previews, introduces receipt-aware
+registry and script-discovered verification configuration commands, adds the foreground
+`manteen-kit dev` last-good server, and replaces author-profile v1 with v2 ownership for Styles API,
+props, and usage evidence. The repository's unit, typecheck/site-check, lint, guard, registry-build,
+package-build, built-Node client/kit e2e, and Fumadocs production-build tiers pass locally. Package
+versions, tags, npm releases, hosted CI, public registry bytes, and site deployment are unchanged.
+
 The agent-native release is public at `manteen-kit@0.2.1` and `manteen@0.7.0`. It adds
 transactional generated registry ownership, one stable JSON command envelope, complete display
 metadata, an opaque SDK facade, offline status, expected-plan digests, deterministic discovery
@@ -77,7 +85,9 @@ acceptance are recorded in the
 complete. The findings and hosted closure receipt are recorded in
 [`w7-hardening-handoff.md`](./handoffs/w7-hardening-handoff.md).
 
-**Commands.** `init`, `add`, `list`, `info`, `diff`, `update` and the narrow `remove` mode ship. In
+**Commands.** `init`, `add`, `list`, `info`, `diff`, `update` and the narrow `remove` mode ship. The
+unreleased source also has reviewed `registry list/add/remove` and `verification show/set/clear`
+configuration surfaces; they are not yet public package claims. In
 public `0.3.0` and later, `update` uses Wu's receipt-v3 three-way model. In public `0.4.0` and later,
 `remove --upstream-removed` adds explicit exact-selected upstream-file pruning; its contract and
 acceptance are in [`upstream-removal-handoff.md`](./handoffs/upstream-removal-handoff.md). Public `0.5.0`
@@ -150,11 +160,12 @@ site and is not implied by an editable CSS module. Every current catalog declara
 matching per-item test that closes the declared selector list against the implementation and checks
 instance `classNames` / `styles`, stable selector classes, component CSS and theme-level extension.
 The optional `manteen-kit` author profile now generalizes that ownership invariant without an
-`@house` assumption: every opted-in item/component claim has exactly one explicit evidence mapping,
-every mapping points back to a current claim, and each unique canonical path resolves to an ordinary
-repository-contained file. The profile remains author-only and is absent from wire output and
-consumer installs. Generic validation does not inspect or execute evidence; the house adapter adds
-the narrower requirement that its mapped files lie on the root `bun test` discovery surface.
+`@house` assumption. Its unreleased v2 replaces v1 and independently binds current Styles API
+item/component, props item/export, and usage item claims in both directions. Each evidence path is
+globally unique and resolves to an ordinary repository-contained file. The profile remains
+author-only and is absent from wire output and consumer installs. Generic validation does not
+inspect or execute evidence; the house adapter adds the narrower requirement that its mapped files
+lie on the root `bun test` discovery surface.
 Components without a declaration may keep editable internal CSS, but later catalog additions still
 need an explicit adopt-or-keep-internal decision rather than silence.
 

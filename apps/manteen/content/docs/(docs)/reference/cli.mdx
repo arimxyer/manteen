@@ -19,6 +19,8 @@ version for a single command.
 | `manteen update [ref...]` | Merge upstream changes around local source adaptations. |
 | `manteen remove --upstream-removed` | Remove exact receipt-owned files proven absent upstream. |
 | `manteen status` | Assess local configuration and receipt health without registry access. |
+| `manteen registry list/add/remove` | Inspect or surgically edit configured registry sources. |
+| `manteen verification show/set/clear` | Discover and configure project-owned operation checks. |
 | `manteen agent guide` | Print the packaged guide without requiring project configuration. |
 | `manteen agent install` | Safely install or update the packaged Manteen skill. |
 
@@ -32,9 +34,10 @@ manteen update --help
 
 ## Review a machine plan before applying it
 
-The `init`, `add`, `update`, and `remove` commands support dry-run JSON plans. Retain the returned
-`planDigest`, repeat the same project root, references, and relevant flags, then apply with
-`--expect-plan`:
+The `init`, `add`, `update`, `remove`, `registry add/remove`, and `verification set/clear` commands
+support dry-run JSON plans. Prefer the exact top-level `rerun` argv returned by a successful
+preview. Otherwise retain the returned `planDigest`, repeat the same project root, references, and
+relevant flags, then apply with `--expect-plan`:
 
 ```bash
 manteen init --dry-run --json
@@ -49,10 +52,18 @@ manteen update @house/article-card --expect-plan <sha256> --json
 manteen remove --upstream-removed --file src/components/ui/old.tsx --dry-run --json
 manteen remove --upstream-removed --file src/components/ui/old.tsx \
   --expect-plan <sha256> --json
+
+manteen registry add @workshop --url 'http://127.0.0.1:4174/{name}.json' \
+  --index http://127.0.0.1:4174/registry.json --dry-run --json
+
+manteen verification set --add typecheck --add test --dry-run --json
 ```
 
 A changed source, destination, preimage, verification definition, or relevant option makes the
 expectation stale and produces a zero-write refusal.
+
+Add previews also expose `installCommand`, the exact dependency-manager command Manteen plans to
+run, or `null` when no dependency operation is needed.
 
 Every recognized JSON invocation emits one versioned document on stdout. Package-manager notices,
 project verification output, and other process diagnostics remain on stderr so automation can

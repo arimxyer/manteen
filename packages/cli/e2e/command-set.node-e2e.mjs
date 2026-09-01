@@ -259,7 +259,7 @@ test("`no receipt yet` is one note, worded once, and root-relative in all four",
 
 // ---- the shared --json envelope ---------------------------------------------
 
-test("every --json document carries the versioned ten-key envelope on stdout alone", () => {
+test("every --json document carries the versioned eleven-key envelope on stdout alone", () => {
   const project = makeProject();
   run(project, ["add", ITEM]);
 
@@ -283,8 +283,9 @@ test("every --json document carries the versioned ten-key envelope on stdout alo
       "diagnostics",
       "errors",
       "notes",
+      "actions",
     ]);
-    assert.equal(doc.schemaVersion, 1);
+    assert.equal(doc.schemaVersion, 2);
     assert.equal(doc.command, command, `${command}: wrong discriminator`);
     assert.equal(typeof doc.root, "string", `${command}: no root`);
     assert.equal(doc.root, project, `${command}: root must be the absolute project root`);
@@ -299,6 +300,7 @@ test("every --json document carries the versioned ten-key envelope on stdout alo
     // Notes travel INSIDE the document, never on the other stream — otherwise a
     // consumer parsing stdout silently sees a partial answer.
     assert.ok(Array.isArray(doc.notes), `${command}: notes must always be present`);
+    assert.ok(Array.isArray(doc.actions), `${command}: actions must always be present`);
     assert.equal(result.stderr, "", `${command}: --json must leave stderr empty`);
     if (command === "update") {
       assert.deepEqual(doc.payload.updateState, { changed: false, versioningRequired: false });
@@ -378,6 +380,7 @@ test("offline status and packaged agent guidance work before project initializat
     "diagnostics",
     "errors",
     "notes",
+    "actions",
   ]);
   assert.equal(statusDocument.command, "status");
   assert.equal(statusDocument.ok, true);

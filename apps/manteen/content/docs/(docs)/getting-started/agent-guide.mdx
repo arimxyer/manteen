@@ -81,13 +81,17 @@ Every recognized `--json` invocation emits one versioned envelope containing:
 
 ```text
 schemaVersion, command, root, ok, exitCode, mutated,
-payload, diagnostics, errors, notes
+payload, diagnostics, errors, notes, actions
 ```
 
 `ok` is exactly `exitCode === 0`. A successful `status` invocation can still report
 `healthy: false`; command success and assessed project health answer different questions. Blocking
 diagnostics carry a typed rerun argument list, a configuration patch, or a bounded manual action
 and rationale.
+
+A successful applicable mutating preview carries one exact top-level rerun argv with the fresh plan
+digest. Discovery-only removal without a selected candidate does not. Execute argv directly after
+reviewing the payload instead of reconstructing flags or shell text.
 
 The [machine output reference](/docs/reference/machine-output) defines every outer field, stream,
 and exit code. [Diagnostics and refusals](/docs/reference/diagnostics) explains forceability and

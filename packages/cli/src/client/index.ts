@@ -68,13 +68,15 @@ export interface ManteenPlanFilePreview {
 }
 
 export interface ManteenPlanPreview {
-  version: 1;
+  version: 2;
   operation: "add" | "update";
   root: string;
   ok: boolean;
   items: readonly ManteenPlanItemPreview[];
   files: readonly ManteenPlanFilePreview[];
   dependencies: readonly PlannedDependency[];
+  /** Exact dependency escape-hatch command planned by nypm, or null. */
+  installCommand: string | null;
   theme: { destination: string; sha256: string; changed: boolean } | null;
   styles: { destination: string; sha256: string; changed: boolean } | null;
   diagnostics: readonly Diagnostic[];
@@ -182,7 +184,7 @@ function resolveConfig(options: CreateManteenClientOptions): LoadedConfig {
 
 function previewPlan(plan: Plan): ManteenPlanPreview {
   return deepFreeze({
-    version: 1 as const,
+    version: 2 as const,
     operation: plan.operation,
     root: plan.root,
     ok: plan.ok,
@@ -204,6 +206,7 @@ function previewPlan(plan: Plan): ManteenPlanPreview {
       ...dependency,
       wantedBy: [...dependency.wantedBy],
     })),
+    installCommand: plan.installCommand,
     theme:
       plan.theme === null
         ? null

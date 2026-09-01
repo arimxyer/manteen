@@ -64,7 +64,7 @@ function invalidConformanceFixture(): { catalog: string; outDir: string; sentine
   );
   writeFileSync(
     join(root, "manteen.author-profile.json"),
-    `${JSON.stringify({ schemaVersion: 1, stylesApi: [] }, null, 2)}\n`,
+    `${JSON.stringify({ schemaVersion: 2, stylesApi: [] }, null, 2)}\n`,
   );
   return { catalog, outDir, sentinel };
 }
@@ -127,7 +127,7 @@ describe("kit JSON commands", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr.toString()).toBe("");
-    expect(json.schemaVersion).toBe(1);
+    expect(json.schemaVersion).toBe(2);
     expect(json.ok).toBe(true);
     expect(json.mutated).toBe(true);
     expect(readFileSync(base, "utf8")).toContain('defaultRadius: "md"');
@@ -170,7 +170,7 @@ describe("kit JSON commands", () => {
       expect(result.exitCode).toBe(1);
       expect(result.stderr.toString()).toBe("");
       expect(json).toMatchObject({
-        schemaVersion: 1,
+        schemaVersion: 2,
         command: "build",
         ok: false,
         exitCode: 1,

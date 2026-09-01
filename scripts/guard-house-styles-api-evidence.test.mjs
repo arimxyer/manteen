@@ -28,7 +28,7 @@ function fixture({ evidence = "test/alpha.test.ts", mappings, testScript, author
     ],
   };
   const profile = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     stylesApi: mappings ?? [{ item: "alpha", component: "Alpha", evidence }],
   };
 
@@ -89,7 +89,17 @@ describe("house Styles API evidence adapter", () => {
   });
 
   test("surfaces generic bidirectional ownership failures", () => {
-    const failures = inspectHouseStylesApiEvidence(fixture({ mappings: [] })).failures;
+    const failures = inspectHouseStylesApiEvidence(
+      fixture({
+        mappings: [
+          {
+            item: "alpha",
+            component: "RetiredAlpha",
+            evidence: "test/alpha.test.ts",
+          },
+        ],
+      }),
+    ).failures;
 
     expect(failures.some((failure) => failure.startsWith("styles-api-evidence-missing:"))).toBe(
       true,

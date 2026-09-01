@@ -35,8 +35,12 @@ all non-clean states as permission to replace a directory.
 The first positional argument is the catalog and the second is its generated output directory;
 `--check` accepts the same pair as a real build. The JSON envelope is versioned and published at
 `manteen-kit/schema/command`; the ownership marker schema is `manteen-kit/schema/output`. Parse
-`schemaVersion`, `command`, `ok`, `exitCode`, `mutated`, `payload`, `errors`, and `notes`, and branch
+`schemaVersion`, `command`, `ok`, `exitCode`, `mutated`, `payload`, `errors`, `notes`, and `actions`, and branch
 on codes and `payload.status` rather than display text.
+
+Author profile v2 can bind current catalog `stylesApi`, `props`, and `usage` claims to distinct
+repository-contained evidence files. Each present section is exact in both directions. Generic
+validation checks ownership and path containment only; it never reads or executes evidence.
 
 ## Build safely
 
@@ -56,6 +60,16 @@ owned. It does not authorize unknown entries, links, invalid ownership, or unsaf
 
 If build reports an interrupted output transaction, preserve the stage, backup, and journal while
 following its deterministic recovery action. Do not delete that evidence speculatively.
+
+For an interactive local authoring loop, run:
+
+```bash
+manteen-kit dev manteen.registry.json public/r --port 0 --jsonl
+```
+
+Wait for `ready` and `build-succeeded`, then use the returned `registryAddArgv` to preview the
+consumer configuration. A failed rebuild keeps the last validated snapshot available. Stop the
+foreground process cleanly; do not describe its local URL or generated output as deployed.
 
 ## Publish
 

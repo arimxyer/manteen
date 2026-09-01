@@ -15,10 +15,11 @@
     "payload",
     "diagnostics",
     "errors",
-    "notes"
+    "notes",
+    "actions"
   ],
   "properties": {
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": { "const": 2 },
     "command": { "type": "string", "minLength": 1 },
     "root": { "oneOf": [{ "type": "string" }, { "type": "null" }] },
     "ok": { "type": "boolean" },
@@ -45,6 +46,11 @@
     "notes": {
       "type": "array",
       "items": { "type": "string" }
+    },
+    "actions": {
+      "type": "array",
+      "minItems": 0,
+      "items": { "$ref": "#/$defs/action" }
     }
   },
   "allOf": [

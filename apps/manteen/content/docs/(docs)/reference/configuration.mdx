@@ -40,6 +40,12 @@ templates instead of expanded secrets.
 See [Authenticated registries](/docs/guides/authenticated-registries) for environment precedence,
 request scope, direct-URL limitations, and safe troubleshooting.
 
+Use `manteen registry list --json` to inspect configured sources. `registry add` and `registry
+remove` provide surgical dry-run/expected-plan edits of this top-level member. Replacement requires
+`--replace` and refuses while receipt items reference the namespace; removal refuses the last
+registry. Repeated `--header key=value` values must contain a literal `${VAR}` template. Machine
+output exposes header and parameter keys but never expanded values.
+
 ## Aliases and TypeScript paths
 
 Every configuration declares `components`, `ui`, `hooks`, and `lib` import prefixes:
@@ -94,6 +100,11 @@ files, or other unowned verifier side effects.
 
 The plan records the chosen scripts and their definitions. If either changes before apply,
 `--expect-plan` refuses the stale plan instead of running a different check than the one reviewed.
+
+Use `manteen verification show --json` to compare current configuration with discovered root
+package scripts. `verification set` stores repeated `--add`, `--update`, or `--remove` script names
+and an optional per-check timeout; `verification clear --operation <add|update|remove|all>` removes
+them. Mutations are dry-run/expected-plan coupled and edit only this top-level member.
 
 See [Maintaining installed source](/docs/guides/maintaining-source) for the update and removal
 workflow that consumes this configuration.

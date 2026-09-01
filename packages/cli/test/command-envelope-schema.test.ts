@@ -11,7 +11,7 @@ const validate = new Ajv2020({ allErrors: true, strict: true }).compile(schema);
 
 function envelope(overrides: Record<string, unknown> = {}) {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     command: "status",
     root: "/project",
     ok: true,
@@ -21,6 +21,7 @@ function envelope(overrides: Record<string, unknown> = {}) {
     diagnostics: [],
     errors: [],
     notes: [],
+    actions: [],
     ...overrides,
   };
 }
@@ -68,7 +69,7 @@ describe("published command envelope schema", () => {
     ).toBe(false);
   });
 
-  test("refuses extra top-level fields so the ten-key boundary cannot drift", () => {
+  test("refuses extra top-level fields so the eleven-key boundary cannot drift", () => {
     expect(validate(envelope({ extra: true }))).toBe(false);
   });
 });

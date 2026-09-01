@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arimxyer.github.io/manteen/schema/manteen-kit-dev-event.schema.json",
+  "title": "manteen-kit dev event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sequence", "event", "payload"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "sequence": { "type": "integer", "minimum": 1 },
+    "event": { "enum": ["ready", "build-succeeded", "build-failed", "stopped"] },
+    "payload": { "type": "object" }
+  }
+}

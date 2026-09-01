@@ -541,6 +541,7 @@ for (const [label, fail] of [
     assert.ok(result.stdout.trimStart().startsWith("{"), result.stdout);
     const document = JSON.parse(result.stdout);
     assert.deepEqual(Object.keys(document).sort(), [
+      "actions",
       "command",
       "diagnostics",
       "errors",

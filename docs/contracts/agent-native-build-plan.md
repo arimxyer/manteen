@@ -2,7 +2,7 @@
 
 [Documentation map](../project-context.md) · [Contracts](README.md)
 
-Status: frozen implementation contract for the 0.2.1 kit and 0.6/0.7 client milestones.
+Status: frozen implementation contract; schema-v2 clean break adopted 2026-08-31.
 
 This document turns the agent-native roadmap into executable contracts. Existing decisions in
 `client-build-plan.md` remain authoritative unless this document explicitly extends them.
@@ -18,11 +18,11 @@ captured or sent to stderr; a child process may never inherit machine stdout. Ca
 output is discarded on success and retained in the structured failure on error so the envelope stays
 parseable without erasing the evidence needed to diagnose an install.
 
-The client envelope is schema version 1:
+The client envelope is schema version 2. Version 1 is not accepted or emitted:
 
 ```ts
 interface CommandEnvelope<T = unknown> {
-  schemaVersion: 1;
+  schemaVersion: 2;
   command: string;
   root: string | null;
   ok: boolean;                 // exactly exitCode === 0
@@ -32,6 +32,7 @@ interface CommandEnvelope<T = unknown> {
   diagnostics: Diagnostic[];
   errors: CommandError[];
   notes: string[];
+  actions: DiagnosticAction[];
 }
 ```
 
@@ -41,6 +42,12 @@ remediation action or records a human-readable `manualRationale`. Actions are on
 - `rerun`: an argv array, never a shell string;
 - `configPatch`: a JSON-compatible patch for `manteen.json`;
 - `manual`: a bounded instruction that cannot safely be automated.
+
+The top-level `actions` array is always present. A successful applicable mutating dry run carries one exact
+`rerun` action that removes `--dry-run`, replaces any older `--expect-plan`, and appends the fresh
+digest. Discovery-only removal previews with no selected candidate carry no apply action. Callers
+execute argv directly; they do not reconstruct a shell command. Diagnostic actions remain attached
+to the finding they remediate.
 
 Schemas are published with both packages and validate success and refusal documents. Secrets and
 expanded URL variables are excluded from all envelopes, diagnostics, receipts, and digests.
@@ -74,7 +81,9 @@ mutates. Its JSON result distinguishes `clean`, `missing`, `changed`, and `refus
 ## 3. Client planning and execution
 
 Mutating previews include `planDigest`. `--expect-plan <sha256>` is accepted by `init`, `add`,
-`update`, and `remove`; a mismatch is a non-forceable zero-write refusal.
+`update`, `remove`, `registry add/remove`, and `verification set/clear`; a mismatch is a
+non-forceable zero-write refusal. Add previews also expose the exact planned dependency-manager
+command, or `null` when no dependency command will run.
 
 The canonical digest is SHA-256 over stable JSON containing normalized options, normalized root,
 requested refs, redacted sources, source hashes, destinations, dispositions, dependency operations,
@@ -97,6 +106,19 @@ members and every unrelated key remain byte-semantically preserved. Missing fiel
 ownership, and every explicit differing value, still refuse with a truthful missing/conflicting/invalid
 reason. When one exact JSON edit is safe to propose but not safe to assume, machine output carries a
 `configPatch` action.
+
+Registry sources have their own bounded configuration commands. `registry list` is read-only;
+`registry add` requires a literal `{name}` URL and explicit `--replace` for a differing source;
+`registry remove` refuses the final source and any namespace still referenced by receipt state.
+Replacement and removal fail closed on unreadable receipts. Header values must retain a literal
+`${VAR}` template. Machine previews expose URL/index and header/parameter keys, never expanded
+values, and apply only a reviewed surgical edit of the top-level `registries` member.
+
+Verification configuration is managed through `verification show/set/clear`. `show` reports the
+configured operation lists and discovers root `package.json` scripts. `set` accepts script names,
+not shell strings, preserves authored order, rejects duplicates and missing scripts, and refuses a
+timeout-only block. `clear` removes one operation or the complete block. These commands surgically
+edit only the top-level `verification` member and share the same exact-preimage plan contract.
 
 A successful `add` proves registry installation, not application integration. Text mode emits that
 fact as an informational stderr advisory and machine mode carries the same text in `notes`; previews,
@@ -130,6 +152,13 @@ to `.agents/skills/manteen` and offers explicit universal-user, Codex-user, Clau
 Claude-user, and custom targets. `--dry-run --json --update` are supported. Existing unowned or
 modified installations are refused; `--take-packaged` is the explicit destructive replacement flag.
 `init` never edits `AGENTS.md` or installs the skill implicitly.
+
+`manteen-kit dev` is a foreground authoring process. It watches the catalog and declared source,
+theme, usage, profile, and evidence inputs; compiles and transactionally writes registry output;
+and serves only the last successfully validated in-memory snapshot over HTTP. Initial failure
+returns `503`; later failures keep serving the last good snapshot. `--jsonl` emits a separate
+schema-versioned ready/build/stopped event stream, including an exact dry-run `manteen registry add`
+argv. Signal shutdown closes watchers and the server. A local ready event is not deployment proof.
 
 The repository root contains vendor-neutral `AGENTS.md`. The public docs expose an Agent Guide plus
 `/llms.txt` and `/llms-full.txt`. MCP is deliberately outside this roadmap.

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Replace the command envelope with schema version 2 and emit an exact reviewed scaffold apply argv
+  from successful dry runs.
+- Add the foreground `manteen-kit dev` watch/build/server loop with versioned JSONL events,
+  transactional generated output, last-good HTTP serving, and an exact consumer registry-add argv.
+- Replace author-profile v1 with v2-only bidirectional evidence ownership for Styles API, props,
+  and usage claims, including cross-category evidence-path uniqueness.
+
 ## 0.2.1
 
 - Authoring format: optional `props` — an author-documented prop surface keyed by exported
