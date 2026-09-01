@@ -20,7 +20,7 @@ historical receipts, start with [`project-context.md`](project-context.md).
 6. **Maintainable** — a linter, dependency automation, and a license file that matches what
    `package.json` claims.
 
-Today: all six criteria are public through `manteen-kit@0.3.1` and `manteen@0.9.1`, including the
+Today: all six criteria are public through `manteen-kit@0.3.2` and `manteen@0.9.2`, including the
 agent-native authoring, machine-command, SDK, verification, and guidance surfaces. W6 `init` is
 complete through its built-Node acceptance tier, W7 closed with a green hosted runtime, OS and
 package-manager matrix, and W8 established provenance-bearing releases. The final accepted
@@ -58,9 +58,10 @@ remain unchanged.
 A later clean-room run found three source regressions behind those accepted public claims: Styles
 API registration did not wire its generated test into author verification, a fully current update
 still entered apply and verification, and a real npm-owned PTY could lose the final dev event. The
-`manteen-kit@0.3.2` and `manteen@0.9.2` source candidates fix all three with built-Node/PTY
-regressions; the public `0.3.1` and `0.9.1` packages remain unchanged until trusted publishing
-completes.
+public `manteen-kit@0.3.2` and `manteen@0.9.2` release fixes all three with built-Node/PTY
+regressions. Its signed tags, hosted portability matrix, npm provenance, and fresh public consumer
+are accepted in the [`0.9.2 release handoff`](./releases/v0.9.2-release-handoff.md). Public registry
+bytes and deployment remain unchanged.
 
 The agent-native release is public at `manteen-kit@0.2.1` and `manteen@0.7.0`. It adds
 transactional generated registry ownership, one stable JSON command envelope, complete display
@@ -140,9 +141,9 @@ was a working bypass that let TypeScript write into a JS project at exit 0). The
 in `plan()`, the bypass routes into the same refusal rather than around it, and both are covered by
 unit tests.
 
-**Distribution.** `manteen-kit@0.3.1` and `manteen@0.9.1` are public on npm as `latest`. Both lines
+**Distribution.** `manteen-kit@0.3.2` and `manteen@0.9.2` are public on npm as `latest`. Both lines
 were published from tagged GitHub Actions OIDC workflows and expose npm publish plus SLSA
-provenance attestations. The current client resolves the public `manteen-kit@^0.3.1`; the earlier
+provenance attestations. The current client resolves the public `manteen-kit@^0.3.2`; the earlier
 client-only `0.3.0`, `0.4.0` and `0.5.0` releases correctly kept
 the prior kit range and created no kit tags. The
 initial trusted-release receipts are in
@@ -153,8 +154,10 @@ the [`0.2 release handoff`](./releases/v0.2-release-handoff.md), and the complet
 [`0.5 release handoff`](./releases/v0.5-release-handoff.md), and the
 [`agent-native release handoff`](./releases/agent-native-release-handoff.md). The public client `0.8.0`
 follow-on is recorded in the [`0.8 release handoff`](./releases/v0.8-release-handoff.md); the schema-v2
-train is recorded in the [`0.9 release handoff`](./releases/v0.9-release-handoff.md), and the current
-reliability release is recorded in the [`0.9.1 release handoff`](./releases/v0.9.1-release-handoff.md).
+train is recorded in the [`0.9 release handoff`](./releases/v0.9-release-handoff.md), the broader
+reliability release is recorded in the [`0.9.1 release handoff`](./releases/v0.9.1-release-handoff.md),
+and the clean-room regression closure is recorded in the
+[`0.9.2 release handoff`](./releases/v0.9.2-release-handoff.md).
 
 **Project hygiene.** The MIT license, Biome, Dependabot, editorconfig and rename are done.
 `SECURITY.md` and contributor ceremony remain deliberately deferred until the repository has
