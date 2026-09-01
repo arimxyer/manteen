@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline";
@@ -87,7 +87,11 @@ function eventStream(child) {
           timer: setTimeout(() => {
             const index = waiters.indexOf(waiter);
             if (index >= 0) waiters.splice(index, 1);
-            reject(new Error(`Timed out waiting for ${label}; events: ${JSON.stringify(events)}`));
+            reject(
+              new Error(
+                `Timed out waiting for ${label}; events: ${JSON.stringify(events)}; stderr: ${JSON.stringify(stderr.join(""))}`,
+              ),
+            );
           }, 10_000),
         };
         waiters.push(waiter);
@@ -213,17 +217,30 @@ test("npm exec SIGINT emits stopped before EOF and closes the listener", {
 }, async () => {
   const created = fixture();
   const bin = join(created.root, "node_modules", ".bin");
+  const installedPackage = join(created.root, "node_modules", "manteen-kit");
   mkdirSync(bin, { recursive: true });
-  const shim = join(bin, "manteen-kit");
+  mkdirSync(installedPackage, { recursive: true });
   writeFileSync(
-    shim,
+    join(installedPackage, "package.json"),
+    `${JSON.stringify({
+      name: "manteen-kit",
+      version: "0.0.0-test",
+      type: "module",
+      bin: { "manteen-kit": "cli.mjs" },
+    })}\n`,
+  );
+  writeFileSync(
+    join(installedPackage, "cli.mjs"),
     `#!/usr/bin/env node\nawait import(${JSON.stringify(pathToFileURL(CLI).href)});\n`,
     { mode: 0o755 },
   );
+  const shim = join(bin, "manteen-kit");
+  symlinkSync("../manteen-kit/cli.mjs", shim);
   const child = spawn(
     "npm",
     [
       "exec",
+      "--offline",
       "--yes=false",
       "--",
       "manteen-kit",
@@ -252,7 +269,10 @@ test("npm exec SIGINT emits stopped before EOF and closes the listener", {
     const exited = new Promise((accept) =>
       child.once("exit", (code, signal) => accept({ code, signal })),
     );
-    child.kill("SIGINT");
+    // A terminal sends Ctrl-C to the foreground process group, not only to the
+    // npm wrapper. The detached group keeps that realistic signal away from
+    // the test runner while exercising both npm and the CLI child.
+    process.kill(-child.pid, "SIGINT");
     const stopped = await stream.wait(
       (event) => event.event === "stopped" && event.sequence > built.sequence,
       "npm exec stopped event",
