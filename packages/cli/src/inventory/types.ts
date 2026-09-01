@@ -401,9 +401,10 @@ export interface ListRow {
 }
 
 export interface ListGroup {
-  registry: string;
+  /** Namespace for configured/recorded registries; null for direct URL installs. */
+  registry: string | null;
   /** REDACTED. */
-  redactedUrl: string;
+  redactedUrl: string | null;
   title: string | null;
   homepage: string | null;
   rows: ListRow[];

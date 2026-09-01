@@ -5,11 +5,37 @@
   "description": "Author-only evidence ownership for claims in a Manteen registry catalog. This data is validated during author builds and is never compiled into registry wire output.",
   "type": "object",
   "required": ["schemaVersion"],
-  "anyOf": [{ "required": ["stylesApi"] }, { "required": ["props"] }, { "required": ["usage"] }],
+  "anyOf": [
+    { "required": ["stylesApi"] },
+    { "required": ["props"] },
+    { "required": ["usage"] },
+    { "required": ["verification"] }
+  ],
   "additionalProperties": false,
   "properties": {
     "$schema": { "type": "string" },
     "schemaVersion": { "const": 2 },
+    "verification": {
+      "type": "object",
+      "required": ["scripts"],
+      "additionalProperties": false,
+      "properties": {
+        "scripts": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9:_-]*$" },
+          "description": "Ordered root package.json scripts run by manteen-kit build and dev before publishing registry output."
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 3600000,
+          "default": 300000,
+          "description": "Wall-clock ceiling applied independently to each author verification script."
+        }
+      }
+    },
     "stylesApi": {
       "type": "array",
       "minItems": 1,

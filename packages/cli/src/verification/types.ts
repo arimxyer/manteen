@@ -31,6 +31,14 @@ export type VerificationStatus = "not-configured" | "skipped" | "planned" | "pas
 
 export type VerificationCheckResult = "passed" | "failed" | "not-run";
 
+/** Machine-readable boundary for every verification result. Project checks run
+ * after writes while the Manteen journal is still live; only captured
+ * Manteen-managed/control preimages are rollback-coupled. */
+export const VERIFICATION_BOUNDARY = {
+  phase: "post-write-pre-commit",
+  rollbackScope: "manteen-managed",
+} as const;
+
 export interface VerificationCheckOutcome {
   script: string;
   command: string;
@@ -72,6 +80,8 @@ export type VerificationFailure =
 
 /** Returned by the transaction while its rollback journal is still live. */
 export interface VerificationOutcome {
+  phase: typeof VERIFICATION_BOUNDARY.phase;
+  rollbackScope: typeof VERIFICATION_BOUNDARY.rollbackScope;
   status: VerificationStatus;
   checks: VerificationCheckOutcome[];
   failure: VerificationFailure | null;

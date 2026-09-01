@@ -24,6 +24,9 @@ version for a single command.
 | `manteen agent guide` | Print the packaged guide without requiring project configuration. |
 | `manteen agent install` | Safely install or update the packaged Manteen skill. |
 
+`manteen list --installed` is receipt-first and never fetches registry indexes. It remains useful
+when a local registry server is stopped; index-only metadata is `null` rather than inferred.
+
 The installed binary is the authority for available options:
 
 ```bash

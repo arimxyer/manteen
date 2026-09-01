@@ -93,7 +93,10 @@ expanded variables, timestamps, and incidental display text.
 Optional verification commands are configured separately for add, update, and remove. Each command
 can opt out with `--no-verify`. Verification runs after writes and inside rollback: failure restores
 all captured preimages, while `mutated` truthfully records whether durable bytes remain changed when
-the process exits. Verification definitions are included in the plan digest and drift is refused.
+the process exits. Every machine verification outcome names this boundary as
+`phase: "post-write-pre-commit"` and `rollbackScope: "manteen-managed"`; those fields do not claim
+that dependencies, caches, generated artifacts, or arbitrary verifier side effects are reversible.
+Verification definitions are included in the plan digest and drift is refused.
 
 `status` is offline. Missing or invalid initialization is a successful assessment with
 `healthy: false`; only inability to inspect the target is a command failure. It reports configuration,
@@ -137,6 +140,9 @@ query, registry and canonical item order remain unchanged. A query ranks matchin
 registry by exact canonical id, exact name, exact title, title prefix, id/name substring, title
 substring, then description substring; ties retain the prior item order. JSON exposes both every
 matching field and the winning rank so the ordering is explainable rather than an opaque score.
+`--installed` is a receipt-first offline inventory: it never fetches registry indexes and reports
+only metadata the receipt and current managed files can prove. Index-only titles, descriptions, and
+compatibility fields are `null`, including for a local registry whose development server has stopped.
 
 The supported programmatic entrypoint is `createManteenClient()`: read operations plus opaque
 plan/apply handles. Existing low-level exports remain available but are not the stable façade.

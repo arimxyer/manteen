@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-
+import { type AuthorVerificationOutcome, runAuthorVerification } from "../author-verification";
 import {
   AuthorConformanceError,
   compileRegistry,
@@ -28,6 +28,26 @@ interface BuildArgs {
   overwriteOutput: boolean;
   json: boolean;
   help: boolean;
+}
+
+function reportAuthorVerificationFailure(
+  args: BuildArgs,
+  authorVerification: AuthorVerificationOutcome,
+): number {
+  if (args.json) {
+    writeJson(
+      kitEnvelope("build", 1, false, { authorVerification }, [
+        {
+          code: authorVerification.failure!.code,
+          message: authorVerification.failure!.message,
+          details: authorVerification,
+        },
+      ]),
+    );
+  } else {
+    process.stderr.write(`${authorVerification.failure!.message}\n`);
+  }
+  return 1;
 }
 
 function parseArgs(argv: string[]): BuildArgs | null {
@@ -132,6 +152,36 @@ export function build(argv: string[]): number {
     return 1;
   }
 
+  const authorVerification = runAuthorVerification(args.catalog, result.authorConformance);
+  if (authorVerification.status === "failed") {
+    return reportAuthorVerificationFailure(args, authorVerification);
+  }
+  if (authorVerification.status === "passed") {
+    try {
+      const revalidated = compileRegistry(args.catalog);
+      if (revalidated.failures.length > 0) {
+        throw new Error(`${revalidated.failures.length} item(s) failed wire-schema validation.`);
+      }
+      if (
+        JSON.stringify(revalidated.authorConformance?.verification ?? null) !==
+        JSON.stringify(result.authorConformance?.verification ?? null)
+      ) {
+        throw new Error("The author verification configuration changed while its scripts ran.");
+      }
+      result = revalidated;
+    } catch (error) {
+      return reportAuthorVerificationFailure(args, {
+        ...authorVerification,
+        status: "failed",
+        failure: {
+          code: "author-verification-input-drift",
+          script: null,
+          message: `Registry inputs could not be revalidated after author verification: ${error instanceof Error ? error.message : String(error)}`,
+        },
+      });
+    }
+  }
+
   if (args.check) {
     const plan = planRegistryWrite(result, args.outDir, {
       overwriteOutput: args.overwriteOutput,
@@ -143,7 +193,7 @@ export function build(argv: string[]): number {
           "build",
           exitCode,
           false,
-          plan,
+          { ...plan, authorVerification },
           plan.diagnostics.map((diagnostic) => ({ ...diagnostic })),
         ),
       );
@@ -189,7 +239,7 @@ export function build(argv: string[]): number {
   }
 
   if (args.json) {
-    writeJson(kitEnvelope("build", 0, outcome.mutated, outcome));
+    writeJson(kitEnvelope("build", 0, outcome.mutated, { ...outcome, authorVerification }));
     return 0;
   }
 
@@ -203,6 +253,9 @@ export function build(argv: string[]): number {
   process.stdout.write(
     `\nBuilt ${result.items.length} items from ${result.source.namespace}. Wire-schema conformance verified.\n`,
   );
+  for (const check of authorVerification.checks) {
+    process.stdout.write(`  verified → ${check.script}\n`);
+  }
 
   return 0;
 }

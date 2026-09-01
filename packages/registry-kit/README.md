@@ -77,16 +77,39 @@ manteen-kit scaffold \
   --apply \
   --expect-plan <sha256> \
   --json
+
+# Complete registration plan: sources plus bounded catalog/profile/package edits
+manteen-kit scaffold \
+  --template component-styles-api \
+  --name status-card \
+  --register \
+  --dry-run \
+  --json
 ```
 
-Use `--catalog path/to/manteen.registry.json` for another registry. Plans contain canonical
-catalog-root-relative paths, complete source contents and hashes, required package declarations,
+Use `--catalog path/to/manteen.registry.json` for another registry. Scaffold component and style
+targets preserve their co-located item directory, so sibling imports remain siblings after client
+installation. Plans contain canonical catalog-root-relative paths, complete source contents and
+hashes, required package declarations,
 and the exact catalog insertion object. The Styles API template also returns its exact author
-profile evidence mapping. The command applies only scaffold-owned source files: it never mutates
-or reserializes `manteen.registry.json`, the author profile, or `package.json`. Differing occupied
-files, unsafe paths or links, catalog collisions, and stale plans are named refusals; exact existing
-scaffold bytes are a no-op. A failed rollback reports `mutated: true` whenever a scaffold-created
-file, staging file, or directory could not be safely removed.
+profile evidence mapping. Without `--register`, apply changes only scaffold-owned source files.
+With `--register`, a reviewed digest also binds surgical catalog insertion, author-profile mapping,
+and missing exact package declarations; conflicts refuse rather than overwrite authored values, and
+all changed files share one rollback boundary. Differing occupied files, unsafe paths or links,
+catalog collisions, dependency conflicts, and stale plans are named refusals; exact existing
+scaffold bytes are a no-op. A failed rollback reports `mutated: true` whenever a scaffold-created or
+registered byte, staging file, or directory could not be safely restored.
+
+An author profile may optionally declare ordered root `package.json` script names under
+`verification.scripts`. `build` and every `dev` rebuild execute them after registry validation and
+before publishing new output, report each result in machine output, and retain the last-good served
+snapshot when a hook fails. A hook cannot replace a later package-script definition; package drift
+refuses, and registry inputs are recompiled before publication. Hooks are author-project checks,
+not proof about a consumer application.
+
+For `dev --port 0`, each successful build event includes both initial registration and explicit
+replacement preview argv. A consumer left pointing at a stopped ephemeral port can run the
+replacement preview and its digest-bound action instead of hand-editing `manteen.json`.
 
 ## Authoring format
 
@@ -155,7 +178,11 @@ interpret tests or source behavior:
       "item": "data-grid",
       "evidence": "evidence/data-grid-usage.contract"
     }
-  ]
+  ],
+  "verification": {
+    "scripts": ["lint", "typecheck"],
+    "timeoutMs": 300000
+  }
 }
 ```
 
@@ -164,9 +191,10 @@ boundary: `stylesApi` maps item/component claims, `props` maps item/export claim
 item claims. Missing, duplicate, and stale mappings refuse, and one physical evidence file cannot
 be reused across sections. Evidence paths are canonical catalog-root-relative POSIX paths to
 existing ordinary files contained by that repository. Evidence can use any filename and file type:
-the generic validator does not require Bun, read evidence contents, inspect assertions or skips,
-execute TypeScript, runtime-import source, or run author commands. The author's normal test runner
-remains the authority for behavioral proof.
+the generic claim validator does not require Bun, read evidence contents, inspect assertions or
+skips, execute TypeScript, or runtime-import source. When `verification` is present, the kit CLI
+does run those exact root package scripts as a separate author-owned gate; the scripts remain the
+authority for behavioral proof.
 
 `props` and `usage` are the same kind of author assertion, for documentation clients. `props`
 documents the prop surface (keyed by exported component or hook name, each entry `name`/`type`

@@ -119,7 +119,7 @@ import {
   type VerificationPorts,
   verifyAppliedUpdate,
 } from "../verification/run";
-import type { VerificationOutcome } from "../verification/types";
+import { VERIFICATION_BOUNDARY, type VerificationOutcome } from "../verification/types";
 
 const EXIT_OK = 0;
 const EXIT_REFUSED = 1;
@@ -212,13 +212,14 @@ function unavailableVerification(
   planned: Plan,
 ): VerificationOutcome {
   if (config.raw.verification?.update === undefined) {
-    return { status: "not-configured", checks: [], failure: null };
+    return { ...VERIFICATION_BOUNDARY, status: "not-configured", checks: [], failure: null };
   }
-  if (options.verify === false) return { status: "skipped", checks: [], failure: null };
+  if (options.verify === false)
+    return { ...VERIFICATION_BOUNDARY, status: "skipped", checks: [], failure: null };
   if (planned.verification === null) {
     // Reachable only on a refused plan. An ok plan with configured verification
     // must carry the exact definitions the runner will revalidate.
-    return { status: "planned", checks: [], failure: null };
+    return { ...VERIFICATION_BOUNDARY, status: "planned", checks: [], failure: null };
   }
   return plannedVerificationOutcome(planned.verification);
 }
@@ -363,7 +364,7 @@ export async function update(
     verification = outcome.verification;
   } else if (verification.status === "planned" && planned.verification !== null) {
     if (!outcome.ok) {
-      verification = { status: "skipped", checks: [], failure: null };
+      verification = { ...VERIFICATION_BOUNDARY, status: "skipped", checks: [], failure: null };
     } else if (!outcome.dryRun) {
       verification = await verifyAppliedUpdate(planned, planned.verification, ports.verification);
     }
@@ -873,8 +874,8 @@ export async function runUpdate(
   const exit = updateExitCode(result);
   const fallbackVerification: VerificationOutcome =
     config.raw.verification === undefined
-      ? { status: "not-configured", checks: [], failure: null }
-      : { status: "skipped", checks: [], failure: null };
+      ? { ...VERIFICATION_BOUNDARY, status: "not-configured", checks: [], failure: null }
+      : { ...VERIFICATION_BOUNDARY, status: "skipped", checks: [], failure: null };
 
   if (flags.json === true) {
     streams.stdout(

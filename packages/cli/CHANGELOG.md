@@ -1,5 +1,11 @@
 # manteen
 
+## Unreleased
+
+- Make `list --installed` a receipt-first offline inventory that never fetches registry indexes.
+- Add machine-explicit verification `phase` and `rollbackScope` fields so managed rollback is not
+  mistaken for reversal of dependency, cache, generated-artifact, or arbitrary script effects.
+
 ## 0.9.0
 
 - Replace the machine envelope with schema version 2, including an always-present top-level

@@ -25,6 +25,11 @@ Require `ok === (exitCode === 0)`. Interpret `mutated` as whether durable projec
 changed when the process exits, including after rollback attempts. Do not infer mutation from a
 planned write count.
 
+Verification outcomes explicitly report `phase: "post-write-pre-commit"` and
+`rollbackScope: "manteen-managed"`. Never broaden that scope to dependency installations, caches,
+generated artifacts, or arbitrary project-script effects. `list --installed` is a receipt-first
+offline inventory and must not be treated as live registry availability evidence.
+
 Validate documents against the JSON schemas shipped by the installed package when durable
 automation depends on them. Branch on stable codes and fields, not display text.
 

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import {
+  existsSync,
   lstatSync,
   mkdirSync,
   mkdtempSync,
@@ -205,7 +206,11 @@ describe("safe author scaffold planning", () => {
       "src/status-card/status-card.tsx",
     ]);
     expect(plans["component-basic"].catalogInsertion.files).toEqual([
-      { path: "src/status-card/status-card.tsx", as: "component" },
+      {
+        path: "src/status-card/status-card.tsx",
+        as: "component",
+        target: "@ui/status-card/status-card.tsx",
+      },
     ]);
     expect(plans["component-basic"].files[0]!.content).not.toContain("factory");
 
@@ -216,11 +221,15 @@ describe("safe author scaffold planning", () => {
       "test/status-card-styles-api.test.tsx",
     ]);
     expect(plans["component-styles-api"].catalogInsertion.files).toEqual([
-      { path: "src/status-card/status-card.tsx", as: "component" },
+      {
+        path: "src/status-card/status-card.tsx",
+        as: "component",
+        target: "@ui/status-card/status-card.tsx",
+      },
       {
         path: "src/status-card/status-card.module.css",
         as: "style",
-        target: "@ui/status-card.module.css",
+        target: "@ui/status-card/status-card.module.css",
       },
     ]);
     expect(plans["component-styles-api"].files[1]!.content).toContain("useStyles");
@@ -229,6 +238,13 @@ describe("safe author scaffold planning", () => {
     expect(plans["component-polymorphic"].files.map((file) => file.path)).toEqual([
       "src/status-card/status-card.tsx",
       "src/status-card/status-card.usage.tsx",
+    ]);
+    expect(plans["component-polymorphic"].catalogInsertion.files).toEqual([
+      {
+        path: "src/status-card/status-card.tsx",
+        as: "component",
+        target: "@ui/status-card/status-card.tsx",
+      },
     ]);
     expect(plans["component-polymorphic"].files[0]!.content).toContain("polymorphicFactory");
     expect(plans["component-polymorphic"].files[1]!.content).toContain('component="a"');
@@ -328,6 +344,159 @@ describe("safe author scaffold planning", () => {
 });
 
 describe("safe author scaffold apply", () => {
+  test("--register completes catalog, profile, package, and source as one reviewed plan", () => {
+    const created = fixture({ profile: true, packageManifest: true });
+    const registeredInput = {
+      ...input(created.catalogPath, "component-styles-api"),
+      register: true,
+    };
+    const planned = planScaffold(registeredInput);
+
+    expect(planned.safe).toBe(true);
+    expect(planned.registration).toMatchObject({ enabled: true });
+    expect(planned.registration.files.map((file) => [file.path, file.operation])).toEqual([
+      ["manteen.author-profile.json", "replace"],
+      ["manteen.registry.json", "replace"],
+      ["package.json", "replace"],
+    ]);
+
+    const outcome = applyScaffold(registeredInput, planned.planDigest);
+    expect(outcome.mutated).toBe(true);
+    expect(outcome.writtenPaths).toEqual(
+      expect.arrayContaining([
+        "src/status-card/status-card.tsx",
+        "manteen.registry.json",
+        "manteen.author-profile.json",
+        "package.json",
+      ]),
+    );
+
+    const catalog = JSON.parse(readFileSync(created.catalogPath, "utf8"));
+    expect(catalog.items.at(-1)).toEqual(planned.catalogInsertion);
+    const profile = JSON.parse(
+      readFileSync(join(created.root, "manteen.author-profile.json"), "utf8"),
+    );
+    expect(profile.stylesApi.at(-1)).toEqual(planned.authorProfileInsertion!.mapping);
+    const manifest = JSON.parse(readFileSync(join(created.root, "package.json"), "utf8"));
+    expect(manifest.dependencies).toEqual({ "@mantine/core": "^9.5.0" });
+    expect(manifest.devDependencies).toMatchObject({
+      "@types/react": "^19.2.0",
+      "@types/react-dom": "^19.2.0",
+      react: "^19.2.0",
+      "react-dom": "^19.2.0",
+      typescript: "^5.9.0",
+      vitest: "^3.2.4",
+    });
+    expect(compileRegistry(created.catalogPath).failures).toEqual([]);
+
+    const secondPlan = planScaffold(registeredInput);
+    expect(secondPlan.safe).toBe(true);
+    expect(secondPlan.files.every((file) => file.operation === "noop")).toBe(true);
+    expect(secondPlan.registration.files.every((file) => file.operation === "noop")).toBe(true);
+    expect(applyScaffold(registeredInput, secondPlan.planDigest)).toMatchObject({
+      mutated: false,
+      writtenPaths: [],
+    });
+  });
+
+  test("--register creates and owns the default author profile when Styles API evidence needs one", () => {
+    const created = fixture({ packageManifest: true });
+    const registeredInput = {
+      ...input(created.catalogPath, "component-styles-api"),
+      register: true,
+    };
+    const planned = planScaffold(registeredInput);
+
+    expect(planned.safe).toBe(true);
+    expect(planned.authorProfileInsertion?.profilePath).toBe("manteen.author-profile.json");
+    expect(planned.registration.files.find((file) => file.role === "author-profile")).toMatchObject(
+      { path: "manteen.author-profile.json", operation: "create" },
+    );
+
+    applyScaffold(registeredInput, planned.planDigest);
+    const catalog = JSON.parse(readFileSync(created.catalogPath, "utf8"));
+    expect(catalog.authorProfile).toBe("manteen.author-profile.json");
+    const profile = JSON.parse(
+      readFileSync(join(created.root, "manteen.author-profile.json"), "utf8"),
+    );
+    expect(profile).toEqual({
+      schemaVersion: 2,
+      stylesApi: [planned.authorProfileInsertion!.mapping],
+    });
+    expect(compileRegistry(created.catalogPath).authorConformance).toMatchObject({
+      claimCount: 1,
+      evidenceCount: 1,
+    });
+  });
+
+  test("--register rolls back control edits and newly created sources together", () => {
+    const created = fixture({ profile: true, packageManifest: true });
+    const before = snapshot(created.root);
+    const registeredInput = {
+      ...input(created.catalogPath, "component-styles-api"),
+      register: true,
+    };
+    const planned = planScaffold(registeredInput);
+
+    expect(() =>
+      applyScaffoldWithHooks(registeredInput, planned.planDigest, {
+        afterRegistrationWrite: (_path, count) => {
+          if (count === 2) throw new Error("injected registration failure");
+        },
+      }),
+    ).toThrow("injected registration failure");
+    expect(snapshot(created.root)).toEqual(before);
+  });
+
+  test("--register reports mutation truth when a control file drifts before rollback", () => {
+    const created = fixture({ profile: true, packageManifest: true });
+    const registeredInput = {
+      ...input(created.catalogPath, "component-styles-api"),
+      register: true,
+    };
+    const planned = planScaffold(registeredInput);
+    let failure: unknown;
+
+    try {
+      applyScaffoldWithHooks(registeredInput, planned.planDigest, {
+        afterRegistrationWrite: (path, count) => {
+          if (count !== 1) return;
+          writeFileSync(join(created.root, ...path.split("/")), "externally drifted control\n");
+          throw new Error("injected control drift");
+        },
+      });
+    } catch (error) {
+      failure = error;
+    }
+
+    expect(failure).toBeInstanceOf(ScaffoldError);
+    expect((failure as ScaffoldError).mutated).toBe(true);
+    expect(diagnostics(failure)).toContain("scaffold-registration-rollback-drift");
+    expect(readFileSync(join(created.root, "manteen.author-profile.json"), "utf8")).toBe(
+      "externally drifted control\n",
+    );
+    expect(existsSync(join(created.root, "src/status-card/status-card.tsx"))).toBe(false);
+  });
+
+  test("--register refuses authored dependency conflicts before writing", () => {
+    const created = fixture({ profile: true, packageManifest: true });
+    writeFileSync(
+      join(created.root, "package.json"),
+      '{"name":"scaffold-fixture","private":true,"dependencies":{"@mantine/core":"^8"}}\n',
+    );
+    const before = snapshot(created.root);
+    const planned = planScaffold({ ...input(created.catalogPath), register: true });
+
+    expect(planned.safe).toBe(false);
+    expect(planned.diagnostics.map((diagnostic) => diagnostic.code)).toContain(
+      "scaffold-package-dependency-conflict",
+    );
+    expect(() =>
+      applyScaffold({ ...input(created.catalogPath), register: true }, planned.planDigest),
+    ).toThrow(ScaffoldError);
+    expect(snapshot(created.root)).toEqual(before);
+  });
+
   test("applies a matching plan and a newly planned exact second run is a no-op", () => {
     const created = fixture({ profile: true, packageManifest: true });
     const preserved = new Map(

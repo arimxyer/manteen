@@ -39,7 +39,7 @@ import { join, resolve } from "node:path";
 import { after, test } from "node:test";
 import { pathToFileURL } from "node:url";
 
-import { compileRegistry, writeRegistry } from "manteen-kit";
+import { applyScaffold, compileRegistry, planScaffold, writeRegistry } from "manteen-kit";
 import { childEnv } from "./helpers/child-env.mjs";
 
 const PKG_ROOT = resolve(import.meta.dirname, "..");
@@ -476,6 +476,8 @@ test("configured add verification failure restores every managed byte", () => {
   assert.equal(result.status, 1, result.all);
   const document = json(result);
   assert.equal(document.payload.verification.status, "failed");
+  assert.equal(document.payload.verification.phase, "post-write-pre-commit");
+  assert.equal(document.payload.verification.rollbackScope, "manteen-managed");
   assert.equal(document.payload.verification.failure.kind, "script-failed");
   assert.equal(document.mutated, false);
   assert.deepEqual(document.notes, []);
@@ -507,6 +509,81 @@ test("list marks an installed item, and its JSON says so with a root-relative pa
     "a listing path must be the POSIX, root-relative receipt form",
   );
   assert.equal(item.installed.files[0].status, "unchanged");
+});
+
+test("list --installed remains receipt-backed when its registry index is offline", () => {
+  const project = makeProject();
+  assert.equal(run(project, ["add", ITEM]).status, 0);
+
+  const configPath = join(project, "manteen.json");
+  const config = JSON.parse(readFileSync(configPath, "utf8"));
+  config.registries["@base"].index = "file:///definitely-missing-manteen-index/registry.json";
+  writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
+
+  const onlineRequired = run(project, ["list", "--json"]);
+  assert.equal(onlineRequired.status, 1, onlineRequired.all);
+  assert.ok(
+    json(onlineRequired).notes.some((note) => note.includes("index-unreachable")),
+    onlineRequired.all,
+  );
+
+  const installed = run(project, ["list", "--installed", "--json"]);
+  assert.equal(installed.status, 0, installed.all);
+  const document = json(installed);
+  assert.equal(document.payload.registries.length, 1, installed.all);
+  assert.deepEqual(
+    document.payload.registries[0].items.map((item) => item.id),
+    [ITEM],
+  );
+  assert.equal(document.payload.registries[0].items[0].installed.direct, true);
+  assert.equal(
+    document.notes.some((note) => note.includes("index-unreachable")),
+    false,
+  );
+});
+
+test("registered scaffold topology installs relative component and style imports as siblings", () => {
+  const registryRoot = join(WORK, "registered-scaffold");
+  mkdirSync(registryRoot, { recursive: true });
+  const catalogPath = join(registryRoot, "manteen.registry.json");
+  writeFileSync(
+    catalogPath,
+    `${JSON.stringify({ name: "Scaffold topology", namespace: "@scaffold", items: [] }, null, 2)}\n`,
+  );
+  writeFileSync(
+    join(registryRoot, "package.json"),
+    '{"name":"scaffold-topology","private":true}\n',
+  );
+  const input = {
+    catalogPath,
+    template: "component-styles-api",
+    itemName: "status-card",
+    register: true,
+  };
+  const plan = planScaffold(input);
+  assert.equal(plan.safe, true, JSON.stringify(plan.diagnostics));
+  applyScaffold(input, plan.planDigest);
+  const outDir = join(WORK, "registered-scaffold-output");
+  writeRegistry(compileRegistry(catalogPath), outDir);
+  const base = pathToFileURL(outDir).href;
+
+  const project = makeProject({
+    registries: {
+      "@scaffold": { url: `${base}/{name}.json`, index: `${base}/registry.json` },
+    },
+  });
+  const preview = run(project, ["add", "@scaffold/status-card", "--dry-run", "--json"]);
+  assert.equal(preview.status, 0, preview.all);
+  const digest = json(preview).payload.planDigest;
+  const applied = run(project, ["add", "@scaffold/status-card", "--expect-plan", digest, "--json"]);
+  assert.equal(applied.status, 0, applied.all);
+
+  const directory = join(project, "src/components/ui/status-card");
+  const component = join(directory, "status-card.tsx");
+  const styles = join(directory, "status-card.module.css");
+  assert.equal(existsSync(component), true);
+  assert.equal(existsSync(styles), true);
+  assert.match(readFileSync(component, "utf8"), /from "\.\/status-card\.module\.css"/);
 });
 
 test("list refuses an unregistered namespace with the code add uses, at exit 1", () => {

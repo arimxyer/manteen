@@ -23,6 +23,7 @@ import type {
   VerificationProcessRequest,
   VerificationProcessResult,
 } from "../src/verification/types";
+import { VERIFICATION_BOUNDARY } from "../src/verification/types";
 
 const roots: string[] = [];
 
@@ -270,6 +271,7 @@ describe("post-apply verification", () => {
         verify: async () => {
           write(fixture.plan.configPath, '{"changed":true}\n');
           return {
+            ...VERIFICATION_BOUNDARY,
             status: "failed",
             checks: [],
             failure: {
@@ -522,11 +524,15 @@ describe("update verification orchestration", () => {
     }));
 
     expect(
-      renderVerification({ status: "planned", checks, failure: null }, fixture.root),
+      renderVerification(
+        { ...VERIFICATION_BOUNDARY, status: "planned", checks, failure: null },
+        fixture.root,
+      ),
     ).toContain("planned  verification  npm run second");
     expect(
       renderVerification(
         {
+          ...VERIFICATION_BOUNDARY,
           status: "failed",
           checks: [{ ...checks[0], result: "failed" }, checks[1] as (typeof checks)[number]],
           failure: {
@@ -574,6 +580,11 @@ describe("update verification orchestration", () => {
     expect(calls).toBe(0);
     expect(result.kind).toBe("applied");
     if (result.kind !== "applied") return;
-    expect(result.verification).toEqual({ status: "skipped", checks: [], failure: null });
+    expect(result.verification).toEqual({
+      ...VERIFICATION_BOUNDARY,
+      status: "skipped",
+      checks: [],
+      failure: null,
+    });
   });
 });

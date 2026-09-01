@@ -13,6 +13,7 @@ const CLI = join(PACKAGE_ROOT, "dist/cli.mjs");
 function fixture() {
   const root = realpathSync.native(mkdtempSync(join(tmpdir(), "manteen-kit-dev-node-")));
   const catalog = join(root, "manteen.registry.json");
+  const profile = join(root, "manteen.author-profile.json");
   const source = join(root, "src/alpha.tsx");
   const outDir = join(root, "generated/r");
   mkdirSync(dirname(source), { recursive: true });
@@ -20,6 +21,7 @@ function fixture() {
   const catalogValue = {
     name: "Dev fixture",
     namespace: "@dev",
+    authorProfile: "manteen.author-profile.json",
     items: [
       {
         name: "alpha",
@@ -29,6 +31,22 @@ function fixture() {
     ],
   };
   writeFileSync(catalog, `${JSON.stringify(catalogValue, null, 2)}\n`);
+  writeFileSync(
+    profile,
+    `${JSON.stringify({ schemaVersion: 2, verification: { scripts: ["verify:author"] } }, null, 2)}\n`,
+  );
+  writeFileSync(
+    join(root, "package.json"),
+    `${JSON.stringify({
+      name: "dev-proof",
+      private: true,
+      scripts: { "verify:author": "node verify-author.mjs" },
+    })}\n`,
+  );
+  writeFileSync(
+    join(root, "verify-author.mjs"),
+    'import { readFileSync } from "node:fs";\nif (readFileSync(new URL("./src/alpha.tsx", import.meta.url), "utf8").includes("verification-failure")) process.exitCode = 1;\n',
+  );
   return { root, catalog, source, outDir, catalogValue };
 }
 
@@ -96,6 +114,8 @@ test("built dev server retains last-good output and recovers in one foreground p
       "initial build",
     );
     assert.equal(first.payload.namespace, "@dev");
+    assert.equal(first.payload.authorVerification.status, "passed");
+    assert.equal(first.payload.authorVerification.checks[0].script, "verify:author");
     assert.deepEqual(first.payload.registryAddArgv, [
       "manteen",
       "registry",
@@ -105,6 +125,19 @@ test("built dev server retains last-good output and recovers in one foreground p
       `${ready.payload.baseUrl}/{name}.json`,
       "--index",
       `${ready.payload.baseUrl}/registry.json`,
+      "--dry-run",
+      "--json",
+    ]);
+    assert.deepEqual(first.payload.registryReplaceArgv, [
+      "manteen",
+      "registry",
+      "add",
+      "@dev",
+      "--url",
+      `${ready.payload.baseUrl}/{name}.json`,
+      "--index",
+      `${ready.payload.baseUrl}/registry.json`,
+      "--replace",
       "--dry-run",
       "--json",
     ]);
@@ -118,9 +151,24 @@ test("built dev server retains last-good output and recovers in one foreground p
       405,
     );
 
+    writeFileSync(created.source, 'export const Alpha = () => "verification-failure";\n');
+    const verificationFailed = await stream.wait(
+      (event) => event.event === "build-failed" && event.sequence > first.sequence,
+      "author verification failure",
+    );
+    assert.equal(verificationFailed.payload.code, "author-verification-script-failed");
+    assert.equal(verificationFailed.payload.servingLastGood, true);
+    assert.match(await (await fetch(`${ready.payload.baseUrl}/alpha.json`)).text(), /first/);
+
+    writeFileSync(created.source, 'export const Alpha = () => "first";\n');
+    const verificationRecovered = await stream.wait(
+      (event) => event.event === "build-succeeded" && event.sequence > verificationFailed.sequence,
+      "author verification recovery",
+    );
+
     writeFileSync(created.catalog, "{ broken\n");
     const failed = await stream.wait(
-      (event) => event.event === "build-failed" && event.sequence > first.sequence,
+      (event) => event.event === "build-failed" && event.sequence > verificationRecovered.sequence,
       "failed rebuild",
     );
     assert.equal(failed.payload.servingLastGood, true);

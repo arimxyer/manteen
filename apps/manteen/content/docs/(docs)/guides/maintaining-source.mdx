@@ -74,9 +74,11 @@ Projects can configure package scripts after successful `add`, `update`, and `re
 The script names and their exact definitions are part of the reviewed plan. Checks run in authored
 order and stop at the first failure.
 
-A verification failure does not undo a coherent mutation: source, bases, and receipt have already
-been applied. Report the mutation result and the verification result separately, then inspect the
-project before choosing another action. `--no-verify` skips configured checks for that invocation;
-it is not a general success override.
+A verification failure restores the source, bases, receipt, configuration, and other captured
+Manteen-managed/control preimages before the mutation journal is released. It does not reverse
+dependency installations, caches, generated artifacts, or arbitrary script effects. Machine
+results make that boundary explicit as `phase: "post-write-pre-commit"` and
+`rollbackScope: "manteen-managed"`. `--no-verify` skips configured checks for that invocation; it
+is not a general success override.
 
 Commit installed source, `manteen.lock.json`, and `.manteen/bases/` as one maintenance boundary.

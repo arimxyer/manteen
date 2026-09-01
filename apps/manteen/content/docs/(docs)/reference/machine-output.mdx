@@ -80,6 +80,11 @@ manteen status --json >manteen-result.json
 When a harness needs verifier output too, capture the streams independently and treat the JSON
 document as the command result.
 
+Verification payloads name their exact execution and rollback boundary:
+`phase: "post-write-pre-commit"` and `rollbackScope: "manteen-managed"`. These fields do not cover
+dependency installations, caches, generated artifacts, or arbitrary side effects from a project
+script.
+
 ## Exit semantics
 
 | Exit | Meaning |

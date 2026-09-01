@@ -1,7 +1,7 @@
 import { existsSync, type FSWatcher, readFileSync, watch } from "node:fs";
 import { createServer } from "node:http";
 import { dirname, isAbsolute, resolve } from "node:path";
-
+import { AuthorVerificationError, runAuthorVerification } from "../author-verification";
 import {
   AuthorConformanceError,
   type CompileResult,
@@ -119,6 +119,13 @@ function discoverInputs(catalogPath: string): string[] {
             }
           }
         }
+        if (
+          profile.verification &&
+          typeof profile.verification === "object" &&
+          Array.isArray((profile.verification as { scripts?: unknown }).scripts)
+        ) {
+          paths.add(resolve(root, "package.json"));
+        }
       } catch {
         // The profile itself remains watched; a later valid write refreshes its evidence graph.
       }
@@ -151,6 +158,12 @@ function errorPayload(error: unknown): { code: string; message: string; details?
     return { code: "mantine-range-validation-failed", message, details: error.failures };
   if (error instanceof RegistryOutputError)
     return { code: "registry-output-refused", message, details: error.diagnostics };
+  if (error instanceof AuthorVerificationError)
+    return {
+      code: error.outcome.failure?.code ?? "author-verification-failed",
+      message,
+      details: error.outcome,
+    };
   return { code: "build-failed", message };
 }
 
@@ -205,9 +218,40 @@ export async function dev(argv: string[]): Promise<number> {
 
   const build = () => {
     try {
-      const result = compileRegistry(args.catalog);
+      let result = compileRegistry(args.catalog);
       if (result.failures.length > 0)
         throw new Error(`${result.failures.length} item(s) failed wire-schema validation.`);
+      const authorVerification = runAuthorVerification(args.catalog, result.authorConformance);
+      if (authorVerification.status === "failed") {
+        throw new AuthorVerificationError(authorVerification);
+      }
+      if (authorVerification.status === "passed") {
+        try {
+          const revalidated = compileRegistry(args.catalog);
+          if (revalidated.failures.length > 0) {
+            throw new Error(
+              `${revalidated.failures.length} item(s) failed wire-schema validation.`,
+            );
+          }
+          if (
+            JSON.stringify(revalidated.authorConformance?.verification ?? null) !==
+            JSON.stringify(result.authorConformance?.verification ?? null)
+          ) {
+            throw new Error("The author verification configuration changed while its scripts ran.");
+          }
+          result = revalidated;
+        } catch (error) {
+          throw new AuthorVerificationError({
+            ...authorVerification,
+            status: "failed",
+            failure: {
+              code: "author-verification-input-drift",
+              script: null,
+              message: `Registry inputs could not be revalidated after author verification: ${error instanceof Error ? error.message : String(error)}`,
+            },
+          });
+        }
+      }
       const outcome = writeRegistry(result, args.outDir, { overwriteOutput: args.overwriteOutput });
       served = snapshot(result);
       const itemUrl = `${baseUrl}/{name}.json`;
@@ -217,6 +261,7 @@ export async function dev(argv: string[]): Promise<number> {
         itemCount: result.items.length,
         mutated: outcome.mutated,
         outputStatus: outcome.status,
+        authorVerification,
         itemUrl,
         indexUrl,
         registryAddArgv: [
@@ -228,6 +273,19 @@ export async function dev(argv: string[]): Promise<number> {
           itemUrl,
           "--index",
           indexUrl,
+          "--dry-run",
+          "--json",
+        ],
+        registryReplaceArgv: [
+          "manteen",
+          "registry",
+          "add",
+          result.source.namespace,
+          "--url",
+          itemUrl,
+          "--index",
+          indexUrl,
+          "--replace",
           "--dry-run",
           "--json",
         ],

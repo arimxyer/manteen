@@ -39,6 +39,12 @@ export interface AuthorProfile {
   stylesApi?: StylesApiEvidenceMapping[];
   props?: PropsEvidenceMapping[];
   usage?: UsageEvidenceMapping[];
+  verification?: AuthorVerificationConfig;
+}
+
+export interface AuthorVerificationConfig {
+  scripts: string[];
+  timeoutMs?: number;
 }
 
 export type AuthorConformanceFailureCode =
@@ -89,6 +95,7 @@ export interface AuthorConformanceInspection {
   failures: AuthorConformanceFailure[];
   claimCount: number;
   evidenceCount: number;
+  verification: AuthorVerificationConfig | null;
 }
 
 interface RepositoryFile {
@@ -378,6 +385,7 @@ export function inspectAuthorConformance(
       failures: [],
       claimCount: 0,
       evidenceCount: 0,
+      verification: null,
     };
   }
 
@@ -397,6 +405,7 @@ export function inspectAuthorConformance(
       failures,
       claimCount: 0,
       evidenceCount: 0,
+      verification: null,
     };
   }
 
@@ -416,6 +425,7 @@ export function inspectAuthorConformance(
       failures,
       claimCount: 0,
       evidenceCount: 0,
+      verification: null,
     };
   }
 
@@ -434,6 +444,7 @@ export function inspectAuthorConformance(
       failures,
       claimCount: 0,
       evidenceCount: 0,
+      verification: null,
     };
   }
 
@@ -486,5 +497,6 @@ export function inspectAuthorConformance(
     failures,
     claimCount,
     evidenceCount: evidenceOwners.size,
+    verification: authorProfile.verification ?? null,
   };
 }

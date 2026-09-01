@@ -43,6 +43,12 @@ tags, hosted CI, npm provenance, and a fresh public consumer are accepted in the
 [`0.9 release handoff`](./releases/v0.9-release-handoff.md). Public registry bytes and site
 deployment remain unchanged; the repository has no workflow that publishes either artifact.
 
+The next unreleased reliability increment is implemented locally: receipt-first offline installed
+inventory, co-located scaffold targets, machine-explicit verification scope, digest-gated complete
+scaffold registration, ephemeral dev-server replacement previews, and author-owned build/dev
+verification hooks. These changes have no public-version, hosted-CI, npm, tag, release, registry,
+or deployment receipt yet.
+
 The agent-native release is public at `manteen-kit@0.2.1` and `manteen@0.7.0`. It adds
 transactional generated registry ownership, one stable JSON command envelope, complete display
 metadata, an opaque SDK facade, offline status, expected-plan digests, deterministic discovery

@@ -159,6 +159,9 @@ Unqueried `list` output keeps deterministic registry and canonical item order. `
 ranks matches within each registry by exact canonical id, exact name, exact title, title prefix,
 id/name substring, title substring, then description substring, with prior order as the tie-breaker.
 JSON rows expose `queryMatches` and the winning `queryRank` so agents can explain the order.
+`list --installed` is receipt-first and does not fetch a registry index, so it remains available
+after a local registry server stops. Metadata that exists only in an index is reported as `null`
+rather than guessed.
 
 For automation, every recognized `--json` invocation writes exactly one versioned envelope to
 stdout with `schemaVersion`, `command`, `root`, `ok`, `exitCode`, `mutated`, `payload`,
@@ -270,6 +273,10 @@ CLI's stderr, including under `--json`, so the JSON document on stdout stays par
 transcript or time-specific verification certificate is written to the receipt. With no configured
 checks, text output stays silent about verification and JSON reports `status: "not-configured"`
 rather than implying a semantic pass.
+
+Every machine verification outcome also carries `phase: "post-write-pre-commit"` and
+`rollbackScope: "manteen-managed"`. Treat those as the exact boundary: dependencies, caches,
+generated artifacts, and arbitrary side effects of project scripts are not covered by the journal.
 
 ## Agent use and SDK
 

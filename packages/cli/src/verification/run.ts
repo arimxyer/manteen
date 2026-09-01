@@ -20,6 +20,7 @@ import type {
   VerificationProcessResult,
   VerificationRunner,
 } from "./types";
+import { VERIFICATION_BOUNDARY } from "./types";
 
 export interface VerificationPorts {
   readReceipt: ReceiptReader;
@@ -220,14 +221,19 @@ function notRun(verification: PlannedVerification): VerificationCheckOutcome[] {
 }
 
 export function plannedVerificationOutcome(verification: PlannedVerification): VerificationOutcome {
-  return { status: "planned", checks: notRun(verification), failure: null };
+  return {
+    ...VERIFICATION_BOUNDARY,
+    status: "planned",
+    checks: notRun(verification),
+    failure: null,
+  };
 }
 
 function failed(
   checks: VerificationCheckOutcome[],
   failure: VerificationFailure,
 ): VerificationOutcome {
-  return { status: "failed", checks, failure };
+  return { ...VERIFICATION_BOUNDARY, status: "failed", checks, failure };
 }
 
 function readDefinitions(path: string): Record<string, unknown> | null {
@@ -458,7 +464,7 @@ export async function verifyAppliedUpdate(
     }
   }
 
-  return { status: "passed", checks, failure: null };
+  return { ...VERIFICATION_BOUNDARY, status: "passed", checks, failure: null };
 }
 
 /** Operation-neutral spelling for new add/remove integrations. */
@@ -535,5 +541,5 @@ export function verifyAppliedMutationSync(
     }
     observed.result = "passed";
   }
-  return { status: "passed", checks, failure: null };
+  return { ...VERIFICATION_BOUNDARY, status: "passed", checks, failure: null };
 }
