@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline";
@@ -50,14 +58,14 @@ function fixture() {
   return { root, catalog, source, outDir, catalogValue };
 }
 
-function eventStream(child) {
+function eventStream(child, { allowControlEcho = false } = {}) {
   const events = [];
   const waiters = [];
   const stderr = [];
   createInterface({ input: child.stdout }).on("line", (line) => {
     let event;
     try {
-      event = JSON.parse(line);
+      event = JSON.parse(allowControlEcho ? line.replace(/^\^C/, "") : line);
     } catch (error) {
       for (const waiter of waiters.splice(0)) waiter.reject(error);
       return;
@@ -288,6 +296,63 @@ test("npm exec SIGINT emits stopped before EOF and closes the listener", {
         child.kill("SIGKILL");
       }
     }
+    rmSync(created.root, { recursive: true, force: true });
+  }
+});
+
+test("npm exec in a real Linux PTY emits stopped when Ctrl-C is typed", {
+  skip: process.platform !== "linux" || !existsSync("/usr/bin/script"),
+}, async () => {
+  const created = fixture();
+  const bin = join(created.root, "node_modules", ".bin");
+  const installedPackage = join(created.root, "node_modules", "manteen-kit");
+  mkdirSync(bin, { recursive: true });
+  mkdirSync(installedPackage, { recursive: true });
+  writeFileSync(
+    join(installedPackage, "package.json"),
+    `${JSON.stringify({
+      name: "manteen-kit",
+      version: "0.0.0-test",
+      type: "module",
+      bin: { "manteen-kit": "cli.mjs" },
+    })}\n`,
+  );
+  writeFileSync(
+    join(installedPackage, "cli.mjs"),
+    `#!/usr/bin/env node\nawait import(${JSON.stringify(pathToFileURL(CLI).href)});\n`,
+    { mode: 0o755 },
+  );
+  symlinkSync("../manteen-kit/cli.mjs", join(bin, "manteen-kit"));
+
+  const command = [
+    "npm exec --offline --yes=false -- manteen-kit dev",
+    JSON.stringify(created.catalog),
+    JSON.stringify(created.outDir),
+    "--port 0 --jsonl",
+  ].join(" ");
+  const child = spawn("/usr/bin/script", ["-qfec", command, "/dev/null"], {
+    cwd: created.root,
+    stdio: ["pipe", "pipe", "pipe"],
+    env: { ...process.env, npm_config_loglevel: "silent" },
+  });
+  const stream = eventStream(child, { allowControlEcho: true });
+
+  try {
+    const ready = await stream.wait((event) => event.event === "ready", "PTY ready");
+    const built = await stream.wait(
+      (event) => event.event === "build-succeeded" && event.sequence > ready.sequence,
+      "PTY initial build",
+    );
+    child.stdin.write("\x03");
+    const stopped = await stream.wait(
+      (event) => event.event === "stopped" && event.sequence > built.sequence,
+      "PTY stopped event",
+    );
+    assert.equal(stopped.payload.reason, "SIGINT");
+    assert.equal(await new Promise((accept) => child.once("exit", accept)), 0);
+    await assert.rejects(fetch(`${ready.payload.baseUrl}/registry.json`));
+  } finally {
+    if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
     rmSync(created.root, { recursive: true, force: true });
   }
 });

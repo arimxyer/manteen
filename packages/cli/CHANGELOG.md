@@ -1,5 +1,10 @@
 # manteen
 
+## 0.9.2
+
+- Short-circuit a fully current update before apply and project verification, returning
+  `nothing-to-do`, no rerun action, and `mutated: false` while preserving all planning refusals.
+
 ## 0.9.1
 
 - Keep add/update dependency-manager transcripts out of machine stdout, sanitize corrupt-receipt

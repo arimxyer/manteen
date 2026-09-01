@@ -353,7 +353,9 @@ test("every --json document carries the versioned eleven-key envelope on stdout 
     assert.ok(Array.isArray(doc.actions), `${command}: actions must always be present`);
     assert.equal(result.stderr, "", `${command}: --json must leave stderr empty`);
     if (command === "update") {
-      assert.deepEqual(doc.payload.updateState, { changed: false, versioningRequired: false });
+      assert.equal(doc.payload.kind, "nothing-to-do");
+      assert.equal(doc.payload.updateState, null);
+      assert.deepEqual(doc.actions, []);
     }
   }
 });
@@ -827,6 +829,58 @@ test("a second update is a no-op that says so, and writes nothing", () => {
   assert.equal(document.mutated, false);
 });
 
+test("a verified no-op update emits no apply action and runs no verifier", () => {
+  const marker = "verification-ran.txt";
+  const project = makeProject({
+    scripts: {
+      verify: `node -e "require('node:fs').writeFileSync('${marker}', 'ran')"`,
+    },
+    verification: { update: ["verify"] },
+  });
+  assert.equal(run(project, ["add", ITEM]).status, 0);
+
+  const preview = run(project, ["update", "--dry-run", "--json"]);
+  assert.equal(preview.status, 0, preview.all);
+  const previewDocument = json(preview);
+  assert.equal(previewDocument.payload.kind, "nothing-to-do");
+  assert.deepEqual(previewDocument.payload.selected, []);
+  assert.deepEqual(previewDocument.actions, []);
+  assert.equal(existsSync(join(project, marker)), false);
+
+  const applied = run(project, ["update", "--json"]);
+  assert.equal(applied.status, 0, applied.all);
+  const appliedDocument = json(applied);
+  assert.equal(appliedDocument.payload.kind, "nothing-to-do");
+  assert.deepEqual(appliedDocument.payload.selected, []);
+  assert.deepEqual(appliedDocument.actions, []);
+  assert.equal(appliedDocument.mutated, false);
+  assert.equal(existsSync(join(project, marker)), false);
+});
+
+test("the no-op shortcut does not bypass a missing-pristine-base refusal", () => {
+  const marker = "verification-ran.txt";
+  const project = makeProject({
+    scripts: {
+      verify: `node -e "require('node:fs').writeFileSync('${marker}', 'ran')"`,
+    },
+    verification: { update: ["verify"] },
+  });
+  assert.equal(run(project, ["add", ITEM]).status, 0);
+  const basePath = join(project, ".manteen", "bases", `${DESTINATION}.base`);
+  rmSync(basePath);
+
+  const refused = run(project, ["update", "--json"]);
+  assert.equal(refused.status, 1, refused.all);
+  const document = json(refused);
+  assert.equal(document.payload.kind, "refused");
+  assert.equal(document.mutated, false);
+  assert.equal(document.payload.verification.status, "skipped");
+  assert.deepEqual(document.actions, []);
+  assert.ok(document.diagnostics.some((diagnostic) => diagnostic.code === "merge-base-unreadable"));
+  assert.equal(existsSync(basePath), false);
+  assert.equal(existsSync(join(project, marker)), false);
+});
+
 test("a non-interactive local-only update and dry-run both preserve the edit", () => {
   const project = makeProject();
   assert.equal(run(project, ["add", ITEM]).status, 0);
@@ -844,7 +898,7 @@ test("a non-interactive local-only update and dry-run both preserve the edit", (
   const preview = run(project, ["update", "--dry-run"]);
   assert.equal(preview.status, 0, preview.all);
   assert.doesNotMatch(preview.stderr, /state-versioning-required/, preview.stderr);
-  assert.match(preview.stdout, /Dry run — nothing was written\./, preview.stdout);
+  assert.equal(preview.stdout, "Nothing to update.\n");
   assert.match(readFileSync(target, "utf8"), /a local edit/, "a dry run must not write");
 });
 

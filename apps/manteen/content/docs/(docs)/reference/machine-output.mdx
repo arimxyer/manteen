@@ -125,6 +125,9 @@ Unexpected apply/verification throws conservatively report mutation possible ins
 the tree is unchanged. Rollback failures include root-relative paths and recovery guidance that
 works with or without Git.
 
+A selected update with no source, dependency, theme, styles, base, or receipt work returns
+`nothing-to-do` before apply. It runs no project verifier and emits no apply action.
+
 ## A safe parsing loop
 
 1. Parse all stdout as one JSON document and validate `schemaVersion`.

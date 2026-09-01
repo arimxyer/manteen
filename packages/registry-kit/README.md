@@ -54,8 +54,9 @@ profile, both normal and `--check` builds validate it before any output mutation
 build failure, and stopped events with `--jsonl`. HTTP requests are served from the last validated
 in-memory snapshot; a broken rebuild never replaces it. The success event includes an exact
 dry-run `manteen registry add` argv for connecting a consumer. Stop it with `SIGINT` or `SIGTERM`.
-The stopped JSONL event is emitted before the stream closes, including through a normal `npm exec`
-wrapper. This is a local server, not publication or deployment evidence.
+The stopped JSONL event is emitted before the stream closes, including when terminal Ctrl-C arrives
+through a normal `npm exec` wrapper; the child retains the terminal interrupt long enough to flush
+that event and then exits cleanly. This is a local server, not publication or deployment evidence.
 
 ### Safe component scaffolds
 
@@ -96,10 +97,12 @@ hashes, required package declarations,
 and the exact catalog insertion object. The Styles API template also returns its exact author
 profile evidence mapping. Without `--register`, apply changes only scaffold-owned source files.
 With `--register`, a reviewed digest also binds surgical catalog insertion, author-profile mapping,
-and missing exact package declarations; declarations are owned by exact section and range text,
-so semver-compatible but differently authored values still refuse rather than normalize, and
-all changed files share one rollback boundary. Differing occupied files, unsafe paths or links,
-catalog collisions, dependency conflicts, and stale plans are named refusals; exact existing
+and missing exact package declarations. A Styles API registration additionally appends `test` to
+`verification.scripts` and adds `scripts.test = "vitest run"` only when that script is absent; an
+existing authored test command is preserved. Package declarations are owned by exact section and
+range text, so semver-compatible but differently authored values still refuse rather than
+normalize, and all changed files share one rollback boundary. Differing occupied files, unsafe
+paths or links, catalog collisions, dependency conflicts, and stale plans are named refusals; exact existing
 scaffold bytes are a no-op. A failed rollback reports `mutated: true` whenever a scaffold-created or
 registered byte, staging file, or directory could not be safely restored.
 

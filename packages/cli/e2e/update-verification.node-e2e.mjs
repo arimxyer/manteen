@@ -578,7 +578,7 @@ test("a merge conflict runs no verification script and changes no update state",
   assert.deepEqual(readFileSync(join(project, RECEIPT_PATH)), receiptBefore);
 });
 
-test("an all-identical installed update still runs configured verification", () => {
+test("an all-identical installed update skips apply and configured verification", () => {
   const registry = publish("all-identical");
   const project = makeProject({
     registry,
@@ -600,8 +600,12 @@ test("an all-identical installed update still runs configured verification", () 
 
   const result = run(project, ["update", "--json"]);
   assert.equal(result.status, 0, result.all);
-  assert.equal(json(result).verification.status, "passed");
-  assert.equal(existsSync(join(project, ".verify-identical")), true);
+  const doc = json(result);
+  assert.equal(doc.kind, "nothing-to-do");
+  assert.equal(doc.mutated, false);
+  assert.equal(doc.verification.status, "skipped");
+  assert.deepEqual(doc.actions, []);
+  assert.equal(existsSync(join(project, ".verify-identical")), false);
   assert.deepEqual(readFileSync(join(project, DESTINATION)), sourceBefore);
   assert.deepEqual(readFileSync(join(project, BASE_PATH)), baseBefore);
   assert.deepEqual(readFileSync(join(project, RECEIPT_PATH)), receiptBefore);
@@ -623,6 +627,7 @@ test("JSON stdout remains one document while both child streams route to stderr"
     `,
   );
   install(project);
+  moveUpstream(registry, "JSON stream verification upstream");
 
   const result = run(project, ["update", "--json"]);
   assert.equal(result.status, 0, result.all);
@@ -710,6 +715,7 @@ test("a zero-exit script that changes a managed component fails verification as 
   install(project);
   const pristine = readFileSync(join(project, DESTINATION), "utf8");
   const before = snapshotManagedTree(project);
+  moveUpstream(registry, "managed drift verification upstream");
 
   const result = run(project, ["update", "--json"]);
   assert.equal(result.status, 1, result.all);

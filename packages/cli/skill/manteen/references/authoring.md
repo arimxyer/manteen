@@ -32,6 +32,10 @@ manteen-kit build manteen.registry.json public/r --check --json
 does not mutate it. Distinguish `clean`, `missing`, `changed`, and `refused` rather than treating
 all non-clean states as permission to replace a directory.
 
+The envelope's top-level `ok` answers whether the check passed (`clean`); `payload.ok` answers
+whether the prospective output is safe to write. A `missing` or `changed` result therefore has
+top-level `ok: false`, `payload.ok: true`, and an exact `payload.status`.
+
 The first positional argument is the catalog and the second is its generated output directory;
 `--check` accepts the same pair as a real build. The JSON envelope is versioned and published at
 `manteen-kit/schema/command`; the ownership marker schema is `manteen-kit/schema/output`. Parse
@@ -69,7 +73,8 @@ manteen-kit dev manteen.registry.json public/r --port 0 --jsonl
 
 Wait for `ready` and `build-succeeded`, then use the returned `registryAddArgv` to preview the
 consumer configuration. A failed rebuild keeps the last validated snapshot available. Stop the
-foreground process cleanly; do not describe its local URL or generated output as deployed.
+foreground process cleanly; npm-owned terminal Ctrl-C emits `stopped` before exit. Do not describe
+its local URL or generated output as deployed.
 
 ## Publish
 

@@ -365,6 +365,12 @@ describe("safe author scaffold apply", () => {
       ["manteen.registry.json", "replace"],
       ["package.json", "replace"],
     ]);
+    expect(
+      planned.registration.files.find((file) => file.role === "author-profile")?.changes,
+    ).toMatchObject({ verificationScriptsAdded: ["test"] });
+    expect(
+      planned.registration.files.find((file) => file.role === "package-manifest")?.changes,
+    ).toMatchObject({ additions: { scripts: { test: "vitest run" } } });
 
     const outcome = applyScaffold(registeredInput, planned.planDigest);
     expect(outcome.mutated).toBe(true);
@@ -383,7 +389,9 @@ describe("safe author scaffold apply", () => {
       readFileSync(join(created.root, "manteen.author-profile.json"), "utf8"),
     );
     expect(profile.stylesApi.at(-1)).toEqual(planned.authorProfileInsertion!.mapping);
+    expect(profile.verification).toEqual({ scripts: ["test"] });
     const manifest = JSON.parse(readFileSync(join(created.root, "package.json"), "utf8"));
+    expect(manifest.scripts).toEqual({ test: "vitest run" });
     expect(manifest.dependencies).toEqual({ "@mantine/core": "^9.5.0" });
     expect(manifest.devDependencies).toMatchObject({
       "@types/react": "^19.2.0",
@@ -428,10 +436,47 @@ describe("safe author scaffold apply", () => {
     expect(profile).toEqual({
       schemaVersion: 2,
       stylesApi: [planned.authorProfileInsertion!.mapping],
+      verification: { scripts: ["test"] },
     });
     expect(compileRegistry(created.catalogPath).authorConformance).toMatchObject({
       claimCount: 1,
       evidenceCount: 1,
+    });
+  });
+
+  test("--register preserves an authored test command and appends it to author verification", () => {
+    const created = fixture({ profile: true, packageManifest: true });
+    writeFileSync(
+      join(created.root, "package.json"),
+      `${JSON.stringify(
+        {
+          name: "scaffold-fixture",
+          private: true,
+          scripts: { lint: "eslint .", test: "vitest run --coverage" },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const profilePath = join(created.root, "manteen.author-profile.json");
+    const profile = JSON.parse(readFileSync(profilePath, "utf8"));
+    profile.verification = { scripts: ["lint"] };
+    writeFileSync(profilePath, `${JSON.stringify(profile, null, 2)}\n`);
+
+    const registeredInput = {
+      ...input(created.catalogPath, "component-styles-api"),
+      register: true,
+    };
+    const planned = planScaffold(registeredInput);
+
+    expect(planned.safe).toBe(true);
+    applyScaffold(registeredInput, planned.planDigest);
+    expect(JSON.parse(readFileSync(join(created.root, "package.json"), "utf8")).scripts).toEqual({
+      lint: "eslint .",
+      test: "vitest run --coverage",
+    });
+    expect(JSON.parse(readFileSync(profilePath, "utf8")).verification).toEqual({
+      scripts: ["lint", "test"],
     });
   });
 

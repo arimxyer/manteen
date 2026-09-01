@@ -15,7 +15,7 @@ export const MANTEEN_AGENT_MANIFEST = {
     publishedClientAtContractFreeze: "0.5.0",
     machineInterfaceMilestone: "0.6.0",
     agentWorkflowMilestone: "0.7.0",
-    documentedClientRelease: "0.9.1",
+    documentedClientRelease: "0.9.2",
     minimumNode: "22.12.0",
   },
   machineInterface: {
