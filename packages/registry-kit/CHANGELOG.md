@@ -1,6 +1,6 @@
 # manteen-kit
 
-## Unreleased
+## 0.3.1
 
 - Reject unknown alias-like file targets during author validation, and make `dev --jsonl` emit its
   final stopped event reliably when Ctrl-C arrives through `npm exec`.

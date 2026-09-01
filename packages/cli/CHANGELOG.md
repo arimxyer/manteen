@@ -1,6 +1,6 @@
 # manteen
 
-## Unreleased
+## 0.9.1
 
 - Keep add/update dependency-manager transcripts out of machine stdout, sanitize corrupt-receipt
   parser errors, reject unknown alias-like explicit targets, and classify true zero-mutation,
