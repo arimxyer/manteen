@@ -1,5 +1,12 @@
 # manteen-kit
 
+## 0.3.3
+
+- Make every packaged README reference resolve to a public repository resource and distinguish
+  repository-only interoperability fixtures from files included in the npm package.
+- Reject repository-relative README links that escape or are absent from the declared package
+  surface during the release guard.
+
 ## 0.3.2
 
 - Make registered Styles API scaffolds runnable by wiring a missing `test` script to `vitest run`

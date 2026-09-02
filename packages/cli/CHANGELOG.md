@@ -1,5 +1,14 @@
 # manteen
 
+## 0.9.4
+
+- Derive agent-guide release metadata from the client package manifest so the packaged machine
+  guide cannot advertise a stale client version.
+- Preserve a generated Vite application's import semicolon convention and produce clean provider
+  nesting without running a formatter over consumer-owned source.
+- Make every packaged README reference resolve to a public or package-contained resource, guarded
+  mechanically before release.
+
 ## 0.9.3
 
 - Generate portable explicit Vite aliases during init instead of relying on a resolver member that

@@ -73,6 +73,14 @@ npm provenance, and fresh public Vite 7.3.6 production build are accepted in the
 [`0.9.3 release handoff`](./releases/v0.9.3-release-handoff.md). Public registry bytes and deployment
 remain unchanged.
 
+The current `manteen-kit@0.3.3` / `manteen@0.9.4` release candidate closes three lower-severity
+packaged-consumer findings from the next clean-room evaluation: package README references now
+resolve on the published surface, agent-guide release identity comes from the client manifest, and
+Vite init preserves the generated application's import punctuation and clean JSX indentation. The
+release guard rejects future package-escaping README links, and focused source plus built-Node tests
+bind the other two seams. Public release evidence remains at `0.3.2` / `0.9.3` until dependency-first
+tagged publication and fresh public-consumer acceptance complete.
+
 The agent-native release is public at `manteen-kit@0.2.1` and `manteen@0.7.0`. It adds
 transactional generated registry ownership, one stable JSON command envelope, complete display
 metadata, an opaque SDK facade, offline status, expected-plan digests, deterministic discovery

@@ -193,7 +193,9 @@ plan/apply handles. Existing low-level exports remain available but are not the 
 
 The CLI package owns `skill/manteen/`: `SKILL.md`, `agents/openai.yaml`, and one-level references for
 consumer use, authoring, and the JSON contract. A versioned agent manifest is the common source for
-CLI guide output and documentation command/version data.
+CLI guide output and documentation command data. Its current documented client release is imported
+from the client package manifest rather than copied, so package identity cannot drift between the
+two surfaces.
 
 `manteen agent guide [--json]` works without project configuration. `manteen agent install` defaults
 to `.agents/skills/manteen` and offers explicit universal-user, Codex-user, Claude-project,
