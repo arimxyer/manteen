@@ -20,7 +20,7 @@ historical receipts, start with [`project-context.md`](project-context.md).
 6. **Maintainable** — a linter, dependency automation, and a license file that matches what
    `package.json` claims.
 
-Today: all six criteria are public through `manteen-kit@0.3.2` and `manteen@0.9.3`, including the
+Today: all six criteria are public through `manteen-kit@0.3.3` and `manteen@0.9.4`, including the
 agent-native authoring, machine-command, SDK, verification, and guidance surfaces. W6 `init` is
 complete through its built-Node acceptance tier, W7 closed with a green hosted runtime, OS and
 package-manager matrix, and W8 established provenance-bearing releases. The final accepted
@@ -73,13 +73,15 @@ npm provenance, and fresh public Vite 7.3.6 production build are accepted in the
 [`0.9.3 release handoff`](./releases/v0.9.3-release-handoff.md). Public registry bytes and deployment
 remain unchanged.
 
-The current `manteen-kit@0.3.3` / `manteen@0.9.4` release candidate closes three lower-severity
+The public `manteen-kit@0.3.3` / `manteen@0.9.4` release closes three lower-severity
 packaged-consumer findings from the next clean-room evaluation: package README references now
 resolve on the published surface, agent-guide release identity comes from the client manifest, and
 Vite init preserves the generated application's import punctuation and clean JSX indentation. The
 release guard rejects future package-escaping README links, and focused source plus built-Node tests
-bind the other two seams. Public release evidence remains at `0.3.2` / `0.9.3` until dependency-first
-tagged publication and fresh public-consumer acceptance complete.
+bind the other two seams. Its signed tags, hosted portability matrix, npm provenance, and fresh
+public Vite consumer are accepted in the
+[`0.9.4 release handoff`](./releases/v0.9.4-release-handoff.md). Public registry bytes and deployment
+remain unchanged.
 
 The agent-native release is public at `manteen-kit@0.2.1` and `manteen@0.7.0`. It adds
 transactional generated registry ownership, one stable JSON command envelope, complete display
@@ -159,9 +161,9 @@ was a working bypass that let TypeScript write into a JS project at exit 0). The
 in `plan()`, the bypass routes into the same refusal rather than around it, and both are covered by
 unit tests.
 
-**Distribution.** `manteen-kit@0.3.2` and `manteen@0.9.3` are public on npm as `latest`. Both lines
+**Distribution.** `manteen-kit@0.3.3` and `manteen@0.9.4` are public on npm as `latest`. Both lines
 were published from tagged GitHub Actions OIDC workflows and expose npm publish plus SLSA
-provenance attestations. The current client resolves the public `manteen-kit@^0.3.2`; the earlier
+provenance attestations. The current client resolves the public `manteen-kit@^0.3.3`; the earlier
 client-only `0.3.0`, `0.4.0` and `0.5.0` releases correctly kept
 the prior kit range and created no kit tags. The
 initial trusted-release receipts are in
@@ -177,7 +179,8 @@ reliability release is recorded in the [`0.9.1 release handoff`](./releases/v0.9
 the clean-room regression closure is recorded in the
 [`0.9.2 release handoff`](./releases/v0.9.2-release-handoff.md), and the client-only Vite/status
 portability release is recorded in the
-[`0.9.3 release handoff`](./releases/v0.9.3-release-handoff.md).
+[`0.9.3 release handoff`](./releases/v0.9.3-release-handoff.md). The current packaged-consumer
+closure is recorded in the [`0.9.4 release handoff`](./releases/v0.9.4-release-handoff.md).
 
 **Project hygiene.** The MIT license, Biome, Dependabot, editorconfig and rename are done.
 `SECURITY.md` and contributor ceremony remain deliberately deferred until the repository has
