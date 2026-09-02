@@ -29,6 +29,10 @@ describe("packaged agent guidance", () => {
       ok: true,
       manifest: { schemaVersion: 1, guideVersion: 3, skill: { name: "manteen" } },
     });
+    const clientPackage = JSON.parse(
+      readFileSync(join(import.meta.dirname, "../package.json"), "utf8"),
+    ) as { version: string };
+    expect(document.manifest.releases.documentedClientRelease).toBe(clientPackage.version);
     expect(document.skill).toContain("name: manteen");
     expect(document.skill).toContain(
       "distinguish registry installation from application integration",

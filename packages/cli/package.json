@@ -1,6 +1,6 @@
 {
   "name": "manteen",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "Install Mantine components from a registry into your project. The consumer side of manteen-kit.",
   "type": "module",
   "license": "MIT",
@@ -52,7 +52,7 @@
     "cross-spawn": "^7.0.6",
     "diff": "^9",
     "get-tsconfig": "^4.14",
-    "manteen-kit": "^0.3.2",
+    "manteen-kit": "^0.3.3",
     "node-diff3": "^3.2.1",
     "nypm": "^0.6.9",
     "semver": "^7.8.5",

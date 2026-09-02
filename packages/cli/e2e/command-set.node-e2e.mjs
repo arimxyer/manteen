@@ -463,6 +463,10 @@ test("offline status and packaged agent guidance work before project initializat
   assert.equal(guideDocument.root, null);
   assert.equal(guideDocument.payload.manifest.skill.name, "manteen");
   assert.equal(guideDocument.payload.manifest.guideVersion, 3);
+  assert.equal(
+    guideDocument.payload.manifest.releases.documentedClientRelease,
+    JSON.parse(readFileSync(join(PKG_ROOT, "package.json"), "utf8")).version,
+  );
   assert.match(guideDocument.payload.skill, /^---\nname: manteen\n/);
   assert.match(
     guideDocument.payload.skill,

@@ -11,7 +11,7 @@ separate public evidence.
 
 | Area | Current state | Authority or evidence |
 | --- | --- | --- |
-| Packages | This tree and public npm `latest` are `manteen-kit@0.3.2` and `manteen@0.9.3`. | `packages/*/package.json`, [`roadmap.md`](roadmap.md), [`v0.9.3-release-handoff.md`](./releases/v0.9.3-release-handoff.md) |
+| Packages | This tree is the `manteen-kit@0.3.3` / `manteen@0.9.4` release candidate. Public npm `latest` remains `0.3.2` / `0.9.3` until separate tagged workflows and public receipts complete. | `packages/*/package.json`, [`roadmap.md`](roadmap.md), [`v0.9.3-release-handoff.md`](./releases/v0.9.3-release-handoff.md) |
 | Current release | The public client release makes generic Vite init portable across Vite 7 and 8 and gives distinct unreadable-receipt states actionable offline recovery. | [`client-build-plan.md`](./contracts/client-build-plan.md), [`v0.9.3-release-handoff.md`](./releases/v0.9.3-release-handoff.md) |
 | Public package proof | The current public `0.3.2` and `0.9.3` packages have signed tags, successful trusted release workflows, npm provenance, and fresh public-consumer receipts. | [`v0.9.3-release-handoff.md`](./releases/v0.9.3-release-handoff.md) |
 | Registry | The source catalog contains 22 items. Generated `public/r/` is local build output and must be rebuilt before use; no repository workflow currently publishes it. | [`roadmap.md`](roadmap.md), `manteen.registry.json` |

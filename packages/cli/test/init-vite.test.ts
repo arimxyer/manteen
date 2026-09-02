@@ -58,19 +58,44 @@ describe("W6 Vite entry adapter", () => {
     expect(result.files[0]?.kind).toBe("entry");
 
     const content = result.files[0]?.content ?? "";
-    expect(content).toContain("import '@mantine/core/styles.css';");
-    expect(content).toContain("import './manteen.css';");
+    expect(content).toContain("import '@mantine/core/styles.css'");
+    expect(content).toContain("import './manteen.css'");
     expect(content.indexOf("@mantine/core/styles.css")).toBeLessThan(
       content.indexOf("./manteen.css"),
     );
     expect(content.indexOf("./manteen.css")).toBeLessThan(content.indexOf("./App.css"));
-    expect(content).toContain("import { MantineProvider } from '@mantine/core';");
-    expect(content).toContain("import { theme } from '@/lib/theme';");
+    expect(content).toContain("import { MantineProvider } from '@mantine/core'");
+    expect(content).toContain("import { theme } from '@/lib/theme'");
     expect(content).toContain("<MantineProvider theme={theme}>");
     expect(content).toContain('<img src={reactLogo} alt="React logo" />');
     expect(content).toContain("count is {count}");
     expect(content).toContain("</MantineProvider>");
     expect(content).not.toContain("ColorSchemeScript");
+    expect(content).toBe(`import { useState } from 'react'
+import reactLogo from './assets/react.svg'
+import '@mantine/core/styles.css'
+import './manteen.css'
+import './App.css'
+import { MantineProvider } from '@mantine/core'
+import { theme } from '@/lib/theme'
+
+function App() {
+  const [count, setCount] = useState(0)
+
+  return (
+    <MantineProvider theme={theme}>
+      <>
+        <img src={reactLogo} alt="React logo" />
+        <button onClick={() => setCount((value) => value + 1)}>
+          count is {count}
+        </button>
+      </>
+    </MantineProvider>
+  )
+}
+
+export default App
+`);
   });
 
   test("reuses existing imports and provider while preserving provider props", () => {
