@@ -2,7 +2,8 @@
 
 Install Mantine components from a registry into your project.
 
-`manteen` is the consumer side of [`manteen-kit`](../registry-kit). The kit compiles a
+`manteen` is the consumer side of
+[`manteen-kit`](https://github.com/arimxyer/manteen/tree/main/packages/registry-kit). The kit compiles a
 catalog into an interchange format; `manteen` reads that format, resolves each item's
 files against your `tsconfig` path aliases, folds any theme contributions into your
 existing theme, and writes the result into your source tree. Components are copied
@@ -130,7 +131,7 @@ manteen add @interop/blocks/release-panel
 Hand-authored items may use a bare `registryDependencies` name. Manteen resolves it against the
 declaring item's namespace and prints `bare-dep-assumed-local` so that compatibility assumption is
 visible. The same live registry has been production-built as both `@alpha` and `@vendor`; see the
-[second registry receipt](../../docs/handoffs/second-registry-handoff.md).
+[second registry receipt](https://github.com/arimxyer/manteen/blob/main/docs/handoffs/second-registry-handoff.md).
 
 The remaining commands keep and inspect what was installed:
 

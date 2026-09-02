@@ -15,8 +15,8 @@
  * have been built. It never creates a tarball or contacts the publish endpoint.
  */
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { join, relative, resolve, sep } from "node:path";
 
 const REPO_ROOT = resolve(import.meta.dirname, "..");
 const REPOSITORY_URL = "git+https://github.com/arimxyer/manteen.git";
@@ -89,6 +89,43 @@ function findWorkspaceProtocol(value, path = "package.json") {
   );
 }
 
+function isPackedManifestPath(manifest, path) {
+  return manifest.files?.some((entry) => path === entry || path.startsWith(`${entry}/`));
+}
+
+function inspectReadmeLinks(spec, manifest) {
+  const readmePath = join(spec.packageRoot, "README.md");
+  const source = readFileSync(readmePath, "utf8");
+
+  for (const match of source.matchAll(/!?\[[^\]]*\]\(([^)\s]+)(?:\s+[^)]*)?\)/g)) {
+    const href = match[1];
+    if (!href || href.startsWith("#") || /^[a-z][a-z\d+.-]*:/i.test(href)) continue;
+
+    const path = href.replace(/^<|>$/g, "").split(/[?#]/, 1)[0];
+    if (!path) continue;
+
+    const destination = resolve(spec.packageRoot, path);
+    const packedPath = relative(spec.packageRoot, destination).split(sep).join("/");
+    const staysInsidePackage =
+      packedPath !== "" && packedPath !== ".." && !packedPath.startsWith("../");
+
+    expect(
+      staysInsidePackage,
+      `${spec.name}: README link ${JSON.stringify(href)} escapes the published package`,
+    );
+    if (!staysInsidePackage) continue;
+
+    expect(
+      existsSync(destination),
+      `${spec.name}: README link ${JSON.stringify(href)} has no repository target`,
+    );
+    expect(
+      isPackedManifestPath(manifest, packedPath),
+      `${spec.name}: README link ${JSON.stringify(href)} is not included by package.json files`,
+    );
+  }
+}
+
 function inspectManifest(spec) {
   const packageRoot = join(REPO_ROOT, spec.dir);
   const manifestPath = join(packageRoot, "package.json");
@@ -146,6 +183,8 @@ function inspectManifest(spec) {
   for (const location of findWorkspaceProtocol(manifest)) {
     failures.push(`${spec.name}: ${location} contains a workspace: protocol`);
   }
+
+  inspectReadmeLinks({ ...spec, packageRoot }, manifest);
 
   return { ...spec, manifest, packageRoot };
 }

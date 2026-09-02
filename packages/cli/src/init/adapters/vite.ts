@@ -74,6 +74,7 @@ function transformEntry(
     },
   });
   const sourceFile = project.createSourceFile(entryPath, content);
+  const semicolonImports = prefersSemicolonImports(sourceFile);
   const target = findTransformTarget(sourceFile);
 
   if (typeof target === "string") return refused(entryPath, target);
@@ -153,16 +154,68 @@ function transformEntry(
     }
   } else {
     const originalRoot = target.root.getText();
-    target.expression.replaceWithText(
-      `<${providerTag} theme={${themeLocal}}>\n${originalRoot}\n</${providerTag}>`,
-    );
+    const source = sourceFile.getFullText();
+    const start = target.root.getStart();
+    const lineStart = source.lastIndexOf("\n", start) + 1;
+    const linePrefix = source.slice(lineStart, start);
+    const lineEnding = content.includes("\r\n") ? "\r\n" : "\n";
+    const replacement = /^\s*$/.test(linePrefix)
+      ? `<${providerTag} theme={${themeLocal}}>${lineEnding}${indentBlock(
+          `${linePrefix}${originalRoot}`,
+          indentationUnit(content),
+        )}${lineEnding}${linePrefix}</${providerTag}>`
+      : `<${providerTag} theme={${themeLocal}}>${originalRoot}</${providerTag}>`;
+    sourceFile.replaceText([start, target.root.getEnd()], replacement);
   }
 
+  const transformed = matchOwnedImportSemicolons(sourceFile.getFullText(), semicolonImports, [
+    "@mantine/core/styles.css",
+    managedStylesImport(entryPath, input.project.layout.stylesPath),
+    ...(existingProviderTag === null ? [MANTINE_CORE] : []),
+    ...(existingThemeLocal === null ? [input.project.layout.themeImport] : []),
+  ]);
+
   return {
-    files: [{ kind: "entry", destination: entryPath, content: sourceFile.getFullText() }],
+    files: [{ kind: "entry", destination: entryPath, content: transformed }],
     instructions: [],
     diagnostics: [],
   };
+}
+
+function prefersSemicolonImports(sourceFile: SourceFile): boolean {
+  const first = sourceFile.getImportDeclarations()[0];
+  return first === undefined || first.getText().trimEnd().endsWith(";");
+}
+
+function indentationUnit(content: string): string {
+  if (/^\t+\S/m.test(content)) return "\t";
+  const widths = [...content.matchAll(/^( +)\S/gm)].map((match) => match[1]?.length ?? 0);
+  const width = Math.min(...widths.filter((candidate) => candidate > 0));
+  return Number.isFinite(width) ? " ".repeat(width) : "  ";
+}
+
+function indentBlock(source: string, indentation: string): string {
+  return source
+    .split(/(\r?\n)/)
+    .map((part) => (/^\r?\n$/.test(part) ? part : `${indentation}${part}`))
+    .join("");
+}
+
+function matchOwnedImportSemicolons(
+  source: string,
+  semicolons: boolean,
+  moduleSpecifiers: readonly string[],
+): string {
+  if (semicolons) return source;
+  const owned = new Set(moduleSpecifiers);
+  return source
+    .split(/(\r?\n)/)
+    .map((part) => {
+      if (/^\r?\n$/.test(part) || !part.trimStart().startsWith("import ")) return part;
+      const specifier = /(?:from\s+)?["']([^"']+)["'];\s*$/.exec(part)?.[1];
+      return specifier && owned.has(specifier) ? part.replace(/;(\s*)$/, "$1") : part;
+    })
+    .join("");
 }
 
 function findTransformTarget(sourceFile: SourceFile): TransformTarget | string {

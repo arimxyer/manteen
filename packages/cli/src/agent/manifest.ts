@@ -1,7 +1,8 @@
 /**
  * Data-only source for packaged agent guidance, CLI guide output, and docs.
- * Keep this module free of Node APIs and side effects so Astro can import it.
+ * Keep this module free of Node APIs and side effects so other build targets can import it.
  */
+import clientPackage from "../../package.json";
 
 export const MANTEEN_AGENT_MANIFEST = {
   schemaVersion: 1,
@@ -15,7 +16,7 @@ export const MANTEEN_AGENT_MANIFEST = {
     publishedClientAtContractFreeze: "0.5.0",
     machineInterfaceMilestone: "0.6.0",
     agentWorkflowMilestone: "0.7.0",
-    documentedClientRelease: "0.9.2",
+    documentedClientRelease: clientPackage.version,
     minimumNode: "22.12.0",
   },
   machineInterface: {

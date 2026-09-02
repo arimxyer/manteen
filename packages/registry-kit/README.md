@@ -273,8 +273,10 @@ manteen-kit build registries/product/manteen.registry.json dist/product
 ```
 
 An item in `@product` can declare `uses: ["@kit/callout", "@base/empty-state"]`, and a client
-resolves across all of them in one install. `fixtures/` contains exactly this arrangement and
-the test suite exercises it.
+resolves across all of them in one install. The repository's
+[`fixtures/`](https://github.com/arimxyer/manteen/tree/main/packages/registry-kit/fixtures)
+contain exactly this arrangement and the test suite exercises it; fixtures are test evidence, not
+part of the published package.
 
 ### Destination collisions
 
